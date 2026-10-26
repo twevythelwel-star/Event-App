@@ -65,11 +65,12 @@ Open `http://localhost:5173/`. If the backend isn't running, the app shows a ban
 - event browsing, menus, sign-in/sign-out and attendee ordering (the server prices every order);
 - the Event Host's payment verification queue (paid, partial, under verification, rejected) and kitchen status;
 - the Staff Scanner's portion handovers, reversals, supervisor overrides and order closing, each written to the handover audit log under the signed-in account;
+- the Event Host's event and menu editing: event details (saved after a short pause while typing), publish / unpublish / cancel, and adding, editing, repricing, restocking or removing menu items. Only the organizer's event owners can edit; uploaded photos and flyers are still browser-only;
 - the cash ledger: cash receipts (against an order or walk-up for an event) and reversals, with server-issued receipt numbers, plus order refunds;
 - Event Host applications: signed-in attendees apply from the Attendee tab; administrators approve or reject them in a review queue on the Administrator and System Administrator tabs. Approval grants the Event Host role and creates the applicant's own organizer;
 - ticket disputes: attendees file them on their own orders; administrators move them to under review, resolved or rejected (delegated admins only see the organizers assigned to them). Resolving a dispute never moves money; refunds stay with the event owner.
 
-Hosts and staff only see orders and cash for their own organizer's events or the events they are assigned to. Payment verifiers and cashiers can take cash; only the event owner can reverse cash or issue refunds. Money is append-only: corrections are linked reversal rows, never edits. Still browser-local demo data: menu and event editing, SMS notifications, and the administrator dashboards' platform stats, users, fees, health and audit panels.
+Hosts and staff only see orders and cash for their own organizer's events or the events they are assigned to. Payment verifiers and cashiers can take cash; only the event owner can reverse cash or issue refunds. Money is append-only: corrections are linked reversal rows, never edits. Still browser-local demo data: flyer and photo uploads, SMS notifications, and the administrator dashboards' platform stats, users, fees, health and audit panels.
 
 Seeded demo data also includes four Kingston Harbour orders in different payment states and a food-station staff account assigned to that event (`DemoOrdersSeeder.php`). `DemoSupportRequestsSeeder.php` adds a pending host application (from a demo applicant account) and an open dispute.
 

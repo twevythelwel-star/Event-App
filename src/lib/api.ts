@@ -309,3 +309,92 @@ export async function updateDisputeStatus(
   });
   return body.data;
 }
+
+// ---- Event Host: own events & menus ------------------------------------------------------
+
+/** snake_case event fields accepted by PATCH /host/events/{id} */
+export type EventPatch = Partial<{
+  title: string;
+  tagline: string | null;
+  date_str: string;
+  time_str: string;
+  venue_name: string;
+  venue_address: string;
+  coordinates: string | null;
+  description: string | null;
+  pickup_instructions: string | null;
+  organizer_phone: string;
+  organizer_whatsapp: string | null;
+  organizer_email: string | null;
+  packaging_fee_usd: number;
+  packaging_fee_jmd: number;
+  advance_order_deadline: string;
+  is_ordering_open: boolean;
+}>;
+
+/** snake_case menu item fields accepted by the host menu endpoints */
+export type MenuItemPayload = {
+  name: string;
+  category: string;
+  description?: string | null;
+  pricing_type: "fixed" | "customizable" | "custom_amount";
+  price_usd: number;
+  price_jmd: number;
+  image_url?: string | null;
+  custom_option_groups?: unknown[] | null;
+  custom_amount_config?: Record<string, unknown> | null;
+  allow_special_instructions?: boolean;
+  available_stock?: number | null;
+};
+
+export async function fetchHostEvents(): Promise<FishFryEventItem[]> {
+  const body = await request<{ data: FishFryEventItem[] }>("/host/events");
+  return body.data;
+}
+
+export async function updateHostEvent(eventId: string, patch: EventPatch): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(`/host/events/${encodeURIComponent(eventId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  return body.data;
+}
+
+export async function setHostEventStatus(
+  eventId: string,
+  status: "draft" | "published" | "unpublished" | "cancelled"
+): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(`/host/events/${encodeURIComponent(eventId)}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+  return body.data;
+}
+
+export async function createHostMenuItem(eventId: string, item: MenuItemPayload): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(`/host/events/${encodeURIComponent(eventId)}/menu`, {
+    method: "POST",
+    body: JSON.stringify(item),
+  });
+  return body.data;
+}
+
+export async function updateHostMenuItem(
+  eventId: string,
+  itemId: string,
+  item: Partial<MenuItemPayload>
+): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(
+    `/host/events/${encodeURIComponent(eventId)}/menu/${encodeURIComponent(itemId)}`,
+    { method: "PUT", body: JSON.stringify(item) }
+  );
+  return body.data;
+}
+
+export async function deleteHostMenuItem(eventId: string, itemId: string): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(
+    `/host/events/${encodeURIComponent(eventId)}/menu/${encodeURIComponent(itemId)}`,
+    { method: "DELETE" }
+  );
+  return body.data;
+}

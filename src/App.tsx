@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDownLeft,
   Banknote,
@@ -21,9 +21,11 @@ import {
   AdminAssignedScope,
   CashPaymentRecord,
   Currency,
+  EventDetails,
   FulfillmentStatus,
   HandoverAuditEntry,
   HandoverStatus,
+  MenuItem,
   MethodId,
   NotificationChannel,
   NotificationLogEntry,
@@ -61,10 +63,15 @@ import {
   ManualPaymentStatus,
   OrderRequest,
   SessionUser,
+  EventPatch,
+  MenuItemPayload,
   closeOrder as closeOrderLive,
+  createHostMenuItem,
+  deleteHostMenuItem,
   fetchAdminDisputes,
   fetchCashLedger,
   fetchEvents,
+  fetchHostEvents,
   fetchMyDisputes,
   fetchMyOrders,
   fetchOperationsOrders,
@@ -72,12 +79,15 @@ import {
   placeOrder,
   recordCashReceipt,
   recordHandover,
+  setHostEventStatus,
   refundOrder as refundOrderLive,
   reverseCashReceipt,
   signOut,
   submitDispute,
   updateDisputeStatus,
   updateFulfillmentStatus as updateFulfillmentStatusLive,
+  updateHostEvent,
+  updateHostMenuItem,
   updatePaymentStatus as updatePaymentStatusLive,
 } from "./lib/api";
 
@@ -410,9 +420,23 @@ export function App() {
   }, [isLiveSession, isLiveAdmin]);
   // Host and scanner views only show orders the server says this user may operate on
   const operableOrders = isLiveSession ? orders.filter((o) => o.capabilities) : orders;
-  // The live event walk-up cash is recorded against: the first event run by an organizer the user belongs to
-  const hostLiveEvent = isLiveSession
-    ? catalogEvents.find((e) => e.organizerId && sessionUser?.organizerIds?.includes(e.organizerId))
+  // Events the signed-in host may edit (every status, so unpublished events stay reachable)
+  const [hostEvents, setHostEvents] = useState<FishFryEventItem[]>([]);
+  const isLiveHost = isLiveSession && hasSessionRole("event_host");
+
+  useEffect(() => {
+    if (!isLiveHost) {
+      setHostEvents([]);
+      return;
+    }
+    fetchHostEvents()
+      .then(setHostEvents)
+      .catch((error) => console.warn("Unable to load your events.", error));
+  }, [isLiveHost]);
+
+  // The live event the host dashboard edits, and walk-up cash is recorded against
+  const hostLiveEvent: FishFryEventItem | undefined = isLiveSession
+    ? hostEvents[0] ?? catalogEvents.find((e) => e.organizerId && sessionUser?.organizerIds?.includes(e.organizerId))
     : undefined;
 
   useEffect(() => {
@@ -628,6 +652,162 @@ export function App() {
       }));
       showToast("Signed out.");
     }
+  }
+
+  // ---- Live event & menu editing (host dashboard) ----------------------------------------
+
+  // Event fields typed in the dashboard are saved together after a short pause, not on every keystroke
+  const pendingEventPatch = useRef<EventPatch>({});
+  const eventSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function applyServerEvent(serverEvent: FishFryEventItem) {
+    setHostEvents((curr) => curr.map((e) => (e.id === serverEvent.id ? serverEvent : e)));
+    // Keep the public catalog in step: published events appear there, others drop out
+    setApiEvents((curr) => {
+      if (!curr) return curr;
+      const others = curr.filter((e) => e.id !== serverEvent.id);
+      return serverEvent.status === "published" ? [...others, serverEvent] : others;
+    });
+  }
+
+  function reloadHostEvents() {
+    fetchHostEvents().then(setHostEvents).catch(() => undefined);
+  }
+
+  function flushEventPatch(eventId: string) {
+    if (eventSaveTimer.current) clearTimeout(eventSaveTimer.current);
+    eventSaveTimer.current = null;
+    const patch = pendingEventPatch.current;
+    pendingEventPatch.current = {};
+    if (Object.keys(patch).length === 0) return Promise.resolve();
+
+    return updateHostEvent(eventId, patch)
+      .then((saved) => {
+        // Ignore a response that would overwrite fields typed since this save was sent
+        if (Object.keys(pendingEventPatch.current).length === 0) applyServerEvent(saved);
+      })
+      .catch((error) => {
+        reportLiveError(error);
+        reloadHostEvents();
+      });
+  }
+
+  /** Parses the dashboard's free-text deadline ("Friday, Nov 20, 2026 at 8:00 PM"); undefined while incomplete. */
+  function parseDeadlineText(text: string): string | undefined {
+    const normalized = text.replace(/\s+at\s+/i, " ").trim();
+    return Number.isNaN(Date.parse(normalized)) ? undefined : normalized;
+  }
+
+  function liveUpdateEventDetails(next: EventDetails) {
+    const current = hostLiveEvent;
+    if (!current?.id) return;
+
+    // Show the edit immediately; the server response later replaces it
+    setHostEvents((curr) => curr.map((e) => (e.id === current.id ? { ...e, ...next, menu: e.menu } : e)));
+
+    if (next.status && next.status !== current.status) {
+      const eventId = current.id;
+      void flushEventPatch(eventId).then(() =>
+        setHostEventStatus(eventId, next.status as "draft" | "published" | "unpublished" | "cancelled")
+          .then(applyServerEvent)
+          .catch((error) => {
+            reportLiveError(error);
+            reloadHostEvents();
+          })
+      );
+      return;
+    }
+
+    const fields: [keyof EventDetails, keyof EventPatch][] = [
+      ["title", "title"],
+      ["tagline", "tagline"],
+      ["dateStr", "date_str"],
+      ["timeStr", "time_str"],
+      ["venueName", "venue_name"],
+      ["venueAddress", "venue_address"],
+      ["coordinates", "coordinates"],
+      ["description", "description"],
+      ["pickupInstructions", "pickup_instructions"],
+      ["organizerPhone", "organizer_phone"],
+      ["organizerWhatsApp", "organizer_whatsapp"],
+      ["organizerEmail", "organizer_email"],
+      ["packagingFeeUSD", "packaging_fee_usd"],
+      ["packagingFeeJMD", "packaging_fee_jmd"],
+      ["isOrderingOpen", "is_ordering_open"],
+    ];
+    const patch: Record<string, unknown> = {};
+    for (const [from, to] of fields) {
+      if (next[from] !== undefined && next[from] !== current[from]) patch[to] = next[from];
+    }
+    if (next.advanceOrderDeadline !== current.advanceOrderDeadline) {
+      const deadline = parseDeadlineText(next.advanceOrderDeadline);
+      if (deadline) patch.advance_order_deadline = deadline;
+    }
+    if (Object.keys(patch).length === 0) return;
+
+    pendingEventPatch.current = { ...pendingEventPatch.current, ...(patch as EventPatch) };
+    if (eventSaveTimer.current) clearTimeout(eventSaveTimer.current);
+    // Toggling ordering is a deliberate switch: save it right away
+    const delay = "is_ordering_open" in patch ? 0 : 900;
+    const eventId = current.id;
+    eventSaveTimer.current = setTimeout(() => void flushEventPatch(eventId), delay);
+  }
+
+  function toMenuPayload(item: MenuItem): MenuItemPayload {
+    return {
+      name: item.name,
+      category: item.category,
+      description: item.description || null,
+      pricing_type: item.pricingType,
+      price_usd: Number(item.priceUSD) || 0,
+      price_jmd: Math.round(Number(item.priceJMD) || 0),
+      // Uploaded images are browser data URLs; the server only stores image links for now
+      image_url: item.imageUrl && !item.imageUrl.startsWith("data:") ? item.imageUrl : null,
+      custom_option_groups: item.pricingType === "customizable" ? item.customOptionGroups ?? null : null,
+      custom_amount_config: item.pricingType === "custom_amount" ? item.customAmountConfig ?? null : null,
+      allow_special_instructions: item.allowSpecialInstructions ?? true,
+      available_stock: item.availableStock ?? null,
+    };
+  }
+
+  function liveUpdateMenu(nextMenu: MenuItem[]) {
+    const current = hostLiveEvent;
+    if (!current?.id) return;
+    const eventId = current.id;
+    const previous = current.menu || [];
+
+    setHostEvents((curr) => curr.map((e) => (e.id === eventId ? { ...e, menu: nextMenu } : e)));
+
+    const previousIds = new Set(previous.map((m) => m.id));
+    const nextIds = new Set(nextMenu.map((m) => m.id));
+    const calls: Promise<FishFryEventItem>[] = [];
+
+    for (const item of nextMenu) {
+      if (!previousIds.has(item.id)) {
+        calls.push(createHostMenuItem(eventId, toMenuPayload(item)));
+      } else {
+        const before = previous.find((m) => m.id === item.id)!;
+        if (JSON.stringify(toMenuPayload(before)) !== JSON.stringify(toMenuPayload(item))) {
+          calls.push(updateHostMenuItem(eventId, item.id, toMenuPayload(item)));
+        }
+      }
+      if (item.imageUrl?.startsWith("data:")) {
+        showToast("Uploaded photos aren't stored on the server yet; use an image link to keep it.");
+      }
+    }
+    for (const item of previous) {
+      if (!nextIds.has(item.id)) calls.push(deleteHostMenuItem(eventId, item.id));
+    }
+
+    // Server ids replace the dashboard's temporary ids once the calls settle
+    Promise.all(calls)
+      .then((results) => {
+        if (results.length) applyServerEvent(results[results.length - 1]);
+      })
+      .catch((error) => {
+        reportLiveError(error);
+        reloadHostEvents();
+      });
   }
 
   function applyServerOrder(serverOrder: TicketOrder) {
@@ -1587,8 +1767,8 @@ export function App() {
 
       {activeTab === "organizer" && (
         <OrganizerDashboard
-          eventDetails={eventDetails}
-          menu={menu}
+          eventDetails={isLiveSession && hostLiveEvent ? hostLiveEvent : eventDetails}
+          menu={isLiveSession && hostLiveEvent ? hostLiveEvent.menu || [] : menu}
           settings={settings}
           orders={operableOrders}
           cashLedger={cashLedger || []}
@@ -1600,9 +1780,13 @@ export function App() {
           onSwitchOrganizer={(orgId) => setSavedState((c) => ({ ...c, activeOrganizerId: orgId }))}
           onSwitchRolePerspective={(role) => setSavedState((c) => ({ ...c, activeRolePerspective: role }))}
           onUpdateEventDetails={(details) =>
-            setSavedState((c) => ({ ...c, eventDetails: details }))
+            isLiveSession && hostLiveEvent
+              ? liveUpdateEventDetails(details)
+              : setSavedState((c) => ({ ...c, eventDetails: details }))
           }
-          onUpdateMenu={(newMenu) => setSavedState((c) => ({ ...c, menu: newMenu }))}
+          onUpdateMenu={(newMenu) =>
+            isLiveSession && hostLiveEvent ? liveUpdateMenu(newMenu) : setSavedState((c) => ({ ...c, menu: newMenu }))
+          }
           onUpdateSettings={(updater) =>
             setSavedState((c) => ({ ...c, settings: updater(c.settings) }))
           }

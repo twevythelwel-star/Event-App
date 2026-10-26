@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\AccountSettingsController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Api\CatalogController;
+use App\Http\Controllers\Api\HostEventsController;
 use App\Http\Controllers\Api\OrderOperationsController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\SupportRequestsController;
@@ -175,6 +176,14 @@ Route::prefix('api/v1')->group(function () {
         Route::get('/operations/cash', [OrderOperationsController::class, 'cashLedger'])->name('api.operations.cash.index');
         Route::post('/operations/cash', [OrderOperationsController::class, 'recordCash'])->name('api.operations.cash.store')->middleware('throttle:60,1');
         Route::post('/operations/cash/{receiptId}/reverse', [OrderOperationsController::class, 'reverseCash'])->name('api.operations.cash.reverse');
+
+        // Event Host editing of their own events and menus (organizer owners only; checked per event)
+        Route::get('/host/events', [HostEventsController::class, 'index'])->name('api.host.events');
+        Route::patch('/host/events/{eventId}', [HostEventsController::class, 'update'])->name('api.host.events.update')->middleware('throttle:120,1');
+        Route::post('/host/events/{eventId}/status', [HostEventsController::class, 'setStatus'])->name('api.host.events.status');
+        Route::post('/host/events/{eventId}/menu', [HostEventsController::class, 'storeMenuItem'])->name('api.host.menu.store');
+        Route::put('/host/events/{eventId}/menu/{itemId}', [HostEventsController::class, 'updateMenuItem'])->name('api.host.menu.update');
+        Route::delete('/host/events/{eventId}/menu/{itemId}', [HostEventsController::class, 'destroyMenuItem'])->name('api.host.menu.destroy');
 
         // Attendee requests: Event Host applications and order disputes
         Route::get('/host-applications', [SupportRequestsController::class, 'myHostApplications'])->name('api.host-applications.mine');
