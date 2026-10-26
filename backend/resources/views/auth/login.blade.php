@@ -62,57 +62,40 @@
             <a href="{{ route('register') }}" class="font-semibold text-indigo-600 hover:text-indigo-700 ml-1">Create attendee account</a>
         </div>
 
-        <!-- Role-Based Access Demo Quick-Selector -->
-        <div class="mt-6 pt-5 border-t border-slate-200/80">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Platform Profiles & Login Presets</span>
-                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">Click to Pre-Fill</span>
+        {{-- Local-development login presets: never rendered outside APP_ENV=local, and passwords come from the
+             demo seeders / .env rather than this template --}}
+        @if (app()->environment('local'))
+            @php
+                $demoPassword = \Database\Seeders\DemoAccountsSeeder::DEMO_PASSWORD;
+                $loginPresets = [
+                    ['label' => 'System Admin', 'tag' => 'Root', 'email' => config('events.system_admin.email'), 'password' => config('events.system_admin.password') ?: $demoPassword, 'blurb' => 'Platform health, logs & provisioning', 'color' => 'purple'],
+                    ['label' => 'Administrator', 'tag' => 'Ops', 'email' => 'admin@islandevents.example', 'password' => $demoPassword, 'blurb' => 'Disputes, host approval & moderation', 'color' => 'blue'],
+                    ['label' => 'Event Host', 'tag' => 'Organizer', 'email' => 'host@islandevents.example', 'password' => $demoPassword, 'blurb' => 'Studio, menu, orders & cash receipts', 'color' => 'amber'],
+                    ['label' => 'Attendee', 'tag' => 'Default', 'email' => 'attendee@islandevents.example', 'password' => $demoPassword, 'blurb' => 'Orders, active tickets & QR pass', 'color' => 'emerald'],
+                ];
+            @endphp
+            <div class="mt-6 pt-5 border-t border-slate-200/80">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-600">Local Demo Accounts</span>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">Click to Pre-Fill</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
+                    @foreach ($loginPresets as $preset)
+                        <button type="button" onclick="fillCredentials(@js($preset['email']), @js($preset['password']))" class="p-2.5 rounded-xl border border-{{ $preset['color'] }}-200 bg-{{ $preset['color'] }}-50/70 hover:bg-{{ $preset['color'] }}-100/80 transition-all text-left cursor-pointer group">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-{{ $preset['color'] }}-900 group-hover:text-{{ $preset['color'] }}-950">{{ $preset['label'] }}</span>
+                                <span class="text-[10px] font-mono text-{{ $preset['color'] }}-700 bg-{{ $preset['color'] }}-200/60 px-1.5 py-0.5 rounded font-semibold">{{ $preset['tag'] }}</span>
+                            </div>
+                            <div class="text-[11px] text-{{ $preset['color'] }}-700 truncate mt-0.5">{{ $preset['email'] }}</div>
+                            <div class="text-[10px] text-{{ $preset['color'] }}-600/80 mt-1">{{ $preset['blurb'] }}</div>
+                        </button>
+                    @endforeach
+                </div>
+
+                <p class="text-[11px] text-slate-500 mt-2.5 text-center">Local development only. Click any card to fill in its credentials.</p>
             </div>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
-                <!-- System Admin -->
-                <button type="button" onclick="fillCredentials('superadmin@islandevents.example', 'SecureIslandSuperPass2026!#')" class="p-2.5 rounded-xl border border-purple-200 bg-purple-50/70 hover:bg-purple-100/80 transition-all text-left cursor-pointer group">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-purple-900 group-hover:text-purple-950">System Admin</span>
-                        <span class="text-[10px] font-mono text-purple-700 bg-purple-200/60 px-1.5 py-0.5 rounded font-semibold">Root</span>
-                    </div>
-                    <div class="text-[11px] text-purple-700 truncate mt-0.5">superadmin@islandevents.example</div>
-                    <div class="text-[10px] text-purple-600/80 mt-1">Platform health, logs & provisioning</div>
-                </button>
-
-                <!-- Delegated Admin -->
-                <button type="button" onclick="fillCredentials('admin@islandevents.jm', 'Password123!')" class="p-2.5 rounded-xl border border-blue-200 bg-blue-50/70 hover:bg-blue-100/80 transition-all text-left cursor-pointer group">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-blue-900 group-hover:text-blue-950">Administrator</span>
-                        <span class="text-[10px] font-mono text-blue-700 bg-blue-200/60 px-1.5 py-0.5 rounded font-semibold">Ops</span>
-                    </div>
-                    <div class="text-[11px] text-blue-700 truncate mt-0.5">admin@islandevents.jm</div>
-                    <div class="text-[10px] text-blue-600/80 mt-1">Disputes, host approval & moderation</div>
-                </button>
-
-                <!-- Event Host -->
-                <button type="button" onclick="fillCredentials('host@islandevents.jm', 'Password123!')" class="p-2.5 rounded-xl border border-amber-200 bg-amber-50/70 hover:bg-amber-100/80 transition-all text-left cursor-pointer group">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-amber-900 group-hover:text-amber-950">Event Host</span>
-                        <span class="text-[10px] font-mono text-amber-700 bg-amber-200/60 px-1.5 py-0.5 rounded font-semibold">Organizer</span>
-                    </div>
-                    <div class="text-[11px] text-amber-700 truncate mt-0.5">host@islandevents.jm</div>
-                    <div class="text-[10px] text-amber-600/80 mt-1">Studio, menu, orders & cash receipts</div>
-                </button>
-
-                <!-- Attendee -->
-                <button type="button" onclick="fillCredentials('attendee@islandevents.jm', 'Password123!')" class="p-2.5 rounded-xl border border-emerald-200 bg-emerald-50/70 hover:bg-emerald-100/80 transition-all text-left cursor-pointer group">
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-emerald-900 group-hover:text-emerald-950">Attendee</span>
-                        <span class="text-[10px] font-mono text-emerald-700 bg-emerald-200/60 px-1.5 py-0.5 rounded font-semibold">Default</span>
-                    </div>
-                    <div class="text-[11px] text-emerald-700 truncate mt-0.5">attendee@islandevents.jm</div>
-                    <div class="text-[10px] text-emerald-600/80 mt-1">Orders, active tickets & QR pass</div>
-                </button>
-            </div>
-            
-            <p class="text-[11px] text-slate-500 mt-2.5 text-center">Click any role card to automatically populate the credentials.</p>
-        </div>
+        @endif
     </div>
 </div>
 

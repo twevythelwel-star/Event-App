@@ -15,11 +15,20 @@ class SystemAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Provision Root System Administrator
+        // 1. Provision Root System Administrator (credentials come from .env, never from source control)
+        $password = (string) config('events.system_admin.password', '');
+        if ($password === '') {
+            if (app()->environment('production')) {
+                throw new \RuntimeException('Set SYSTEM_ADMIN_PASSWORD in .env before seeding the System Administrator in production.');
+            }
+            // Local development shares the demo accounts' well-known password
+            $password = DemoAccountsSeeder::DEMO_PASSWORD;
+        }
+
         SystemAdminProvisioningService::provisionInitialSystemAdmin([
             'name' => 'Platform Superadmin',
-            'email' => 'superadmin@islandevents.example',
-            'password' => 'SecureIslandSuperPass2026!#',
+            'email' => (string) config('events.system_admin.email'),
+            'password' => $password,
             'phone' => '+1 (876) 555-0100',
         ]);
 

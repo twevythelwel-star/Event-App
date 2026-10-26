@@ -50,7 +50,7 @@ php artisan migrate:fresh --seed
 php artisan serve --port=8000
 ```
 
-The seeders create the 10 fish fry events with their menus, a System Administrator, and demo sign-in accounts for an attendee, an event host (Kingston Youth Foundation) and a delegated admin. Their emails and the shared local password are in `backend/database/seeders/DemoAccountsSeeder.php`; that seeder refuses to run in production.
+The seeders create the 10 fish fry events with their menus, a System Administrator, and demo sign-in accounts for an attendee, an event host (Kingston Youth Foundation) and a delegated admin. Their emails and the shared local password are in `backend/database/seeders/DemoAccountsSeeder.php`; that seeder refuses to run in production. The System Administrator's email and password come from `SYSTEM_ADMIN_EMAIL` / `SYSTEM_ADMIN_PASSWORD` in `backend/.env`; locally the password falls back to the demo password, and seeding in production stops unless it is set. The `/login` page's demo-account shortcuts only appear when `APP_ENV=local`.
 
 **Frontend:**
 
@@ -80,5 +80,7 @@ npm test                                   # frontend (Vitest)
 cd backend && php artisan test             # backend feature tests (PHPUnit)
 cd backend && php tests/run_backend_tests.php   # legacy standalone service checks
 ```
+
+**Continuous integration:** `.github/workflows/ci.yml` runs on every push to `main` and on pull requests: the frontend type-check, build and Vitest suite, plus the backend PHPUnit tests, legacy service checks, PHP lint, and a full `migrate:fresh --seed`.
 
 **Webhooks:** delivery callbacks are at `POST /api/webhooks/twilio/status-callback` and `POST /api/webhooks/email`. Set `TWILIO_AUTH_TOKEN`, `MAILGUN_WEBHOOK_SIGNING_KEY`, `EMAIL_WEBHOOK_BASIC_AUTH_USER` and `EMAIL_WEBHOOK_BASIC_AUTH_PASSWORD` in `backend/.env`; any callback without valid credentials gets a 403.

@@ -59,6 +59,16 @@ class RouteAccessTest extends TestCase
         ], $overrides);
     }
 
+    public function test_login_page_only_shows_demo_credentials_in_local_development(): void
+    {
+        $demoPassword = \Database\Seeders\DemoAccountsSeeder::DEMO_PASSWORD;
+
+        $this->get('/login')->assertOk()->assertDontSee($demoPassword, false)->assertDontSee('Local Demo Accounts');
+
+        $this->app['env'] = 'local';
+        $this->get('/login')->assertOk()->assertSee('Local Demo Accounts')->assertSee('host@islandevents.example');
+    }
+
     public function test_events_create_is_not_shadowed_by_event_detail_route(): void
     {
         $this->get('/events/create')->assertRedirect('/login');

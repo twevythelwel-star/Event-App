@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    name: Frontend (type-check, build, Vitest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # `npm run build` runs `tsc -b` first, so this is also the type check
+      - run: npm run build
+
+      - run: npm test
+
+  backend:
+    name: Backend (PHPUnit, legacy checks, lint)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_sqlite, sqlite3, intl
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      # Feature tests run against in-memory SQLite (see phpunit.xml)
+      - run: php artisan test
+
+      - name: Legacy standalone service checks
+        run: php tests/run_backend_tests.php
+
+      - name: PHP syntax lint
+        run: php tests/lint_all.php
+
+      - name: Migrations and seeders run cleanly
+        run: |
+          touch database/database.sqlite
+          php artisan migrate:fresh --seed --force

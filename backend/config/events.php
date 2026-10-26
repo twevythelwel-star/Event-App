@@ -25,6 +25,20 @@ return [
     | rejected (403) whenever the relevant secret is left unset.
     |
     */
+    /*
+    |--------------------------------------------------------------------------
+    | Initial System Administrator
+    |--------------------------------------------------------------------------
+    |
+    | Used once by SystemAdminSeeder to provision the root account. The seeder
+    | refuses to run in production when no password is set.
+    |
+    */
+    'system_admin' => [
+        'email' => env('SYSTEM_ADMIN_EMAIL', 'superadmin@islandevents.example'),
+        'password' => env('SYSTEM_ADMIN_PASSWORD'),
+    ],
+
     'webhooks' => [
         'twilio_auth_token' => env('TWILIO_AUTH_TOKEN'),
         'mailgun_signing_key' => env('MAILGUN_WEBHOOK_SIGNING_KEY'),

@@ -1827,7 +1827,7 @@ export function App() {
                         <span style={{ fontSize: "11px", fontWeight: 700, background: "#f3e8ff", color: "#7e22ce", padding: "2px 8px", borderRadius: "9999px" }}>Platform Root</span>
                       </div>
                       <div style={{ fontSize: "12px", color: "#6b21a8", marginTop: "3px" }}>
-                        <strong>Email:</strong> <code>superadmin@islandevents.example</code> &nbsp;|&nbsp; <strong>Password:</strong> <code>SecureIslandSuperPass2026!#</code>
+                        <strong>Email:</strong> <code>superadmin@islandevents.example</code> &nbsp;|&nbsp; <strong>Password:</strong> local demo password (see <code>backend/database/seeders/DemoAccountsSeeder.php</code>)
                       </div>
                     </div>
                     <button
@@ -1858,7 +1858,7 @@ export function App() {
                         <span style={{ fontSize: "11px", fontWeight: 700, background: "#dbeafe", color: "#1d4ed8", padding: "2px 8px", borderRadius: "9999px" }}>Delegated Ops</span>
                       </div>
                       <div style={{ fontSize: "12px", color: "#1d4ed8", marginTop: "3px" }}>
-                        <strong>Email:</strong> <code>admin@islandevents.jm</code> &nbsp;|&nbsp; <strong>Password:</strong> <code>Password123!</code>
+                        <strong>Email:</strong> <code>admin@islandevents.example</code> &nbsp;|&nbsp; <strong>Password:</strong> local demo password (see <code>backend/database/seeders/DemoAccountsSeeder.php</code>)
                       </div>
                     </div>
                     <button
@@ -1889,7 +1889,7 @@ export function App() {
                         <span style={{ fontSize: "11px", fontWeight: 700, background: "#fef3c7", color: "#b45309", padding: "2px 8px", borderRadius: "9999px" }}>Event Owner</span>
                       </div>
                       <div style={{ fontSize: "12px", color: "#b45309", marginTop: "3px" }}>
-                        <strong>Email:</strong> <code>host@islandevents.jm</code> &nbsp;|&nbsp; <strong>Password:</strong> <code>Password123!</code>
+                        <strong>Email:</strong> <code>host@islandevents.example</code> &nbsp;|&nbsp; <strong>Password:</strong> local demo password (see <code>backend/database/seeders/DemoAccountsSeeder.php</code>)
                       </div>
                     </div>
                     <button
@@ -1920,7 +1920,7 @@ export function App() {
                         <span style={{ fontSize: "11px", fontWeight: 700, background: "#d1fae5", color: "#047857", padding: "2px 8px", borderRadius: "9999px" }}>Default Safe Role</span>
                       </div>
                       <div style={{ fontSize: "12px", color: "#047857", marginTop: "3px" }}>
-                        <strong>Email:</strong> <code>attendee@islandevents.jm</code> &nbsp;|&nbsp; <strong>Password:</strong> <code>Password123!</code>
+                        <strong>Email:</strong> <code>attendee@islandevents.example</code> &nbsp;|&nbsp; <strong>Password:</strong> local demo password (see <code>backend/database/seeders/DemoAccountsSeeder.php</code>)
                       </div>
                     </div>
                     <button
