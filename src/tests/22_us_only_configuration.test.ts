@@ -7,7 +7,6 @@ import {
   lockAuthoritativeCurrency,
   registerInternationalMarket,
   US_MARKET_CONFIG,
-  US_STATES,
   US_TIMEZONES,
   validateUSAddress,
 } from "../services/marketConfiguration";
