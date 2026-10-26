@@ -1,0 +1,547 @@
+[
+  {
+    "id": "evt-kingston-harbour-fry",
+    "menu": [
+      {
+        "id": "kgn-escovitch",
+        "name": "Kingston Escovitch Snapper Meal",
+        "category": "Mains",
+        "pricingType": "customizable",
+        "description": "Crispy whole fried Jamaican snapper dressed with spicy pickled scotch bonnet peppers, carrots, pimento, and onions. Served with 2 festivals.",
+        "priceUSD": 10,
+        "priceJMD": 1500,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 200,
+        "customOptionGroups": [
+          {
+            "id": "fish-size",
+            "title": "Fish Catch Size",
+            "required": true,
+            "choices": [
+              {
+                "label": "Standard Snapper (1 lb)",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Large Snapper (1.5 lb) (+J$350 / $2.25)",
+                "extraPriceUSD": 2.25,
+                "extraPriceJMD": 350
+              }
+            ]
+          },
+          {
+            "id": "sides",
+            "title": "Side Pairing",
+            "required": true,
+            "choices": [
+              {
+                "label": "2 Golden Sweet Festivals",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Fried Cassava Bammy (+J$100 / $0.75)",
+                "extraPriceUSD": 0.75,
+                "extraPriceJMD": 100
+              },
+              {
+                "label": "Festival & Bammy Combo (+J$200 / $1.50)",
+                "extraPriceUSD": 1.5,
+                "extraPriceJMD": 200
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "kgn-fried-chicken",
+        "name": "Kingston Seasoned Fried Chicken",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Deep golden Jamaican spiced fried chicken (2 pieces) served with 2 crispy festivals and fresh pepper slaw.",
+        "priceUSD": 8,
+        "priceJMD": 1200,
+        "imageUrl": "/images/fried_chicken.jpg",
+        "availableStock": 150
+      },
+      {
+        "id": "kgn-festivals",
+        "name": "Extra Sweet Festivals (2 pcs)",
+        "category": "Sides & Extras",
+        "pricingType": "fixed",
+        "description": "Sweet, crunchy traditional Jamaican fried cornmeal dumplings.",
+        "priceUSD": 1.5,
+        "priceJMD": 200,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 400
+      },
+      {
+        "id": "kgn-sorrel-drink",
+        "name": "Fresh Brewed Sorrel with Ginger",
+        "category": "Beverages",
+        "pricingType": "fixed",
+        "description": "Chilled authentic Jamaican sorrel brewed with spicy ginger and pimento.",
+        "priceUSD": 2,
+        "priceJMD": 300,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 180
+      }
+    ]
+  },
+  {
+    "id": "evt-hellshire-sunset-fry",
+    "menu": [
+      {
+        "id": "hellshire-parrot-fish",
+        "name": "Hellshire Deep-Fried Parrot Fish Platter",
+        "category": "Mains",
+        "pricingType": "customizable",
+        "description": "Fresh ocean-caught whole parrot fish deep-fried in seasoned Dutch pot oil and bathed in fiery scotch bonnet pickle sauce.",
+        "priceUSD": 11,
+        "priceJMD": 1700,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 160,
+        "customOptionGroups": [
+          {
+            "id": "side-dish",
+            "title": "Traditional Side",
+            "required": true,
+            "choices": [
+              {
+                "label": "Soaked & Fried Cassava Bammy (2 wedges)",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Sweet Festivals (2 pcs)",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Bammy & Festival Duo (+J$150 / $1.00)",
+                "extraPriceUSD": 1,
+                "extraPriceJMD": 150
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "hellshire-lobster",
+        "name": "Beachside Garlic Butter Grilled Lobster",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Half pound succulent spiny Caribbean lobster tail grilled on coals with fresh garlic butter, scallion and lime.",
+        "priceUSD": 18,
+        "priceJMD": 2800,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 90
+      },
+      {
+        "id": "hellshire-peppershrimp",
+        "name": "Fiery Middle Quarters Pepper Shrimp (Bag)",
+        "category": "Sides & Extras",
+        "pricingType": "fixed",
+        "description": "Famous river shrimp simmered in whole scotch bonnet peppers, sea salt and allspice.",
+        "priceUSD": 4,
+        "priceJMD": 600,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 250
+      },
+      {
+        "id": "hellshire-coconut-water",
+        "name": "Ice Cold Jelly Coconut Water",
+        "category": "Beverages",
+        "pricingType": "fixed",
+        "description": "Freshly sliced jelly coconut water with tender jelly spooned inside.",
+        "priceUSD": 2,
+        "priceJMD": 250,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 200
+      }
+    ]
+  },
+  {
+    "id": "evt-port-royal-heritage-fry",
+    "menu": [
+      {
+        "id": "pr-steamed-snapper",
+        "name": "Port Royal Steamed Snapper in Okra Broth",
+        "category": "Mains",
+        "pricingType": "customizable",
+        "description": "Whole snapper steamed gently with young garden okra, pumpkin, scotch bonnet, scallion, and traditional Excelsior water crackers.",
+        "priceUSD": 12,
+        "priceJMD": 1800,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 140,
+        "customOptionGroups": [
+          {
+            "id": "pr-spice",
+            "title": "Spice Level",
+            "required": true,
+            "choices": [
+              {
+                "label": "Medium Spice (Mild scotch bonnet aroma)",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "True Jamaican Hot (Whole pepper burst)",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "pr-conch-soup",
+        "name": "Slow-Simmered Island Conch Soup (Bowl)",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Tender pounded conch meat simmered for hours with yellow yam, sweet corn, spinners, and island herbs.",
+        "priceUSD": 7,
+        "priceJMD": 1000,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 180
+      },
+      {
+        "id": "pr-crackers-bammy",
+        "name": "Water Crackers & Bammy Side Pack",
+        "category": "Sides & Extras",
+        "pricingType": "fixed",
+        "description": "Authentic Jamaican water crackers and crispy fried bammy wedges.",
+        "priceUSD": 2,
+        "priceJMD": 250,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 300
+      }
+    ]
+  },
+  {
+    "id": "evt-ochorios-fishermans-fry",
+    "menu": [
+      {
+        "id": "ocho-brownstew-kingfish",
+        "name": "Brown Stew Kingfish Steak Platter",
+        "category": "Mains",
+        "pricingType": "customizable",
+        "description": "Thick, meaty cut of kingfish pan-seared then simmered in a dark, rich, caramelized onion and bell pepper gravy.",
+        "priceUSD": 10.5,
+        "priceJMD": 1600,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 150,
+        "customOptionGroups": [
+          {
+            "id": "ocho-sides",
+            "title": "Side Choice",
+            "required": true,
+            "choices": [
+              {
+                "label": "Crispy Green Plantain Chips & Festival",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Boiled Yellow Yam & Dumpling",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "ocho-escovitch-snapper",
+        "name": "North Coast Fried Escovitch Snapper",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Whole snapper seasoned in pimento spice rub, fried golden crisp with pickled pepper slaw.",
+        "priceUSD": 10,
+        "priceJMD": 1500,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 180
+      },
+      {
+        "id": "ocho-ting",
+        "name": "Chilled Jamaican Ting Soda",
+        "category": "Beverages",
+        "pricingType": "fixed",
+        "description": "Refreshing grapefruit soda made with real Jamaican grapefruit juice.",
+        "priceUSD": 1.5,
+        "priceJMD": 200,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 250
+      }
+    ]
+  },
+  {
+    "id": "evt-negril-7mile-catch",
+    "menu": [
+      {
+        "id": "negril-doctorfish",
+        "name": "Negril Fried Doctor Fish Combo",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Sweet and flaky reef doctor fish seasoned and fried in pure coconut oil with scotch bonnet relish and golden bammies.",
+        "priceUSD": 12,
+        "priceJMD": 1800,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 130
+      },
+      {
+        "id": "negril-lobster-tail",
+        "name": "Grilled Caribbean Spiny Lobster Tail",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Jumbo Caribbean lobster tail basted with garlic scallion compound butter and lime juice.",
+        "priceUSD": 20,
+        "priceJMD": 3100,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 80
+      },
+      {
+        "id": "negril-pudding",
+        "name": "Traditional Sweet Potato Pudding Wedge",
+        "category": "Sides & Extras",
+        "pricingType": "fixed",
+        "description": "Authentic 'Hell a top, Hell a bottom, Hallelujah in di middle' Jamaican spiced sweet potato pudding.",
+        "priceUSD": 3,
+        "priceJMD": 450,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 120
+      }
+    ]
+  },
+  {
+    "id": "evt-mobay-pier1-fiesta",
+    "menu": [
+      {
+        "id": "mobay-curry-conch",
+        "name": "Slow-Simmered Jamaican Curried Conch",
+        "category": "Mains",
+        "pricingType": "customizable",
+        "description": "Tender conch meat simmered in authentic West Indian curry, garlic, scotch bonnet and thyme with sweet potato.",
+        "priceUSD": 12,
+        "priceJMD": 1850,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 120,
+        "customOptionGroups": [
+          {
+            "id": "mobay-sides",
+            "title": "Carbohydrate Pairing",
+            "required": true,
+            "choices": [
+              {
+                "label": "Fried Yellow Heart Breadfruit Slices",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Steamed White Jasmine Rice",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Both (Breadfruit & Rice Combo) (+J$150 / $1.00)",
+                "extraPriceUSD": 1,
+                "extraPriceJMD": 150
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "mobay-snapper-meal",
+        "name": "MoBay Escovitch Snapper & Festivals",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Crispy fried whole snapper paired with 2 golden sweet festivals and tangy pimento pickle.",
+        "priceUSD": 10,
+        "priceJMD": 1500,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 200
+      },
+      {
+        "id": "mobay-ginger-beer",
+        "name": "Old-Fashioned Jamaican Ginger Beer",
+        "category": "Beverages",
+        "pricingType": "fixed",
+        "description": "Real spicy, ginger-infused home-style brewed carbonated refresher.",
+        "priceUSD": 2,
+        "priceJMD": 250,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 200
+      }
+    ]
+  },
+  {
+    "id": "evt-treasure-beach-calabash",
+    "menu": [
+      {
+        "id": "tb-woodfire-snapper",
+        "name": "South Coast Wood-Fired Snapper Platter",
+        "category": "Mains",
+        "pricingType": "customizable",
+        "description": "Snapper fried over pimento and logwood coals, offering an earthy smoky aroma topped with spicy onion-carrot chow.",
+        "priceUSD": 10,
+        "priceJMD": 1500,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 140,
+        "customOptionGroups": [
+          {
+            "id": "tb-side",
+            "title": "Traditional St. Elizabeth Side",
+            "required": true,
+            "choices": [
+              {
+                "label": "Steamed Callaloo Dumplings & Bammy",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Golden Festivals (2 pcs)",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "tb-watermelon-juice",
+        "name": "Fresh St. Elizabeth Watermelon Ginger Juice",
+        "category": "Beverages",
+        "pricingType": "fixed",
+        "description": "Freshly cold-pressed sweet melon from the breadbasket parish with a fiery kick of ginger.",
+        "priceUSD": 2,
+        "priceJMD": 250,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 180
+      }
+    ]
+  },
+  {
+    "id": "evt-boston-bay-jerk-fish",
+    "menu": [
+      {
+        "id": "boston-jerk-snapper",
+        "name": "Boston Bay Smoked Jerk Snapper Meal",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Whole snapper slow-roasted over sweetwood and pimento poles, coated with authentic fiery Portland jerk marinade.",
+        "priceUSD": 11,
+        "priceJMD": 1700,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 150
+      },
+      {
+        "id": "boston-roast-breadfruit",
+        "name": "Charcoal Roasted Breadfruit Wedges",
+        "category": "Sides & Extras",
+        "pricingType": "fixed",
+        "description": "Hearty yellow-heart breadfruit roasted whole over embers then sliced and fried in island butter.",
+        "priceUSD": 2,
+        "priceJMD": 300,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 250
+      },
+      {
+        "id": "boston-sorrel-fizz",
+        "name": "Portland Wild Sorrel Fizz",
+        "category": "Beverages",
+        "pricingType": "fixed",
+        "description": "Sparkling natural hibiscus brew spiced with ginger and cloves.",
+        "priceUSD": 2,
+        "priceJMD": 250,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 200
+      }
+    ]
+  },
+  {
+    "id": "evt-whitehouse-cooperative",
+    "menu": [
+      {
+        "id": "wh-deepsea-snapper",
+        "name": "Whitehouse Deep-Sea Red Snapper",
+        "category": "Mains",
+        "pricingType": "customizable",
+        "description": "Heavyweight fresh snapper caught on the offshore banks, crispy fried and smothered in spicy pickled escovitch relish.",
+        "priceUSD": 11,
+        "priceJMD": 1650,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 160,
+        "customOptionGroups": [
+          {
+            "id": "wh-sides",
+            "title": "Carb Pairing",
+            "required": true,
+            "choices": [
+              {
+                "label": "Thick Fried Cassava Bammy & Festival",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              },
+              {
+                "label": "Fresh Jamaican Hard Dough Bread & Bammy",
+                "extraPriceUSD": 0,
+                "extraPriceJMD": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "wh-fish-tea",
+        "name": "Traditional Spicy Fish Tea Broth (Cup)",
+        "category": "Sides & Extras",
+        "pricingType": "fixed",
+        "description": "Clear, deeply flavored spicy fish broth with green bananas, scallion, whole scotch bonnet, and black pepper.",
+        "priceUSD": 3,
+        "priceJMD": 400,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 200
+      }
+    ]
+  },
+  {
+    "id": "evt-runaway-bay-carnival",
+    "menu": [
+      {
+        "id": "rb-yellowtail-snapper",
+        "name": "Runaway Bay Crispy Yellowtail Snapper",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Tender, sweet yellowtail snapper fried golden brown and loaded with sweet carrot and hot pepper escovitch.",
+        "priceUSD": 10,
+        "priceJMD": 1500,
+        "imageUrl": "/images/escovitch_fish.jpg",
+        "availableStock": 175
+      },
+      {
+        "id": "rb-fried-chicken",
+        "name": "Flavours Crispy Island Fried Chicken",
+        "category": "Mains",
+        "pricingType": "fixed",
+        "description": "Double seasoned crunch fried chicken with 2 golden festivals and fresh cabbage slaw.",
+        "priceUSD": 8,
+        "priceJMD": 1200,
+        "imageUrl": "/images/fried_chicken.jpg",
+        "availableStock": 140
+      },
+      {
+        "id": "rb-fresh-limeade",
+        "name": "Old Jamaica Fresh Brown Sugar Limeade",
+        "category": "Beverages",
+        "pricingType": "fixed",
+        "description": "Freshly squeezed limes sweetened with authentic Jamaican unrefined brown sugar and vanilla.",
+        "priceUSD": 1.75,
+        "priceJMD": 250,
+        "imageUrl": "/images/bammy.jpg",
+        "availableStock": 220
+      }
+    ]
+  }
+]

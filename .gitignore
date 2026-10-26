@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+backend/vendor/
+
+# Build output
+dist/
+
+# Secrets and local environment
+backend/.env
+backend/.env.backup
+backend/.env.production
+
+# Local databases
+*.sqlite
+*.sqlite-journal
+*.sqlite3
+
+# Logs and caches
+*.log
+backend/.phpunit.result.cache
+backend/.phpunit.cache/
+
+# Machine-specific tool config (absolute paths to this computer's PHP install)
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db
