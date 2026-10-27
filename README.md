@@ -48,6 +48,8 @@ cp .env.example .env        # first time only
 php artisan key:generate    # first time only
 php artisan migrate:fresh --seed
 php artisan serve --port=8000
+# Flyer uploads need PHP to accept files up to 5 MB; if php.ini's limits are lower, run instead
+# (from the project root): php -d upload_max_filesize=6M -d post_max_size=8M -S 127.0.0.1:8000 -t backend/public backend/dev-server.php
 ```
 
 The seeders create the 10 fish fry events with their menus, a System Administrator, and demo sign-in accounts for an attendee, an event host (Kingston Youth Foundation) and a delegated admin. Their emails and the shared local password are in `backend/database/seeders/DemoAccountsSeeder.php`; that seeder refuses to run in production. The System Administrator's email and password come from `SYSTEM_ADMIN_EMAIL` / `SYSTEM_ADMIN_PASSWORD` in `backend/.env`; locally the password falls back to the demo password, and seeding in production stops unless it is set. The `/login` page's demo-account shortcuts only appear when `APP_ENV=local`.
@@ -65,12 +67,12 @@ Open `http://localhost:5173/`. If the backend isn't running, the app shows a ban
 - event browsing, menus, sign-in/sign-out and attendee ordering (the server prices every order);
 - the Event Host's payment verification queue (paid, partial, under verification, rejected) and kitchen status;
 - the Staff Scanner's portion handovers, reversals, supervisor overrides and order closing, each written to the handover audit log under the signed-in account;
-- the Event Host's event and menu editing: event details (saved after a short pause while typing), publish / unpublish / cancel, and adding, editing, repricing, restocking or removing menu items. Only the organizer's event owners can edit; uploaded photos and flyers are still browser-only;
+- the Event Host's event and menu editing: event details (saved after a short pause while typing), publish / unpublish / cancel, and adding, editing, repricing, restocking or removing menu items. Only the organizer's event owners can edit. Event flyers and menu photos are uploaded to the server (JPEG/PNG/WebP up to 5 MB, re-encoded to strip metadata) and are publicly visible only while the event is published;
 - the cash ledger: cash receipts (against an order or walk-up for an event) and reversals, with server-issued receipt numbers, plus order refunds;
 - Event Host applications: signed-in attendees apply from the Attendee tab; administrators approve or reject them in a review queue on the Administrator and System Administrator tabs. Approval grants the Event Host role and creates the applicant's own organizer;
 - ticket disputes: attendees file them on their own orders; administrators move them to under review, resolved or rejected (delegated admins only see the organizers assigned to them). Resolving a dispute never moves money; refunds stay with the event owner.
 
-Hosts and staff only see orders and cash for their own organizer's events or the events they are assigned to. Payment verifiers and cashiers can take cash; only the event owner can reverse cash or issue refunds. Money is append-only: corrections are linked reversal rows, never edits. Still browser-local demo data: flyer and photo uploads, SMS notifications, and the administrator dashboards' platform stats, users, fees, health and audit panels.
+Hosts and staff only see orders and cash for their own organizer's events or the events they are assigned to. Payment verifiers and cashiers can take cash; only the event owner can reverse cash or issue refunds. Money is append-only: corrections are linked reversal rows, never edits. Still browser-local demo data: SMS notifications, and the administrator dashboards' platform stats, users, fees, health and audit panels.
 
 Seeded demo data also includes four Kingston Harbour orders in different payment states and a food-station staff account assigned to that event (`DemoOrdersSeeder.php`). `DemoSupportRequestsSeeder.php` adds a pending host application (from a demo applicant account) and an open dispute.
 
