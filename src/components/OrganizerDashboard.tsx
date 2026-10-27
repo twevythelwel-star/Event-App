@@ -493,6 +493,9 @@ export const OrganizerDashboard: React.FC<Props> = ({
   const [newItemPriceJMD, setNewItemPriceJMD] = useState(2500);
   const [newItemImage, setNewItemImage] = useState("/images/jerk_chicken.jpg");
   const [customImageUrl, setCustomImageUrl] = useState("");
+  // Photo picked from the device (data URL); uploaded to the server when the item is saved
+  const [uploadedPhoto, setUploadedPhoto] = useState("");
+  const [uploadedPhotoName, setUploadedPhotoName] = useState("");
   const [newItemStock, setNewItemStock] = useState<number>(100);
   const [isStockUnlimited, setIsStockUnlimited] = useState(false);
   const [newItemAllowInstructions, setNewItemAllowInstructions] = useState(true);
@@ -817,6 +820,8 @@ export const OrganizerDashboard: React.FC<Props> = ({
     setNewItemPriceJMD(2500);
     setNewItemImage("/images/jerk_chicken.jpg");
     setCustomImageUrl("");
+    setUploadedPhoto("");
+    setUploadedPhotoName("");
     setNewItemStock(100);
     setIsStockUnlimited(false);
     setNewItemAllowInstructions(true);
@@ -841,7 +846,11 @@ export const OrganizerDashboard: React.FC<Props> = ({
     setNewItemPriceUSD(item.priceUSD);
     setNewItemPriceJMD(item.priceJMD);
     setNewItemImage(item.imageUrl);
-    setCustomImageUrl(item.imageUrl.startsWith("http") ? item.imageUrl : "");
+    const isPresetImage = item.imageUrl.startsWith("/images/");
+    const isPickedPhoto = item.imageUrl.startsWith("data:");
+    setCustomImageUrl(isPresetImage || isPickedPhoto ? "" : item.imageUrl);
+    setUploadedPhoto(isPickedPhoto ? item.imageUrl : "");
+    setUploadedPhotoName("");
     setIsStockUnlimited(item.availableStock === undefined || item.availableStock === null);
     setNewItemStock(item.availableStock ?? 100);
     setNewItemAllowInstructions(Boolean(item.allowSpecialInstructions));
@@ -869,7 +878,7 @@ export const OrganizerDashboard: React.FC<Props> = ({
       ? customCategoryInput.trim()
       : newItemCategory) as MenuCategory;
 
-    const finalImageUrl = customImageUrl.trim() || newItemImage;
+    const finalImageUrl = uploadedPhoto || customImageUrl.trim() || newItemImage;
     const finalStock = isStockUnlimited ? undefined : Number(newItemStock) || 0;
 
     let customAmountConfig = undefined;
@@ -3994,6 +4003,59 @@ export const OrganizerDashboard: React.FC<Props> = ({
                       value={customImageUrl}
                       onChange={(e) => setCustomImageUrl(e.target.value)}
                     />
+                  </div>
+
+                  {/* Upload a photo from this device (JPEG, PNG or WebP, up to 5 MB) */}
+                  <div className="form-group">
+                    <label className="field-label" htmlFor="menu-photo-input">
+                      Or upload a photo (JPEG, PNG or WebP, max 5 MB)
+                    </label>
+                    <input
+                      id="menu-photo-input"
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (!file) return;
+                        if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+                          setToastMessage("Photos must be JPEG, PNG or WebP.");
+                          setTimeout(() => setToastMessage(""), 3000);
+                          return;
+                        }
+                        if (file.size > 5 * 1024 * 1024) {
+                          setToastMessage("Photos must be 5 MB or smaller.");
+                          setTimeout(() => setToastMessage(""), 3000);
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                          setUploadedPhoto(String(reader.result));
+                          setUploadedPhotoName(file.name);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                    {uploadedPhoto && (
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "8px" }}>
+                        <img
+                          src={uploadedPhoto}
+                          alt="Selected menu photo preview"
+                          style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8 }}
+                        />
+                        <span style={{ fontSize: "12px" }}>{uploadedPhotoName || "Selected photo"}</span>
+                        <button
+                          type="button"
+                          className="action-pill-btn"
+                          onClick={() => {
+                            setUploadedPhoto("");
+                            setUploadedPhotoName("");
+                          }}
+                        >
+                          Remove photo
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Base Prices */}

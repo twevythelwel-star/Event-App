@@ -54,7 +54,8 @@ function readXsrfToken(): string | null {
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
-  if (init.body) headers.set("Content-Type", "application/json");
+  // File uploads (FormData) set their own multipart boundary
+  if (init.body && !(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
 
   // Laravel issues the XSRF-TOKEN cookie on every response and checks it on state-changing requests
   const xsrf = readXsrfToken();
@@ -395,6 +396,48 @@ export async function deleteHostMenuItem(eventId: string, itemId: string): Promi
   const body = await request<{ data: FishFryEventItem }>(
     `/host/events/${encodeURIComponent(eventId)}/menu/${encodeURIComponent(itemId)}`,
     { method: "DELETE" }
+  );
+  return body.data;
+}
+
+// ---- Flyer & menu photo uploads ----------------------------------------------------------
+
+/** Turns a browser data URL (from FileReader) back into an uploadable Blob. */
+export async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  const response = await fetch(dataUrl);
+  return response.blob();
+}
+
+function imageForm(field: string, image: Blob, filename: string): FormData {
+  const form = new FormData();
+  form.append(field, image, filename);
+  return form;
+}
+
+export async function uploadHostFlyer(eventId: string, image: Blob, filename = "flyer"): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(`/host/events/${encodeURIComponent(eventId)}/flyer`, {
+    method: "POST",
+    body: imageForm("flyer", image, filename),
+  });
+  return body.data;
+}
+
+export async function removeHostFlyer(eventId: string): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(`/host/events/${encodeURIComponent(eventId)}/flyer`, {
+    method: "DELETE",
+  });
+  return body.data;
+}
+
+export async function uploadHostMenuPhoto(
+  eventId: string,
+  itemId: string,
+  image: Blob,
+  filename = "photo"
+): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(
+    `/host/events/${encodeURIComponent(eventId)}/menu/${encodeURIComponent(itemId)}/photo`,
+    { method: "POST", body: imageForm("photo", image, filename) }
   );
   return body.data;
 }

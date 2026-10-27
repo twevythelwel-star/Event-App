@@ -82,6 +82,25 @@ class HostEventsController extends Controller
         return $this->run(fn () => $this->present($request, $this->events->deleteMenuItem($request->user(), $eventId, $itemId)));
     }
 
+    public function uploadFlyer(Request $request, string $eventId): JsonResponse
+    {
+        $request->validate(['flyer' => ['required', 'file']]);
+
+        return $this->run(fn () => $this->present($request, $this->events->uploadFlyer($request->user(), $eventId, $request->file('flyer'))));
+    }
+
+    public function removeFlyer(Request $request, string $eventId): JsonResponse
+    {
+        return $this->run(fn () => $this->present($request, $this->events->removeFlyer($request->user(), $eventId)));
+    }
+
+    public function uploadMenuPhoto(Request $request, string $eventId, string $itemId): JsonResponse
+    {
+        $request->validate(['photo' => ['required', 'file']]);
+
+        return $this->run(fn () => $this->present($request, $this->events->uploadMenuPhoto($request->user(), $eventId, $itemId, $request->file('photo'))));
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -96,7 +115,8 @@ class HostEventsController extends Controller
             'pricing_type' => [$required, Rule::in(['fixed', 'customizable', 'custom_amount'])],
             'price_usd' => [$required, 'numeric', 'min:0', 'max:10000'],
             'price_jmd' => [$required, 'integer', 'min:0', 'max:1000000'],
-            'image_url' => ['sometimes', 'nullable', 'string', 'max:500'],
+            // Links only: absolute http(s) URLs or site paths; uploads go through the photo endpoint
+            'image_url' => ['sometimes', 'nullable', 'string', 'max:500', 'regex:/^(https?:\/\/|\/)[^\s"\'<>]*$/i'],
             'custom_option_groups' => ['sometimes', 'nullable', 'array', 'max:10'],
             'custom_option_groups.*.id' => ['required', 'string', 'max:64'],
             'custom_option_groups.*.title' => ['required', 'string', 'max:100'],

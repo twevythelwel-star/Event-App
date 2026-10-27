@@ -67,6 +67,7 @@ import {
   MenuItemPayload,
   closeOrder as closeOrderLive,
   createHostMenuItem,
+  dataUrlToBlob,
   deleteHostMenuItem,
   fetchAdminDisputes,
   fetchCashLedger,
@@ -79,6 +80,7 @@ import {
   placeOrder,
   recordCashReceipt,
   recordHandover,
+  removeHostFlyer,
   setHostEventStatus,
   refundOrder as refundOrderLive,
   reverseCashReceipt,
@@ -88,6 +90,8 @@ import {
   updateFulfillmentStatus as updateFulfillmentStatusLive,
   updateHostEvent,
   updateHostMenuItem,
+  uploadHostFlyer,
+  uploadHostMenuPhoto,
   updatePaymentStatus as updatePaymentStatusLive,
 } from "./lib/api";
 
@@ -718,6 +722,24 @@ export function App() {
       return;
     }
 
+    // A new flyer arrives as a browser data URL; removing it clears the URL
+    if (next.flyerUrl !== current.flyerUrl) {
+      const eventId = current.id;
+      const flyerUrl = next.flyerUrl;
+      const save = flyerUrl?.startsWith("data:")
+        ? dataUrlToBlob(flyerUrl).then((blob) => uploadHostFlyer(eventId, blob))
+        : !flyerUrl
+        ? removeHostFlyer(eventId)
+        : null;
+      if (save) {
+        save.then(applyServerEvent).catch((error) => {
+          reportLiveError(error);
+          reloadHostEvents();
+        });
+        return;
+      }
+    }
+
     const fields: [keyof EventDetails, keyof EventPatch][] = [
       ["title", "title"],
       ["tagline", "tagline"],
@@ -761,7 +783,7 @@ export function App() {
       pricing_type: item.pricingType,
       price_usd: Number(item.priceUSD) || 0,
       price_jmd: Math.round(Number(item.priceJMD) || 0),
-      // Uploaded images are browser data URLs; the server only stores image links for now
+      // A freshly picked photo is a browser data URL: it is uploaded separately, so send no link for it
       image_url: item.imageUrl && !item.imageUrl.startsWith("data:") ? item.imageUrl : null,
       custom_option_groups: item.pricingType === "customizable" ? item.customOptionGroups ?? null : null,
       custom_amount_config: item.pricingType === "custom_amount" ? item.customAmountConfig ?? null : null,
@@ -782,17 +804,27 @@ export function App() {
     const nextIds = new Set(nextMenu.map((m) => m.id));
     const calls: Promise<FishFryEventItem>[] = [];
 
+    // An uploaded photo (data URL) is sent once the item exists on the server
+    const withPhoto = (item: MenuItem, saved: Promise<FishFryEventItem>) =>
+      item.imageUrl?.startsWith("data:")
+        ? saved.then(async (event) => {
+            // New items get their server id here: the one item that was not on the menu before
+            const serverItem = previousIds.has(item.id)
+              ? event.menu.find((m) => m.id === item.id)
+              : event.menu.find((m) => !previousIds.has(m.id) && m.name === item.name);
+            if (!serverItem) return event;
+            return uploadHostMenuPhoto(eventId, serverItem.id, await dataUrlToBlob(item.imageUrl));
+          })
+        : saved;
+
     for (const item of nextMenu) {
       if (!previousIds.has(item.id)) {
-        calls.push(createHostMenuItem(eventId, toMenuPayload(item)));
+        calls.push(withPhoto(item, createHostMenuItem(eventId, toMenuPayload(item))));
       } else {
         const before = previous.find((m) => m.id === item.id)!;
         if (JSON.stringify(toMenuPayload(before)) !== JSON.stringify(toMenuPayload(item))) {
-          calls.push(updateHostMenuItem(eventId, item.id, toMenuPayload(item)));
+          calls.push(withPhoto(item, updateHostMenuItem(eventId, item.id, toMenuPayload(item))));
         }
-      }
-      if (item.imageUrl?.startsWith("data:")) {
-        showToast("Uploaded photos aren't stored on the server yet; use an image link to keep it.");
       }
     }
     for (const item of previous) {

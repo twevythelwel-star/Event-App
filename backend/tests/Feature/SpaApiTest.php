@@ -55,6 +55,27 @@ class SpaApiTest extends TestCase
         $this->getJson('/api/v1/session')->assertJson(['user' => null]);
     }
 
+    public function test_login_limit_is_per_account_so_a_shared_venue_ip_is_not_locked_out(): void
+    {
+        // Eight different people signing in from the same venue Wi-Fi within a minute
+        for ($i = 1; $i <= 8; $i++) {
+            \App\Models\User::create([
+                'name' => "Gate Staff {$i}",
+                'email' => "gate{$i}@example.test",
+                'password' => password_hash('correct-horse', PASSWORD_DEFAULT),
+                'status' => 'active',
+            ]);
+            $this->postJson('/api/v1/session', ['email' => "gate{$i}@example.test", 'password' => 'correct-horse'])->assertOk();
+            $this->deleteJson('/api/v1/session');
+        }
+
+        // Guessing one account's password is still cut off after 5 attempts
+        for ($i = 1; $i <= 5; $i++) {
+            $this->postJson('/api/v1/session', ['email' => 'host@islandevents.example', 'password' => "guess-{$i}"])->assertStatus(422);
+        }
+        $this->postJson('/api/v1/session', ['email' => 'host@islandevents.example', 'password' => 'guess-6'])->assertStatus(429);
+    }
+
     public function test_events_endpoint_returns_published_events_with_menus(): void
     {
         $response = $this->getJson('/api/v1/events')->assertOk();

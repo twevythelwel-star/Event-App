@@ -6,6 +6,7 @@ use App\Http\Controllers\AccountSettingsController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\HostEventsController;
+use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\OrderOperationsController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\SupportRequestsController;
@@ -59,7 +60,7 @@ Route::middleware(['guest'])->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
 
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
 
     Route::get('/forgot-password', [PasswordResetController::class, 'showForgotForm'])->name('password.request');
     Route::post('/forgot-password', [PasswordResetController::class, 'sendResetLink'])->name('password.email')->middleware('throttle:3,1');
@@ -156,9 +157,13 @@ Route::middleware(['auth', 'active'])->group(function () {
 // Single-Page App JSON API (cookie session + XSRF token, served same-origin through the Vite proxy)
 Route::prefix('api/v1')->group(function () {
     Route::get('/session', [SessionController::class, 'show'])->name('api.session.show');
-    Route::post('/session', [SessionController::class, 'store'])->name('api.session.store')->middleware('throttle:5,1');
+    Route::post('/session', [SessionController::class, 'store'])->name('api.session.store')->middleware('throttle:login');
     Route::post('/register', [SessionController::class, 'register'])->name('api.register')->middleware('throttle:10,1');
     Route::get('/events', [CatalogController::class, 'events'])->name('api.events.index');
+
+    // Uploaded images: public for published events, otherwise only for accounts that manage the event
+    Route::get('/media/events/{eventId}/flyer', [MediaController::class, 'flyer'])->name('api.media.flyer');
+    Route::get('/media/menu/{itemId}/photo', [MediaController::class, 'menuPhoto'])->name('api.media.menu-photo');
 
     Route::middleware(['auth', 'active'])->group(function () {
         Route::delete('/session', [SessionController::class, 'destroy'])->name('api.session.destroy');
@@ -184,6 +189,9 @@ Route::prefix('api/v1')->group(function () {
         Route::post('/host/events/{eventId}/menu', [HostEventsController::class, 'storeMenuItem'])->name('api.host.menu.store');
         Route::put('/host/events/{eventId}/menu/{itemId}', [HostEventsController::class, 'updateMenuItem'])->name('api.host.menu.update');
         Route::delete('/host/events/{eventId}/menu/{itemId}', [HostEventsController::class, 'destroyMenuItem'])->name('api.host.menu.destroy');
+        Route::post('/host/events/{eventId}/flyer', [HostEventsController::class, 'uploadFlyer'])->name('api.host.flyer.store')->middleware('throttle:20,1');
+        Route::delete('/host/events/{eventId}/flyer', [HostEventsController::class, 'removeFlyer'])->name('api.host.flyer.destroy');
+        Route::post('/host/events/{eventId}/menu/{itemId}/photo', [HostEventsController::class, 'uploadMenuPhoto'])->name('api.host.menu.photo')->middleware('throttle:30,1');
 
         // Attendee requests: Event Host applications and order disputes
         Route::get('/host-applications', [SupportRequestsController::class, 'myHostApplications'])->name('api.host-applications.mine');

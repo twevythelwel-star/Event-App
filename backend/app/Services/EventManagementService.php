@@ -13,6 +13,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
@@ -26,6 +27,10 @@ use Illuminate\Support\Str;
 class EventManagementService
 {
     public const STATUSES = ['draft', 'published', 'unpublished', 'cancelled'];
+
+    public function __construct(
+        protected MediaStorageService $media
+    ) {}
 
     /**
      * Organizer ids whose events this user may edit, or null for every organizer (System Administrators).
@@ -150,6 +155,12 @@ class EventManagementService
         $item = $this->findMenuItem($event, $itemId);
         $this->assertMenuItemConsistent(array_merge($item->only(['pricing_type', 'custom_option_groups', 'custom_amount_config']), $data));
 
+        // Replacing an uploaded photo with a link (or nothing) removes the stored file
+        if (array_key_exists('image_url', $data) && $data['image_url'] !== $item->image_url && $item->image_path) {
+            $this->media->delete($item->image_path);
+            $data['image_path'] = null;
+        }
+
         $item->fill($data)->save();
         $this->audit($user, 'menu_item_updated', 'menu_items', $item->id, "Menu item '{$item->name}' updated on '{$event->title}'.");
 
@@ -170,6 +181,66 @@ class EventManagementService
 
         $item->delete();
         $this->audit($user, 'menu_item_deleted', 'menu_items', $item->id, "Menu item '{$item->name}' removed from '{$event->title}'.");
+
+        return $this->findEvent($user, $eventId);
+    }
+
+    public function uploadFlyer(User $user, string $eventId, UploadedFile $file): Event
+    {
+        $event = $this->findEvent($user, $eventId);
+        $stored = $this->media->storeImage($file, $event->organizer_id, 'flyers');
+        $previous = $event->flyer_path;
+
+        $event->fill([
+            'flyer_path' => $stored['path'],
+            'flyer_mime_type' => $stored['mime'],
+            'flyer_size_bytes' => $stored['size'],
+            'flyer_width' => $stored['width'],
+            'flyer_height' => $stored['height'],
+            'is_flyer_public' => $event->status === 'published',
+        ])->save();
+        $this->media->delete($previous);
+
+        $this->audit($user, 'event_flyer_uploaded', 'events', $event->id, "Flyer uploaded for '{$event->title}' ({$stored['width']}x{$stored['height']}, {$stored['size']} bytes).");
+
+        return $this->findEvent($user, $eventId);
+    }
+
+    public function removeFlyer(User $user, string $eventId): Event
+    {
+        $event = $this->findEvent($user, $eventId);
+        $previous = $event->flyer_path;
+
+        $event->fill([
+            'flyer_path' => null,
+            'flyer_thumbnail_path' => null,
+            'flyer_mime_type' => null,
+            'flyer_size_bytes' => null,
+            'flyer_width' => null,
+            'flyer_height' => null,
+            'is_flyer_public' => false,
+        ])->save();
+        $this->media->delete($previous);
+
+        $this->audit($user, 'event_flyer_removed', 'events', $event->id, "Flyer removed from '{$event->title}'.");
+
+        return $this->findEvent($user, $eventId);
+    }
+
+    public function uploadMenuPhoto(User $user, string $eventId, string $itemId, UploadedFile $file): Event
+    {
+        $event = $this->findEvent($user, $eventId);
+        $item = $this->findMenuItem($event, $itemId);
+        $stored = $this->media->storeImage($file, $event->organizer_id, 'menu');
+        $previous = $item->image_path;
+
+        $item->image_path = $stored['path'];
+        // Version the URL so browsers fetch the new photo instead of a cached one
+        $item->image_url = "/api/v1/media/menu/{$item->id}/photo?v=" . substr(sha1($stored['path']), 0, 10);
+        $item->save();
+        $this->media->delete($previous);
+
+        $this->audit($user, 'menu_photo_uploaded', 'menu_items', $item->id, "Photo uploaded for '{$item->name}' on '{$event->title}'.");
 
         return $this->findEvent($user, $eventId);
     }

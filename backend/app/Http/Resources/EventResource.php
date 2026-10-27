@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\MediaStorageService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -39,7 +40,15 @@ class EventResource extends JsonResource
             'pickupInstructions' => $this->pickup_instructions ?? '',
             'packagingFeeUSD' => (float) $this->packaging_fee_usd,
             'packagingFeeJMD' => (int) $this->packaging_fee_jmd,
-            'flyerUrl' => $this->is_flyer_public ? $this->flyer_path : null,
+            // Uploaded flyers go through the media route, which enforces who may see unpublished events
+            'flyerUrl' => MediaStorageService::isStoredPath($this->flyer_path)
+                ? "/api/v1/media/events/{$this->id}/flyer?v=" . substr(sha1($this->flyer_path), 0, 10)
+                : $this->flyer_path,
+            'flyerMimeType' => $this->flyer_mime_type,
+            'flyerSizeBytes' => $this->flyer_size_bytes,
+            'flyerDimensions' => $this->flyer_width && $this->flyer_height
+                ? ['width' => $this->flyer_width, 'height' => $this->flyer_height]
+                : null,
             'isFlyerPublic' => $this->is_flyer_public,
             'menu' => MenuItemResource::collection($this->whenLoaded('menuItems')),
         ];

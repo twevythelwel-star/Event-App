@@ -23,6 +23,7 @@ class MenuItem extends Model
         'price_usd',
         'price_jmd',
         'image_url',
+        'image_path',
         'custom_option_groups',
         'custom_amount_config',
         'allow_special_instructions',
