@@ -61,15 +61,32 @@ class OrderPlacementService
         }
 
         $currency = $payload['currency'] ?? $event->currency ?? 'USD';
+        $idempotencyKey = isset($payload['idempotency_key']) ? trim((string) $payload['idempotency_key']) : '';
 
         // 3. Database Transaction & Atomic Stock Reservation
         // Failures inside the transaction throw so any stock already reserved is rolled back
         try {
-            return DB::transaction(function () use ($event, $payload, $customerName, $customerPhone, $itemsPayload, $currency, $authUser) {
+            return DB::transaction(function () use ($event, $payload, $customerName, $customerPhone, $itemsPayload, $currency, $authUser, $idempotencyKey) {
+                if ($idempotencyKey !== '') {
+                    $existing = Order::withoutGlobalScopes()
+                        ->where('event_id', $event->id)
+                        ->where('notes', 'LIKE', "%[idem:{$idempotencyKey}]%")
+                        ->with('items')
+                        ->first();
+                    if ($existing) {
+                        return [
+                            'success' => true,
+                            'order' => $existing,
+                        ];
+                    }
+                }
+
                 $orderItemsToCreate = [];
+                $ticketTiers = is_array($event->ticket_tiers) ? $event->ticket_tiers : [];
+                $ticketTiersModified = false;
 
                 foreach ($itemsPayload as $entry) {
-                    $menuItemId = $entry['menu_item_id'];
+                    $menuItemId = (string) ($entry['menu_item_id'] ?? '');
                     $quantity = (int) ($entry['quantity'] ?? 0);
 
                     if ($quantity <= 0) {
@@ -82,6 +99,18 @@ class OrderPlacementService
                         ->where('is_active', true)
                         ->lockForUpdate()
                         ->first();
+
+                    if (!$menuItem && $this->isTicketTierItemId($menuItemId, $ticketTiers)) {
+                        $orderItemsToCreate[] = $this->resolveAndReserveTicketTier(
+                            $menuItemId,
+                            $quantity,
+                            $currency,
+                            $ticketTiers,
+                            $ticketTiersModified
+                        );
+                        continue;
+                    }
+
                     if (!$menuItem) {
                         throw new OrderPlacementException("Menu item with ID {$menuItemId} not found.");
                     }
@@ -126,8 +155,22 @@ class OrderPlacementService
                     ];
                 }
 
-                // Calculate Order Totals in exact integer cents; packaging fee is always the organizer's configured fee
-                $packagingFee = (float) ($currency === 'JMD' ? ($event->packaging_fee_jmd ?? 0) : ($event->packaging_fee_usd ?? 0));
+                if ($ticketTiersModified) {
+                    $event->ticket_tiers = $ticketTiers;
+                    $event->save();
+                }
+
+                // Calculate Order Totals in exact integer cents; packaging fee applies when food items are present
+                $hasFoodItems = false;
+                foreach ($orderItemsToCreate as $it) {
+                    if (($it['category'] ?? '') !== 'Tickets') {
+                        $hasFoodItems = true;
+                        break;
+                    }
+                }
+                $packagingFee = $hasFoodItems
+                    ? (float) ($currency === 'JMD' ? ($event->packaging_fee_jmd ?? 0) : ($event->packaging_fee_usd ?? 0))
+                    : 0.0;
                 $totals = PriceCalculationService::calculateOrderTotals($orderItemsToCreate, $packagingFee, $currency);
 
                 // Determine safe initial payment status
@@ -178,7 +221,7 @@ class OrderPlacementService
                     'authorized_unpaid' => $authorizedUnpaid,
                     'secure_ticket_token' => $secureToken,
                     'all_handed_over' => false,
-                    'notes' => $payload['notes'] ?? null,
+                    'notes' => trim(($payload['notes'] ?? '') . ($idempotencyKey !== '' ? " [idem:{$idempotencyKey}]" : '')) ?: null,
                 ]);
 
                 foreach ($orderItemsToCreate as $itemData) {
@@ -196,6 +239,110 @@ class OrderPlacementService
         } catch (OrderPlacementException $e) {
             return ['success' => false, 'error' => $e->getMessage()];
         }
+    }
+
+    private function isTicketTierItemId(string $itemId, array $ticketTiers): bool
+    {
+        if (str_starts_with($itemId, 'tier-') || in_array($itemId, ['general-admission', 'vip-oceanfront', 'family-bundle'], true)) {
+            return true;
+        }
+        foreach ($ticketTiers as $tier) {
+            if (isset($tier['id']) && (string) $tier['id'] === $itemId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function resolveAndReserveTicketTier(
+        string $itemId,
+        int $quantity,
+        string $currency,
+        array &$ticketTiers,
+        bool &$ticketTiersModified
+    ): array {
+        // Match against host-configured ticket_tiers first
+        foreach ($ticketTiers as $idx => $tier) {
+            if (isset($tier['id']) && (string) $tier['id'] === $itemId) {
+                $name = (string) ($tier['name'] ?? 'Admission Ticket');
+                $maxPerCustomer = (int) ($tier['max_per_order'] ?? $tier['maxPerOrder'] ?? $tier['maxPerCustomer'] ?? 10);
+                if ($maxPerCustomer > 0 && $quantity > $maxPerCustomer) {
+                    throw new OrderPlacementException("Maximum {$maxPerCustomer} '{$name}' tickets allowed per order.");
+                }
+
+                $availKey = isset($tier['quantity_available']) ? 'quantity_available' : (isset($tier['quantityAvailable']) ? 'quantityAvailable' : 'availableStock');
+                if (isset($tier[$availKey]) && $tier[$availKey] !== null) {
+                    $avail = (int) $tier[$availKey];
+                    if ($avail < $quantity) {
+                        throw new OrderPlacementException("Insufficient ticket inventory for '{$name}'. Available: {$avail}, Requested: {$quantity}.");
+                    }
+                    $ticketTiers[$idx][$availKey] = $avail - $quantity;
+                    $ticketTiersModified = true;
+                }
+
+                $unitPrice = $currency === 'JMD'
+                    ? (float) ($tier['price_jmd'] ?? $tier['priceJMD'] ?? (($tier['price'] ?? 15) * 150))
+                    : (float) ($tier['price_usd'] ?? $tier['priceUSD'] ?? $tier['price'] ?? 15);
+
+                return [
+                    'id' => (string) Str::uuid(),
+                    'menu_item_id' => $itemId,
+                    'name' => $name,
+                    'category' => 'Tickets',
+                    'pricing_type' => 'fixed',
+                    'base_price' => $unitPrice,
+                    'selected_options_summary' => ['Digital Admission Pass'],
+                    'options_total_extra' => 0.0,
+                    'custom_donation_amount' => null,
+                    'final_item_price' => $unitPrice,
+                    'currency' => $currency,
+                    'quantity' => $quantity,
+                    'collected_quantity' => 0,
+                    'special_instructions' => null,
+                    'handover_status' => 'pending',
+                ];
+            }
+        }
+
+        // Standard default ticket tiers when event has no custom ticket_tiers array persisted yet
+        $defaults = [
+            'tier-ga' => ['name' => 'General Admission Pass', 'usd' => 15.0, 'jmd' => 2250.0, 'max' => 6],
+            'general-admission' => ['name' => 'General Admission Pass', 'usd' => 15.0, 'jmd' => 2250.0, 'max' => 6],
+            'tier-vip' => ['name' => 'VIP Oceanfront Lounge Pass', 'usd' => 45.0, 'jmd' => 6800.0, 'max' => 4],
+            'vip-oceanfront' => ['name' => 'VIP Oceanfront Lounge Pass', 'usd' => 45.0, 'jmd' => 6800.0, 'max' => 4],
+            'tier-eb' => ['name' => 'Early Bird Community Pass', 'usd' => 10.0, 'jmd' => 1500.0, 'max' => 2],
+            'tier-group' => ['name' => 'Group Cabana & Table Pass (4 Guests)', 'usd' => 140.0, 'jmd' => 21000.0, 'max' => 2],
+            'family-bundle' => ['name' => 'Family & Cabana Table Bundle (4 Guests)', 'usd' => 110.0, 'jmd' => 16500.0, 'max' => 2],
+        ];
+
+        if (!isset($defaults[$itemId])) {
+            throw new OrderPlacementException("Ticket tier '{$itemId}' is not available for this event.");
+        }
+
+        $spec = $defaults[$itemId];
+        if ($quantity > $spec['max']) {
+            throw new OrderPlacementException("Maximum {$spec['max']} '{$spec['name']}' tickets allowed per order.");
+        }
+
+        $unitPrice = $currency === 'JMD' ? $spec['jmd'] : $spec['usd'];
+
+        return [
+            'id' => (string) Str::uuid(),
+            'menu_item_id' => $itemId,
+            'name' => $spec['name'],
+            'category' => 'Tickets',
+            'pricing_type' => 'fixed',
+            'base_price' => $unitPrice,
+            'selected_options_summary' => ['Digital Admission Pass'],
+            'options_total_extra' => 0.0,
+            'custom_donation_amount' => null,
+            'final_item_price' => $unitPrice,
+            'currency' => $currency,
+            'quantity' => $quantity,
+            'collected_quantity' => 0,
+            'special_instructions' => null,
+            'handover_status' => 'pending',
+        ];
     }
 
     /**

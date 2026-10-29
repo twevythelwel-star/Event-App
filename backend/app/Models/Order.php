@@ -55,6 +55,7 @@ class Order extends Model
         'all_handed_over' => 'boolean',
         'verified_at' => 'datetime',
         'closed_at' => 'datetime',
+        'checked_in_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

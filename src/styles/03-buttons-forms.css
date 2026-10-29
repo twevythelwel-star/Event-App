@@ -1,0 +1,443 @@
+/* ==========================================================================
+   EVENTBITE DESIGN SYSTEM — MODULE 03: BUTTON SYSTEM & FORM CONTROLS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Button System (8 Variants + States)
+   -------------------------------------------------------------------------- */
+
+.eb-btn,
+.btn,
+.primary-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0.625rem 1.125rem;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  font-family: var(--font-sans);
+  font-size: var(--text-button-size);
+  font-weight: 700;
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.eb-btn:focus-visible,
+.btn:focus-visible,
+.primary-button:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+  box-shadow: var(--shadow-focus);
+}
+
+.eb-btn:active:not(:disabled):not([aria-disabled="true"]),
+.btn:active:not(:disabled):not([aria-disabled="true"]) {
+  transform: translateY(1px);
+}
+
+/* Variant 1: Primary (Electric Lime with #14210A contrast-verified text) */
+.eb-btn-primary,
+.btn-primary,
+.primary-button {
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  border-color: var(--color-accent);
+  box-shadow: 0 4px 14px rgba(199, 255, 69, 0.18);
+}
+
+.eb-btn-primary:hover:not(:disabled):not([aria-disabled="true"]),
+.btn-primary:hover:not(:disabled):not([aria-disabled="true"]),
+.primary-button:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-accent-text);
+  box-shadow: 0 6px 20px rgba(199, 255, 69, 0.28);
+}
+
+/* Variant 2: Secondary (Elevated Dark Surface) */
+.eb-btn-secondary,
+.btn-secondary {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+
+.eb-btn-secondary:hover:not(:disabled):not([aria-disabled="true"]),
+.btn-secondary:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--color-surface-elevated);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
+}
+
+/* Variant 3: Outline */
+.eb-btn-outline,
+.btn-outline {
+  background-color: transparent;
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+.eb-btn-outline:hover:not(:disabled):not([aria-disabled="true"]),
+.btn-outline:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: rgba(168, 182, 200, 0.08);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Variant 4: Ghost */
+.eb-btn-ghost,
+.btn-ghost,
+.text-button {
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  border-color: transparent;
+}
+
+.eb-btn-ghost:hover:not(:disabled):not([aria-disabled="true"]),
+.btn-ghost:hover:not(:disabled):not([aria-disabled="true"]),
+.text-button:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: rgba(168, 182, 200, 0.08);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+/* Variant 5: Destructive */
+.eb-btn-destructive,
+.btn-danger {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
+}
+
+.eb-btn-destructive:hover:not(:disabled):not([aria-disabled="true"]),
+.btn-danger:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--color-error);
+  color: #FFFFFF;
+  border-color: var(--color-error);
+}
+
+/* Variant 6: Icon-Only (44x44px minimum touch target) */
+.eb-btn-icon,
+.header-action-btn {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: var(--radius-md);
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eb-btn-icon:hover:not(:disabled):not([aria-disabled="true"]),
+.header-action-btn:hover:not(:disabled):not([aria-disabled="true"]) {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-strong);
+}
+
+/* Size Modifiers */
+.eb-btn-sm,
+.btn-sm {
+  min-height: 36px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.8125rem;
+  border-radius: var(--radius-sm);
+}
+
+.eb-btn-lg {
+  min-height: 50px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  border-radius: var(--radius-lg);
+}
+
+.eb-btn-block {
+  width: 100%;
+}
+
+/* Variant 7 & 8: Loading & Disabled States (Duplicate Submission Prevention) */
+.eb-btn:disabled,
+.btn:disabled,
+.primary-button:disabled,
+.eb-btn[aria-disabled="true"],
+.eb-btn-loading,
+.eb-btn[data-loading="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.eb-btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: eb-spin 0.65s linear infinite;
+}
+
+/* --------------------------------------------------------------------------
+   2. Form Controls (Accessible Labels, Focus, Error & Help States)
+   -------------------------------------------------------------------------- */
+
+.eb-form-group,
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  margin-bottom: var(--layout-form-gap);
+}
+
+.eb-label,
+.field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-sans);
+  font-size: var(--text-label-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.eb-label-required {
+  color: var(--color-error-text);
+  font-weight: 700;
+}
+
+/* Text, Search, Numeric, Date/Time, Select, and Textarea Controls */
+.eb-input,
+.eb-select,
+.eb-textarea,
+.settings-input,
+.settings-textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.625rem 0.875rem;
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.eb-input::placeholder,
+.eb-textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.eb-input:hover:not(:disabled),
+.eb-select:hover:not(:disabled),
+.eb-textarea:hover:not(:disabled) {
+  border-color: var(--color-border-strong);
+}
+
+.eb-input:focus,
+.eb-select:focus,
+.eb-textarea:focus,
+.eb-input:focus-visible,
+.eb-select:focus-visible,
+.eb-textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+  background-color: var(--color-surface);
+}
+
+.eb-input:disabled,
+.eb-select:disabled,
+.eb-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: rgba(11, 25, 43, 0.5);
+}
+
+.eb-textarea {
+  min-height: 104px;
+  resize: vertical;
+}
+
+/* Search Input Wrapper */
+.eb-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.eb-search-wrap .eb-search-icon {
+  position: absolute;
+  left: 0.875rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+  display: inline-flex;
+}
+
+.eb-search-wrap .eb-input {
+  padding-left: 2.625rem;
+}
+
+/* Numeric Input (Tabular Numerals) */
+.eb-input-numeric,
+input[type="number"].eb-input {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Checkboxes & Radio Controls */
+.eb-choice-label {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  min-height: 44px;
+  padding: 0.5rem 0;
+  cursor: pointer;
+  color: var(--color-text-primary);
+  font-size: 0.9rem;
+}
+
+.eb-checkbox,
+.eb-radio {
+  width: 20px;
+  height: 20px;
+  margin-top: 0.1rem;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.eb-checkbox:focus-visible,
+.eb-radio:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* Toggle Switch Control */
+.eb-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+.eb-toggle-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.eb-toggle-track {
+  width: 44px;
+  height: 24px;
+  background-color: var(--color-background-secondary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  position: relative;
+  transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+  flex-shrink: 0;
+}
+
+.eb-toggle-thumb {
+  width: 18px;
+  height: 18px;
+  background-color: var(--color-text-secondary);
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+
+.eb-toggle-input:checked + .eb-toggle-track {
+  background-color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.eb-toggle-input:checked + .eb-toggle-track .eb-toggle-thumb {
+  transform: translateX(20px);
+  background-color: var(--color-accent-text);
+}
+
+.eb-toggle-input:focus-visible + .eb-toggle-track {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* File Upload Dropzone */
+.eb-file-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-6);
+  background-color: var(--color-background-secondary);
+  border: 1.5px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+
+.eb-file-upload:hover,
+.eb-file-upload:focus-within {
+  border-color: var(--color-accent);
+  background-color: var(--color-surface);
+}
+
+/* Help Text & Accessible Field Validation Errors (Icon + Text, never color alone) */
+.eb-help-text,
+.field-hint {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.eb-input-error,
+.eb-input[aria-invalid="true"],
+.eb-select[aria-invalid="true"],
+.eb-textarea[aria-invalid="true"] {
+  border-color: var(--color-error) !important;
+  background-color: rgba(239, 68, 68, 0.06);
+}
+
+.eb-field-error {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-error-text);
+  line-height: 1.4;
+}
+

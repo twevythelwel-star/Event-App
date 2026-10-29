@@ -1,201 +1,728 @@
 @extends('layouts.app')
 
-@section('title', ($event->title ?? 'Event') . ' — Island Events')
+@section('title', ($event->title ?? 'Event Details') . ' — Island Events')
 @section('page-title', $event->title ?? 'Event Details')
 
 @section('content')
-<div class="space-y-6">
-    <!-- Back Navigation -->
-    <div>
-        <a href="{{ route('events.index') }}" class="btn btn-secondary btn-sm" style="display: inline-flex; align-items: center; gap: 0.35rem;">
-            <span>&larr;</span>
-            <span>Back to All Events</span>
-        </a>
-    </div>
+<style>
+    /* Premium Midnight-Navy Theme for Event Detail Screen */
+    .event-detail-root {
+        background-color: #0B132B;
+        min-height: 100vh;
+        color: #FFFFFF;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: -1.5rem -1rem 0;
+        padding-bottom: 5rem;
+    }
 
-    <!-- Event Hero Banner -->
-    <div class="card" style="padding: 0; overflow: hidden; border: none; box-shadow: var(--shadow-md);">
-        <div style="height: 280px; background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); position: relative; display: flex; align-items: center; justify-content: center;">
-            @if(!empty($event->flyer_url))
-                <img src="{{ $event->flyer_url }}" alt="{{ $event->title }}" style="width: 100%; height: 100%; object-fit: cover;">
-            @else
-                <div style="text-align: center; color: var(--color-white); opacity: 0.9;">
-                    <span style="font-size: 4rem;">🌴</span>
-                    <div style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 0.5rem;">Island Event Experience</div>
-                </div>
-            @endif
+    .detail-hero {
+        position: relative;
+        width: 100%;
+        height: 380px;
+        overflow: hidden;
+    }
 
-            <div style="position: absolute; bottom: 16px; left: 24px; right: 24px; background: rgba(16, 24, 40, 0.75); backdrop-filter: blur(8px); padding: 1rem 1.5rem; border-radius: var(--radius-md); border: 1px solid rgba(255, 255, 255, 0.15); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                <div>
-                    <h1 style="font-size: 1.45rem; font-weight: 800; color: var(--color-white); margin-bottom: 0.2rem;">
-                        {{ $event->title }}
-                    </h1>
-                    <div style="font-size: 0.85rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.85rem; flex-wrap: wrap;">
-                        <span>📅 {{ $event->date ? (is_string($event->date) ? date('l, F j, Y', strtotime($event->date)) : $event->date->format('l, F j, Y')) : 'Date TBA' }}</span>
-                        <span>📍 {{ $event->venue ?? 'United States' }}</span>
-                    </div>
-                </div>
+    .detail-hero-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 30%;
+        filter: brightness(0.9);
+    }
 
-                <div>
-                    @if($event->is_ordering_open)
-                        <span class="badge badge-active">Kitchen Accepting Pre-Orders</span>
-                    @else
-                        <span class="badge" style="background: #e2e8f0; color: #475569;">Ordering Closed</span>
-                    @endif
-                </div>
+    .detail-hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(11, 19, 43, 0.55) 0%, rgba(11, 19, 43, 0.15) 45%, rgba(11, 19, 43, 0.95) 90%, #0B132B 100%);
+    }
+
+    .detail-hero-nav {
+        position: absolute;
+        top: 20px;
+        left: 0;
+        right: 0;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+    }
+
+    .btn-glass {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background-color: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(12px);
+        color: #FFFFFF;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 9999px;
+        padding: 8px 18px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .btn-glass:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        color: #FFFFFF;
+        transform: translateY(-1px);
+    }
+
+    .icon-glass-btn {
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background-color: rgba(15, 23, 42, 0.75);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.2s ease;
+    }
+
+    .detail-main-layout {
+        max-width: 1200px;
+        margin: -40px auto 0;
+        padding: 0 24px;
+        position: relative;
+        z-index: 5;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 32px;
+        align-items: start;
+    }
+
+    @media (max-width: 900px) {
+        .detail-main-layout {
+            grid-template-columns: 1fr;
+            margin-top: -20px;
+            padding: 0 16px;
+        }
+    }
+
+    .card-navy {
+        background-color: #162038;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 24px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .section-tab-nav {
+        background-color: #162038;
+        padding: 6px;
+        border-radius: 16px;
+        display: flex;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        gap: 6px;
+        margin-bottom: 24px;
+    }
+
+    .section-tab-btn {
+        flex: 1;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: none;
+        background-color: transparent;
+        color: #94A3B8;
+        font-weight: 700;
+        font-size: 14px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .section-tab-btn.active {
+        background-color: #4F46E5;
+        color: #FFFFFF;
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+    }
+
+    .tab-pane {
+        display: none;
+    }
+
+    .tab-pane.active {
+        display: block;
+    }
+
+    .gallery-scroll {
+        display: flex;
+        gap: 14px;
+        overflow-x: auto;
+        padding-bottom: 12px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .gallery-item {
+        min-width: 190px;
+        max-width: 210px;
+        height: 135px;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        position: relative;
+        flex-shrink: 0;
+        cursor: pointer;
+    }
+
+    .gallery-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .gallery-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(15,23,42,0.9) 100%);
+        padding: 8px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #FFFFFF;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .btn-gradient-purchase {
+        width: 100%;
+        background: linear-gradient(135deg, #7C3AED 0%, #EC4899 50%, #F97316 100%);
+        border: none;
+        border-radius: 14px;
+        padding: 16px 24px;
+        font-size: 16px;
+        font-weight: 800;
+        color: #FFFFFF;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 10px 25px rgba(236, 72, 153, 0.35);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        text-decoration: none;
+    }
+
+    .btn-gradient-purchase:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(236, 72, 153, 0.45);
+        color: #FFFFFF;
+    }
+</style>
+
+<div class="event-detail-root" id="event-detail-page">
+    <!-- Toast Notification -->
+    <div id="detail-toast" style="display: none; position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background-color: #1E293B; color: #FFFFFF; padding: 12px 24px; border-radius: 9999px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); z-index: 9999; font-size: 14px; font-weight: 600;"></div>
+
+    <!-- 1. Cinematic Hero Section -->
+    <div class="detail-hero">
+        @php
+            $heroImg = !empty($event->flyer_path) ? asset('storage/' . $event->flyer_path) : (
+                !empty($event->flyer_url) ? $event->flyer_url : asset('images/island_festival_sunset.jpg')
+            );
+        @endphp
+        <img src="{{ $heroImg }}" alt="{{ $event->title }}" class="detail-hero-img">
+        <div class="detail-hero-overlay"></div>
+
+        <!-- Floating Top Navigation -->
+        <div class="detail-hero-nav">
+            <a href="{{ route('events.index') }}" class="btn-glass" id="btn-back-to-discovery">
+                <span>&larr;</span>
+                <span>Back to All Events</span>
+            </a>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <button type="button" class="icon-glass-btn" id="btn-favorite-toggle" onclick="toggleDetailFavorite()" title="Save to Favorites">
+                    <span id="fav-icon">🤍</span>
+                </button>
+                <button type="button" class="icon-glass-btn" onclick="shareCurrentEvent()" title="Share Event">
+                    <span>🔗</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Two-Column Layout: Details + Menu Items -->
-    <div class="grid-2">
-        <!-- Event Overview & Instructions -->
-        <div class="card space-y-4">
-            <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--color-navy); border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem;">
-                About This Event
-            </h2>
-            <p style="font-size: 0.88rem; color: var(--color-text-secondary); line-height: 1.6;">
-                {{ $event->description ?? 'Join us for this special Caribbean food and entertainment event. All food packages are prepared fresh on-site and redeemed with instant digital QR passes.' }}
-            </p>
-
-            <div style="background: var(--color-bg-page); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1rem; font-size: 0.82rem; color: var(--color-text-secondary); space-y: 1;">
-                <div style="font-weight: 700; color: var(--color-navy); margin-bottom: 0.25rem;">Food Collection Protocol:</div>
-                <div>&bull; Present your QR ticket pass at the designated food station.</div>
-                <div>&bull; Orders are verified in real-time by island staff.</div>
-                <div>&bull; Bank transfers & manual payments must be verified prior to event entry.</div>
-            </div>
-
-            <!-- Authentication CTA Box -->
-            @guest
-            <div style="background: var(--color-indigo-soft); border: 1px solid var(--color-indigo-subtle); border-radius: var(--radius-md); padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
-                <div style="font-size: 0.92rem; font-weight: 700; color: var(--color-navy); display: flex; align-items: center; gap: 0.4rem;">
-                    <span>🔒</span>
-                    <span>Sign In Required for Orders & Tickets</span>
-                </div>
-                <p style="font-size: 0.82rem; color: var(--color-text-secondary); line-height: 1.5;">
-                    To protect order integrity and issue personal QR tickets, you must be signed in with an attendee account.
-                </p>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <a href="{{ route('login') }}" class="btn btn-secondary btn-sm" style="flex: 1; text-align: center;">Log In</a>
-                    <a href="{{ route('register') }}" class="btn btn-primary btn-sm" style="flex: 1; text-align: center;">Create Account</a>
-                </div>
-            </div>
-            @endguest
-        </div>
-
-        <!-- Menu Offerings Preview -->
-        <div class="card space-y-4">
-            <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--color-navy); border-bottom: 1px solid var(--color-border); padding-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
-                <span>Featured Caribbean Menu</span>
-                <span style="font-size: 0.75rem; color: var(--color-text-muted); font-weight: 500;">Pre-order in advance</span>
-            </h2>
-
-            @if(empty($event->menuItems) || count($event->menuItems) === 0)
-                <div class="empty-state" style="padding: 2rem 1rem;">
-                    <div class="empty-state-icon">🍲</div>
-                    <div class="empty-state-title">Menu Coming Soon</div>
-                    <div class="empty-state-desc">The host is preparing seasonal dishes and pricing tiers.</div>
-                </div>
-            @else
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    @foreach($event->menuItems as $item)
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.85rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-page);">
-                            <div>
-                                <div style="font-weight: 700; font-size: 0.92rem; color: var(--color-navy);">{{ $item->name }}</div>
-                                <div style="font-size: 0.78rem; color: var(--color-text-secondary);">{{ $item->description ?? 'Authentic Island dish' }}</div>
-                            </div>
-                            <div style="text-align: right;">
-                                <div style="font-weight: 800; font-size: 0.98rem; color: var(--color-indigo);">
-                                    ${{ number_format($item->price_usd ?? $item->price, 2) }}
-                                </div>
-                                <div style="font-size: 0.72rem; color: var(--color-text-muted);">
-                                    USD &bull; Pre-order
-                                </div>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
-
-            @auth
-                <div style="padding-top: 1rem; border-top: 1px solid var(--color-border); display: flex; flex-direction: column; gap: 0.75rem;">
+    <!-- 2. Main Content Layout (Desktop: Left Info / Right Sticky Ticket Panel) -->
+    <div class="detail-main-layout">
+        <!-- LEFT COLUMN: Metadata, Tabs, Media Gallery & Organizer -->
+        <div style="display: flex; flex-direction: column; gap: 28px;">
+            <!-- Event Title & Overview -->
+            <div class="card-navy" style="position: relative;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                    <span style="background: rgba(99, 102, 241, 0.85); color: #FFFFFF; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase;">
+                        🌴 {{ $event->locationCategory ?? 'Island Event' }}
+                    </span>
                     @if($event->is_ordering_open)
-                        <button type="button" class="btn btn-primary" onclick="document.getElementById('preorder-modal').style.display='block'" style="width: 100%; text-align: center; font-weight: 700;">
-                            <span>🛒</span>
-                            <span>Pre-Order Caribbean Meals Now</span>
-                        </button>
+                        <span style="background: rgba(16, 185, 129, 0.85); color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">
+                            ✓ Kitchen Accepting Pre-Orders
+                        </span>
                     @endif
-                    <a href="{{ route('attendee.dashboard') }}" class="btn btn-secondary" style="width: 100%; text-align: center;">
-                        <span>🎟️</span>
-                        <span>View My Digital Tickets & Passes</span>
-                    </a>
+                    <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #CBD5E1; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 9999px;">
+                        Verified Host
+                    </span>
                 </div>
 
-                <!-- Pre-order Modal Dialog -->
-                @if($event->is_ordering_open && !empty($event->menuItems) && count($event->menuItems) > 0)
-                <div id="preorder-modal" style="display: none; position: fixed; inset: 0; background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(4px); z-index: 50; overflow-y: auto; padding: 2rem 1rem;">
-                    <div class="card" style="max-width: 580px; margin: 2rem auto; background: var(--color-white); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); padding: 2rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid var(--color-border); padding-bottom: 1rem;">
-                            <div>
-                                <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--color-navy);">Pre-Order Event Dining</h3>
-                                <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 0.2rem;">Select your meal portions for {{ $event->title }}.</p>
-                            </div>
-                            <button type="button" onclick="document.getElementById('preorder-modal').style.display='none'" style="background: none; border: none; font-size: 1.25rem; color: var(--color-text-muted); cursor: pointer;">✕</button>
-                        </div>
+                <h1 style="font-size: 28px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0 0 10px; letter-spacing: -0.01em;">
+                    {{ $event->title }}
+                </h1>
 
-                        <form action="{{ route('orders.store', $event->slug ?? $event->id) }}" method="POST" id="order-form">
-                            @csrf
-                            <input type="hidden" name="currency" value="USD">
-                            <input type="hidden" name="customer_name" value="{{ Auth::user()->name }}">
-                            <input type="hidden" name="email" value="{{ Auth::user()->email }}">
-
-                            <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
-                                <div style="font-weight: 700; font-size: 0.88rem; color: var(--color-navy);">Select Dishes:</div>
-                                @foreach($event->menuItems as $idx => $item)
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-bg-page);">
-                                        <div>
-                                            <div style="font-weight: 700; font-size: 0.9rem; color: var(--color-navy);">{{ $item->name }}</div>
-                                            <div style="font-size: 0.8rem; color: var(--color-indigo); font-weight: 600;">${{ number_format($item->price_usd ?? $item->price, 2) }} USD</div>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <input type="hidden" name="items[{{ $idx }}][menu_item_id]" value="{{ $item->id }}">
-                                            <label style="font-size: 0.8rem; color: var(--color-text-secondary);">Qty:</label>
-                                            <input type="number" name="items[{{ $idx }}][quantity]" value="{{ $idx === 0 ? 1 : 0 }}" min="0" max="20" style="width: 60px; padding: 0.35rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); text-align: center; font-weight: 600;">
-                                        </div>
-                                    </div>
-                                @endforeach
-                            </div>
-
-                            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
-                                <div>
-                                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--color-text-primary); display: block; margin-bottom: 0.25rem;">Contact Mobile Phone (for SMS Pass)</label>
-                                    <input type="tel" name="customer_phone" value="{{ Auth::user()->phone ?? '+1 (305) 555-0199' }}" required style="width: 100%; padding: 0.65rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm);">
-                                </div>
-
-                                <div>
-                                    <label style="font-size: 0.82rem; font-weight: 600; color: var(--color-text-primary); display: block; margin-bottom: 0.25rem;">Payment Method</label>
-                                    <select name="method" required style="width: 100%; padding: 0.65rem; border: 1px solid var(--color-border); border-radius: var(--radius-sm); background: var(--color-white);">
-                                        <option value="cash">Cash on Arrival (Pay at Venue)</option>
-                                        <option value="bank">US Domestic Bank Transfer (ACH / Wire)</option>
-                                        <option value="zelle">Zelle Transfer</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div style="padding: 1rem; background: var(--color-indigo-soft); border-radius: var(--radius-md); margin-bottom: 1.5rem; font-size: 0.82rem; color: var(--color-navy); line-height: 1.5;">
-                                <strong>Notice:</strong> Your order will receive a unique reference code and digital voucher. Manual transfers are verified against bank statements before final fulfillment.
-                            </div>
-
-                            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                                <button type="button" class="btn btn-secondary" onclick="document.getElementById('preorder-modal').style.display='none'">Cancel</button>
-                                <button type="submit" class="btn btn-primary" style="font-weight: 700;">Confirm & Place Pre-Order</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                @if(!empty($event->tagline))
+                    <p style="font-size: 15px; color: #94A3B8; line-height: 1.5; margin: 0 0 18px; font-weight: 500;">
+                        {{ $event->tagline }}
+                    </p>
                 @endif
-            @endauth
+
+                <!-- Metadata Highlights Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; padding: 16px; background-color: #0F172A; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.06);">
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <span style="font-size: 20px;">📅</span>
+                        <div>
+                            <div style="font-size: 10px; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Date & Time</div>
+                            <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">
+                                {{ $event->date_str ?? ($event->date ? (is_string($event->date) ? date('l, F j, Y', strtotime($event->date)) : $event->date->format('l, F j, Y')) : 'Date TBA') }}
+                            </div>
+                            <div style="font-size: 11px; color: #94A3B8;">
+                                {{ $event->time_str ?? '12:00 PM – 8:00 PM' }} ({{ $event->timezone ?? 'EST' }})
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; align-items: flex-start;">
+                        <span style="font-size: 20px;">📍</span>
+                        <div>
+                            <div style="font-size: 10px; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Venue & Location</div>
+                            <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">
+                                {{ $event->venue_name ?? $event->venue ?? 'Waterfront Pavilion' }}
+                            </div>
+                            <div style="font-size: 11px; color: #94A3B8;">
+                                {{ $event->venue_address ?? 'United States' }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Section Switcher Tabs (Tickets · Food · Details) -->
+            <div>
+                <div class="section-tab-nav" role="tablist">
+                    <button type="button" class="section-tab-btn active" id="tab-tickets-btn" onclick="switchSection('tickets')">
+                        <span>🎟️</span>
+                        <span>Tickets & Passes</span>
+                    </button>
+                    <button type="button" class="section-tab-btn" id="tab-food-btn" onclick="switchSection('food')">
+                        <span>🍲</span>
+                        <span>Food & Dining ({{ count($event->menuItems ?? []) }})</span>
+                    </button>
+                    <button type="button" class="section-tab-btn" id="tab-details-btn" onclick="switchSection('details')">
+                        <span>ℹ️</span>
+                        <span>Event Guide</span>
+                    </button>
+                </div>
+
+                <!-- TAB 1: TICKETS -->
+                <div class="tab-pane active" id="pane-tickets">
+                    <div style="display: flex; flex-direction: column; gap: 14px;">
+                        <!-- Tier 1: General Admission -->
+                        <div class="card-navy" style="padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">General Admission Pass</h3>
+                                        <span style="background: rgba(99, 102, 241, 0.2); color: #818CF8; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">POPULAR</span>
+                                    </div>
+                                    <p style="font-size: 13px; color: #94A3B8; margin: 4px 0 10px;">
+                                        Includes full event entry, access to live reggae performance stage, and mobile QR pass.
+                                    </p>
+                                </div>
+                                <div style="text-align: right; flex-shrink: 0;">
+                                    <div style="font-size: 20px; font-weight: 900; color: #FFFFFF;">$15.00</div>
+                                    <div style="font-size: 10px; color: #94A3B8;">USD per pass</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; font-size: 12px; color: #CBD5E1;">
+                                <div>✓ Admission to waterfront grounds & stage</div>
+                                <div>✓ Instant digital QR ticket delivered to mobile</div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                                <span style="font-size: 12px; color: #94A3B8;">Passes available: <strong style="color: #10B981;">200 remaining</strong></span>
+                                <div style="display: flex; align-items: center; gap: 10px; background: #0F172A; padding: 4px 8px; border-radius: 8px;">
+                                    <button type="button" onclick="adjustQty('ga', -1)" style="background: none; border: none; color: #FFFFFF; font-size: 16px; cursor: pointer; padding: 0 4px;">-</button>
+                                    <span id="qty-ga" style="font-size: 14px; font-weight: 800; min-width: 20px; text-align: center;">1</span>
+                                    <button type="button" onclick="adjustQty('ga', 1)" style="background: none; border: none; color: #FFFFFF; font-size: 16px; cursor: pointer; padding: 0 4px;">+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tier 2: VIP Waterfront Lounge -->
+                        <div class="card-navy" style="padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">VIP Waterfront Lounge</h3>
+                                        <span style="background: rgba(236, 72, 153, 0.2); color: #F472B6; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">VIP LOUNGE</span>
+                                    </div>
+                                    <p style="font-size: 13px; color: #94A3B8; margin: 4px 0 10px;">
+                                        Express VIP lane entry, reserved shaded oceanfront seating, and 1 complimentary island rum punch voucher.
+                                    </p>
+                                </div>
+                                <div style="text-align: right; flex-shrink: 0;">
+                                    <div style="font-size: 20px; font-weight: 900; color: #FFFFFF;">$45.00</div>
+                                    <div style="font-size: 10px; color: #94A3B8;">USD per pass</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; font-size: 12px; color: #CBD5E1;">
+                                <div>✓ Express check-in lane & dedicated bar server</div>
+                                <div>✓ 1 Complimentary artisanal beverage included</div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                                <span style="font-size: 12px; color: #94A3B8;">Passes available: <strong style="color: #10B981;">45 remaining</strong></span>
+                                <div style="display: flex; align-items: center; gap: 10px; background: #0F172A; padding: 4px 8px; border-radius: 8px;">
+                                    <button type="button" onclick="adjustQty('vip', -1)" style="background: none; border: none; color: #FFFFFF; font-size: 16px; cursor: pointer; padding: 0 4px;">-</button>
+                                    <span id="qty-vip" style="font-size: 14px; font-weight: 800; min-width: 20px; text-align: center;">0</span>
+                                    <button type="button" onclick="adjustQty('vip', 1)" style="background: none; border: none; color: #FFFFFF; font-size: 16px; cursor: pointer; padding: 0 4px;">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: FOOD & DINING -->
+                <div class="tab-pane" id="pane-food">
+                    @if(empty($event->menuItems) || count($event->menuItems) === 0)
+                        <div class="card-navy" style="text-align: center; padding: 36px 20px;">
+                            <span style="font-size: 36px;">🍲</span>
+                            <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 10px 0 6px;">Menu In Preparation</h3>
+                            <p style="font-size: 13px; color: #94A3B8; margin: 0;">The host is finalizing seasonal dishes and pricing tiers.</p>
+                        </div>
+                    @else
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+                            @foreach($event->menuItems as $item)
+                                <div class="card-navy" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <div>
+                                        <div style="font-size: 10px; text-transform: uppercase; color: #818CF8; font-weight: 700;">{{ $item->category ?? 'Caribbean Specialty' }}</div>
+                                        <h4 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 4px 0 6px;">{{ $item->name }}</h4>
+                                        <p style="font-size: 12px; color: #94A3B8; margin: 0 0 12px; line-height: 1.4;">{{ $item->description ?? 'Authentic Island dish freshly prepared.' }}</p>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+                                        <span style="font-size: 16px; font-weight: 800; color: #FFFFFF;">${{ number_format($item->price_usd ?? $item->price, 2) }}</span>
+                                        @auth
+                                            <button type="button" onclick="document.getElementById('preorder-modal').style.display='block'" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.35); color: #818CF8; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;">
+                                                Pre-Order
+                                            </button>
+                                        @else
+                                            <a href="{{ route('login') }}" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #CBD5E1; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 700; text-decoration: none;">
+                                                Sign In to Order
+                                            </a>
+                                        @endauth
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+
+                <!-- TAB 3: DETAILS & EVENT GUIDE -->
+                <div class="tab-pane" id="pane-details">
+                    <div class="card-navy" style="display: flex; flex-direction: column; gap: 18px;">
+                        <div>
+                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0 0 8px;">About This Experience</h3>
+                            <p style="font-size: 13px; color: #CBD5E1; line-height: 1.6; margin: 0;">
+                                {{ $event->description ?? 'Join us for this special Caribbean food and entertainment event. All food packages are prepared fresh on-site and redeemed with instant digital QR passes.' }}
+                            </p>
+                        </div>
+
+                        <div style="background: #0F172A; border-radius: 12px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 12px; color: #94A3B8;">
+                            <strong style="color: #FFFFFF; display: block; margin-bottom: 6px;">Food Collection & Pass Protocol:</strong>
+                            <div>&bull; Present your QR ticket pass at the designated food station.</div>
+                            <div>&bull; Orders are verified in real-time by island staff terminals.</div>
+                            <div>&bull; Pre-ordered meals are held fresh under temperature control.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Authentic Media Section (Horizontal Gallery) -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">Event & Atmosphere Gallery</h3>
+                    <span style="font-size: 11px; color: #94A3B8;">5 verified event photos</span>
+                </div>
+
+                <div class="gallery-scroll">
+                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/escovitch_fish.jpg') }}', 'Authentic Escovitch Snapper')">
+                        <img src="{{ asset('images/escovitch_fish.jpg') }}" alt="Escovitch Fish">
+                        <div class="gallery-caption">Signature Dish</div>
+                    </div>
+                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/island_music_reggae_concert.jpg') }}', 'Live Music Stage')">
+                        <img src="{{ asset('images/island_music_reggae_concert.jpg') }}" alt="Reggae Stage">
+                        <div class="gallery-caption">Live Reggae Stage</div>
+                    </div>
+                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/island_festival_sunset.jpg') }}', 'Sunset Waterfront')">
+                        <img src="{{ asset('images/island_festival_sunset.jpg') }}" alt="Festival Sunset">
+                        <div class="gallery-caption">Waterfront Atmosphere</div>
+                    </div>
+                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/jerk_chicken.jpg') }}', 'Smoked Jerk Chicken')">
+                        <img src="{{ asset('images/jerk_chicken.jpg') }}" alt="Jerk Chicken">
+                        <div class="gallery-caption">Pimento Smoked Jerk</div>
+                    </div>
+                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/rum_punch.jpg') }}', 'Island Rum Punch')">
+                        <img src="{{ asset('images/rum_punch.jpg') }}" alt="Rum Punch">
+                        <div class="gallery-caption">Island Refreshments</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Host / Organizer Information -->
+            <div class="card-navy">
+                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
+                    <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #FFFFFF;">
+                        {{ substr($event->organizer_name ?? 'Island', 0, 1) }}
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $event->organizer_name ?? 'Island Events Host' }}</h3>
+                            <span style="color: #10B981;">✓</span>
+                        </div>
+                        <div style="font-size: 11px; color: #10B981; font-weight: 600;">Verified Event Producer</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    @if(!empty($event->organizer_phone))
+                        <a href="tel:{{ $event->organizer_phone }}" class="btn-glass" style="font-size: 12px; padding: 6px 14px;">
+                            <span>📞</span>
+                            <span>{{ $event->organizer_phone }}</span>
+                        </a>
+                    @endif
+                    @if(!empty($event->organizer_whatsapp))
+                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $event->organizer_whatsapp) }}" target="_blank" class="btn-glass" style="font-size: 12px; padding: 6px 14px; color: #34D399;">
+                            <span>💬</span>
+                            <span>WhatsApp Host</span>
+                        </a>
+                    @endif
+                    @if(!empty($event->organizer_email))
+                        <a href="mailto:{{ $event->organizer_email }}" class="btn-glass" style="font-size: 12px; padding: 6px 14px;">
+                            <span>✉️</span>
+                            <span>{{ $event->organizer_email }}</span>
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: Sticky Ticket Reservation Panel -->
+        <div style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px;">
+            <div class="card-navy" style="box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.12);">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
+                    <div>
+                        <div style="font-size: 10px; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Starting From</div>
+                        <div style="font-size: 26px; font-weight: 900; color: #FFFFFF;">$15.00</div>
+                    </div>
+                    <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34D399; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
+                        ✓ Live Inventory
+                    </span>
+                </div>
+
+                <!-- Live Subtotal Summary -->
+                <div style="background: #0F172A; border-radius: 12px; padding: 14px; margin-bottom: 18px; border: 1px solid rgba(255, 255, 255, 0.06);">
+                    <div style="display: flex; justify-content: space-between; font-size: 13px; color: #CBD5E1; margin-bottom: 6px;">
+                        <span>Selected Passes:</span>
+                        <strong id="summary-qty-label" style="color: #FFFFFF;">1 pass</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; color: #FFFFFF; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                        <span>Total Amount:</span>
+                        <span id="summary-total-label" style="color: #38BDF8;">$15.00 USD</span>
+                    </div>
+                </div>
+
+                <!-- Purchase Button -->
+                @auth
+                    @if($event->is_ordering_open)
+                        <button type="button" class="btn-gradient-purchase" id="btn-blade-purchase-tickets" onclick="document.getElementById('preorder-modal').style.display='block'">
+                            <span>🎟️</span>
+                            <span id="btn-purchase-label">Get Tickets & Pre-Order Meals</span>
+                        </button>
+                    @else
+                        <a href="{{ route('attendee.dashboard') }}" class="btn-gradient-purchase" id="btn-blade-view-tickets">
+                            <span>🎟️</span>
+                            <span>View Digital Tickets</span>
+                        </a>
+                    @endif
+                @else
+                    <a href="{{ route('login') }}" class="btn-gradient-purchase" id="btn-blade-signin-purchase">
+                        <span>🔒</span>
+                        <span>Sign In to Get Tickets</span>
+                    </a>
+                @endauth
+
+                <!-- Jump to Food Ordering -->
+                @if(!empty($event->menuItems) && count($event->menuItems) > 0)
+                    <button type="button" onclick="switchSection('food')" class="btn-glass" style="width: 100%; justify-content: center; margin-top: 10px; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
+                        <span>🍲</span>
+                        <span>View Caribbean Menu Offerings</span>
+                    </button>
+                @endif
+
+                <div style="margin-top: 14px; font-size: 11px; color: #94A3B8; text-align: center; line-height: 1.4;">
+                    🔒 Instant QR pass issuance. Authorized Island Events Payments guarantee.
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Pre-Order Modal Dialog -->
+    @auth
+        @if($event->is_ordering_open && !empty($event->menuItems) && count($event->menuItems) > 0)
+            <div id="preorder-modal" style="display: none; position: fixed; inset: 0; background: rgba(11, 19, 43, 0.8); backdrop-filter: blur(8px); z-index: 1000; overflow-y: auto; padding: 2rem 1rem;">
+                <div style="max-width: 580px; margin: 2rem auto; background: #162038; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); padding: 2rem; color: #FFFFFF;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem;">
+                        <div>
+                            <h3 style="font-size: 1.35rem; font-weight: 800; color: #FFFFFF; margin: 0;">Pre-Order Event Dining & Passes</h3>
+                            <p style="font-size: 0.85rem; color: #94A3B8; margin-top: 0.2rem;">Select your portions for {{ $event->title }}.</p>
+                        </div>
+                        <button type="button" onclick="document.getElementById('preorder-modal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; color: #94A3B8; cursor: pointer;">✕</button>
+                    </div>
+
+                    <form action="{{ route('orders.store', $event->slug ?? $event->id) }}" method="POST" id="order-form">
+                        @csrf
+                        <input type="hidden" name="currency" value="USD">
+                        <input type="hidden" name="customer_name" value="{{ Auth::user()->name }}">
+                        <input type="hidden" name="email" value="{{ Auth::user()->email }}">
+
+                        <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="font-weight: 700; font-size: 0.88rem; color: #818CF8;">Select Dishes:</div>
+                            @foreach($event->menuItems as $idx => $item)
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; background: #0F172A;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 0.9rem; color: #FFFFFF;">{{ $item->name }}</div>
+                                        <div style="font-size: 0.8rem; color: #38BDF8; font-weight: 600;">${{ number_format($item->price_usd ?? $item->price, 2) }} USD</div>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                        <input type="hidden" name="items[{{ $idx }}][menu_item_id]" value="{{ $item->id }}">
+                                        <label style="font-size: 0.8rem; color: #94A3B8;">Qty:</label>
+                                        <input type="number" name="items[{{ $idx }}][quantity]" value="{{ $idx === 0 ? 1 : 0 }}" min="0" max="20" style="width: 60px; padding: 0.35rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; text-align: center; font-weight: 700; background: #1E293B; color: #FFFFFF;">
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
+                            <div>
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #CBD5E1; display: block; margin-bottom: 0.25rem;">Contact Mobile Phone (for SMS Pass)</label>
+                                <input type="tel" name="customer_phone" value="{{ Auth::user()->phone ?? '+1 (305) 555-0199' }}" required style="width: 100%; padding: 0.65rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; background: #0F172A; color: #FFFFFF;">
+                            </div>
+
+                            <div>
+                                <label style="font-size: 0.82rem; font-weight: 600; color: #CBD5E1; display: block; margin-bottom: 0.25rem;">Payment Method</label>
+                                <select name="method" required style="width: 100%; padding: 0.65rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; background: #0F172A; color: #FFFFFF;">
+                                    <option value="cash">Cash on Arrival (Pay at Venue)</option>
+                                    <option value="bank">US Domestic Bank Transfer (ACH / Wire)</option>
+                                    <option value="zelle">Zelle Transfer</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('preorder-modal').style.display='none'">Cancel</button>
+                            <button type="submit" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%); border: none;">Confirm & Place Pre-Order</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
+    @endauth
 </div>
+
+<script>
+    // Tab switching logic: swaps the active section content
+    function switchSection(tabName) {
+        document.querySelectorAll('.section-tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+        const targetBtn = document.getElementById('tab-' + tabName + '-btn');
+        const targetPane = document.getElementById('pane-' + tabName);
+
+        if (targetBtn) targetBtn.classList.add('active');
+        if (targetPane) targetPane.classList.add('active');
+    }
+
+    // Ticket Quantities & Live Subtotal Calculator
+    let gaQty = 1;
+    let vipQty = 0;
+
+    function adjustQty(tier, delta) {
+        if (tier === 'ga') {
+            gaQty = Math.max(0, gaQty + delta);
+            document.getElementById('qty-ga').innerText = gaQty;
+        } else if (tier === 'vip') {
+            vipQty = Math.max(0, vipQty + delta);
+            document.getElementById('qty-vip').innerText = vipQty;
+        }
+
+        const totalQty = gaQty + vipQty;
+        const totalCost = (gaQty * 15) + (vipQty * 45);
+
+        document.getElementById('summary-qty-label').innerText = totalQty + (totalQty === 1 ? ' pass' : ' passes');
+        document.getElementById('summary-total-label').innerText = '$' + totalCost.toFixed(2) + ' USD';
+        
+        const purchaseLabel = document.getElementById('btn-purchase-label');
+        if (purchaseLabel) {
+            purchaseLabel.innerText = totalQty > 0 ? 'Get ' + totalQty + ' Ticket' + (totalQty > 1 ? 's' : '') + ' • $' + totalCost.toFixed(2) : 'Select Passes to Continue';
+        }
+    }
+
+    // Favorite Toggle
+    let isFaved = false;
+    function toggleDetailFavorite() {
+        isFaved = !isFaved;
+        document.getElementById('fav-icon').innerText = isFaved ? '❤️' : '🤍';
+        showDetailToast(isFaved ? 'Event saved to your Island Favorites! ❤️' : 'Removed from favorites.');
+    }
+
+    // Share Event
+    function shareCurrentEvent() {
+        if (navigator.share) {
+            navigator.share({
+                title: document.title,
+                url: window.location.href
+            }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            showDetailToast('Event link copied to clipboard! 📋');
+        }
+    }
+
+    function showDetailToast(msg) {
+        const toast = document.getElementById('detail-toast');
+        if (toast) {
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 3000);
+        }
+    }
+
+    function openLightbox(url, caption) {
+        showDetailToast('Viewing: ' + caption);
+    }
+</script>
 @endsection

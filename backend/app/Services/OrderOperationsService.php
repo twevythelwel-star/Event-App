@@ -448,6 +448,8 @@ class OrderOperationsService
             'user_agent' => request()->userAgent() ?? 'api',
             'details' => $details,
             'is_pii_access' => false,
+            'organizer_id' => $order->organizer_id,
+            'event_id' => $order->event_id,
             'created_at' => now(),
         ]);
     }

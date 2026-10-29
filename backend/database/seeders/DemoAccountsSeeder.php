@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\OrganizerUser;
 use App\Models\User;
+use App\Models\AdminPermission;
 use App\Models\UserRole;
 use Illuminate\Database\Seeder;
 
@@ -40,6 +41,21 @@ class DemoAccountsSeeder extends Seeder
 
             if ($account['role']) {
                 UserRole::updateOrCreate(['user_id' => $user->id, 'role' => $account['role']], ['is_active' => true, 'assigned_at' => now()]);
+            }
+
+            // The demo administrator gets oversight permissions across organizers, but no audit-log
+            // access and no payment verification, so the console's permission limits are visible.
+            if ($account['role'] === 'admin') {
+                AdminPermission::updateOrCreate(['user_id' => $user->id], [
+                    'scope' => 'all',
+                    'can_manage_events' => true,
+                    'can_moderate_content' => true,
+                    'can_support_orders' => true,
+                    'can_view_payments' => true,
+                    'can_view_reports' => true,
+                    'can_access_audit_logs' => false,
+                    'assigned_organizer_ids' => [],
+                ]);
             }
 
             if ($account['organizer']) {

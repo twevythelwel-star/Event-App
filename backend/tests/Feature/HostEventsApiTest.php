@@ -174,4 +174,68 @@ class HostEventsApiTest extends TestCase
 
         $this->assertSame($item->name, $order->fresh('items')->items->first()->name);
     }
+
+    public function test_host_creates_draft_event_with_timezone_and_ticket_tiers_via_wizard(): void
+    {
+        $host = $this->user('host');
+
+        $payload = [
+            'title' => 'Port Royal Sunset Seafood & Reggae Night',
+            'tagline' => 'Fresh Lobster, Snapper & Acoustic Roots',
+            'category' => 'Seafood & Fish Fry',
+            'date_str' => 'Saturday, December 19, 2026',
+            'event_date_iso' => '2026-12-19',
+            'time_str' => '4:00 PM – 11:00 PM',
+            'start_time' => '16:00',
+            'end_time' => '23:00',
+            'timezone' => 'America/Jamaica',
+            'venue_name' => 'Port Royal Historic Dockyard',
+            'venue_address' => '1 Dockyard Lane, Port Royal, Kingston',
+            'organizer_name' => 'Kingston Youth Foundation',
+            'organizer_phone' => '+1 (876) 926-3849',
+            'advance_order_deadline' => '2026-12-18 18:00',
+            'packaging_fee_usd' => 1.25,
+            'packaging_fee_jmd' => 200,
+            'supports_food_ordering' => true,
+            'ticket_tiers' => [
+                [
+                    'id' => 'tier-ga',
+                    'name' => 'General Admission',
+                    'category' => 'General',
+                    'priceUSD' => 15,
+                    'priceJMD' => 2300,
+                    'availableStock' => 150,
+                    'maxPerCustomer' => 8,
+                    'saleStartIso' => '2026-11-01T00:00',
+                    'saleEndIso' => '2026-12-19T16:00',
+                    'isActive' => true,
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($host)->postJson('/api/v1/host/events', $payload)
+            ->assertCreated()
+            ->assertJsonPath('data.title', 'Port Royal Sunset Seafood & Reggae Night')
+            ->assertJsonPath('data.status', 'draft')
+            ->assertJsonPath('data.timezone', 'America/Jamaica')
+            ->assertJsonPath('data.category', 'Seafood & Fish Fry');
+
+        $createdId = $response->json('data.id');
+        $this->assertNotEmpty($createdId);
+
+        // Reject invalid ticket tier pricing (negative price) on server
+        $invalidTierPayload = $payload;
+        $invalidTierPayload['ticket_tiers'][0]['priceUSD'] = -5;
+        $this->actingAs($host)->patchJson("/api/v1/host/events/{$createdId}", [
+            'ticket_tiers' => $invalidTierPayload['ticket_tiers'],
+        ])->assertStatus(422);
+
+        // Reject invalid IANA timezone on server
+        $this->actingAs($host)->patchJson("/api/v1/host/events/{$createdId}", [
+            'timezone' => 'Invalid/Timezone',
+        ])->assertStatus(422);
+
+        // Unauthorized staff cannot create events
+        $this->actingAs($this->user('staff'))->postJson('/api/v1/host/events', $payload)->assertStatus(403);
+    }
 }

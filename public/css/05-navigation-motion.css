@@ -1,0 +1,344 @@
+/* ==========================================================================
+   EVENTBITE DESIGN SYSTEM — MODULE 05: NAVIGATION, IMAGERY & MOTION
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. System A: Customer Mobile Bottom Navigation
+   -------------------------------------------------------------------------- */
+
+.eb-customer-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  height: var(--layout-bottom-nav-height);
+  background-color: rgba(11, 25, 43, 0.94);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 var(--space-2) env(safe-area-inset-bottom, 0px);
+}
+
+.eb-customer-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 64px;
+  min-height: 48px;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+}
+
+.eb-customer-nav-item:hover {
+  color: var(--color-text-primary);
+}
+
+.eb-customer-nav-item.active,
+.eb-customer-nav-item[aria-current="page"] {
+  color: var(--color-accent);
+}
+
+.eb-customer-nav-item:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1024px) {
+  .eb-customer-bottom-nav-mobile-only {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. System B: Management Sidebar Navigation (Hosts, Staff, Administrators)
+   -------------------------------------------------------------------------- */
+
+.eb-app-shell,
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+aside.eb-management-sidebar,
+aside.app-sidebar {
+  width: var(--layout-sidebar-width);
+  background-color: var(--color-background-secondary);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  transition: transform var(--duration-normal) var(--ease-out-quart);
+}
+
+.eb-sidebar-brand,
+.sidebar-brand {
+  height: var(--layout-header-height);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--color-border);
+  text-decoration: none;
+  color: var(--color-text-primary);
+}
+
+.eb-brand-mark,
+.brand-logo-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-accent);
+  color: var(--color-accent-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.eb-sidebar-nav,
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem 0.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.eb-nav-section-title,
+.nav-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.06em;
+  padding: 0.75rem 0.75rem 0.35rem;
+}
+
+.eb-sidebar-link,
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 42px;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.eb-sidebar-link:hover,
+.sidebar-nav a:hover {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.eb-sidebar-link.active,
+.sidebar-nav a.active,
+.eb-sidebar-link[aria-current="page"] {
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+}
+
+.eb-sidebar-footer,
+.sidebar-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* Management Main Area & Top Header */
+.eb-app-main,
+.app-main {
+  margin-left: var(--layout-sidebar-width);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+header.eb-app-header,
+header.app-header {
+  height: var(--layout-header-height);
+  background-color: rgba(11, 25, 43, 0.9);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 0 var(--layout-page-padding-x);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+@media (max-width: 1023px) {
+  aside.eb-management-sidebar,
+  aside.app-sidebar {
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-modal);
+  }
+
+  aside.eb-management-sidebar.open,
+  aside.app-sidebar.open {
+    transform: translateX(0);
+  }
+
+  .eb-app-main,
+  .app-main {
+    margin-left: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. Iconography & Imagery Aspect-Ratio Frames
+   -------------------------------------------------------------------------- */
+
+.eb-icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.eb-icon-sm {
+  width: 16px;
+  height: 16px;
+}
+
+.eb-icon-lg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Standardized Media Aspect Ratios */
+.eb-media-frame {
+  position: relative;
+  width: 100%;
+  background-color: var(--color-background-secondary);
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.eb-media-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.eb-aspect-event-hero {
+  aspect-ratio: 21 / 9;
+}
+
+.eb-aspect-event-card {
+  aspect-ratio: 16 / 10;
+}
+
+.eb-aspect-food-card {
+  aspect-ratio: 4 / 3;
+}
+
+.eb-aspect-flyer {
+  aspect-ratio: 3 / 4;
+}
+
+.eb-aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+@media (max-width: 639px) {
+  .eb-aspect-event-hero {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. Restrained Motion & Accessibility Reduced-Motion Support
+   -------------------------------------------------------------------------- */
+
+@keyframes eb-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes eb-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes eb-check-pop {
+  0% {
+    transform: scale(0.92);
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.eb-animate-in {
+  animation: eb-fade-in var(--duration-normal) var(--ease-out-quart);
+}
+
+.eb-animate-checkin {
+  animation: eb-check-pop var(--duration-normal) var(--ease-out-quart);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

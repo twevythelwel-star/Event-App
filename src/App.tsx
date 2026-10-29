@@ -73,8 +73,8 @@ import {
   fetchCashLedger,
   fetchEvents,
   fetchHostEvents,
-  fetchMessageLog,
   fetchMyDisputes,
+  fetchMessageLog,
   fetchMyOrders,
   fetchOperationsOrders,
   fetchSession,
@@ -225,12 +225,14 @@ export const GATEWAY_RECOMMENDATIONS = {
   ],
 };
 
-const formatMoney = (amount: number, currency: Currency) =>
-  new Intl.NumberFormat(currency === "JMD" ? "en-JM" : "en-US", {
+const formatMoney = (amount: number, currency: Currency = "USD") => {
+  const curr = currency || "USD";
+  return new Intl.NumberFormat(curr === "JMD" ? "en-JM" : "en-US", {
     style: "currency",
-    currency,
+    currency: curr,
     maximumFractionDigits: 0,
   }).format(amount);
+};
 
 function readSavedState(): SavedState {
   const rawState = window.localStorage.getItem(STORAGE_KEY);
@@ -327,7 +329,14 @@ function loadInitialState() {
 export function App() {
   const [initialState] = useState(loadInitialState);
   const [savedState, setSavedState] = useState<SavedState>(initialState.state);
-  const [activeTab, setActiveTab] = useState<"guest" | "staff" | "organizer" | "admin" | "system_admin">("guest");
+  const [activeTab, setActiveTab] = useState<"guest" | "staff" | "organizer" | "admin" | "system_admin">(() => {
+    if (typeof window !== "undefined") {
+      const q = new URLSearchParams(window.location.search).get("tab");
+      if (q === "organizer" || q === "host") return "organizer";
+      if (q === "staff" || q === "admin" || q === "system_admin") return q;
+    }
+    return "guest";
+  });
   const [showGatewayModal, setShowGatewayModal] = useState(false);
   const [showAuthProfilesModal, setShowAuthProfilesModal] = useState(false);
   const [selectedEventIndex, setSelectedEventIndex] = useState(0);
@@ -1814,7 +1823,17 @@ export function App() {
           formatMoney={formatMoney}
           attendeeProfile={
             isApiOnline && sessionUser
-              ? { ...attendeeProfile, name: sessionUser.name, email: sessionUser.email, phone: sessionUser.phone ?? attendeeProfile.phone, isGuest: false }
+              ? {
+                  ...attendeeProfile,
+                  name: sessionUser.name,
+                  email: sessionUser.email,
+                  phone: sessionUser.phone ?? attendeeProfile.phone,
+                  avatarUrl: sessionUser.avatar_url ?? attendeeProfile.avatarUrl,
+                  bio: sessionUser.bio ?? attendeeProfile.bio,
+                  membershipStatus: sessionUser.membership_status ?? attendeeProfile.membershipStatus,
+                  memberSince: sessionUser.member_since ?? attendeeProfile.memberSince,
+                  isGuest: false,
+                }
               : attendeeProfile
           }
           onSubmitDispute={handleSubmitDispute}
@@ -1857,6 +1876,25 @@ export function App() {
           activeOrganizerId={activeOrganizerId}
           activeRolePerspective={activeRolePerspective}
           tenantUsers={tenantUsers}
+          sessionUser={sessionUser}
+          hostEvents={hostEvents}
+          catalogEvents={catalogEvents}
+          handoverAuditLogs={handoverAuditLogs}
+          isApiOnline={isApiOnline}
+          onSelectHostEvent={(ev) => {
+            if (isLiveSession && "menu" in ev) {
+              setHostEvents((curr) => [ev, ...curr.filter((e) => e.id !== ev.id)]);
+            } else {
+              setSavedState((c) => ({
+                ...c,
+                eventDetails: ev,
+                menu: "menu" in ev && Array.isArray(ev.menu) ? ev.menu : c.menu,
+              }));
+            }
+          }}
+          onSignOut={() => {
+            void handleSignOut();
+          }}
           onSwitchOrganizer={(orgId) => setSavedState((c) => ({ ...c, activeOrganizerId: orgId }))}
           onSwitchRolePerspective={(role) => setSavedState((c) => ({ ...c, activeRolePerspective: role }))}
           onUpdateEventDetails={(details) =>
@@ -1868,7 +1906,7 @@ export function App() {
             isLiveSession && hostLiveEvent ? liveUpdateMenu(newMenu) : setSavedState((c) => ({ ...c, menu: newMenu }))
           }
           onUpdateSettings={(updater) =>
-            setSavedState((c) => ({ ...c, settings: updater(c.settings) }))
+            setSavedState((c) => ({ ...c, settings: typeof updater === "function" ? updater(c.settings) : updater }))
           }
           onUpdatePaymentStatus={handleUpdatePaymentStatus}
           onUpdateFulfillmentStatus={handleUpdateFulfillmentStatus}

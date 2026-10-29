@@ -1,0 +1,545 @@
+/* ==========================================================================
+   EVENTBITE DESIGN SYSTEM — MODULE 04: SURFACES, CARDS, TABLES & MODALS
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Base Panels & Dashboard Surfaces
+   -------------------------------------------------------------------------- */
+
+.eb-panel,
+.eb-card,
+.card,
+.panel {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--layout-card-padding-lg);
+  box-shadow: var(--shadow-subtle);
+}
+
+.eb-panel-elevated {
+  background-color: var(--color-surface-elevated);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.eb-card-header,
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.eb-card-title,
+.card-title {
+  font-family: var(--font-display);
+  font-size: var(--text-card-size);
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.eb-card-subtitle,
+.card-subtitle {
+  font-size: var(--text-supporting-size);
+  color: var(--color-text-secondary);
+  margin-top: 0.25rem;
+}
+
+/* --------------------------------------------------------------------------
+   2. Event Card Pattern
+   -------------------------------------------------------------------------- */
+
+.eb-event-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition:
+    transform var(--duration-normal) var(--ease-out-quart),
+    border-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard);
+}
+
+.eb-event-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.eb-event-card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background-color: var(--color-background-secondary);
+  overflow: hidden;
+}
+
+.eb-event-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  transition: transform var(--duration-slow) var(--ease-out-quart);
+}
+
+.eb-event-card:hover .eb-event-card-media img {
+  transform: scale(1.03);
+}
+
+.eb-event-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(7, 17, 31, 0.1) 0%, rgba(7, 17, 31, 0.85) 100%);
+  pointer-events: none;
+}
+
+.eb-event-card-body {
+  padding: var(--layout-card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.eb-event-card-footer {
+  margin-top: auto;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   3. Food Card Pattern (Warm Editorial)
+   -------------------------------------------------------------------------- */
+
+.eb-food-card,
+.food-card {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition:
+    transform var(--duration-fast) var(--ease-out-quart),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.eb-food-card:hover,
+.food-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-border-strong);
+}
+
+.eb-food-card-media,
+.food-card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background-color: var(--color-background-secondary);
+  overflow: hidden;
+}
+
+.eb-food-card-media img,
+.food-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.eb-food-card-body,
+.food-card-body {
+  padding: var(--layout-card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   4. Ticket Card, Order Card & Payment Card Patterns
+   -------------------------------------------------------------------------- */
+
+.eb-ticket-card {
+  position: relative;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+
+.eb-ticket-card-tear {
+  position: relative;
+  border-top: 1.5px dashed var(--color-border-strong);
+  margin: var(--space-4) 0;
+}
+
+.eb-ticket-qr-well {
+  background-color: var(--color-qr-surface);
+  color: var(--color-qr-ink);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.eb-order-card,
+.eb-payment-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--layout-card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.eb-payment-card-selected {
+  background-color: var(--color-surface-elevated);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+
+/* --------------------------------------------------------------------------
+   5. Metric KPI Cards
+   -------------------------------------------------------------------------- */
+
+.eb-metric-card,
+.metric-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--layout-card-padding) var(--layout-card-padding-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.eb-metric-label,
+.metric-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.eb-metric-value,
+.metric-value {
+  font-family: var(--font-display);
+  font-size: var(--text-metric-size);
+  font-weight: 800;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.eb-metric-footer,
+.metric-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   6. Status Badges (Textual Label Always Required for Payment Statuses)
+   -------------------------------------------------------------------------- */
+
+.eb-badge,
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.6875rem;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--text-status-size);
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.eb-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+  flex-shrink: 0;
+}
+
+/* Verified / Paid / Operational */
+.eb-badge-success,
+.badge-active,
+.badge-paid,
+.badge-operational,
+.badge-healthy,
+.badge-verified {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+  border-color: var(--color-success-border);
+}
+
+/* Pending / Awaiting Verification (Never implied as verified revenue) */
+.eb-badge-warning,
+.badge-pending,
+.badge-awaiting_payment,
+.badge-payment_submitted,
+.badge-degraded,
+.badge-under_verification {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border-color: var(--color-warning-border);
+}
+
+/* Error / Rejected / Cancelled / Suspended */
+.eb-badge-error,
+.badge-suspended,
+.badge-failed,
+.badge-rejected,
+.badge-cancelled {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
+}
+
+/* Secondary Purple Accent (Provider / Role / Scope Differentiation) */
+.eb-badge-purple,
+.badge-scope {
+  background-color: var(--color-purple-surface);
+  color: var(--color-purple-text);
+  border-color: var(--color-purple-border);
+}
+
+/* Neutral / Informational */
+.eb-badge-info,
+.badge-info {
+  background-color: var(--color-info-bg);
+  color: var(--color-info-text);
+  border-color: var(--color-info-border);
+}
+
+.eb-badge-accent {
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+}
+
+/* --------------------------------------------------------------------------
+   7. Data Tables (Responsive & Tabular-Aligned)
+   -------------------------------------------------------------------------- */
+
+.eb-table-wrap,
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-surface);
+}
+
+.eb-table,
+table.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+  color: var(--color-text-primary);
+}
+
+.eb-table th,
+table.data-table th {
+  background-color: var(--color-background-secondary);
+  color: var(--color-text-secondary);
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: var(--table-cell-padding-y) var(--table-cell-padding-x);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.eb-table td,
+table.data-table td {
+  padding: var(--table-cell-padding-y) var(--table-cell-padding-x);
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+
+.eb-table tbody tr:last-child td,
+table.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.eb-table tbody tr:hover td,
+table.data-table tbody tr:hover td {
+  background-color: var(--color-surface-elevated);
+}
+
+.eb-table-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   8. Modal Dialogs, Dropdowns, Empty States & Notifications
+   -------------------------------------------------------------------------- */
+
+.eb-modal-backdrop,
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background-color: rgba(7, 17, 31, 0.82);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.eb-modal {
+  width: 100%;
+  max-width: var(--layout-modal-md);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+  background-color: var(--color-surface-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-modal);
+}
+
+@media (max-width: 639px) {
+  .eb-modal-backdrop-sheet {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .eb-modal-backdrop-sheet .eb-modal {
+    max-width: 100%;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+.eb-dropdown {
+  background-color: var(--color-surface-elevated);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+  box-shadow: var(--shadow-elevated);
+  min-width: 200px;
+}
+
+.eb-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 40px;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.eb-dropdown-item:hover,
+.eb-dropdown-item:focus-visible {
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+/* Empty State */
+.eb-empty-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--space-10) var(--space-5);
+  background-color: var(--color-background-secondary);
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+}
+
+.eb-empty-state-title,
+.empty-state-title {
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: var(--space-2) 0 var(--space-1);
+}
+
+.eb-empty-state-desc,
+.empty-state-desc {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  max-width: 420px;
+  margin: 0 auto var(--space-4);
+}
+
+/* Flash Alerts & Notifications */
+.eb-alert,
+.flash-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: 0.875rem 1.125rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: var(--space-5);
+}
+
+.eb-alert-success,
+.flash-success {
+  background-color: var(--color-success-bg);
+  color: var(--color-success-text);
+  border-color: var(--color-success-border);
+}
+
+.eb-alert-warning {
+  background-color: var(--color-warning-bg);
+  color: var(--color-warning-text);
+  border-color: var(--color-warning-border);
+}
+
+.eb-alert-error,
+.flash-error {
+  background-color: var(--color-error-bg);
+  color: var(--color-error-text);
+  border-color: var(--color-error-border);
+}

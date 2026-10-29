@@ -36,8 +36,29 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Public Event Browsing (subject to configurable require_login_for_event_browsing policy)
-Route::get('/', [EventController::class, 'index'])->name('home');
+// Welcome & Onboarding Screen (cinematic guest landing, auto-redirect for authenticated users)
+Route::get('/', function (\Illuminate\Http\Request $request) {
+    if (auth()->check()) {
+        $user = auth()->user();
+        $activeRole = $user->current_context_role ?? $user->role;
+        $targetRoute = match ($activeRole) {
+            'system_admin' => 'system-admin.dashboard',
+            'admin' => 'admin.dashboard',
+            'event_host' => 'host.dashboard',
+            default => 'attendee.dashboard',
+        };
+        return redirect()->route($targetRoute);
+    }
+
+    if ($request->wantsJson()) {
+        return response()->json([
+            'success' => true,
+            'data' => \App\Models\Event::latest()->get(),
+        ]);
+    }
+
+    return view('welcome');
+})->name('home');
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/events/{eventSlug}/menu', [MenuController::class, 'index'])->name('events.menu.index');
 
@@ -167,6 +188,11 @@ Route::prefix('api/v1')->group(function () {
 
     Route::middleware(['auth', 'active'])->group(function () {
         Route::delete('/session', [SessionController::class, 'destroy'])->name('api.session.destroy');
+        Route::put('/profile', [SessionController::class, 'updateProfile'])->name('api.profile.update');
+        Route::put('/profile/password', [SessionController::class, 'updatePassword'])->name('api.profile.password')->middleware('throttle:10,1');
+        Route::get('/notifications', [SessionController::class, 'notifications'])->name('api.notifications.index');
+        Route::post('/notifications/read-all', [SessionController::class, 'markAllNotificationsRead'])->name('api.notifications.read-all');
+        Route::post('/notifications/{id}/read', [SessionController::class, 'markNotificationRead'])->name('api.notifications.read');
         Route::post('/events/{eventSlug}/orders', [CatalogController::class, 'placeOrder'])->name('api.orders.store')->middleware('throttle:15,1');
         Route::get('/orders', [CatalogController::class, 'myOrders'])->name('api.orders.index');
 
@@ -186,7 +212,9 @@ Route::prefix('api/v1')->group(function () {
         Route::post('/operations/events/{eventId}/reminders', [OrderOperationsController::class, 'sendReminders'])->name('api.operations.reminders')->middleware('throttle:5,1');
 
         // Event Host editing of their own events and menus (organizer owners only; checked per event)
+        Route::get('/host/dashboard', [HostDashboardController::class, 'index'])->name('api.host.dashboard');
         Route::get('/host/events', [HostEventsController::class, 'index'])->name('api.host.events');
+        Route::post('/host/events', [HostEventsController::class, 'store'])->name('api.host.events.store')->middleware('throttle:30,1');
         Route::patch('/host/events/{eventId}', [HostEventsController::class, 'update'])->name('api.host.events.update')->middleware('throttle:120,1');
         Route::post('/host/events/{eventId}/status', [HostEventsController::class, 'setStatus'])->name('api.host.events.status');
         Route::post('/host/events/{eventId}/menu', [HostEventsController::class, 'storeMenuItem'])->name('api.host.menu.store');
@@ -195,6 +223,14 @@ Route::prefix('api/v1')->group(function () {
         Route::post('/host/events/{eventId}/flyer', [HostEventsController::class, 'uploadFlyer'])->name('api.host.flyer.store')->middleware('throttle:20,1');
         Route::delete('/host/events/{eventId}/flyer', [HostEventsController::class, 'removeFlyer'])->name('api.host.flyer.destroy');
         Route::post('/host/events/{eventId}/menu/{itemId}/photo', [HostEventsController::class, 'uploadMenuPhoto'])->name('api.host.menu.photo')->middleware('throttle:30,1');
+
+        // Event Host worker assignments & staff claim code verification
+        Route::get('/host/events/{event}/staff', [StaffAssignmentController::class, 'showEventStaff'])->name('api.host.events.staff');
+        Route::post('/host/events/{event}/staff/verify-code', [StaffAssignmentController::class, 'verifyClaimCode'])->name('api.host.events.staff.verify-code')->middleware('throttle:20,1');
+        Route::post('/host/events/{event}/staff/assign', [StaffAssignmentController::class, 'assignStaff'])->name('api.host.events.staff.assign');
+        Route::post('/host/events/{event}/staff/{assignment}/revoke', [StaffAssignmentController::class, 'revokeAssignment'])->name('api.host.events.staff.revoke');
+        Route::post('/staff-codes/generate', [StaffAssignmentController::class, 'generateClaimCode'])->name('api.staff-codes.generate')->middleware('throttle:10,1');
+        Route::post('/staff-codes/{id}/revoke', [StaffAssignmentController::class, 'revokeClaimCode'])->name('api.staff-codes.revoke');
 
         // Attendee requests: Event Host applications and order disputes
         Route::get('/host-applications', [SupportRequestsController::class, 'myHostApplications'])->name('api.host-applications.mine');
@@ -215,3 +251,6 @@ Route::prefix('api/v1')->group(function () {
 
 // Public Event Detail - registered last so the {id} wildcard cannot shadow static paths such as /events/create
 Route::get('/events/{id}', [EventController::class, 'show'])->name('events.show');
+
+// Administration console (permission-scoped platform oversight)
+require __DIR__ . '/admin.php';

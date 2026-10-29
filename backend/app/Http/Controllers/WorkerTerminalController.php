@@ -75,7 +75,7 @@ class WorkerTerminalController extends Controller
         }
 
         try {
-            $scanResult = EventWorkerService::scanAndValidateTicket($user, $order);
+            $scanResult = EventWorkerService::scanAndValidateTicket($user, $order, (string) $event->id);
             return response()->json($scanResult);
         } catch (SecurityException $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);

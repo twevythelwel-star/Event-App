@@ -12,6 +12,12 @@ class UserPolicy
      */
     public function before(User $user, string $ability): ?bool
     {
+        // Status and role changes carry invariants (no self-suspension, no acting on System
+        // Administrators, no self-elevation) that must hold for System Administrators too.
+        if (in_array($ability, ['manageStatus', 'assignRole'], true)) {
+            return null;
+        }
+
         if ($user->hasRole(AccountType::SYSTEM_ADMIN)) {
             return true;
         }

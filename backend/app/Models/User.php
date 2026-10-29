@@ -21,6 +21,9 @@ class User extends Authenticatable
         'last_name',
         'email',
         'phone',
+        'avatar_url',
+        'bio',
+        'marketing_preferences',
         'password',
         'status',
         'preferred_display_currency',
@@ -46,6 +49,7 @@ class User extends Authenticatable
         'two_factor_confirmed_at' => 'datetime',
         'agreed_to_terms_at' => 'datetime',
         'is_system_admin' => 'boolean',
+        'marketing_preferences' => 'array',
     ];
 
     /**
@@ -119,6 +123,14 @@ class User extends Authenticatable
     public function organizerMemberships(): HasMany
     {
         return $this->hasMany(OrganizerUser::class, 'user_id');
+    }
+
+    /**
+     * Event-specific staff assignments (payment clerk, ticket checker, etc.).
+     */
+    public function workerAssignments(): HasMany
+    {
+        return $this->hasMany(EventWorkerAssignment::class, 'user_id');
     }
 
     /**

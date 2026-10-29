@@ -4,11 +4,9 @@ import {
   AlertTriangle,
   ArrowDownLeft,
   ArrowRight,
-  Banknote,
   Bell,
   Calendar,
   Check,
-  CheckCircle2,
   Clock3,
   Copy,
   DollarSign,
@@ -21,11 +19,9 @@ import {
   Mail,
   MapPin,
   MessageCircle,
-  MessageSquare,
   Minus,
   Phone,
   Plus,
-  RefreshCw,
   Search,
   Send,
   Share2,
@@ -33,14 +29,20 @@ import {
   ShieldCheck,
   ShoppingBag,
   Sliders,
-  Sparkles,
   Ticket,
   UserRound,
   Utensils,
   Settings2,
   X,
+  Compass,
 } from "lucide-react";
-import { AccountSettingsView } from "./AccountSettingsView";
+import { EventDiscoveryHomepage, BottomNavItem } from "./EventDiscoveryHomepage";
+import { EventDetailView } from "./EventDetailView";
+import { TicketSelectionScreen } from "./TicketSelectionScreen";
+import { FoodAndDrinksScreen } from "./FoodAndDrinksScreen";
+import { AttendeeTicketManagementScreen } from "./AttendeeTicketManagementScreen";
+import { IslandEventDigitalTicketScreen } from "./IslandEventDigitalTicketScreen";
+import { IslandEventUserProfileScreen } from "./IslandEventUserProfileScreen";
 
 import {
   AttendeeProfile,
@@ -120,11 +122,11 @@ export const GuestMenuCheckout: React.FC<Props> = ({
   menu,
   settings,
   orders,
-  notificationLogs = [],
+  notificationLogs: _notificationLogs = [],
   availableMethods,
   isOwnerPreview = false,
   onPlaceOrder,
-  onSendCustomNotification,
+  onSendCustomNotification: _onSendCustomNotification,
   onOpenSettings,
   formatMoney,
   attendeeProfile,
@@ -141,8 +143,14 @@ export const GuestMenuCheckout: React.FC<Props> = ({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showLoginPromptModal, setShowLoginPromptModal] = useState(false);
   const [activeStep, setActiveStep] = useState<
-    "menu" | "checkout" | "ticket" | "orders_wallet" | "saved_events" | "settings"
-  >("menu");
+    "discovery" | "event_details" | "ticket_selection" | "menu" | "checkout" | "ticket" | "orders_wallet" | "saved_events" | "settings"
+  >("discovery");
+  const [selectedTicketQuantities, setSelectedTicketQuantities] = useState<Record<string, number>>({
+    "tier-ga": 1,
+  });
+  const [selectedFoodFromTickets, setSelectedFoodFromTickets] = useState<Record<string, number>>({});
+  const [discoveryBottomNav, setDiscoveryBottomNav] = useState<BottomNavItem>("home");
+  const [isTourGridExpanded, setIsTourGridExpanded] = useState(false);
 
   // Attendee Notification Preferences
   const [prefSms, setPrefSms] = useState(attendeeProfile?.notificationPreferences.smsReminders ?? true);
@@ -155,10 +163,6 @@ export const GuestMenuCheckout: React.FC<Props> = ({
   const [disputeModalOrder, setDisputeModalOrder] = useState<TicketOrder | null>(null);
   const [disputeReasonInput, setDisputeReasonInput] = useState("");
 
-  // Email Receipt State
-  const [receiptEmailInput, setReceiptEmailInput] = useState("");
-  const [receiptEmailSent, setReceiptEmailSent] = useState(false);
-
   // Customer Contact State
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -170,6 +174,11 @@ export const GuestMenuCheckout: React.FC<Props> = ({
   // Ticket viewing state
   const [issuedTicket, setIssuedTicket] = useState<TicketOrder | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [checkoutIdempotencyKey, setCheckoutIdempotencyKey] = useState<string>(() =>
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `idem-${Date.now()}-${Math.floor(Math.random() * 100000)}`
+  );
   const [showSmsModal, setShowSmsModal] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [lightboxImg, setLightboxImg] = useState<{ url: string; caption: string } | null>(null);
@@ -188,6 +197,11 @@ export const GuestMenuCheckout: React.FC<Props> = ({
   // Custom Amount / Donation Modal State for "custom_amount"
   const [donationItem, setDonationItem] = useState<MenuItem | null>(null);
   const [customAmountValue, setCustomAmountValue] = useState<number>(1500);
+
+  // Each attendee screen starts at the top instead of inheriting the previous scroll position.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [activeStep, selectedEventIndex]);
 
   // Auto-detect and display ticket if opened via secure direct link (?ticket=... or #ticket=...)
   useEffect(() => {
@@ -227,13 +241,27 @@ export const GuestMenuCheckout: React.FC<Props> = ({
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const hasFoodInCart = useMemo(
+    () =>
+      cart.some(
+        (ci) =>
+          !ci.menuItemId.startsWith("tier-") &&
+          ci.menuItemId !== "general-admission" &&
+          ci.menuItemId !== "vip-oceanfront" &&
+          ci.menuItemId !== "group-pass"
+      ),
+    [cart]
+  );
+
+  const effectivePackagingFee = hasFoodInCart ? packagingFee : 0;
+
   const cartTotals = useMemo(() => {
     return calculateOrderTotals(
       cart.map((ci) => ({ finalItemPrice: ci.finalItemPrice, quantity: ci.quantity })),
-      cart.length > 0 ? packagingFee : 0,
+      effectivePackagingFee,
       settings.currency
     );
-  }, [cart, packagingFee, settings.currency]);
+  }, [cart, effectivePackagingFee, settings.currency]);
 
   const cartSubtotal = cartTotals.subtotal;
   const finalTotalAmount = cartTotals.totalAmount;
@@ -448,7 +476,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
       email: customerEmail.trim() || undefined,
       method: selectedMethod,
       subtotal: cartSubtotal,
-      packagingFee: cart.length > 0 ? packagingFee : 0,
+      packagingFee: effectivePackagingFee,
       totalAmount: finalTotalAmount,
       amountPaid: 0, // Invariant: Initially 0 until verified by event owner / cashier
       currency: settings.currency,
@@ -472,6 +500,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
       currency: settings.currency,
       payment_reference: newOrder.paymentReference,
       sender_name: senderName.trim() || undefined,
+      idempotency_key: checkoutIdempotencyKey,
       items: cart.map((ci) => ({
         menu_item_id: ci.menuItemId,
         quantity: ci.quantity,
@@ -496,6 +525,11 @@ export const GuestMenuCheckout: React.FC<Props> = ({
     setCart([]);
     setPaymentReference("");
     setSenderName("");
+    setCheckoutIdempotencyKey(
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `idem-${Date.now()}-${Math.floor(Math.random() * 100000)}`
+    );
     setActiveStep("ticket");
   }
 
@@ -546,11 +580,6 @@ export const GuestMenuCheckout: React.FC<Props> = ({
     }
   }
 
-  // Mask phone for customer privacy on public passes
-  const maskedPhone = (phoneStr: string) => {
-    if (phoneStr.length < 7) return phoneStr;
-    return phoneStr.replace(/(\+?\d{1,3}[\s-]?)?(\d{3})\d{3}(\d{4})/, "$1$2-***-$3");
-  };
 
   const shareableTicketUrl = issuedTicket
     ? `${window.location.origin}?ticket=${issuedTicket.ticketCode}`
@@ -558,45 +587,486 @@ export const GuestMenuCheckout: React.FC<Props> = ({
 
   return (
     <div className="guest-journey-container">
+      {/* Step 0: Dedicated Midnight-Navy Discovery Homepage */}
+      {activeStep === "discovery" && allEvents && allEvents.length > 0 && (
+        <EventDiscoveryHomepage
+          events={allEvents}
+          selectedEventIndex={selectedEventIndex}
+          onSelectEvent={(idx) => {
+            if (onSelectEvent) onSelectEvent(idx);
+          }}
+          onNavigateToDetails={(idx) => {
+            if (onSelectEvent) onSelectEvent(idx);
+            setActiveStep("event_details");
+          }}
+          isLoggedIn={isLoggedIn}
+          userName={attendeeProfile?.name}
+          userEmail={attendeeProfile?.email}
+          onOpenAuthModal={() => onLogin && onLogin()}
+          onLogout={onLogout || (() => {})}
+          onNavigateToTickets={() => {
+            setDiscoveryBottomNav("tickets");
+            setActiveStep("orders_wallet");
+          }}
+          onNavigateToFood={(idx) => {
+            if (idx !== undefined && onSelectEvent) onSelectEvent(idx);
+            setDiscoveryBottomNav("food");
+            setActiveStep("menu");
+          }}
+          onNavigateToProfile={() => {
+            setDiscoveryBottomNav("profile");
+            setActiveStep("settings");
+          }}
+          formatMoney={formatMoney}
+          activeBottomNav={discoveryBottomNav}
+          onChangeBottomNav={(nav) => setDiscoveryBottomNav(nav)}
+        />
+      )}
+
+      {/* Step 0.5: Dedicated Premium Event Detail Screen */}
+      {activeStep === "event_details" && (
+        <EventDetailView
+          event={allEvents && allEvents.length > 0 ? allEvents[selectedEventIndex] || eventDetails : eventDetails}
+          eventIndex={selectedEventIndex}
+          onBack={() => setActiveStep("discovery")}
+          onNavigateToFood={(idx) => {
+            if (onSelectEvent) onSelectEvent(idx);
+            setActiveStep("menu");
+          }}
+          onNavigateToTickets={() => {
+            setActiveStep("ticket_selection");
+          }}
+          isLoggedIn={isLoggedIn}
+          onOpenAuthModal={() => onLogin && onLogin()}
+          formatMoney={formatMoney}
+        />
+      )}
+
+      {/* Step 0.75: Dedicated Ticket Selection Screen */}
+      {activeStep === "ticket_selection" && (
+        <TicketSelectionScreen
+          event={allEvents && allEvents.length > 0 ? allEvents[selectedEventIndex] || eventDetails : eventDetails}
+          eventIndex={selectedEventIndex}
+          onBack={() => setActiveStep("event_details")}
+          onOpenCompleteMenu={() => setActiveStep("menu")}
+          onContinueToCheckout={(selectionData) => {
+            setSelectedTicketQuantities(selectionData.selectedTickets);
+            setSelectedFoodFromTickets(selectionData.selectedFood);
+
+            const activeEvt: any =
+              allEvents && allEvents.length > 0 ? allEvents[selectedEventIndex] || eventDetails : eventDetails;
+            const newCartItems: CartItem[] = [];
+
+            // 1. Populate cart with any selected ticket passes
+            const defaultTiers: Record<string, { name: string; priceUSD: number; priceJMD: number }> = {
+              "tier-ga": { name: "General Admission Pass", priceUSD: 15, priceJMD: 2250 },
+              "tier-vip": { name: "VIP Oceanfront Lounge Pass", priceUSD: 45, priceJMD: 6800 },
+              "tier-early-bird": { name: "Early-Bird Advance Pass", priceUSD: 12, priceJMD: 1800 },
+              "tier-group": { name: "Family & Crew 4-Pack", priceUSD: 50, priceJMD: 7500 },
+            };
+
+            if (selectionData.selectedTickets) {
+              Object.entries(selectionData.selectedTickets).forEach(([tierId, qty]) => {
+                if (qty > 0) {
+                  const customTier = Array.isArray(activeEvt?.ticketTiers)
+                    ? activeEvt.ticketTiers.find((t: any, idx: number) => String(t.id || `tier-${idx}`) === tierId)
+                    : null;
+                  const tierMeta = customTier
+                    ? {
+                        name: String(customTier.name || "Admission Pass"),
+                        priceUSD: Number(customTier.priceUSD ?? customTier.price_usd ?? 15),
+                        priceJMD: Number(customTier.priceJMD ?? customTier.price_jmd ?? 2250),
+                      }
+                    : defaultTiers[tierId] || { name: "Event Admission Pass", priceUSD: 15, priceJMD: 2250 };
+                  const unitPrice = settings.currency === "JMD" ? tierMeta.priceJMD : tierMeta.priceUSD;
+
+                  newCartItems.push({
+                    menuItemId: tierId,
+                    name: tierMeta.name,
+                    pricingType: "fixed",
+                    basePrice: unitPrice,
+                    optionsTotalExtra: 0,
+                    selectedOptionsSummary: [],
+                    finalItemPrice: unitPrice,
+                    quantity: qty,
+                    imageUrl: activeEvt?.flyerUrl || "/images/island_festival_sunset.jpg",
+                  });
+                }
+              });
+            }
+
+            // 2. Populate cart with any selected food items
+            if (menu && selectionData.selectedFood) {
+              Object.entries(selectionData.selectedFood).forEach(([dishId, qty]) => {
+                if (qty > 0) {
+                  const dish = menu.find((m: MenuItem) => m.id === dishId);
+                  if (dish) {
+                    newCartItems.push({
+                      menuItemId: dish.id,
+                      name: dish.name,
+                      pricingType: dish.pricingType,
+                      basePrice: settings.currency === "JMD" ? dish.priceJMD : dish.priceUSD,
+                      optionsTotalExtra: 0,
+                      selectedOptionsSummary: [],
+                      finalItemPrice: settings.currency === "JMD" ? dish.priceJMD : dish.priceUSD,
+                      quantity: qty,
+                      imageUrl: dish.imageUrl,
+                    });
+                  }
+                }
+              });
+            }
+
+            if (newCartItems.length > 0) {
+              setCart(newCartItems);
+            }
+            setActiveStep("checkout");
+          }}
+          formatMoney={formatMoney}
+          initialSelectedTickets={selectedTicketQuantities}
+          initialSelectedFood={selectedFoodFromTickets}
+        />
+      )}
+
+      {/* Step 0.85: Dedicated Island Event Food & Drinks Screen */}
+      {activeStep === "menu" && (
+        <FoodAndDrinksScreen
+          eventDetails={allEvents && allEvents.length > 0 ? allEvents[selectedEventIndex] || eventDetails : eventDetails}
+          menu={allEvents && allEvents.length > 0 && allEvents[selectedEventIndex]?.menu ? allEvents[selectedEventIndex].menu! : menu}
+          settings={settings}
+          cart={cart}
+          onAddToCart={(item) => {
+            const basePrice = getItemBasePrice(item);
+            setCart((prev) => {
+              const existingIdx = prev.findIndex(
+                (ci) => ci.menuItemId === item.id && ci.pricingType === "fixed"
+              );
+              if (existingIdx >= 0) {
+                const next = [...prev];
+                next[existingIdx].quantity += 1;
+                return next;
+              }
+              return [
+                ...prev,
+                {
+                  menuItemId: item.id,
+                  name: item.name,
+                  pricingType: "fixed",
+                  basePrice,
+                  optionsTotalExtra: 0,
+                  selectedOptionsSummary: [],
+                  finalItemPrice: basePrice,
+                  quantity: 1,
+                  imageUrl: item.imageUrl,
+                },
+              ];
+            });
+            showToast(`Added ${item.name} to cart`);
+          }}
+          onUpdateCartQuantity={(index, delta) => updateQuantity(index, delta)}
+          onRemoveCartItem={(index) => updateQuantity(index, -cart[index].quantity)}
+          onAddCustomizedItem={(item, chosenChoices, instructions, quantity) => {
+            const calculated = calculateItemFinalPrice(
+              item,
+              settings.currency,
+              chosenChoices
+            );
+            const newCartItem: CartItem = {
+              menuItemId: item.id,
+              name: item.name,
+              pricingType: "customizable",
+              basePrice: calculated.basePrice,
+              optionsTotalExtra: calculated.optionsExtra,
+              selectedOptionsSummary: calculated.summaryList,
+              finalItemPrice: calculated.finalPrice,
+              quantity: quantity || 1,
+              imageUrl: item.imageUrl,
+              specialInstructions: instructions || undefined,
+              selectedChoices: { ...chosenChoices },
+            };
+            setCart((prev) => [...prev, newCartItem]);
+            showToast(`Added ${quantity || 1}x ${item.name} to cart`);
+          }}
+          onAddDonationItem={(item, amt) => {
+            const calculated = calculateItemFinalPrice(
+              item,
+              settings.currency,
+              {},
+              amt
+            );
+            const newCartItem: CartItem = {
+              menuItemId: item.id,
+              name: item.name,
+              pricingType: "custom_amount",
+              basePrice: calculated.basePrice,
+              optionsTotalExtra: 0,
+              selectedOptionsSummary: calculated.summaryList,
+              customDonationAmount: amt,
+              finalItemPrice: calculated.finalPrice,
+              quantity: 1,
+              imageUrl: item.imageUrl,
+            };
+            setCart((prev) => [...prev, newCartItem]);
+            showToast(`Added contribution of ${formatMoney(amt, settings.currency)}`);
+          }}
+          onBack={() => {
+            if (selectedTicketQuantities && Object.values(selectedTicketQuantities).some((q) => q > 0)) {
+              setActiveStep("ticket_selection");
+            } else {
+              setActiveStep("event_details");
+            }
+          }}
+          onProceedToCheckout={() => setActiveStep("checkout")}
+          formatMoney={formatMoney}
+        />
+      )}
+
+      {/* Step 0.9: Dedicated Authenticated Attendee Ticket Management Screen ("Your Tickets") */}
+      {activeStep === "orders_wallet" && (
+        <AttendeeTicketManagementScreen
+          orders={orders}
+          currentUser={attendeeProfile}
+          isLoggedIn={isLoggedIn}
+          onOpenAuthModal={() => onLogin && onLogin()}
+          onDiscoverEvents={() => {
+            setDiscoveryBottomNav("home");
+            setActiveStep("discovery");
+          }}
+          onSelectEventDetails={(eventId) => {
+            if (allEvents && allEvents.length > 0) {
+              const idx = allEvents.findIndex((e) => e.id === eventId);
+              if (idx >= 0 && onSelectEvent) {
+                onSelectEvent(idx);
+              }
+            }
+            setActiveStep("event_details");
+          }}
+          formatMoney={formatMoney}
+          allEvents={allEvents}
+        />
+      )}
+
+      {activeStep !== "discovery" && activeStep !== "event_details" && activeStep !== "ticket_selection" && activeStep !== "menu" && activeStep !== "orders_wallet" && (
+        <>
+      {/* Checkout and the ticket are focused screens: skip the browse chrome above them */}
+      {activeStep !== "checkout" && activeStep !== "ticket" && (
+      <>
+          {/* Cinematic Island Event Welcome & Onboarding Hero (Live the Moment) */}
+      {!isLoggedIn && (activeStep as string) !== "ticket" && (
+        <div
+          className="welcome-cinematic-hero"
+          style={{
+            position: "relative",
+            minHeight: "340px",
+            borderRadius: "20px",
+            marginBottom: "20px",
+            background: "linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.55) 50%, rgba(15, 23, 42, 0.25) 100%), url('/images/island_festival_sunset.jpg') center bottom / cover no-repeat",
+            color: "#ffffff",
+            padding: "36px 32px 28px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            boxShadow: "0 16px 36px -10px rgba(15, 23, 42, 0.35)",
+            overflow: "hidden",
+          }}
+          id="welcome-cinematic-hero-banner"
+        >
+          <div style={{ maxWidth: "660px", position: "relative", zIndex: 2 }}>
+            <div
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                background: "rgba(255, 255, 255, 0.16)",
+                backdropFilter: "blur(8px)",
+                padding: "4px 12px",
+                borderRadius: "9999px",
+                fontSize: "11px",
+                fontWeight: 700,
+                letterSpacing: "0.06em",
+                color: "#ffffff",
+                marginBottom: "12px",
+                border: "1px solid rgba(255, 255, 255, 0.25)",
+              }}
+            >
+              <span>🌴</span>
+              <span>ISLAND EVENT PLATFORM</span>
+            </div>
+
+            <h1
+              style={{
+                margin: "0 0 8px",
+                fontSize: "36px",
+                fontWeight: 900,
+                letterSpacing: "-0.03em",
+                color: "#ffffff",
+                lineHeight: 1.1,
+                textShadow: "0 2px 16px rgba(0,0,0,0.4)",
+              }}
+            >
+              Live the Moment.
+            </h1>
+
+            <p
+              style={{
+                margin: "0 0 20px",
+                fontSize: "14px",
+                color: "#e2e8f0",
+                lineHeight: 1.55,
+                maxWidth: "540px",
+                textShadow: "0 1px 8px rgba(0,0,0,0.3)",
+              }}
+            >
+              Curated culinary gatherings, authentic Caribbean music festivals, and streamlined digital ticketing across the United States.
+            </p>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap", marginBottom: "14px" }}>
+              <button
+                type="button"
+                onClick={onLogin}
+                id="btn-welcome-cta-register"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  padding: "11px 24px",
+                  borderRadius: "9999px",
+                  fontSize: "14px",
+                  fontWeight: 800,
+                  color: "#ffffff",
+                  background: "linear-gradient(135deg, #7c3aed 0%, #ec4899 50%, #f97316 100%)",
+                  border: "none",
+                  cursor: "pointer",
+                  boxShadow: "0 6px 20px -2px rgba(236, 72, 153, 0.45)",
+                  transition: "all 0.18s ease",
+                }}
+              >
+                <span>Get Started</span>
+                <ArrowRight size={16} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setDiscoveryBottomNav("home");
+                  setActiveStep("discovery");
+                }}
+                id="btn-welcome-explore-events"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "11px 20px",
+                  borderRadius: "9999px",
+                  fontSize: "13px",
+                  fontWeight: 700,
+                  color: "#ffffff",
+                  background: "rgba(255, 255, 255, 0.14)",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  cursor: "pointer",
+                }}
+              >
+                <Globe size={15} />
+                <span>Explore Events</span>
+              </button>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#cbd5e1" }}>
+              <span>Already have an Island Event account?</span>
+              <button
+                type="button"
+                onClick={onLogin}
+                id="btn-welcome-discreet-login"
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  color: "#ffffff",
+                  fontWeight: 700,
+                  textDecoration: "underline",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                }}
+              >
+                Sign In
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 10 Fish Fry Events Discovery Tour Strip */}
       {allEvents && allEvents.length > 0 && (
         <div
           className="fishfry-events-discovery-strip"
           style={{
-            marginBottom: "20px",
+            marginBottom: "16px",
             background: "#ffffff",
             border: "1px solid #e2e8f0",
             borderRadius: "14px",
-            padding: "16px 18px",
+            padding: "12px 16px",
             boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
           }}
           id="fishfry-events-tour-container"
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#D4AF37" }}>
+                <span style={{ fontSize: "11px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#D4AF37" }}>
                   🌴 Premier Cultural & Culinary Events Tour
                 </span>
                 <span style={{ fontSize: "11px", fontWeight: 700, background: "#EEF2FF", color: "#4338CA", padding: "1px 8px", borderRadius: "9999px", border: "1px solid #C7D2FE" }}>
                   {allEvents.length} Curated Experiences
                 </span>
+                <span style={{ fontSize: "11px", color: "#64748B" }}>
+                  &bull; Active: <strong>#{selectedEventIndex + 1} {allEvents[selectedEventIndex]?.title || "Current Event"}</strong>
+                </span>
               </div>
-              <h3 style={{ fontSize: "16px", fontWeight: 800, color: "#111827", margin: "3px 0 0" }}>
-                Select an Event to View Its Venue, Schedule & Exclusive Menu
-              </h3>
             </div>
-            <div style={{ fontSize: "12px", color: "#64748B" }}>
-              Showing: <strong>{selectedEventIndex + 1} of {allEvents.length}</strong> &bull; Click any card to switch
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "12px", color: "#64748B" }}>
+                Showing <strong>{selectedEventIndex + 1} of {allEvents.length}</strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsTourGridExpanded(!isTourGridExpanded)}
+                id="btn-toggle-event-tour-view"
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  padding: "4px 10px",
+                  borderRadius: "8px",
+                  border: isTourGridExpanded ? "1px solid #4F46E5" : "1px solid #CBD5E1",
+                  background: isTourGridExpanded ? "#4F46E5" : "#F8FAFC",
+                  color: isTourGridExpanded ? "#FFFFFF" : "#1E293B",
+                  cursor: "pointer",
+                  transition: "all 0.15s ease",
+                }}
+              >
+                {isTourGridExpanded ? "▲ Compact Carousel" : "▼ View All 10 Grid"}
+              </button>
             </div>
           </div>
 
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(215px, 1fr))",
-              gap: "10px",
-            }}
+            style={
+              isTourGridExpanded
+                ? {
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(215px, 1fr))",
+                    gap: "10px",
+                  }
+                : {
+                    display: "flex",
+                    gap: "10px",
+                    overflowX: "auto",
+                    paddingBottom: "6px",
+                    scrollSnapType: "x mandatory",
+                    WebkitOverflowScrolling: "touch",
+                  }
+            }
           >
             {allEvents.map((evt, idx) => {
               const isSelected = selectedEventIndex === idx;
@@ -609,25 +1079,29 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                     border: isSelected ? "2px solid #4F46E5" : "1px solid #E2E8F0",
                     background: isSelected ? "#EEF2FF" : "#ffffff",
                     borderRadius: "12px",
-                    padding: "10px 12px",
+                    padding: "9px 12px",
                     textAlign: "left",
                     cursor: "pointer",
                     transition: "all 0.15s ease",
-                    boxShadow: isSelected ? "0 4px 14px rgba(79, 70, 229, 0.16)" : "none",
+                    boxShadow: isSelected ? "0 4px 12px rgba(79, 70, 229, 0.14)" : "none",
+                    minWidth: isTourGridExpanded ? "auto" : "210px",
+                    maxWidth: isTourGridExpanded ? "none" : "235px",
+                    flexShrink: isTourGridExpanded ? 1 : 0,
+                    scrollSnapAlign: "start",
                   }}
                   id={`btn-select-event-${idx}`}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "4px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "3px" }}>
                     <span style={{ fontSize: "10px", fontWeight: 700, color: isSelected ? "#4338CA" : "#64748B", textTransform: "uppercase" }}>
                       #{idx + 1} · {evt.locationCategory || "United States"}
                     </span>
                     {isSelected && (
                       <span style={{ fontSize: "9px", fontWeight: 800, background: "#4F46E5", color: "#fff", padding: "1px 6px", borderRadius: "4px" }}>
-                        Selected
+                        Active
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#111827", lineHeight: "1.3", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "#111827", lineHeight: "1.3", marginBottom: "3px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {evt.title}
                   </div>
                   <div style={{ fontSize: "11px", color: "#475569" }}>
@@ -649,30 +1123,30 @@ export const GuestMenuCheckout: React.FC<Props> = ({
           style={{
             background: "linear-gradient(135deg, #FEF3C7 0%, #FFFBEB 100%)",
             border: "1px solid #FDE68A",
-            borderRadius: "14px",
-            padding: "14px 18px",
-            marginBottom: "20px",
+            borderRadius: "12px",
+            padding: "10px 16px",
+            marginBottom: "16px",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
             flexWrap: "wrap",
-            gap: "12px",
+            gap: "10px",
           }}
           id="visitor-view-only-banner"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", maxWidth: "760px" }}>
-            <span style={{ fontSize: "26px" }}>🌴</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", maxWidth: "760px" }}>
+            <span style={{ fontSize: "20px" }}>🌴</span>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <strong style={{ fontSize: "14px", color: "#92400E" }}>
+                <strong style={{ fontSize: "13px", color: "#92400E" }}>
                   Public Visitor Mode — Viewing Only
                 </strong>
-                <span style={{ fontSize: "10px", fontWeight: 700, background: "#FEF08A", color: "#854D0E", padding: "2px 8px", borderRadius: "9999px" }}>
-                  Not Logged In
+                <span style={{ fontSize: "10px", fontWeight: 700, background: "#FEF08A", color: "#854D0E", padding: "1px 7px", borderRadius: "9999px" }}>
+                  Guest Access
                 </span>
               </div>
-              <p style={{ fontSize: "12px", color: "#78350F", margin: "2px 0 0", lineHeight: "1.4" }}>
-                You have open access to view all curated events and explore their full culinary menus. To place food pre-orders, reserve portions, or claim digital QR tickets, please sign in.
+              <p style={{ fontSize: "12px", color: "#78350F", margin: "1px 0 0", lineHeight: "1.35" }}>
+                Open access to view all curated cultural events and complete culinary menus. Sign in to pre-order portions, claim tickets, and access your digital wallet.
               </p>
             </div>
           </div>
@@ -680,7 +1154,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
             <button
               type="button"
               className="primary-button"
-              style={{ background: "#4F46E5", borderColor: "#4338CA", fontSize: "12px", padding: "8px 16px", fontWeight: 700 }}
+              style={{ background: "#4F46E5", borderColor: "#4338CA", fontSize: "12px", padding: "7px 14px", fontWeight: 700 }}
               onClick={onLogin}
               id="btn-visitor-quick-login"
             >
@@ -788,7 +1262,53 @@ export const GuestMenuCheckout: React.FC<Props> = ({
       <div className="journey-stepper" aria-label="Customer order steps">
         <button
           type="button"
-          className={`step-pill ${activeStep === "menu" ? "active" : ""}`}
+          className="step-pill"
+          onClick={() => {
+            setDiscoveryBottomNav("home");
+            setActiveStep("discovery");
+          }}
+          id="step-discovery-home-btn"
+          style={{
+            background: "#0B132B",
+            color: "#ffffff",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            fontWeight: 700,
+          }}
+        >
+          <Compass size={14} />
+          <span>🌴 Discovery Home</span>
+        </button>
+        <button
+          type="button"
+          className="step-pill"
+          onClick={() => setActiveStep("event_details")}
+          id="step-event-details-btn"
+          style={{
+            background: "transparent",
+            color: "#1e293b",
+            fontWeight: 700,
+          }}
+        >
+          <Info size={14} />
+          <span>Event Details</span>
+        </button>
+        <button
+          type="button"
+          className="step-pill"
+          onClick={() => setActiveStep("ticket_selection")}
+          id="step-ticket-selection-btn"
+          style={{
+            background: "transparent",
+            color: "#1e293b",
+            fontWeight: 700,
+          }}
+        >
+          <Ticket size={14} />
+          <span>Ticket Selection</span>
+        </button>
+        <button
+          type="button"
+          className={`step-pill ${(activeStep as string) === "menu" ? "active" : ""}`}
           onClick={() => setActiveStep("menu")}
           id="step-menu-btn"
         >
@@ -797,7 +1317,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
         </button>
         <button
           type="button"
-          className={`step-pill ${activeStep === "checkout" ? "active" : ""}`}
+          className={`step-pill ${(activeStep as string) === "checkout" ? "active" : ""}`}
           onClick={() => cart.length > 0 && setActiveStep("checkout")}
           disabled={cart.length === 0}
           id="step-checkout-btn"
@@ -807,7 +1327,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
         </button>
         <button
           type="button"
-          className={`step-pill ${activeStep === "ticket" ? "active" : ""}`}
+          className={`step-pill ${(activeStep as string) === "ticket" ? "active" : ""}`}
           disabled={!issuedTicket}
           onClick={() => issuedTicket && setActiveStep("ticket")}
           id="step-ticket-btn"
@@ -817,7 +1337,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
         </button>
         <button
           type="button"
-          className={`step-pill ${activeStep === "orders_wallet" ? "active" : ""}`}
+          className={`step-pill ${(activeStep as string) === "orders_wallet" ? "active" : ""}`}
           onClick={() => setActiveStep("orders_wallet")}
           id="step-wallet-btn"
         >
@@ -844,11 +1364,86 @@ export const GuestMenuCheckout: React.FC<Props> = ({
         </button>
       </div>
 
+
+      </>
+      )}
+
       {toastMessage && <div className="mini-toast">{toastMessage}</div>}
 
       {/* STEP 1: DISCOVER & BROWSE MENU */}
-      {activeStep === "menu" && (
+      {(activeStep as string) === "menu" && (
         <section className="menu-experience-section">
+          <div style={{ marginBottom: "14px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+            <button
+              type="button"
+              onClick={() => {
+                setDiscoveryBottomNav("home");
+                setActiveStep("discovery");
+              }}
+              id="btn-back-to-discovery-home"
+              style={{
+                background: "#0B132B",
+                color: "#818CF8",
+                border: "1px solid rgba(129, 140, 248, 0.3)",
+                borderRadius: "9999px",
+                padding: "7px 16px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+              }}
+            >
+              <span>← Back to Discovery Home</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveStep("event_details")}
+              id="btn-goto-event-details-from-menu"
+              style={{
+                background: "rgba(99, 102, 241, 0.12)",
+                border: "1px solid rgba(99, 102, 241, 0.3)",
+                color: "#4338CA",
+                padding: "6px 14px",
+                borderRadius: "9999px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              <Info size={13} />
+              <span>Event Details</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveStep("ticket_selection")}
+              id="btn-return-to-tickets-from-menu"
+              style={{
+                background: "rgba(16, 185, 129, 0.12)",
+                border: "1px solid rgba(16, 185, 129, 0.3)",
+                color: "#059669",
+                padding: "6px 14px",
+                borderRadius: "9999px",
+                fontSize: "12px",
+                fontWeight: 700,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              <Ticket size={13} />
+              <span>← Return to Ticket Selection</span>
+            </button>
+            <span style={{ fontSize: "11px", color: "#64748B" }}>
+              Viewing culinary menu for: <strong>{eventDetails.title}</strong>
+            </span>
+          </div>
           {/* Public / Owner Preview Status Notice */}
           {visibility.mode === "owner_preview" && (
             <div className={`public-preview-banner ${eventDetails.status || "draft"}`} id="preview-mode-banner">
@@ -1167,29 +1762,29 @@ export const GuestMenuCheckout: React.FC<Props> = ({
 
       {/* STEP 2: CHECKOUT & PAYMENT */}
       {activeStep === "checkout" && (
-        <section className="checkout-experience-section">
+        <section className="checkout-experience-section att-checkout">
           <div className="checkout-split-layout">
             {/* Left: Frictionless Guest Details & Payment Method */}
             <div className="panel checkout-left-panel">
               <div className="panel-heading">
                 <div>
-                  <span className="section-kicker">STEP 2 OF 3</span>
-                  <h2>Guest Information & Direct Payment</h2>
-                  <p>No account required. Enter your details to receive your digital ticket voucher.</p>
+                  <span className="section-kicker">Step 2 of 3</span>
+                  <h2>Checkout</h2>
+                  <p>No account needed. We'll text your ticket to the number below.</p>
                 </div>
                 <button
                   type="button"
                   className="text-button"
                   onClick={() => setActiveStep("menu")}
                 >
-                  ← Edit Food Items
+                  Edit order
                 </button>
               </div>
 
               <form onSubmit={handleCheckoutSubmit} className="checkout-form">
                 <div className="form-group">
                   <label className="field-label" htmlFor="cust-name">
-                    Full Name (Reservation Name) *
+                    Full name
                   </label>
                   <div className="input-wrap">
                     <UserRound size={16} />
@@ -1206,7 +1801,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
 
                 <div className="form-group">
                   <label className="field-label" htmlFor="cust-phone">
-                    Mobile Phone / WhatsApp Number * (For Digital Ticket SMS)
+                    Phone or WhatsApp
                   </label>
                   <div className="input-wrap">
                     <Phone size={16} />
@@ -1220,13 +1815,13 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                     />
                   </div>
                   <span className="field-hint">
-                    Used to retrieve your order if you lose your link. Never shared with third parties.
+                    We send your ticket here, and you can use it to find your order again.
                   </span>
                 </div>
 
                 <div className="form-group">
                   <label className="field-label" htmlFor="cust-email">
-                    Email Address (Optional email receipt)
+                    Email (optional, for a receipt)
                   </label>
                   <div className="input-wrap">
                     <Mail size={16} />
@@ -1243,10 +1838,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                 <div className="payment-method-block">
                   <div className="payment-title">
                     <div>
-                      <label className="field-label">Select Payment Method *</label>
-                      <span>
-                        Currency: {settings.currency === "JMD" ? "Jamaican Dollar (JMD)" : "US Dollar (USD)"}
-                      </span>
+                      <label className="field-label">Payment method</label>
                     </div>
                     <span className="currency-badge">{settings.currency}</span>
                   </div>
@@ -1301,21 +1893,19 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                     <div className="transfer-instructions">
                       <div className="instructions-title">
                         <span>
-                          <ArrowDownLeft size={15} /> PAYMENT & VERIFICATION DETAILS
+                          <ArrowDownLeft size={15} /> How to pay
                         </span>
                         <span>{METHOD_INFO[selectedMethod].name}</span>
                       </div>
 
                       {selectedMethod === "cash" ? (
                         <div className="cash-instructions-card">
-                          <p>
-                            Pay cash in person at <strong>Kingston Youth Center</strong> or upon arrival at <strong>Food Collection Tent B</strong>.
-                          </p>
+                          <p>Pay cash when you collect your order.</p>
                           <div className="recipient-detail">
                             <pre>{settings.methods[selectedMethod].details}</pre>
                           </div>
                           <p className="instruction-footnote">
-                            <Info size={12} /> Your order will be placed as <strong>Awaiting Payment</strong>, reserving your meal portions. Staff will issue your official cash receipt and activate your voucher upon payment.
+                            <Info size={12} /> Your order is held as <strong>Awaiting payment</strong>. Staff mark it paid when you pay.
                           </p>
                         </div>
                       ) : selectedMethod === "card" ? (
@@ -1350,19 +1940,19 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                           <div className="payment-proof-inputs">
                             <div className="input-group">
                               <label htmlFor="checkout-ref-num">
-                                Bank / App Reference Number (Optional)
+                                Transfer reference (optional)
                               </label>
                               <input
                                 id="checkout-ref-num"
                                 type="text"
-                                placeholder="e.g. NCB-109284 or Zelle Conf #..."
+                                placeholder="e.g. NCB-109284"
                                 value={paymentReference}
                                 onChange={(e) => setPaymentReference(e.target.value)}
                               />
                             </div>
                             <div className="input-group">
                               <label htmlFor="checkout-sender-name">
-                                Name on Sender's Account (Optional)
+                                Name on the paying account (optional)
                               </label>
                               <input
                                 id="checkout-sender-name"
@@ -1375,7 +1965,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                           </div>
 
                           <p className="instruction-footnote">
-                            <Info size={12} /> <strong>Anti-fraud notice:</strong> Tickets remain in <strong>Payment Submitted / Under Verification</strong> until the organizer cross-checks the bank or payment account. Submitting a screenshot is not immediate verification.
+                            <Info size={12} /> Your ticket shows <strong>Pending Verification</strong> until the organiser verifies your transfer, then it turns <strong>Paid</strong>. EventBite never asks for or stores your payment-account password.
                           </p>
                         </div>
                       )}
@@ -1385,22 +1975,13 @@ export const GuestMenuCheckout: React.FC<Props> = ({
 
                 <button
                   type="submit"
-                  className="primary-button"
+                  className="primary-button att-place-order"
                   disabled={isSubmittingOrder || !customerName.trim() || !customerPhone.trim() || !selectedMethod}
                 >
                   {isSubmittingOrder
-                    ? "Submitting order…"
-                    : <>Submit Order & Issue Digital Ticket ({formatMoney(finalTotalAmount, settings.currency)}) <ArrowRight size={17} /></>}
+                    ? "Placing order…"
+                    : <>Place order · {formatMoney(finalTotalAmount, settings.currency)} <ArrowRight size={17} /></>}
                 </button>
-
-                <div className="form-safety-notice">
-                  <ShieldAlert size={14} />
-                  <span>
-                    <strong>Strict Verification Policy:</strong> In accordance with organizer safety rules,
-                    tickets remain <strong>Pending Verification</strong> until the organizer cross-references
-                    the bank/app statement.
-                  </span>
-                </div>
               </form>
             </div>
 
@@ -1409,8 +1990,8 @@ export const GuestMenuCheckout: React.FC<Props> = ({
               <div className="panel order-summary-panel">
                 <div className="panel-heading">
                   <div>
-                    <span className="section-kicker">ORDER BREAKDOWN</span>
-                    <h3>Items Selected</h3>
+                    <span className="section-kicker">Your order</span>
+                    <h3>Order summary</h3>
                   </div>
                   <span className="step-badge">{cartCount} items</span>
                 </div>
@@ -1474,17 +2055,17 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                 {/* Calculation Table */}
                 <div className="calculation-breakdown">
                   <div className="calc-row">
-                    <span>Items Subtotal:</span>
+                    <span>Subtotal</span>
                     <span>{formatMoney(cartSubtotal, settings.currency)}</span>
                   </div>
-                  {packagingFee > 0 && (
+                  {effectivePackagingFee > 0 && (
                     <div className="calc-row">
-                      <span>Packaging & Eco Fee:</span>
-                      <span>{formatMoney(packagingFee, settings.currency)}</span>
+                      <span>Packaging fee</span>
+                      <span>{formatMoney(effectivePackagingFee, settings.currency)}</span>
                     </div>
                   )}
                   <div className="calc-row total">
-                    <strong>Final Amount Due:</strong>
+                    <strong>Total</strong>
                     <strong className="final-total">
                       {formatMoney(finalTotalAmount, settings.currency)}
                     </strong>
@@ -1506,498 +2087,36 @@ export const GuestMenuCheckout: React.FC<Props> = ({
 
       {/* STEP 3: DIGITAL TICKET & NOTIFICATION CONFIRMATION */}
       {activeStep === "ticket" && issuedTicket && (
-        <section className="ticket-experience-section">
-          <div className="ticket-success-banner fishfry">
-            <CheckCircle2 size={24} />
-            <div>
-              <h2>Order Placed & Digital Ticket Generated!</h2>
-              <p>
-                Order #{issuedTicket.orderNumber} · Reference <code>{issuedTicket.ticketCode}</code>
-              </p>
-            </div>
-            <div className="banner-actions">
-              <button
-                type="button"
-                className="sms-preview-btn"
-                onClick={() => setShowSmsModal(true)}
-              >
-                <MessageSquare size={15} /> View SMS Voucher Preview
-              </button>
-            </div>
-          </div>
-
-          {/* Secure Direct Ticket URL Bar */}
-          <div className="secure-link-bar">
-            <div className="secure-link-left">
-              <Sparkles size={16} />
-              <div>
-                <strong>Bookmark or Share This Secure Ticket Link:</strong>
-                <p>Lost your SMS? You can always retrieve your order anytime using this permanent link.</p>
-              </div>
-            </div>
-            <div className="secure-link-action">
-              <input readOnly value={shareableTicketUrl} className="secure-link-input" />
-              <button
-                type="button"
-                className="preset-btn"
-                onClick={() => copyText(shareableTicketUrl, "Ticket link copied to clipboard!")}
-              >
-                <Copy size={13} /> Copy Ticket Link
-              </button>
-            </div>
-          </div>
-
-          {/* Consolidated Digital Ticket Pass Card */}
-          <div className="ticket-card-container">
-            <div className="digital-ticket-card">
-              {/* Ticket Header */}
-              <div className="ticket-card-header">
-                <div className="ticket-brand">
-                  <Ticket size={20} />
-                  <span>{eventDetails.title}</span>
-                </div>
-                <span
-                  className={`ticket-status-pill ${
-                    issuedTicket.status === "paid"
-                      ? "paid"
-                      : issuedTicket.status === "partially_paid"
-                      ? "partially-paid"
-                      : issuedTicket.status === "rejected"
-                      ? "rejected"
-                      : issuedTicket.status === "refunded"
-                      ? "refunded"
-                      : issuedTicket.status === "awaiting_payment"
-                      ? "awaiting-payment"
-                      : "pending"
-                  }`}
-                >
-                  {issuedTicket.status === "paid" ? (
-                    <>
-                      <CheckCircle2 size={13} /> VERIFIED PAID
-                    </>
-                  ) : issuedTicket.status === "partially_paid" ? (
-                    <>
-                      <DollarSign size={13} /> PARTIALLY PAID (
-                      {formatMoney(issuedTicket.amountPaid || 0, issuedTicket.currency)} /{" "}
-                      {formatMoney(issuedTicket.totalAmount, issuedTicket.currency)})
-                    </>
-                  ) : issuedTicket.status === "awaiting_payment" ? (
-                    <>
-                      <Banknote size={13} /> AWAITING PAYMENT (CASH / ADVANCE)
-                    </>
-                  ) : issuedTicket.status === "rejected" ? (
-                    <>
-                      <AlertTriangle size={13} /> NOT VERIFIED / REJECTED
-                    </>
-                  ) : issuedTicket.status === "refunded" ? (
-                    <>
-                      <RefreshCw size={13} /> REFUNDED
-                    </>
-                  ) : (
-                    <>
-                      <Clock3 size={13} /> PAYMENT SUBMITTED (UNDER VERIFICATION)
-                    </>
-                  )}
-                </span>
-              </div>
-
-              {/* Event Main Info */}
-              <div className="ticket-card-event">
-                <span className="ticket-label">OFFICIAL EVENT ADMISSION & FOOD VOUCHER</span>
-                <h3>{eventDetails.title}</h3>
-                <p className="ticket-venue">
-                  <MapPin size={14} /> {eventDetails.venueName} · {eventDetails.venueAddress}
-                </p>
-                <p className="ticket-date">
-                  <Clock3 size={14} /> {eventDetails.dateStr} ({eventDetails.timeStr})
-                </p>
-                <p className="ticket-pickup-hint">
-                  <strong>Pickup Instructions:</strong> {eventDetails.pickupInstructions}
-                </p>
-
-                {/* Status Guidance Banner */}
-                {issuedTicket.status === "paid" ? (
-                  <div className="ticket-status-guidance paid">
-                    <CheckCircle2 size={15} />
-                    <span>Payment verified in full. Present this QR code at Collection Tent B to receive your meal portions.</span>
-                  </div>
-                ) : issuedTicket.status === "partially_paid" ? (
-                  <div className="ticket-status-guidance partial">
-                    <DollarSign size={15} />
-                    <span>
-                      Deposit of {formatMoney(issuedTicket.amountPaid || 0, issuedTicket.currency)} verified.
-                      Remaining balance of{" "}
-                      <strong>
-                        {formatMoney(
-                          issuedTicket.totalAmount - (issuedTicket.amountPaid || 0),
-                          issuedTicket.currency
-                        )}
-                      </strong>{" "}
-                      payable in cash upon collection.
-                    </span>
-                  </div>
-                ) : issuedTicket.status === "awaiting_payment" ? (
-                  <div className="ticket-status-guidance awaiting">
-                    <Banknote size={15} />
-                    <span>
-                      Meals reserved! Please pay{" "}
-                      <strong>{formatMoney(issuedTicket.totalAmount, issuedTicket.currency)}</strong> in cash to authorized staff. Your digital ticket will be confirmed on the spot.
-                    </span>
-                  </div>
-                ) : issuedTicket.status === "rejected" ? (
-                  <div className="ticket-status-guidance rejected">
-                    <AlertTriangle size={15} />
-                    <span>
-                      Payment could not be verified on the bank statement.{" "}
-                      {issuedTicket.rejectionReason ? `Reason: ${issuedTicket.rejectionReason}. ` : ""}
-                      Please contact {eventDetails.organizerPhone} or WhatsApp the organizer.
-                    </span>
-                  </div>
-                ) : (
-                  <div className="ticket-status-guidance pending">
-                    <Clock3 size={15} />
-                    <span>
-                      Your transfer report has been logged. The organizer is cross-referencing the account statement.
-                      {issuedTicket.paymentReference ? ` Ref: ${issuedTicket.paymentReference}.` : ""}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* QR Code and Code Row */}
-              <div className="ticket-qr-section">
-                <div className="qr-box">
-                  <svg
-                    viewBox="0 0 120 120"
-                    width="120"
-                    height="120"
-                    className="qr-svg"
-                    role="img"
-                    aria-label="Ticket QR code"
-                  >
-                    <rect width="120" height="120" fill="white" />
-                    {/* Top-Left Finder */}
-                    <rect x="10" y="10" width="30" height="30" fill="#1e2820" />
-                    <rect x="15" y="15" width="20" height="20" fill="white" />
-                    <rect x="20" y="20" width="10" height="10" fill="#1e2820" />
-                    {/* Top-Right Finder */}
-                    <rect x="80" y="10" width="30" height="30" fill="#1e2820" />
-                    <rect x="85" y="15" width="20" height="20" fill="white" />
-                    <rect x="90" y="20" width="10" height="10" fill="#1e2820" />
-                    {/* Bottom-Left Finder */}
-                    <rect x="10" y="80" width="30" height="30" fill="#1e2820" />
-                    <rect x="15" y="85" width="20" height="20" fill="white" />
-                    <rect x="20" y="90" width="10" height="10" fill="#1e2820" />
-                    {/* Timing & Data Patterns */}
-                    <rect x="45" y="15" width="5" height="5" fill="#1e2820" />
-                    <rect x="55" y="15" width="5" height="5" fill="#1e2820" />
-                    <rect x="65" y="15" width="5" height="5" fill="#1e2820" />
-                    <rect x="45" y="25" width="15" height="5" fill="#1e2820" />
-                    <rect x="45" y="35" width="5" height="10" fill="#1e2820" />
-                    <rect x="60" y="40" width="10" height="10" fill="#1e2820" />
-                    <rect x="25" y="45" width="10" height="10" fill="#1e2820" />
-                    <rect x="45" y="55" width="30" height="10" fill="#1e2820" />
-                    <rect x="80" y="50" width="10" height="15" fill="#1e2820" />
-                    <rect x="95" y="60" width="15" height="5" fill="#1e2820" />
-                    <rect x="50" y="75" width="20" height="10" fill="#1e2820" />
-                    <rect x="80" y="80" width="10" height="10" fill="#1e2820" />
-                    <rect x="95" y="95" width="15" height="15" fill="#1e2820" />
-                    <rect x="45" y="95" width="10" height="15" fill="#1e2820" />
-                    <rect x="65" y="95" width="10" height="10" fill="#1e2820" />
-                  </svg>
-                </div>
-
-                <div className="ticket-meta-block">
-                  <div>
-                    <span className="ticket-label">TICKET NUMBER</span>
-                    <strong className="ticket-code-display">{issuedTicket.ticketCode}</strong>
-                  </div>
-                  <div>
-                    <span className="ticket-label">CUSTOMER NAME</span>
-                    <p>{issuedTicket.customerName}</p>
-                  </div>
-                  <div>
-                    <span className="ticket-label">CUSTOMER PHONE</span>
-                    <p>{maskedPhone(issuedTicket.customerPhone)}</p>
-                  </div>
-                  <div>
-                    <span className="ticket-label">ORDER ID</span>
-                    <p>{issuedTicket.orderNumber}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Perforation Divider */}
-              <div className="ticket-perforation">
-                <span className="perforation-notch left" />
-                <div className="perforation-line" />
-                <span className="perforation-notch right" />
-              </div>
-
-              {/* Itemized Meal & Beverage Vouchers */}
-              <div className="ticket-items-section">
-                <span className="ticket-label">CONSOLIDATED MEAL & DRINK ITEMS (EVENT DAY REDEMPTION)</span>
-                <div className="ticket-vouchers-list">
-                  {issuedTicket.items.map((it, idx) => (
-                    <div className="ticket-voucher-item" key={idx}>
-                      <div className="voucher-left">
-                        <Utensils size={15} />
-                        <div>
-                          <strong>
-                            {it.quantity}× {it.name}
-                          </strong>
-                          {it.selectedOptionsSummary && it.selectedOptionsSummary.length > 0 && (
-                            <div className="selected-options-list">
-                              {it.selectedOptionsSummary.map((opt, oIdx) => (
-                                <span className="addon-tag" key={oIdx}>
-                                  {opt}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          {it.specialInstructions && (
-                            <span className="instructions-snippet">
-                              Note: {it.specialInstructions}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <span
-                        className={`handover-badge ${
-                          it.handoverStatus === "collected" ? "collected" : "pending"
-                        }`}
-                      >
-                        {it.handoverStatus === "collected" ? (
-                          <>
-                            <Check size={12} /> Handed Over
-                          </>
-                        ) : (
-                          "Ready for Collection"
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Calculation Summary in Ticket */}
-              <div className="ticket-fee-summary-row">
-                <span>Subtotal: {formatMoney(issuedTicket.subtotal, issuedTicket.currency)}</span>
-                {issuedTicket.packagingFee > 0 && (
-                  <span>Fee: {formatMoney(issuedTicket.packagingFee, issuedTicket.currency)}</span>
-                )}
-                <strong>
-                  Total: {formatMoney(issuedTicket.totalAmount, issuedTicket.currency)}
-                </strong>
-              </div>
-
-              {/* Ticket Footer Action */}
-              <div className="ticket-card-footer">
-                <div className="ticket-price-paid">
-                  <span>Payment Method:</span>
-                  <strong>{METHOD_INFO[issuedTicket.method].name}</strong>
-                </div>
-                <div className="ticket-actions-group">
-                  <button
-                    type="button"
-                    className="ticket-action-btn"
-                    onClick={() => copyText(shareableTicketUrl, "Ticket link copied!")}
-                  >
-                    <Share2 size={14} /> Share Link
-                  </button>
-                  <button
-                    type="button"
-                    className="ticket-action-btn primary"
-                    onClick={() => window.print()}
-                  >
-                    <Download size={14} /> Print / Save Voucher
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* MULTI-CHANNEL RECEIPT ALTERNATIVES & NOTIFICATION TRACKING */}
-          <div className="ticket-receipt-delivery-card">
-            <div className="receipt-delivery-header">
-              <div className="receipt-header-left">
-                <span className="notif-badge-pill">MULTI-CHANNEL RECEIPT ALTERNATIVES</span>
-                <h3>Email Receipt & Shareable Ticket Access</h3>
-                <p>
-                  Cannot receive SMS due to roaming or carrier delays? Access your digital ticket
-                  through email or our permanent shareable web link.
-                </p>
-              </div>
-              <div className="decoupled-guarantee-pill">
-                <ShieldAlert size={14} />
-                <span>SMS Failure Never Reverses Payment</span>
-              </div>
-            </div>
-
-            <div className="receipt-options-grid">
-              {/* Option A: Send Email Receipt */}
-              <div className="receipt-option-box">
-                <div className="receipt-option-title">
-                  <Mail size={16} className="email-icon" />
-                  <strong>Send Official Email Receipt</strong>
-                </div>
-                <p>
-                  Receive an itemized proof-of-order and pickup voucher sent directly to your inbox.
-                </p>
-                <div className="receipt-input-action">
-                  <input
-                    type="email"
-                    placeholder="Enter your email address..."
-                    value={receiptEmailInput}
-                    onChange={(e) => setReceiptEmailInput(e.target.value)}
-                    className="receipt-email-input"
-                  />
-                  <button
-                    type="button"
-                    className="send-receipt-btn"
-                    disabled={!receiptEmailInput.includes("@")}
-                    onClick={() => {
-                      if (onSendCustomNotification && issuedTicket) {
-                        onSendCustomNotification({
-                          orderId: issuedTicket.id,
-                          orderNumber: issuedTicket.orderNumber,
-                          customerName: issuedTicket.customerName,
-                          recipient: receiptEmailInput.trim(),
-                          channel: "email",
-                          trigger: "payment_verified",
-                          title: `Official Receipt — ${eventDetails.title}`,
-                          message: `Island Events: Official Receipt for Order ${issuedTicket.orderNumber}. Amount: ${formatMoney(issuedTicket.totalAmount, issuedTicket.currency)}. Present Ticket ${issuedTicket.ticketCode} on ${eventDetails.dateStr} at ${eventDetails.venueName}.`,
-                          status: "delivered",
-                          provider: "Island Mail",
-                          deliveredAt: new Date().toISOString(),
-                        });
-                        setReceiptEmailSent(true);
-                        copyText(
-                          receiptEmailInput,
-                          `Official receipt sent to ${receiptEmailInput.trim()}!`
-                        );
-                      }
-                    }}
-                  >
-                    <Mail size={13} /> {receiptEmailSent ? "Receipt Sent!" : "Send Receipt"}
-                  </button>
-                </div>
-                {receiptEmailSent && (
-                  <span className="receipt-sent-note">
-                    <CheckCircle2 size={12} /> Email receipt dispatched via secure gateway.
-                  </span>
-                )}
-              </div>
-
-              {/* Option B: Shareable Ticket Link & WhatsApp */}
-              <div className="receipt-option-box">
-                <div className="receipt-option-title">
-                  <Share2 size={16} className="share-icon" />
-                  <strong>Permanent Shareable Web Link</strong>
-                </div>
-                <p>
-                  Bookmark or share this live ticket URL. Works on any browser without needing SMS.
-                </p>
-                <div className="receipt-input-action">
-                  <input
-                    readOnly
-                    value={shareableTicketUrl}
-                    className="receipt-email-input read-only"
-                  />
-                  <button
-                    type="button"
-                    className="copy-ticket-url-btn"
-                    onClick={() => copyText(shareableTicketUrl, "Ticket URL copied to clipboard!")}
-                  >
-                    <Copy size={13} /> Copy Link
-                  </button>
-                </div>
-                <div className="whatsapp-ticket-share">
-                  <a
-                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                      `Here is my official ticket and food voucher for ${eventDetails.title}: ${shareableTicketUrl}`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="whatsapp-ticket-link"
-                  >
-                    <MessageCircle size={14} /> Send Voucher via WhatsApp
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Notification Delivery Timeline for this order */}
-            {(() => {
-              const orderNotifs = notificationLogs.filter(
-                (n) => n.orderId === issuedTicket.id || n.orderNumber === issuedTicket.orderNumber
-              );
-              if (orderNotifs.length === 0) return null;
-
-              return (
-                <div className="ticket-notifications-timeline">
-                  <div className="timeline-heading">
-                    <MessageSquare size={15} />
-                    <strong>Order Notification & SMS Delivery Logs ({orderNotifs.length})</strong>
-                  </div>
-                  <div className="ticket-notif-items">
-                    {orderNotifs.map((n) => (
-                      <div className="ticket-notif-entry" key={n.id}>
-                        <div className="entry-left">
-                          <span className={`channel-badge ${n.channel}`}>
-                            {n.channel.toUpperCase()}
-                          </span>
-                          <div>
-                            <strong>{n.title}</strong>
-                            <p>{n.message}</p>
-                            <span className="entry-time">
-                              {new Date(n.sentAt || n.createdAt || Date.now()).toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })}{" "}
-                              · Gateway: {n.provider}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="entry-right">
-                          <span className={`delivery-status-tag ${n.status}`}>
-                            {n.status === "delivered" && <CheckCircle2 size={12} />}
-                            {n.status === "failed" && <AlertTriangle size={12} />}
-                            {n.status === "queued" && <Clock3 size={12} />}
-                            {n.status === "sent" && <Clock3 size={12} />}
-                            {n.status.toUpperCase()}
-                          </span>
-                          {n.status === "failed" && (
-                            <span className="notif-fail-guarantee">
-                              Payment Valid & Preserved
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className="ticket-back-row">
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => {
-                setActiveStep("menu");
-                setIssuedTicket(null);
-              }}
-            >
-              ← Order More Meals
-            </button>
-          </div>
-        </section>
+        <IslandEventDigitalTicketScreen
+          ticket={issuedTicket}
+          eventDetails={allEvents?.find((e) => e.id === issuedTicket.eventId) || eventDetails}
+          onReturnToTickets={() => {
+            setActiveStep(isLoggedIn ? "orders_wallet" : "discovery");
+          }}
+          onViewEventDetails={(eventId) => {
+            if (eventId && allEvents && onSelectEvent) {
+              const idx = allEvents.findIndex((e) => e.id === eventId);
+              if (idx >= 0) onSelectEvent(idx);
+            }
+            setActiveStep("event_details");
+          }}
+          onTransferTicket={(transferredTicket, recName, recEmail) => {
+            transferredTicket.isTransferred = true;
+            transferredTicket.transferredTo = `${recName} (${recEmail})`;
+            transferredTicket.transferredAt = new Date().toISOString();
+            transferredTicket.notes = `Transferred to ${recName} on ${new Date().toLocaleDateString()}`;
+            setIssuedTicket({ ...transferredTicket });
+            showToast(`Ticket #${transferredTicket.ticketCode} transferred to ${recName}`);
+          }}
+          formatMoney={formatMoney}
+          isLoggedIn={isLoggedIn}
+          currentUser={attendeeProfile}
+        />
       )}
 
+
       {/* STEP 4: MY DIGITAL TICKETS & ORDER HISTORY (ATTENDEE WALLET) */}
-      {activeStep === "orders_wallet" && (
+      {(activeStep as string) === "orders_wallet" && (
         <section className="attendee-wallet-section" id="attendee-wallet-view">
           <div className="attendee-wallet-header">
             <div className="wallet-title-wrap">
@@ -2298,24 +2417,37 @@ export const GuestMenuCheckout: React.FC<Props> = ({
 
       {/* STEP 6: ATTENDEE ACCOUNT SETTINGS & PRIVACY (9) */}
       {activeStep === "settings" && (
-        <section className="attendee-settings-section">
-          <AccountSettingsView
-            accountType="attendee"
-            currentUser={{
-              name: attendeeProfile?.name || "Marcus Bailey",
-              email: attendeeProfile?.email || "marcus.bailey@islandevents.example",
-              phone: attendeeProfile?.phone || "+1 (876) 555-4321",
-              roleLabel: "Attendee",
-            }}
-            orders={orders}
-            attendeeProfile={attendeeProfile}
-            formatMoney={formatMoney}
-            onNavigateToTab={(tab) => {
-              if (tab === "orders" || tab === "tickets") setActiveStep("orders_wallet");
-              else if (tab === "menu") setActiveStep("menu");
-            }}
-          />
-        </section>
+        <IslandEventUserProfileScreen
+          currentUser={attendeeProfile}
+          attendeeProfile={attendeeProfile}
+          orders={orders}
+          allEvents={allEvents}
+          notifications={_notificationLogs}
+          formatMoney={formatMoney}
+          onNavigateToTickets={() => {
+            setDiscoveryBottomNav("tickets");
+            setActiveStep("orders_wallet");
+          }}
+          onNavigateToFood={() => {
+            setDiscoveryBottomNav("food");
+            setActiveStep("menu");
+          }}
+          onNavigateToEventDetails={(eventId) => {
+            const idx = allEvents?.findIndex((e) => e.id === eventId);
+            if (idx !== undefined && idx >= 0 && onSelectEvent) onSelectEvent(idx);
+            setActiveStep("event_details");
+          }}
+          onBackToDiscovery={() => {
+            setDiscoveryBottomNav("home");
+            setActiveStep("discovery");
+          }}
+          onLogout={onLogout || (() => {})}
+          onProfileUpdated={(updated) => {
+            if (attendeeProfile) {
+              Object.assign(attendeeProfile, updated);
+            }
+          }}
+        />
       )}
 
       {/* DISPUTE SUBMISSION MODAL */}
@@ -2728,6 +2860,8 @@ export const GuestMenuCheckout: React.FC<Props> = ({
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
 
       {/* Full Resolution Image Lightbox for Promotional Flyer */}

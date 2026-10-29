@@ -23,13 +23,38 @@ class CatalogController extends Controller
         protected OrderPlacementService $orderService
     ) {}
 
-    public function events(): AnonymousResourceCollection
+    public function events(Request $request): AnonymousResourceCollection
     {
-        $events = TenantContext::withoutTenantScope(fn () => Event::query()
-            ->where('status', 'published')
-            ->with(['menuItems' => fn ($query) => $query->where('is_active', true)->orderBy('sort_order')])
-            ->orderBy('advance_order_deadline')
-            ->get());
+        $search = trim((string) $request->query('search', ''));
+        $category = trim((string) $request->query('category', ''));
+
+        $events = TenantContext::withoutTenantScope(function () use ($search, $category) {
+            $query = Event::query()
+                ->where('status', 'published')
+                ->with(['menuItems' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')]);
+
+            if ($search !== '') {
+                $like = '%' . strtolower($search) . '%';
+                $query->where(function ($q) use ($like) {
+                    $q->whereRaw('LOWER(title) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(COALESCE(category, \'\')) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(COALESCE(venue_name, \'\')) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(COALESCE(venue_address, \'\')) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(COALESCE(organizer_name, \'\')) LIKE ?', [$like])
+                        ->orWhereRaw('LOWER(COALESCE(description, \'\')) LIKE ?', [$like]);
+                });
+            }
+
+            if ($category !== '' && strtolower($category) !== 'all' && strtolower($category) !== 'all events') {
+                $catLike = '%' . strtolower($category) . '%';
+                $query->where(function ($q) use ($catLike) {
+                    $q->whereRaw('LOWER(COALESCE(category, \'\')) LIKE ?', [$catLike])
+                        ->orWhereRaw('LOWER(title) LIKE ?', [$catLike]);
+                });
+            }
+
+            return $query->orderBy('advance_order_deadline')->get();
+        });
 
         return EventResource::collection($events);
     }

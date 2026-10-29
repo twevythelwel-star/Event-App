@@ -178,14 +178,24 @@ class EventWorkerService
     }
 
     /**
-     * Scan ticket and record entry while strictly protecting payment/PII from Ticket Checker.
+     * Scan ticket and record entry while strictly enforcing:
+     * 1. Ticket authenticity
+     * 2. Event association
+     * 3. Validity period
+     * 4. Ticket status
+     * 5. Duplicate-redemption prevention
+     * 6. Authorized redemption
+     * And recording successful redemptions and rejection reasons in the audit trail.
      */
     public static function scanAndValidateTicket(
         User $worker,
-        Order $order
+        Order $order,
+        ?string $expectedEventId = null
     ): array {
+        // 6. Authorized redemption check
+        $scanningEventId = $expectedEventId ?? $order->event_id;
         $assignment = EventWorkerAssignment::where('user_id', $worker->id)
-            ->where(fn($q) => $q->where('event_id', $order->event_id)->orWhereNull('event_id'))
+            ->where(fn($q) => $q->where('event_id', $scanningEventId)->orWhereNull('event_id'))
             ->where('is_active', true)
             ->first();
 
@@ -194,19 +204,71 @@ class EventWorkerService
             ($assignment && $assignment->canPerform('scan_qr_tickets'));
 
         if (!$canScan) {
+            AuditLogService::log(
+                action: 'ticket_redemption_rejected',
+                targetEntity: 'orders',
+                targetId: (string) $order->id,
+                details: "Unauthorized redemption attempt by worker {$worker->email} on ticket {$order->ticket_code}.",
+                actor: $worker
+            );
             throw new SecurityException("Unauthorized: Worker {$worker->email} is not permitted to scan tickets.");
         }
 
-        // Check if ticket is valid
-        $isTicketValid = in_array($order->status, ['paid', 'confirmed']);
+        // 1. Authenticity check: Genuine ticket code & order number must exist
+        $isAuthentic = !empty($order->ticket_code) && !empty($order->order_number);
+        $rejectionReason = null;
 
-        // Check if already admitted
+        // 2. Event association check
+        $isEventMatched = true;
+        if ($expectedEventId !== null && (string) $order->event_id !== (string) $expectedEventId) {
+            $isEventMatched = false;
+            $rejectionReason = "Event association mismatch: Ticket belongs to event {$order->event_id}, not {$expectedEventId}.";
+        }
+
+        // 3. Validity period check
+        $isPeriodValid = true;
+        if ($order->status === 'expired' || ($order->closed_at && $order->all_handed_over)) {
+            $isPeriodValid = false;
+            $rejectionReason = $rejectionReason ?? "Ticket validity window has expired or event is closed.";
+        }
+
+        // 4. Ticket status check (must be paid or confirmed)
+        $isStatusValid = in_array($order->status, ['paid', 'confirmed'], true);
+        if (!$isStatusValid) {
+            $rejectionReason = $rejectionReason ?? "Invalid ticket status: {$order->status}. Must be confirmed or paid.";
+        }
+
+        // 5. Duplicate-redemption prevention check
         $isAlreadyAdmitted = !empty($order->checked_in_at);
+        if ($isAlreadyAdmitted) {
+            $checkInStr = $order->checked_in_at instanceof \DateTimeInterface
+                ? $order->checked_in_at->format('Y-m-d H:i:s')
+                : (string) $order->checked_in_at;
+            $rejectionReason = $rejectionReason ?? "Duplicate redemption prevented: Ticket was already admitted at {$checkInStr}.";
+        }
 
-        if ($isTicketValid && !$isAlreadyAdmitted) {
+        $isSuccess = $isAuthentic && $isEventMatched && $isPeriodValid && $isStatusValid && !$isAlreadyAdmitted;
+
+        if ($isSuccess) {
             $order->checked_in_at = now();
             $order->checked_in_by = $worker->id;
             $order->save();
+
+            AuditLogService::log(
+                action: 'ticket_redemption_verified',
+                targetEntity: 'orders',
+                targetId: (string) $order->id,
+                details: "Ticket {$order->ticket_code} (Order #{$order->order_number}) successfully verified and redeemed by {$worker->email}.",
+                actor: $worker
+            );
+        } else {
+            AuditLogService::log(
+                action: 'ticket_redemption_rejected',
+                targetEntity: 'orders',
+                targetId: (string) $order->id,
+                details: "Ticket {$order->ticket_code} redemption rejected by {$worker->email}. Reason: {$rejectionReason}",
+                actor: $worker
+            );
         }
 
         // Prepare raw order array
@@ -231,9 +293,10 @@ class EventWorkerService
         }
 
         return [
-            'success' => $isTicketValid && !$isAlreadyAdmitted,
+            'success' => $isSuccess,
             'already_admitted' => $isAlreadyAdmitted,
-            'valid' => $isTicketValid,
+            'valid' => $isSuccess,
+            'rejection_reason' => $rejectionReason,
             'ticket' => $sanitizedData,
         ];
     }

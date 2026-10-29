@@ -795,6 +795,7 @@ class TestRunner
         $this->suite19MandatoryAuthenticationAndAccountAccess();
         $this->suite20CompleteRoleBasedAccessControlAndNavigation();
         $this->suite21UnitedStatesOnlyConfigurationAndPaymentIntegrity();
+        $this->suite22TicketRedemptionAndServerSideQrVerification();
 
         echo "\n--------------------------------------------------------\n";
         echo "SUMMARY: {$this->passed} Passed, {$this->failed} Failed\n";
@@ -3248,6 +3249,225 @@ class TestRunner
         // Still strictly US on initial launch
         $this->assert(\App\Services\MarketConfigurationService::isCountryAllowed('CA') === false, "Modularly registered Canada remains inactive for initial US launch");
         $this->assert(\App\Services\MarketConfigurationService::isCountryAllowed('US') === true, "United States remains active");
+    }
+
+    private function suite22TicketRedemptionAndServerSideQrVerification(): void
+    {
+        echo "\nSuite 22: Ticket Redemption, Server-Side QR Verification & Audit Trail Enforcement\n";
+
+        // Setup test event and authorized ticket checker worker
+        $testEvent = new \App\Models\Event([
+            'id' => 'evt-qr-festival-2026',
+            'organizer_id' => 'org-island-events',
+            'title' => 'Ocho Rios Reggae & Sound Festival 2026',
+            'status' => 'published',
+        ]);
+        $testEvent->save();
+
+        $authorizedChecker = new \App\Models\User([
+            'id' => 7701,
+            'name' => 'Checker Marcia',
+            'email' => 'marcia.checker@islandevents.example',
+            'status' => 'active',
+            'role' => 'attendee',
+        ]);
+        $authorizedChecker->save();
+
+        $checkerAssignment = new \App\Models\EventWorkerAssignment([
+            'id' => 'asg-marcia-checker',
+            'organizer_id' => 'org-island-events',
+            'event_id' => 'evt-qr-festival-2026',
+            'user_id' => 7701,
+            'worker_role' => \App\Enums\EventWorkerRole::TICKET_CHECKER,
+            'station_assignment' => 'all',
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+        $checkerAssignment->save();
+
+        $unauthorizedWorker = new \App\Models\User([
+            'id' => 7702,
+            'name' => 'Kitchen Jerome',
+            'email' => 'jerome.cook@islandevents.example',
+            'status' => 'active',
+            'role' => 'attendee',
+        ]);
+        $unauthorizedWorker->save();
+
+        $cookAssignment = new \App\Models\EventWorkerAssignment([
+            'id' => 'asg-jerome-cook',
+            'organizer_id' => 'org-island-events',
+            'event_id' => 'evt-qr-festival-2026',
+            'user_id' => 7702,
+            'worker_role' => \App\Enums\EventWorkerRole::FOOD_STATION_WORKER,
+            'station_assignment' => 'mains',
+            'is_active' => true,
+            'status' => 'active',
+        ]);
+        $cookAssignment->save();
+
+        // 1. Genuine Paid Ticket Order
+        $validPaidOrder = new \App\Models\Order([
+            'id' => 'ord-valid-qr-001',
+            'organizer_id' => 'org-island-events',
+            'event_id' => 'evt-qr-festival-2026',
+            'user_id' => 201,
+            'ticket_code' => 'TKT-2026-VIP01',
+            'order_number' => 'ORD-2026-77881',
+            'customer_name' => 'Akeem Campbell',
+            'email' => 'akeem.c@islandevents.example',
+            'status' => 'paid',
+            'secure_ticket_token' => 'tok_sha256_cryptographic_seed_9981',
+            'total_amount' => 150.00,
+            'currency' => 'USD',
+        ]);
+        $validPaidOrder->save();
+
+        // Check authorized redemption & successful first scan
+        $firstScan = \App\Services\EventWorkerService::scanAndValidateTicket(
+            $authorizedChecker,
+            $validPaidOrder,
+            'evt-qr-festival-2026'
+        );
+
+        $this->assert($firstScan['success'] === true, "Authorized Ticket Checker successfully validates authentic ticket");
+        $this->assert($firstScan['valid'] === true, "First ticket redemption succeeds");
+        $this->assert($firstScan['already_admitted'] === false, "Ticket was not previously admitted");
+        $this->assert(!empty($validPaidOrder->checked_in_at), "Redemption sets checked_in_at timestamp on order");
+        $this->assert($validPaidOrder->checked_in_by === 7701, "Redemption records authorized checker user ID");
+
+        // 2. Duplicate Redemption Prevention
+        $secondScan = \App\Services\EventWorkerService::scanAndValidateTicket(
+            $authorizedChecker,
+            $validPaidOrder,
+            'evt-qr-festival-2026'
+        );
+
+        $this->assert($secondScan['success'] === false, "Duplicate redemption attempt is strictly blocked");
+        $this->assert($secondScan['already_admitted'] === true, "already_admitted reports true on second scan");
+        $this->assert(str_contains($secondScan['rejection_reason'], 'Duplicate redemption prevented'), "Rejection reason explicitly identifies duplicate redemption");
+
+        // 3. Event Association Enforcement
+        $otherEventOrder = new \App\Models\Order([
+            'id' => 'ord-other-event-002',
+            'organizer_id' => 'org-island-events',
+            'event_id' => 'evt-unrelated-beach-bash',
+            'user_id' => 201,
+            'ticket_code' => 'TKT-2026-OTHER',
+            'order_number' => 'ORD-2026-99001',
+            'customer_name' => 'Akeem Campbell',
+            'status' => 'paid',
+            'secure_ticket_token' => 'tok_sha256_other_event',
+            'total_amount' => 50.00,
+            'currency' => 'USD',
+        ]);
+        $otherEventOrder->save();
+
+        $crossEventScan = \App\Services\EventWorkerService::scanAndValidateTicket(
+            $authorizedChecker,
+            $otherEventOrder,
+            'evt-qr-festival-2026' // Scanning at Festival 2026
+        );
+
+        $this->assert($crossEventScan['success'] === false, "Ticket from different event is rejected");
+        $this->assert(str_contains($crossEventScan['rejection_reason'], 'Event association mismatch'), "Rejection reason explicitly states event association mismatch");
+
+        // 4. Ticket Status Check (Unpaid, Cancelled, Refunded)
+        $unpaidOrder = new \App\Models\Order([
+            'id' => 'ord-unpaid-003',
+            'organizer_id' => 'org-island-events',
+            'event_id' => 'evt-qr-festival-2026',
+            'user_id' => 201,
+            'ticket_code' => 'TKT-2026-UNPAID',
+            'order_number' => 'ORD-2026-99002',
+            'status' => 'awaiting_payment',
+            'total_amount' => 75.00,
+            'currency' => 'USD',
+        ]);
+        $unpaidOrder->save();
+
+        $unpaidScan = \App\Services\EventWorkerService::scanAndValidateTicket(
+            $authorizedChecker,
+            $unpaidOrder,
+            'evt-qr-festival-2026'
+        );
+
+        $this->assert($unpaidScan['success'] === false, "Unpaid awaiting-payment ticket is rejected at gate");
+        $this->assert(str_contains($unpaidScan['rejection_reason'], 'Invalid ticket status: awaiting_payment'), "Rejection reason specifies awaiting_payment status");
+
+        $refundedOrder = new \App\Models\Order([
+            'id' => 'ord-refunded-004',
+            'organizer_id' => 'org-island-events',
+            'event_id' => 'evt-qr-festival-2026',
+            'user_id' => 201,
+            'ticket_code' => 'TKT-2026-REFUND',
+            'order_number' => 'ORD-2026-99003',
+            'status' => 'refunded',
+            'total_amount' => 100.00,
+            'currency' => 'USD',
+        ]);
+        $refundedOrder->save();
+
+        $refundedScan = \App\Services\EventWorkerService::scanAndValidateTicket(
+            $authorizedChecker,
+            $refundedOrder,
+            'evt-qr-festival-2026'
+        );
+
+        $this->assert($refundedScan['success'] === false, "Refunded ticket is rejected at gate");
+        $this->assert(str_contains($refundedScan['rejection_reason'], 'Invalid ticket status: refunded'), "Rejection reason specifies refunded status");
+
+        // 5. Validity Period Check
+        $expiredOrder = new \App\Models\Order([
+            'id' => 'ord-expired-005',
+            'organizer_id' => 'org-island-events',
+            'event_id' => 'evt-qr-festival-2026',
+            'user_id' => 201,
+            'ticket_code' => 'TKT-2026-EXPIRED',
+            'order_number' => 'ORD-2026-99004',
+            'status' => 'expired',
+            'total_amount' => 60.00,
+            'currency' => 'USD',
+        ]);
+        $expiredOrder->save();
+
+        $expiredScan = \App\Services\EventWorkerService::scanAndValidateTicket(
+            $authorizedChecker,
+            $expiredOrder,
+            'evt-qr-festival-2026'
+        );
+
+        $this->assert($expiredScan['success'] === false, "Expired ticket is rejected");
+        $this->assert(str_contains($expiredScan['rejection_reason'], 'expired'), "Rejection reason explicitly identifies expiration");
+
+        // 6. Authorized Redemption Security Check (Unauthorized Worker Blocked)
+        $unauthorizedBlocked = false;
+        try {
+            \App\Services\EventWorkerService::scanAndValidateTicket(
+                $unauthorizedWorker, // Food station worker without scan_qr_tickets
+                $validPaidOrder,
+                'evt-qr-festival-2026'
+            );
+        } catch (\SecurityException $e) {
+            $unauthorizedBlocked = true;
+        }
+        $this->assert($unauthorizedBlocked, "Worker without scan_qr_tickets permission is blocked with SecurityException");
+
+        // 7. Immutable Audit Trail Entries Recorded
+        $auditLogs = \App\Models\SecurityAuditLog::where('target_entity', 'orders')->get();
+        $hasVerifiedLog = false;
+        $hasRejectedLog = false;
+        foreach ($auditLogs as $log) {
+            if ($log->action === 'ticket_redemption_verified') {
+                $hasVerifiedLog = true;
+            }
+            if ($log->action === 'ticket_redemption_rejected') {
+                $hasRejectedLog = true;
+            }
+        }
+
+        $this->assert($hasVerifiedLog, "Successful ticket redemption is logged in immutable security audit trail");
+        $this->assert($hasRejectedLog, "Rejected ticket redemption is logged with reason in security audit trail");
     }
 }
 

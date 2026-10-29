@@ -21,8 +21,12 @@ class EventResource extends JsonResource
             'slug' => $this->slug,
             'title' => $this->title,
             'tagline' => $this->tagline ?? '',
+            'category' => $this->category ?? 'Seafood & Fish Fry',
             'dateStr' => $this->date_str,
+            'eventDateIso' => $this->event_date_iso,
             'timeStr' => $this->time_str,
+            'startTime' => $this->start_time,
+            'endTime' => $this->end_time,
             'timezone' => $timezone,
             'venueName' => $this->venue_name,
             'venueAddress' => $this->venue_address,
@@ -40,6 +44,8 @@ class EventResource extends JsonResource
             'pickupInstructions' => $this->pickup_instructions ?? '',
             'packagingFeeUSD' => (float) $this->packaging_fee_usd,
             'packagingFeeJMD' => (int) $this->packaging_fee_jmd,
+            'supportsFoodOrdering' => (bool) ($this->supports_food_ordering ?? true),
+            'ticketTiers' => $this->ticket_tiers ?? [],
             // Uploaded flyers go through the media route, which enforces who may see unpublished events
             'flyerUrl' => MediaStorageService::isStoredPath($this->flyer_path)
                 ? "/api/v1/media/events/{$this->id}/flyer?v=" . substr(sha1($this->flyer_path), 0, 10)

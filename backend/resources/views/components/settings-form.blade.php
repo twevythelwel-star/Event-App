@@ -1,13 +1,13 @@
 @props(['title', 'description', 'action', 'method' => 'POST', 'scopeTag' => null])
 
-<div class="card settings-card">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+<div class="eb-panel card settings-card" style="margin-bottom: var(--space-6);">
+    <div class="eb-card-header card-header">
         <div>
-            <h2 class="card-title">{{ $title }}</h2>
-            <p class="card-subtitle">{{ $description }}</p>
+            <h2 class="eb-card-title card-title">{{ $title }}</h2>
+            <p class="eb-card-subtitle card-subtitle">{{ $description }}</p>
         </div>
         @if($scopeTag)
-            <span class="badge badge-scope">
+            <span class="eb-badge eb-badge-purple badge badge-scope">
                 {{ $scopeTag }}
             </span>
         @endif
@@ -21,8 +21,8 @@
 
         {{ $slot }}
 
-        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
-            <button type="submit" class="btn btn-primary">
+        <div style="margin-top: var(--space-6); display: flex; justify-content: flex-end; gap: var(--space-3);">
+            <button type="submit" class="eb-btn eb-btn-primary btn btn-primary" data-prevent-double-submit="true">
                 Save Changes
             </button>
         </div>

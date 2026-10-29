@@ -30,7 +30,8 @@ class EventManagementService
 
     public function __construct(
         protected MediaStorageService $media
-    ) {}
+    ) {
+    }
 
     /**
      * Organizer ids whose events this user may edit, or null for every organizer (System Administrators).
@@ -56,7 +57,7 @@ class EventManagementService
     public function eventsQuery(User $user): Builder
     {
         $query = Event::withoutGlobalScopes()
-            ->with(['menuItems' => fn ($q) => $q->withoutGlobalScopes()->whereNull('deleted_at')->where('is_active', true)->orderBy('sort_order')])
+            ->with(['menuItems' => fn($q) => $q->withoutGlobalScopes()->whereNull('deleted_at')->where('is_active', true)->orderBy('sort_order')])
             ->orderBy('advance_order_deadline');
 
         $organizers = $this->manageableOrganizerIds($user);
@@ -75,15 +76,100 @@ class EventManagementService
     }
 
     /**
+     * Create a new event (defaults to draft status unless explicitly published after passing readiness checks).
+     *
+     * @param array<string, mixed> $data Validated event fields (snake_case)
+     */
+    public function createEvent(User $user, array $data): Event
+    {
+        $organizers = $this->manageableOrganizerIds($user);
+        if ($organizers !== null && $organizers->isEmpty()) {
+            throw new SecurityException('You are not authorized to create events.');
+        }
+
+        $requestedOrgId = $data['organizer_id'] ?? null;
+        if ($organizers !== null) {
+            if ($requestedOrgId !== null && !$organizers->contains($requestedOrgId)) {
+                throw new SecurityException('You may only create events for organizers you manage.');
+            }
+            $organizerId = $requestedOrgId ?: (string) $organizers->first();
+        } else {
+            $organizerId = $requestedOrgId ?: 'org-kingston-youth';
+        }
+
+        $timezone = $data['timezone'] ?? 'America/Jamaica';
+        $this->assertValidTimezone($timezone);
+
+        if (isset($data['ticket_tiers']) && is_array($data['ticket_tiers'])) {
+            $this->assertTicketTiersValid($data['ticket_tiers']);
+        }
+
+        $deadlineRaw = $data['advance_order_deadline'] ?? now($timezone)->addDays(14)->toIso8601String();
+        $deadlineUtc = Carbon::parse($deadlineRaw, $timezone)->utc();
+
+        $title = trim((string) ($data['title'] ?? 'Untitled Island Event'));
+        $slug = !empty($data['slug'])
+            ? $data['slug']
+            : Str::slug($title) . '-' . strtolower(Str::random(6));
+
+        $event = Event::withoutGlobalScopes()->create([
+            'id' => 'evt-' . strtolower(Str::random(10)),
+            'organizer_id' => $organizerId,
+            'slug' => $slug,
+            'title' => $title,
+            'tagline' => $data['tagline'] ?? '',
+            'category' => $data['category'] ?? 'Seafood & Fish Fry',
+            'date_str' => $data['date_str'] ?? '',
+            'event_date_iso' => $data['event_date_iso'] ?? null,
+            'time_str' => $data['time_str'] ?? '',
+            'start_time' => $data['start_time'] ?? null,
+            'end_time' => $data['end_time'] ?? null,
+            'timezone' => $timezone,
+            'venue_name' => $data['venue_name'] ?? '',
+            'venue_address' => $data['venue_address'] ?? '',
+            'coordinates' => $data['coordinates'] ?? '',
+            'description' => $data['description'] ?? '',
+            'currency' => $data['currency'] ?? 'JMD',
+            'organizer_name' => $data['organizer_name'] ?? $user->name,
+            'organizer_phone' => $data['organizer_phone'] ?? ($user->phone ?? '+1 (876) 555-0100'),
+            'organizer_whatsapp' => $data['organizer_whatsapp'] ?? '',
+            'organizer_email' => $data['organizer_email'] ?? $user->email,
+            'advance_order_deadline' => $deadlineUtc,
+            'is_ordering_open' => false,
+            'status' => 'draft',
+            'pickup_instructions' => $data['pickup_instructions'] ?? '',
+            'packaging_fee_usd' => $data['packaging_fee_usd'] ?? 0,
+            'packaging_fee_jmd' => $data['packaging_fee_jmd'] ?? 0,
+            'supports_food_ordering' => $data['supports_food_ordering'] ?? true,
+            'ticket_tiers' => $data['ticket_tiers'] ?? [],
+            'is_flyer_public' => false,
+        ]);
+
+        $this->audit($user, 'event_created', 'events', $event->id, "Draft event '{$event->title}' created via Event Wizard.");
+
+        return $this->findEvent($user, $event->id);
+    }
+
+    /**
      * @param array<string, mixed> $data Validated event fields (snake_case)
      */
     public function updateEvent(User $user, string $eventId, array $data): Event
     {
         $event = $this->findEvent($user, $eventId);
 
+        if (array_key_exists('timezone', $data) && $data['timezone'] !== null) {
+            $this->assertValidTimezone((string) $data['timezone']);
+        }
+
+        if (array_key_exists('ticket_tiers', $data) && is_array($data['ticket_tiers'])) {
+            $this->assertTicketTiersValid($data['ticket_tiers']);
+        }
+
+        $effectiveTimezone = $data['timezone'] ?? $event->timezone ?: 'America/Jamaica';
+
         if (array_key_exists('advance_order_deadline', $data)) {
             // Deadlines are entered in the event's own timezone
-            $data['advance_order_deadline'] = Carbon::parse($data['advance_order_deadline'], $event->timezone ?: 'America/Jamaica')->utc();
+            $data['advance_order_deadline'] = Carbon::parse($data['advance_order_deadline'], $effectiveTimezone)->utc();
         }
         if (($data['is_ordering_open'] ?? false) === true && $event->status !== 'published') {
             throw new \InvalidArgumentException('Publish the event before opening it for orders.');
@@ -110,8 +196,11 @@ class EventManagementService
             if (trim((string) $event->title) === '' || trim((string) $event->date_str) === '' || trim((string) $event->venue_name) === '') {
                 throw new \InvalidArgumentException('Cannot publish: the event needs a title, date and venue.');
             }
-            if ($event->menuItems->isEmpty()) {
+            if ($event->menuItems->isEmpty() && empty($event->ticket_tiers)) {
                 throw new \InvalidArgumentException('Cannot publish: add at least one menu item first.');
+            }
+            if (is_array($event->ticket_tiers) && !empty($event->ticket_tiers)) {
+                $this->assertTicketTiersValid($event->ticket_tiers);
             }
         }
 
@@ -253,6 +342,53 @@ class EventManagementService
         }
 
         return $item;
+    }
+
+    private function assertValidTimezone(string $timezone): void
+    {
+        if (!in_array($timezone, timezone_identifiers_list(), true)) {
+            throw new \InvalidArgumentException("Invalid IANA timezone '{$timezone}'.");
+        }
+    }
+
+    /**
+     * Validates ticket tiers pricing, stock availability, and sale windows on the server.
+     *
+     * @param array<int, array<string, mixed>> $tiers
+     */
+    private function assertTicketTiersValid(array $tiers): void
+    {
+        foreach ($tiers as $idx => $tier) {
+            if (!is_array($tier)) {
+                throw new \InvalidArgumentException("Ticket tier #{$idx} must be an object.");
+            }
+            $name = trim((string) ($tier['name'] ?? ''));
+            if (strlen($name) < 2) {
+                throw new \InvalidArgumentException('Each ticket tier requires a name of at least 2 characters.');
+            }
+            $priceUsd = (float) ($tier['priceUSD'] ?? $tier['price_usd'] ?? -1);
+            $priceJmd = (float) ($tier['priceJMD'] ?? $tier['price_jmd'] ?? -1);
+            if ($priceUsd < 0 || $priceJmd < 0) {
+                throw new \InvalidArgumentException("Ticket tier '{$name}' prices cannot be negative.");
+            }
+            $stock = (int) ($tier['availableStock'] ?? $tier['available_stock'] ?? 0);
+            if ($stock <= 0) {
+                throw new \InvalidArgumentException("Ticket tier '{$name}' must have a positive quantity limit.");
+            }
+            $maxPerCustomer = (int) ($tier['maxPerCustomer'] ?? $tier['max_per_customer'] ?? 1);
+            if ($maxPerCustomer < 1 || $maxPerCustomer > $stock) {
+                throw new \InvalidArgumentException("Ticket tier '{$name}' maxPerCustomer must be between 1 and availableStock ({$stock}).");
+            }
+            $saleStart = $tier['saleStartIso'] ?? $tier['sale_start_iso'] ?? null;
+            $saleEnd = $tier['saleEndIso'] ?? $tier['sale_end_iso'] ?? null;
+            if (!empty($saleStart) && !empty($saleEnd)) {
+                $startTs = strtotime((string) $saleStart);
+                $endTs = strtotime((string) $saleEnd);
+                if ($startTs === false || $endTs === false || $startTs > $endTs) {
+                    throw new \InvalidArgumentException("Ticket tier '{$name}' sale start date must be on or before sale end date.");
+                }
+            }
+        }
     }
 
     /**

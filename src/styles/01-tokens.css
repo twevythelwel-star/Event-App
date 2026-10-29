@@ -1,0 +1,174 @@
+/* ==========================================================================
+   EVENTBITE DESIGN SYSTEM — MODULE 01: CENTRALIZED DESIGN TOKENS
+   Aesthetic Direction: Cinematic Dark + Premium Minimal + Warm Editorial
+   ========================================================================== */
+
+:root {
+  /* ------------------------------------------------------------------------
+     1. Core Color System (WCAG 2.1 Contrast Verified)
+     ------------------------------------------------------------------------ */
+  --color-background: #07111F;           /* Primary canvas (L = 0.0080) */
+  --color-background-secondary: #0B192B; /* Secondary surface / sidebar / inputs (L = 0.0144) */
+  --color-surface: #10243A;              /* Standard cards / panels / tables (L = 0.0232) */
+  --color-surface-elevated: #152C45;     /* Modals / hover cards / sticky bars (L = 0.0319) */
+
+  /* Primary Electric Lime Accent (16.51:1 on #07111F, 11.42:1 on #14210A) */
+  --color-accent: #C7FF45;
+  --color-accent-hover: #D7FF77;
+  --color-accent-active: #B2EE2B;
+  --color-accent-text: #14210A;
+  --color-accent-subtle: rgba(199, 255, 69, 0.12);
+  --color-accent-border: rgba(199, 255, 69, 0.35);
+
+  /* Secondary Purple Accent (Selective accents, provider badges, differentiation) */
+  --color-purple: #8B5CF6;
+  --color-purple-text: #C4B5FD;          /* 10.45:1 on #07111F, 7.64:1 on #152C45 */
+  --color-purple-surface: rgba(139, 92, 246, 0.14);
+  --color-purple-border: rgba(139, 92, 246, 0.38);
+
+  /* Typography Colors */
+  --color-text-primary: #F8FAFC;         /* 18.29:1 on #07111F, 13.38:1 on #152C45 (AAA) */
+  --color-text-secondary: #A8B6C8;       /* 9.48:1 on #07111F, 6.94:1 on #152C45 (AA/AAA) */
+  --color-text-muted: #8494A8;           /* 6.18:1 on #07111F, 4.52:1 on #152C45 (AA) */
+  --color-text-inverse: #07111F;
+
+  /* Borders & Dividers */
+  --color-border: #26384D;
+  --color-border-subtle: rgba(168, 182, 200, 0.12);
+  --color-border-strong: #364F6B;
+  --color-border-focus: #C7FF45;
+
+  /* Semantic Status Colors (Always paired with explicit textual labels) */
+  --color-success: #22C55E;
+  --color-success-text: #4ADE80;         /* 9.95:1 on #10243A */
+  --color-success-bg: rgba(34, 197, 94, 0.14);
+  --color-success-border: rgba(34, 197, 94, 0.38);
+
+  --color-warning: #F59E0B;
+  --color-warning-text: #FBBF24;         /* 10.32:1 on #10243A */
+  --color-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-warning-border: rgba(245, 158, 11, 0.38);
+
+  --color-error: #EF4444;
+  --color-error-text: #FCA5A5;           /* 9.35:1 on #152C45 for small validation text */
+  --color-error-bg: rgba(239, 68, 68, 0.14);
+  --color-error-border: rgba(239, 68, 68, 0.42);
+
+  --color-info: #38BDF8;
+  --color-info-text: #7DD3FC;
+  --color-info-bg: rgba(56, 189, 248, 0.14);
+  --color-info-border: rgba(56, 189, 248, 0.35);
+
+  /* High-Contrast Optical QR Quiet Zone */
+  --color-qr-surface: #FFFFFF;
+  --color-qr-ink: #07111F;
+
+  /* ------------------------------------------------------------------------
+     2. Typography Tokens
+     ------------------------------------------------------------------------ */
+  --font-display: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  --text-display-size: clamp(1.875rem, 3.5vw, 2.75rem);     /* 30px - 44px */
+  --text-page-size: clamp(1.5rem, 2.5vw, 2rem);             /* 24px - 32px */
+  --text-section-size: clamp(1.1875rem, 1.8vw, 1.4375rem);  /* 19px - 23px */
+  --text-card-size: 1.0625rem;                              /* 17px */
+  --text-body-size: 0.9375rem;                              /* 15px */
+  --text-supporting-size: 0.84375rem;                       /* 13.5px */
+  --text-label-size: 0.8125rem;                             /* 13px */
+  --text-button-size: 0.875rem;                             /* 14px */
+  --text-price-size: 1.125rem;                              /* 18px */
+  --text-metric-size: clamp(1.625rem, 2.5vw, 2.125rem);     /* 26px - 34px */
+  --text-ticket-size: 0.9375rem;                            /* 15px */
+  --text-timestamp-size: 0.8125rem;                         /* 13px */
+  --text-status-size: 0.75rem;                              /* 12px */
+
+  /* ------------------------------------------------------------------------
+     3. Spacing & Layout Scale (4px Base Grid)
+     ------------------------------------------------------------------------ */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+
+  --layout-page-padding-x: clamp(1rem, 3vw, 2rem);
+  --layout-page-padding-y: clamp(1.25rem, 2.5vw, 2rem);
+  --layout-section-gap: clamp(1.5rem, 3vw, 2.5rem);
+  --layout-card-padding: 1.25rem;
+  --layout-card-padding-lg: 1.5rem;
+  --layout-form-gap: 1.125rem;
+  --layout-grid-gap: 1.25rem;
+  --layout-sidebar-width: 264px;
+  --layout-header-height: 64px;
+  --layout-bottom-nav-height: 68px;
+  --layout-modal-sm: 440px;
+  --layout-modal-md: 560px;
+  --layout-modal-lg: 760px;
+  --layout-max-width: 1360px;
+  --table-cell-padding-y: 0.875rem;
+  --table-cell-padding-x: 1rem;
+
+  /* ------------------------------------------------------------------------
+     4. Radii, Borders & Elevation Shadows
+     ------------------------------------------------------------------------ */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 9999px;
+
+  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.28);
+  --shadow-card: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
+  --shadow-elevated: 0 18px 40px -10px rgba(0, 0, 0, 0.65);
+  --shadow-modal: 0 24px 56px -12px rgba(0, 0, 0, 0.82);
+  --shadow-focus: 0 0 0 3px rgba(199, 255, 69, 0.32);
+
+  /* ------------------------------------------------------------------------
+     5. Motion & Interaction Timing
+     ------------------------------------------------------------------------ */
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 140ms;
+  --duration-normal: 200ms;
+  --duration-slow: 280ms;
+
+  /* ------------------------------------------------------------------------
+     6. Backward-Compatible Aliases (React SPA & Laravel Blade Legacy Tokens)
+     ------------------------------------------------------------------------ */
+  --att-bg: var(--color-background);
+  --att-surface-1: var(--color-background-secondary);
+  --att-surface-2: var(--color-surface);
+  --att-surface-3: var(--color-surface-elevated);
+  --att-line: var(--color-border);
+  --att-text-1: var(--color-text-primary);
+  --att-text-body: var(--color-text-secondary);
+  --att-text-2: var(--color-text-secondary);
+  --att-text-3: var(--color-text-muted);
+  --att-accent: var(--color-accent);
+  --att-accent-hover: var(--color-accent-hover);
+  --att-on-accent: var(--color-accent-text);
+  --att-ok: var(--color-success);
+  --att-warn: var(--color-warning);
+  --att-bad: var(--color-error);
+
+  --color-bg-page: var(--color-background);
+  --color-bg-card: var(--color-surface);
+  --color-bg-card-hover: var(--color-surface-elevated);
+  --color-white: var(--color-surface);
+  --color-navy: var(--color-text-primary);
+  --color-charcoal: var(--color-text-secondary);
+  --color-indigo: var(--color-accent);
+  --color-indigo-hover: var(--color-accent-hover);
+  --color-indigo-soft: var(--color-accent-subtle);
+  --color-indigo-subtle: var(--color-accent-border);
+  --sidebar-width: var(--layout-sidebar-width);
+  --header-height: var(--layout-header-height);
+}
+

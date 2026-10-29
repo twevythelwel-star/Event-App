@@ -30,6 +30,7 @@ class StoreOrderRequest extends FormRequest
             'items.*.special_instructions' => ['nullable', 'string', 'max:300'],
             'packaging_fee' => ['nullable', 'numeric', 'min:0'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'idempotency_key' => ['nullable', 'string', 'max:120'],
         ];
     }
 }

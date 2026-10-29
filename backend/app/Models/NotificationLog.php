@@ -37,6 +37,7 @@ class NotificationLog extends Model
         'queued_at',
         'sent_at',
         'delivered_at',
+        'read_at',
     ];
 
     protected $casts = [
@@ -45,6 +46,7 @@ class NotificationLog extends Model
         'queued_at' => 'datetime',
         'sent_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'read_at' => 'datetime',
     ];
 
     /**

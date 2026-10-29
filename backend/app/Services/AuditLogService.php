@@ -19,9 +19,13 @@ class AuditLogService
         ?User $actor = null,
         bool $isPiiAccess = false,
         ?string $ipAddress = null,
-        ?string $userAgent = null
+        ?string $userAgent = null,
+        string $outcome = 'success',
+        ?string $organizerId = null,
+        ?string $eventId = null
     ): SecurityAuditLog {
         $actorRole = $actor ? $actor->getActiveRole()->value : 'system';
+        $request = app()->runningInConsole() ? null : request();
 
         return SecurityAuditLog::create([
             'id' => (string) Str::uuid(),
@@ -30,10 +34,13 @@ class AuditLogService
             'action' => $action,
             'target_entity' => $targetEntity,
             'target_id' => $targetId,
-            'ip_address' => $ipAddress ?? '127.0.0.1',
-            'user_agent' => $userAgent ?? 'App/Backend',
+            'ip_address' => $ipAddress ?? $request?->ip() ?? '127.0.0.1',
+            'user_agent' => $userAgent ?? Str::limit((string) ($request?->userAgent() ?? 'App/Backend'), 255, ''),
             'details' => $details,
             'is_pii_access' => $isPiiAccess,
+            'outcome' => $outcome,
+            'organizer_id' => $organizerId,
+            'event_id' => $eventId,
             'created_at' => now(),
         ]);
     }

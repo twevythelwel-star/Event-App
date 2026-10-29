@@ -26,6 +26,9 @@ class SecurityAuditLog extends Model
         'user_agent',
         'details',
         'is_pii_access',
+        'outcome',
+        'organizer_id',
+        'event_id',
         'created_at',
     ];
 
@@ -33,6 +36,20 @@ class SecurityAuditLog extends Model
         'is_pii_access' => 'boolean',
         'created_at' => 'datetime',
     ];
+
+    /**
+     * Audit history is append-only: no application code path may rewrite or remove a record.
+     */
+    protected static function booted(): void
+    {
+        static::updating(function () {
+            throw new \LogicException('Security audit records are immutable.');
+        });
+
+        static::deleting(function () {
+            throw new \LogicException('Security audit records cannot be deleted.');
+        });
+    }
 
     public function user(): BelongsTo
     {

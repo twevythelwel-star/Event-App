@@ -1,6 +1,10 @@
 export type Currency = "USD" | "JMD";
 export type BusinessLocation = "JM" | "US";
 export type MethodId = "bank" | "zelle" | "cashapp" | "cash" | "card";
+export type PaymentMethodKey = MethodId;
+export type OrderStatus = PaymentStatus;
+export type OrderFulfillmentStatus = FulfillmentStatus;
+export type MenuPricingType = PricingType;
 
 // 7 Payment Statuses per specification
 export type PaymentStatus =
@@ -32,7 +36,17 @@ export type Settings = {
   methods: Record<MethodId, PaymentMethodSettings>;
 };
 
-export type MenuCategory = "Mains" | "Sides & Extras" | "Sides" | "Beverages" | "Community Donations";
+export type MenuCategory =
+  | "Food"
+  | "Drinks"
+  | "Desserts"
+  | "Sides"
+  | "Snacks"
+  | "Mains"
+  | "Sides & Extras"
+  | "Beverages"
+  | "Community Donations"
+  | (string & {});
 
 export type PricingType = "fixed" | "customizable" | "custom_amount";
 
@@ -152,7 +166,16 @@ export type TicketOrder = {
   notes?: string;
   secureTicketToken: string;
   eventId?: string;
+  isReversed?: boolean;
   eventTitle?: string;
+  venueName?: string;
+  venueLocation?: string;
+  eventDateStr?: string;
+  eventTimeStr?: string;
+  eventThumbnail?: string;
+  isTransferred?: boolean;
+  transferredTo?: string;
+  transferredAt?: string;
   // Present on orders loaded for host/staff operations: what the signed-in user may do with this order
   capabilities?: { verify: boolean; collect: boolean; scan: boolean; cash: boolean; reverse: boolean; refund: boolean };
   refunds?: { amount: number; reason: string; refundedAt: string; refundedBy: string }[];
@@ -182,9 +205,39 @@ export type CashPaymentRecord = {
   reversalAuthorizedBy?: string;
   createdAt?: string;
   eventId?: string;
+  isReversed?: boolean;
 };
 
 export type EventStatus = "draft" | "published" | "unpublished" | "cancelled";
+
+export type EventWizardStepId =
+  | "basic_details"
+  | "date_location"
+  | "tickets"
+  | "food"
+  | "review";
+
+export type EventTicketTierCategory =
+  | "General"
+  | "VIP"
+  | "Early Bird"
+  | "Group"
+  | "Community";
+
+export type EventTicketTier = {
+  id: string;
+  name: string;
+  category: EventTicketTierCategory;
+  priceUSD: number;
+  priceJMD: number;
+  availableStock: number;
+  maxPerCustomer: number;
+  saleStartIso?: string;
+  saleEndIso?: string;
+  description?: string;
+  benefits?: string[];
+  isActive?: boolean;
+};
 
 export type EventDetails = {
   id?: string;
@@ -210,6 +263,12 @@ export type EventDetails = {
   pickupInstructions: string;
   packagingFeeUSD: number;
   packagingFeeJMD: number;
+  category?: string;
+  eventDateIso?: string;
+  startTime?: string;
+  endTime?: string;
+  supportsFoodOrdering?: boolean;
+  ticketTiers?: EventTicketTier[];
   flyerUrl?: string;
   flyerStoragePath?: string;
   flyerMimeType?: string;
@@ -503,6 +562,10 @@ export type AttendeeProfile = {
   name: string;
   phone: string;
   email: string;
+  avatarUrl?: string;
+  bio?: string;
+  membershipStatus?: string;
+  memberSince?: string;
   savedEvents: SavedEvent[];
   notificationPreferences: AttendeeNotificationPreferences;
   isGuest: boolean;

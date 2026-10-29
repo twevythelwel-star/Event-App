@@ -173,7 +173,7 @@ class SupportRequestsApiTest extends TestCase
         $admin = $this->user('admin');
         $dispute = $this->openDispute();
 
-        AdminPermission::create(['user_id' => $admin->id, 'scope' => 'assigned_events', 'can_support_orders' => true, 'assigned_organizer_ids' => ['org-hellshire-fishers']]);
+        AdminPermission::updateOrCreate(['user_id' => $admin->id], ['scope' => 'assigned_events', 'can_support_orders' => true, 'assigned_organizer_ids' => ['org-hellshire-fishers']]);
         $this->actingAs($admin->fresh())->getJson('/api/v1/admin/disputes')->assertOk()->assertJsonCount(0, 'data');
         $this->actingAs($admin->fresh())->postJson("/api/v1/admin/disputes/{$dispute->id}/status", ['status' => 'under_review'])->assertNotFound();
 

@@ -19,6 +19,13 @@ export type SessionUser = {
   name: string;
   email: string;
   phone: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
+  marketing_preferences?: Record<string, boolean> | null;
+  membership_status?: string;
+  member_since?: string;
+  orders_count?: number;
+  unread_notifications_count?: number;
   roles: string[];
   activeRole: string;
   organizerIds: string[];
@@ -32,6 +39,7 @@ export type OrderRequest = {
   currency: Currency;
   payment_reference?: string;
   sender_name?: string;
+  idempotency_key?: string;
   items: {
     menu_item_id: string;
     quantity: number;
@@ -88,12 +96,94 @@ export async function signIn(email: string, password: string): Promise<SessionUs
   return body.user;
 }
 
+export async function registerAccount(data: {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  password: string;
+  password_confirmation: string;
+  agree_terms: boolean;
+}): Promise<SessionUser> {
+  await fetchSession();
+  const body = await request<{ user: SessionUser }>("/register", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+  return body.user;
+}
+
 export async function signOut(): Promise<void> {
   await request("/session", { method: "DELETE" });
 }
 
-export async function fetchEvents(): Promise<FishFryEventItem[]> {
-  const body = await request<{ data: FishFryEventItem[] }>("/events");
+export async function updateProfile(data: {
+  name?: string;
+  email?: string;
+  phone?: string;
+  avatar_url?: string;
+  bio?: string;
+  marketing_preferences?: Record<string, boolean>;
+}): Promise<{ user: SessionUser; message: string }> {
+  return await request<{ user: SessionUser; message: string }>("/profile", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updatePassword(data: {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}): Promise<{ success: boolean; message: string }> {
+  return await request<{ success: boolean; message: string }>("/profile/password", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export type ApiNotificationItem = {
+  id: string;
+  title?: string;
+  message?: string;
+  type?: string;
+  read_at?: string | null;
+  readAt?: string | null;
+  created_at?: string;
+  data?: {
+    title?: string;
+    message?: string;
+    type?: string;
+  };
+};
+
+export async function fetchNotifications(): Promise<{
+  data: any[];
+  unread_count: number;
+  unreadCount?: number;
+}> {
+  return await request<{ data: any[]; unread_count: number; unreadCount?: number }>("/notifications");
+}
+
+export async function markNotificationRead(id: string): Promise<void> {
+  await request(`/notifications/${encodeURIComponent(id)}/read`, { method: "POST" });
+}
+
+export async function markAllNotificationsRead(): Promise<void> {
+  await request("/notifications/read-all", { method: "POST" });
+}
+
+export async function fetchEvents(params?: { search?: string; category?: string }): Promise<FishFryEventItem[]> {
+  const qs = new URLSearchParams();
+  if (params?.search && params.search.trim() !== "") {
+    qs.set("search", params.search.trim());
+  }
+  if (params?.category && params.category.trim() !== "" && params.category !== "All" && params.category !== "All Events") {
+    qs.set("category", params.category.trim());
+  }
+  const queryString = qs.toString();
+  const path = queryString ? `/events?${queryString}` : "/events";
+  const body = await request<{ data: FishFryEventItem[] }>(path);
   return body.data;
 }
 
@@ -218,6 +308,25 @@ export async function refundOrder(orderId: string, payload: { amount: number; re
   return body.data;
 }
 
+export async function fetchMessageLog(): Promise<NotificationLogEntry[]> {
+  const body = await request<{ data: NotificationLogEntry[] }>("/operations/notifications");
+  return body.data;
+}
+
+export async function retryNotification(logId: string): Promise<NotificationLogEntry> {
+  const body = await request<{ data: NotificationLogEntry }>(`/operations/notifications/${encodeURIComponent(logId)}/retry`, {
+    method: "POST",
+  });
+  return body.data;
+}
+
+export async function sendEventReminders(eventId: string): Promise<number> {
+  const body = await request<{ reminded: number }>(`/operations/events/${encodeURIComponent(eventId)}/reminders`, {
+    method: "POST",
+  });
+  return body.reminded;
+}
+
 // ---- Event Host applications -------------------------------------------------------------
 
 export type HostApplication = {
@@ -332,6 +441,15 @@ export type EventPatch = Partial<{
   packaging_fee_jmd: number;
   advance_order_deadline: string;
   is_ordering_open: boolean;
+  category: string | null;
+  event_date_iso: string | null;
+  start_time: string | null;
+  end_time: string | null;
+  timezone: string | null;
+  currency: "JMD" | "USD";
+  organizer_name: string | null;
+  supports_food_ordering: boolean;
+  ticket_tiers: unknown[] | null;
 }>;
 
 /** snake_case menu item fields accepted by the host menu endpoints */
@@ -348,6 +466,14 @@ export type MenuItemPayload = {
   allow_special_instructions?: boolean;
   available_stock?: number | null;
 };
+
+export async function createHostEvent(payload: EventPatch): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>("/host/events", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return body.data;
+}
 
 export async function fetchHostEvents(): Promise<FishFryEventItem[]> {
   const body = await request<{ data: FishFryEventItem[] }>("/host/events");
@@ -443,24 +569,119 @@ export async function uploadHostMenuPhoto(
   return body.data;
 }
 
-// ---- Customer notifications (SMS / email) ------------------------------------------------
+// ---- Host Dashboard Overview & Staff / Worker Assignments --------------------------------
 
-/** Real messages sent for orders this user can handle payments for. */
-export async function fetchMessageLog(): Promise<NotificationLogEntry[]> {
-  const body = await request<{ data: NotificationLogEntry[] }>("/operations/notifications");
-  return body.data;
+export type HostDashboardSummaryResponse = {
+  dashboard: string;
+  host_name: string;
+  organizer_id: string | null;
+  role_on_event: string;
+  total_events: number;
+  total_orders: number;
+  paid_orders_count: number;
+  pending_verification_count: number;
+  cash_receipts_total: number;
+  gross_volume_jmd: number;
+  verified_payments_jmd: number;
+  confirmed_payments_jmd?: number;
+  pending_payments_jmd?: number;
+  forecast_revenue_jmd?: number;
+  refunds_total_jmd?: number;
+  settled_funds_jmd?: number;
+  sold_portions: number;
+  prep_with_buffer: number;
+  buffer_percent: number;
+  active_workers_count: number;
+};
+
+export type BackendStaffAssignment = {
+  id: string;
+  event_id: string;
+  user_id: string;
+  role_on_event: "payment_clerk" | "ticket_checker" | "food_station_worker" | "supervisor" | string;
+  assigned_stations?: string[];
+  status?: string;
+  is_active: boolean;
+  user?: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+  };
+};
+
+export async function fetchHostDashboardSummary(): Promise<HostDashboardSummaryResponse> {
+  return request<HostDashboardSummaryResponse>("/host/dashboard");
 }
 
-export async function retryNotification(id: string): Promise<NotificationLogEntry> {
-  const body = await request<{ data: NotificationLogEntry }>(`/operations/notifications/${encodeURIComponent(id)}/retry`, {
-    method: "POST",
-  });
-  return body.data;
+export async function fetchHostEventStaff(eventId: string): Promise<{
+  success: boolean;
+  assignments: BackendStaffAssignment[];
+}> {
+  return request<{ success: boolean; assignments: BackendStaffAssignment[] }>(
+    `/host/events/${encodeURIComponent(eventId)}/staff`
+  );
 }
 
-export async function sendEventReminders(eventId: string): Promise<number> {
-  const body = await request<{ reminded: number }>(`/operations/events/${encodeURIComponent(eventId)}/reminders`, {
+export async function verifyStaffClaimCode(
+  eventId: string,
+  claimCode: string
+): Promise<{
+  valid: boolean;
+  candidate: {
+    user_id: string;
+    name: string;
+    masked_email: string;
+    masked_phone?: string | null;
+    account_status: string;
+    expires_at: string;
+  };
+}> {
+  return request(`/host/events/${encodeURIComponent(eventId)}/staff/verify-code`, {
     method: "POST",
+    body: JSON.stringify({ claim_code: claimCode }),
   });
-  return body.reminded;
+}
+
+export async function assignEventStaff(
+  eventId: string,
+  payload: {
+    claim_code: string;
+    role_on_event: "payment_clerk" | "ticket_checker" | "food_station_worker" | "supervisor";
+    assigned_stations?: string[];
+  }
+): Promise<{
+  success: boolean;
+  message: string;
+  assignment: {
+    id: string;
+    staff_name: string;
+    role_on_event: string;
+    assigned_stations: string[];
+    status: string;
+  };
+}> {
+  return request(`/host/events/${encodeURIComponent(eventId)}/staff/assign`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function revokeEventStaffAssignment(
+  eventId: string,
+  assignmentId: string
+): Promise<{ success: boolean; message: string }> {
+  return request(
+    `/host/events/${encodeURIComponent(eventId)}/staff/${encodeURIComponent(assignmentId)}/revoke`,
+    { method: "POST" }
+  );
+}
+
+export async function generateStaffClaimCode(): Promise<{
+  success: boolean;
+  code: string;
+  expires_at: string;
+  expires_in_minutes: number;
+}> {
+  return request("/staff-codes/generate", { method: "POST" });
 }

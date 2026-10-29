@@ -1,0 +1,298 @@
+/* ==========================================================================
+   EVENTBITE DESIGN SYSTEM — MODULE 02: TYPOGRAPHY, SPACING & LAYOUT
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-size);
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Typography Scale Classes
+   -------------------------------------------------------------------------- */
+
+/* 1. Display Headings (Hero banners, spotlight headers) */
+.eb-text-display {
+  font-family: var(--font-display);
+  font-size: var(--text-display-size);
+  font-weight: 800;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* 2. Page Headings (H1) */
+.eb-text-page-title,
+.eb-h1 {
+  font-family: var(--font-display);
+  font-size: var(--text-page-size);
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* 3. Section Headings (H2) */
+.eb-text-section-title,
+.eb-h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-section-size);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* 4. Card Headings (H3) */
+.eb-text-card-title,
+.eb-h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-card-size);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* 5. Body Text */
+.eb-text-body {
+  font-family: var(--font-sans);
+  font-size: var(--text-body-size);
+  font-weight: 400;
+  line-height: 1.55;
+  color: var(--color-text-secondary);
+}
+
+/* 6. Supporting Text */
+.eb-text-supporting {
+  font-family: var(--font-sans);
+  font-size: var(--text-supporting-size);
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+/* 7. Form & Field Labels */
+.eb-text-label {
+  font-family: var(--font-sans);
+  font-size: var(--text-label-size);
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--color-text-primary);
+}
+
+/* 8. Button Text */
+.eb-text-button {
+  font-family: var(--font-sans);
+  font-size: var(--text-button-size);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+}
+
+/* 9. Prices (Tabular Numerals) */
+.eb-text-price {
+  font-family: var(--font-display);
+  font-size: var(--text-price-size);
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.eb-text-price-accent {
+  font-family: var(--font-display);
+  font-size: var(--text-price-size);
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent);
+}
+
+/* 10. Large Dashboard Metrics (Tabular Numerals) */
+.eb-text-metric {
+  font-family: var(--font-display);
+  font-size: var(--text-metric-size);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+/* 11. Ticket Numbers & Order Codes */
+.eb-text-ticket-code {
+  font-family: var(--font-mono);
+  font-size: var(--text-ticket-size);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+/* 12. Timestamps & Schedules */
+.eb-text-timestamp {
+  font-family: var(--font-sans);
+  font-size: var(--text-timestamp-size);
+  font-weight: 500;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
+}
+
+/* 13. Status Labels */
+.eb-text-status {
+  font-family: var(--font-sans);
+  font-size: var(--text-status-size);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+}
+
+/* --------------------------------------------------------------------------
+   Spacing & Layout Containers
+   -------------------------------------------------------------------------- */
+
+.eb-page-container {
+  width: 100%;
+  max-width: var(--layout-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding: var(--layout-page-padding-y) var(--layout-page-padding-x);
+}
+
+.eb-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-6);
+}
+
+.eb-section {
+  margin-bottom: var(--layout-section-gap);
+}
+
+.eb-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+
+/* Responsive Grids */
+.eb-grid-2,
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  gap: var(--layout-grid-gap);
+}
+
+.eb-grid-3,
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--layout-grid-gap);
+}
+
+.eb-grid-4,
+.grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--layout-grid-gap);
+}
+
+.eb-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.eb-cluster {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* --------------------------------------------------------------------------
+   Responsive Breakpoints (Tested at 360px, 390px, 768px, 1024px, 1440px, 1920px)
+   -------------------------------------------------------------------------- */
+
+/* Ultra-compact & Mobile (360px - 639px) */
+@media (max-width: 639px) {
+  :root {
+    --layout-page-padding-x: 0.875rem;
+    --layout-page-padding-y: 1rem;
+    --layout-card-padding: 1rem;
+    --layout-card-padding-lg: 1.125rem;
+    --layout-grid-gap: 0.875rem;
+  }
+
+  .eb-hide-mobile,
+  .desktop-only {
+    display: none !important;
+  }
+}
+
+/* Small Mobile (<= 390px) */
+@media (max-width: 390px) {
+  :root {
+    --layout-page-padding-x: 0.75rem;
+    --table-cell-padding-x: 0.625rem;
+  }
+}
+
+/* Tablet (640px - 1023px) */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .eb-grid-4,
+  .grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Desktop (1024px+) */
+@media (min-width: 1024px) {
+  .eb-hide-desktop {
+    display: none !important;
+  }
+}
+
+/* Wide Desktop (1440px - 1920px+) */
+@media (min-width: 1440px) {
+  :root {
+    --layout-max-width: 1400px;
+  }
+}
+

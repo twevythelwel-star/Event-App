@@ -90,10 +90,23 @@ class HostDashboardController extends Controller
             ? $opsRule->calculatePrepForecast($totalSoldPortions) 
             : (int) ceil(($totalSoldPortions * (100 + $bufferPercent)) / 100);
 
-        // Financial aggregates
+        // Financial aggregates (strictly distinguishing confirmed, pending, forecast, refunds, and settled funds)
         $grossVolumeJMD = $orders->where('currency', 'JMD')->sum('total_amount');
         $verifiedPaymentsJMD = $paidOrders->where('currency', 'JMD')->sum('total_amount');
+        $partiallyPaidConfirmedJMD = $orders->where('currency', 'JMD')->where('status', 'partially_paid')->sum('amount_paid');
+        $confirmedPaymentsJMD = $verifiedPaymentsJMD + $partiallyPaidConfirmedJMD;
+
+        $pendingSubmittedJMD = $orders->where('currency', 'JMD')->whereIn('status', ['payment_submitted', 'under_verification', 'pending_verification', 'awaiting_payment'])->sum('total_amount');
+        $partiallyPaidRemainingJMD = $orders->where('currency', 'JMD')->where('status', 'partially_paid')->sum(function ($o) {
+            return max(0, (float) $o->total_amount - (float) ($o->amount_paid ?? 0));
+        });
+        $pendingPaymentsJMD = $pendingSubmittedJMD + $partiallyPaidRemainingJMD;
+
+        $forecastRevenueJMD = $confirmedPaymentsJMD + $pendingPaymentsJMD;
+        $refundsTotalJMD = $orders->where('currency', 'JMD')->where('status', 'refunded')->sum('total_amount');
+
         $cashReceivedJMD = $cashRecords->where('currency', 'JMD')->sum('amount');
+        $settledFundsJMD = max(0, $confirmedPaymentsJMD - $refundsTotalJMD);
         $pendingTransfersCount = $orders->whereIn('status', ['payment_submitted', 'under_verification'])->count();
 
         $data = [
@@ -108,6 +121,11 @@ class HostDashboardController extends Controller
             'cash_receipts_total' => $cashReceivedJMD,
             'gross_volume_jmd' => $grossVolumeJMD,
             'verified_payments_jmd' => $verifiedPaymentsJMD,
+            'confirmed_payments_jmd' => $confirmedPaymentsJMD,
+            'pending_payments_jmd' => $pendingPaymentsJMD,
+            'forecast_revenue_jmd' => $forecastRevenueJMD,
+            'refunds_total_jmd' => $refundsTotalJMD,
+            'settled_funds_jmd' => $settledFundsJMD,
             'sold_portions' => $totalSoldPortions,
             'prep_with_buffer' => $prepWithBuffer,
             'buffer_percent' => $bufferPercent,

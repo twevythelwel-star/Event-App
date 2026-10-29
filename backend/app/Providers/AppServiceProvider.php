@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\AdminAuthorization;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -22,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        AdminAuthorization::register();
+
         // Sign-in attempts are limited per account (to stop password guessing) and, more loosely, per IP.
         // A plain per-IP limit would lock out a whole venue: staff and attendees share one public IP on event Wi-Fi.
         RateLimiter::for('login', fn (Request $request) => [

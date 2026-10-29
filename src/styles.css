@@ -1,34 +1,58 @@
+@import "./styles/01-tokens.css";
+@import "./styles/02-typography-layout.css";
+@import "./styles/03-buttons-forms.css";
+@import "./styles/04-surfaces-cards.css";
+@import "./styles/05-navigation-motion.css";
+
 :root {
-  font-family: "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #111827;
-  background: #F8FAFC;
+  font-family: var(--font-sans);
+  color: var(--color-text-primary);
+  background: var(--color-background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   font-smooth: always;
   font-optical-sizing: auto;
   font-weight: 400;
-  --ink: #111827;
-  --muted: #64748B;
-  --line: #E2E8F0;
-  --navy: #0B0F17;
-  --charcoal: #1F2937;
-  --indigo: #4F46E5;
-  --indigo-hover: #4338CA;
-  --indigo-soft: #EEF2FF;
-  --gold: #D4AF37;
-  --gold-warm: #C5A880;
-  --gold-soft: #FEF9C3;
-  --green: #15803D;
+  --ink: var(--color-text-primary);
+  --muted: var(--color-text-secondary);
+  --line: var(--color-border);
+  --navy: var(--color-background);
+  --charcoal: var(--color-background-secondary);
+  --indigo: var(--color-accent);
+  --indigo-hover: var(--color-accent-hover);
+  --indigo-soft: var(--color-accent-subtle);
+  --gold: var(--color-accent);
+  --gold-warm: var(--color-accent-hover);
+  --gold-soft: var(--color-accent-subtle);
+  --green: var(--color-success);
   --dark-green: #14532D;
-  --pale-green: #DCFCE7;
-  --amber: #B45309;
-  --amber-light: #FEF3C7;
-  --danger: #B91C1C;
+  --pale-green: var(--color-success-bg);
+  --amber: var(--color-warning);
+  --amber-light: var(--color-warning-bg);
+  --danger: var(--color-error);
+
+  /* Attendee app (dark, single lime accent). Mapped to centralized EventBite tokens */
+  --att-bg: var(--color-background);
+  --att-surface-1: var(--color-background-secondary);
+  --att-surface-2: var(--color-surface);
+  --att-surface-3: var(--color-surface-elevated);
+  --att-line: var(--color-border);
+  --att-text-1: var(--color-text-primary);
+  --att-text-body: var(--color-text-secondary);
+  --att-text-2: var(--color-text-secondary);
+  --att-text-3: var(--color-text-muted);
+  --att-accent: var(--color-accent);
+  --att-accent-hover: var(--color-accent-hover);
+  --att-on-accent: var(--color-accent-text);
+  --att-ok: var(--color-success);
+  --att-warn: var(--color-warning);
+  --att-bad: var(--color-error);
+  --att-display: var(--font-display);
 }
 
 * { box-sizing: border-box; }
 
-body { min-width: 360px; margin: 0; background: #F8FAFC; color: #111827; }
+body { min-width: 320px; margin: 0; background: var(--color-background); color: var(--color-text-primary); }
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 
@@ -46,6 +70,12 @@ button { cursor: pointer; }
 .currency-pill strong { color: #4F46E5; }
 .gateway-header-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 20px; border: 1px solid #C7D2FE; background: #EEF2FF; color: #4338CA; font-size: 10px; font-weight: 700; transition: all 0.15s; }
 .gateway-header-btn:hover { background: #E0E7FF; }
+
+/* Curated Events Tour Horizontal Scrollbar */
+.fishfry-events-discovery-strip *::-webkit-scrollbar { height: 6px; }
+.fishfry-events-discovery-strip *::-webkit-scrollbar-track { background: #F1F5F9; border-radius: 9999px; }
+.fishfry-events-discovery-strip *::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 9999px; }
+.fishfry-events-discovery-strip *::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
 /* Main Tabs Navigation */
 .tabs { min-height: 52px; display: flex; align-items: stretch; gap: 24px; border-bottom: 1px solid #E2E8F0; margin-bottom: 24px; }
@@ -7701,3 +7731,146 @@ button { cursor: pointer; }
 }
 
 
+
+/* ==========================================================================
+   ATTENDEE APP: shared pieces for the dark, single-accent attendee screens
+   ========================================================================== */
+.att-btn-primary { height: 48px; padding: 0 22px; border: 0; border-radius: 14px; background: var(--att-accent); color: var(--att-on-accent); font: 800 15px "Inter", sans-serif; white-space: nowrap; transition: background 0.15s; }
+.att-btn-primary:hover:not(:disabled) { background: var(--att-accent-hover); }
+.att-btn-primary:disabled { background: var(--att-surface-3); color: var(--att-text-2); cursor: not-allowed; }
+.att-action-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 80; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: rgba(17, 25, 35, 0.96); backdrop-filter: blur(14px); border-top: 1px solid var(--att-line); }
+.att-mobile-only { display: none !important; }
+
+/* Event titles use the condensed poster face */
+#discovery-header-greeting { font-size: 26px !important; }
+#island-event-detail-screen h1, #card-primary-featured-event h3, #island-digital-ticket-pass h1 { font-family: var(--att-display) !important; font-weight: 400 !important; letter-spacing: 0.01em !important; text-transform: uppercase; }
+
+@media (max-width: 900px) {
+  .att-mobile-only { display: flex !important; }
+  #sticky-ticket-purchase-card #btn-confirm-ticket-purchase { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  .att-hide-mobile { display: none !important; }
+  .att-discovery-header > div { flex-wrap: wrap; }
+  #btn-discovery-header-login, #btn-discovery-header-register { padding: 8px 14px !important; white-space: nowrap; }
+  #food-screen-back-btn span, #food-screen-cart-header-btn .cart-header-text { display: none; }
+  #food-screen-back-btn, #food-screen-cart-header-btn { padding: 8px 10px !important; flex-shrink: 0; }
+  #food-screen-title { font-size: 17px !important; }
+}
+@media (max-width: 480px) {
+  [role="tablist"][aria-label="Event Sections"] button { padding: 10px 8px !important; font-size: 14px !important; }
+  [role="tablist"][aria-label="Event Sections"] button svg { display: none; }
+}
+
+/* Food menu: compact rows on phones (photo, name, price, action) */
+@media (max-width: 600px) {
+  .att-menu-grid { gap: 10px !important; }
+  .att-menu-card { flex-direction: row !important; border-radius: 16px !important; }
+  .att-menu-photo { width: 104px !important; aspect-ratio: auto !important; flex-shrink: 0; }
+  .att-menu-body { padding: 12px 12px 12px 14px !important; min-width: 0; }
+  .att-menu-body h3 { font-size: 15px !important; }
+  .att-menu-desc { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin: 0 0 6px !important; font-size: 12px !important; }
+  .att-menu-opts, .att-menu-cat, .att-menu-stock.is-available { display: none !important; }
+  .att-menu-stock { top: 6px !important; left: 6px !important; right: auto !important; font-size: 10px !important; padding: 2px 6px !important; }
+  .att-menu-action { display: flex; justify-content: flex-end; padding-top: 4px !important; }
+  .att-menu-action > button { width: auto !important; padding: 8px 14px !important; }
+  .att-menu-action > div { width: 150px; }
+}
+@media (max-width: 600px) {
+  .att-menu-head { flex-direction: column !important; gap: 2px !important; margin-bottom: 4px !important; }
+  .att-menu-head > div { text-align: left !important; }
+}
+
+/* Checkout: the attendee dark look on top of the shared checkout classes */
+.att-checkout { margin: 0 -2px; padding: 20px 16px 28px; border-radius: 20px; background: var(--att-bg); color: var(--att-text-1); font-family: "Inter", sans-serif; }
+.att-checkout .checkout-split-layout { gap: 16px; }
+.att-checkout .checkout-form { margin-top: 20px; }
+.att-checkout .panel { background: var(--att-surface-1); border: 1px solid var(--att-line); border-radius: 18px; box-shadow: none; }
+.att-checkout .panel-heading h2 { font: 800 26px "Inter", sans-serif; letter-spacing: -0.02em; color: var(--att-text-1); }
+.att-checkout .panel-heading h3 { font-size: 17px; color: var(--att-text-1); }
+.att-checkout .panel-heading p { font-size: 13px; color: var(--att-text-2); }
+.att-checkout .section-kicker { color: var(--att-text-2); font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.att-checkout .text-button { color: var(--att-accent); font-size: 13px; }
+.att-checkout .step-badge { background: var(--att-surface-2); color: var(--att-text-1); border-color: var(--att-line); font-size: 12px; }
+.att-checkout .panel-divider { background: var(--att-line); }
+.att-checkout .field-label { font-size: 13px; font-weight: 600; color: var(--att-text-1); }
+.att-checkout .field-hint { font-size: 12px; color: var(--att-text-2); }
+.att-checkout .input-wrap { height: 48px; border: 1px solid var(--att-line); border-radius: 12px; background: var(--att-surface-2); color: var(--att-text-2); }
+.att-checkout .input-wrap:focus-within { outline: 2px solid var(--att-accent); outline-offset: 0; border-color: transparent; }
+.att-checkout .input-wrap input, .att-checkout .input-group input { font-size: 15px; color: var(--att-text-1); }
+.att-checkout input::placeholder { color: var(--att-text-3); }
+.att-checkout .payment-method-block { border-top-color: var(--att-line); }
+.att-checkout .currency-badge { background: var(--att-surface-2); color: var(--att-text-1); font-size: 12px; border-radius: 9999px; padding: 4px 10px; }
+.att-checkout .method-options { grid-template-columns: 1fr; gap: 8px; }
+.att-checkout .method-option { padding: 14px; gap: 12px; border: 1px solid var(--att-line); border-radius: 14px; background: var(--att-surface-2); color: var(--att-text-1); }
+.att-checkout .method-option:hover { border-color: rgba(182, 240, 58, 0.4); }
+.att-checkout .method-option.selected { border-color: var(--att-accent); background: rgba(182, 240, 58, 0.08); box-shadow: none; }
+.att-checkout .method-icon { width: 38px; height: 38px; border-radius: 10px; background: var(--att-surface-3); color: var(--att-text-1); }
+.att-checkout .method-option.selected .method-icon { background: var(--att-accent); color: var(--att-on-accent); }
+.att-checkout .method-copy strong { font-size: 15px; color: var(--att-text-1); }
+.att-checkout .method-copy span { font-size: 12px; color: var(--att-text-2); }
+.att-checkout .radio { width: 20px; height: 20px; border-color: var(--att-text-3); }
+.att-checkout .radio.checked { border-color: var(--att-accent); background: var(--att-accent); color: var(--att-on-accent); }
+.att-checkout .empty-methods { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.35); color: var(--att-warn); }
+.att-checkout .empty-methods strong { color: var(--att-text-1); font-size: 14px; }
+.att-checkout .empty-methods span { color: var(--att-text-2); font-size: 12px; }
+.att-checkout .transfer-instructions { border: 1px solid var(--att-line); border-radius: 14px; background: var(--att-surface-2); }
+.att-checkout .instructions-title { font-size: 13px; color: var(--att-text-1); }
+.att-checkout .instructions-title span:last-child { background: var(--att-surface-3); color: var(--att-text-1); border-radius: 9999px; padding: 3px 10px; font-size: 12px; }
+.att-checkout .transfer-instructions p { font-size: 13px; color: var(--att-text-body); }
+.att-checkout .transfer-instructions strong { color: var(--att-text-1); }
+.att-checkout .recipient-detail { border: 1px solid var(--att-line); border-radius: 12px; background: var(--att-bg); }
+.att-checkout .recipient-detail pre { font-size: 14px; color: var(--att-text-1); }
+.att-checkout .recipient-detail button { color: var(--att-accent); }
+.att-checkout .recipient-detail button:hover { background: var(--att-surface-3); }
+.att-checkout .instruction-footnote { display: block; font-size: 12px; line-height: 1.5; color: var(--att-text-2); }
+.att-checkout .instruction-footnote svg { vertical-align: -2px; margin-right: 4px; }
+.att-checkout .payment-proof-inputs .input-group input { width: 100%; }
+.att-checkout .input-group label { font-size: 13px; color: var(--att-text-1); }
+.att-checkout .input-group input { height: 44px; padding: 0 12px; border: 1px solid var(--att-line); border-radius: 12px; background: var(--att-bg); }
+.att-checkout .att-place-order { width: 100%; height: 54px; border-radius: 14px; background: var(--att-accent); color: var(--att-on-accent); font-size: 16px; font-weight: 800; box-shadow: none; }
+.att-checkout .att-place-order:hover:not(:disabled) { background: var(--att-accent-hover); transform: none; box-shadow: none; }
+.att-checkout .att-place-order:disabled { background: var(--att-surface-3); color: var(--att-text-2); }
+.att-checkout .cart-summary-item { border-bottom-color: var(--att-line); }
+.att-checkout .cart-item-thumb { width: 56px; height: 56px; border-radius: 12px; }
+.att-checkout .cart-item-details strong { font-size: 14px; color: var(--att-text-1); }
+.att-checkout .addon-tag { font-size: 11px; background: var(--att-surface-2); color: var(--att-text-body); }
+.att-checkout .instructions-snippet, .att-checkout .cart-item-calc { font-size: 12px; color: var(--att-text-2); }
+.att-checkout .cart-item-right strong { font-size: 14px; color: var(--att-text-1); }
+.att-checkout .mini-qty-row button { width: 28px; height: 28px; border: 1px solid var(--att-line); border-radius: 8px; background: var(--att-surface-2); color: var(--att-text-1); }
+.att-checkout .mini-qty-row span { font-size: 14px; color: var(--att-text-1); }
+.att-checkout .calculation-breakdown { font-size: 14px; color: var(--att-text-2); }
+.att-checkout .calc-row.total { border-top-color: var(--att-line); font-size: 16px; color: var(--att-text-1); }
+.att-checkout .final-total { font: 800 22px "Inter", sans-serif; color: var(--att-text-1); }
+.att-checkout .event-reminder-box { border: 1px solid var(--att-line); border-radius: 14px; background: var(--att-surface-2); color: var(--att-text-2); font-size: 13px; }
+.att-checkout .event-reminder-box strong { font-size: 14px; color: var(--att-text-1); }
+.att-checkout .event-reminder-box p { font-size: 12px; color: var(--att-text-2); }
+
+@media (max-width: 900px) {
+  .att-checkout .checkout-split-layout { grid-template-columns: minmax(0, 1fr); }
+  /* Order summary first on phones, then details and payment, as on the target board */
+  .att-checkout .checkout-summary-sidebar { order: -1; }
+  .att-checkout .att-place-order { position: sticky; bottom: 12px; z-index: 5; }
+}
+
+/* Digital ticket: "what now" line, entry guidance and action rows */
+.att-ticket-status { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; padding: 16px; border-radius: 18px; background: var(--att-surface-1); border: 1px solid var(--att-line); }
+.att-ticket-status-icon { width: 44px; height: 44px; flex-shrink: 0; display: grid; place-items: center; border-radius: 14px; background: var(--att-accent); color: var(--att-on-accent); }
+.att-ticket-status-title { font-size: 20px; font-weight: 800; color: var(--att-text-1); line-height: 1.2; }
+.att-ticket-status-detail { margin-top: 2px; font-size: 13px; color: var(--att-text-2); }
+.att-ticket-guide { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; line-height: 1.5; color: var(--att-text-body); }
+.att-ticket-guide li { position: relative; padding-left: 18px; }
+.att-ticket-guide li::before { content: ""; position: absolute; left: 2px; top: 9px; width: 6px; height: 6px; border-radius: 50%; background: var(--att-text-3); }
+.att-ticket-rows { display: flex; flex-direction: column; background: var(--att-surface-2); border-top: 1px solid var(--att-line); }
+.att-ticket-rows button { display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px 24px; border: 0; border-bottom: 1px solid var(--att-line); background: none; color: var(--att-text-1); font: 600 15px "Inter", sans-serif; text-align: left; }
+.att-ticket-rows button:last-child { border-bottom: 0; }
+.att-ticket-rows button span { flex: 1; }
+.att-ticket-rows button svg { color: var(--att-text-2); flex-shrink: 0; }
+.att-ticket-rows button:hover:not(:disabled) { background: var(--att-surface-3); }
+.att-ticket-rows button:disabled { color: var(--att-text-3); cursor: not-allowed; }
+
+@media (max-width: 600px) {
+  #island-digital-ticket-pass { --att-ticket-art-height: 150px; }
+  #island-digital-ticket-pass h1 { font-size: 22px !important; }
+}

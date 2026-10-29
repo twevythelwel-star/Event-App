@@ -8,18 +8,35 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Event extends Model
 {
     use HasFactory, HasUuids, SoftDeletes, BelongsToTenant;
+
+    /**
+     * New events get UUID keys, but the seeded demo catalogue uses readable keys such as
+     * "evt-kingston-harbour-fry". Accept both so route model binding (worker terminal, ordering,
+     * host staff pages) can find demo events. The lookup itself is unchanged: exact key match,
+     * with the normal scopes applied.
+     */
+    protected function isValidUniqueId($value): bool
+    {
+        return Str::isUuid($value)
+            || (is_string($value) && preg_match('/^evt-[a-z0-9]+(?:-[a-z0-9]+)*$/', $value) === 1 && strlen($value) <= 64);
+    }
 
     protected $fillable = [
         'organizer_id',
         'slug',
         'title',
         'tagline',
+        'category',
         'date_str',
+        'event_date_iso',
         'time_str',
+        'start_time',
+        'end_time',
         'timezone',
         'venue_name',
         'venue_address',
@@ -36,6 +53,8 @@ class Event extends Model
         'pickup_instructions',
         'packaging_fee_usd',
         'packaging_fee_jmd',
+        'supports_food_ordering',
+        'ticket_tiers',
         'flyer_path',
         'flyer_thumbnail_path',
         'flyer_mime_type',
@@ -51,6 +70,8 @@ class Event extends Model
         'is_flyer_public' => 'boolean',
         'packaging_fee_usd' => 'decimal:2',
         'packaging_fee_jmd' => 'integer',
+        'supports_food_ordering' => 'boolean',
+        'ticket_tiers' => 'array',
         'flyer_size_bytes' => 'integer',
         'flyer_width' => 'integer',
         'flyer_height' => 'integer',
