@@ -13,10 +13,11 @@ use Illuminate\Support\Facades\Http;
 class TwilioSmsSender
 {
     /**
-     * Twilio error codes that will fail the same way on every retry: bad or unreachable numbers, opt-outs,
-     * unsupported regions, and trial accounts texting a number that hasn't been verified (21608).
+     * Twilio error codes that will fail the same way on every automatic retry: bad or unreachable numbers,
+     * opt-outs, unsupported regions, trial accounts texting an unverified number (21608), and the account's
+     * daily message limit (63038), which only resets the next day. Hosts can still retry these by hand.
      */
-    private const PERMANENT_ERRORS = [21211, 21214, 21408, 21606, 21608, 21610, 21612, 21614];
+    private const PERMANENT_ERRORS = [21211, 21214, 21408, 21606, 21608, 21610, 21612, 21614, 63038];
 
     public function isConfigured(): bool
     {
@@ -53,7 +54,13 @@ class TwilioSmsSender
         }
 
         $code = (int) $response->json('code');
-        $message = "Twilio error {$code}: " . ($response->json('message') ?? $response->status());
+        // Twilio's text can include the Account SID; hosts read these reasons, so keep it out
+        $detail = preg_replace(
+            ['/\bAccount AC[0-9a-f]{32}/i', '/AC[0-9a-f]{32}/i'],
+            ['The Twilio account', 'the Twilio account'],
+            (string) ($response->json('message') ?? $response->status())
+        );
+        $message = "Twilio error {$code}: {$detail}";
         if (in_array($code, self::PERMANENT_ERRORS, true) || $response->status() === 401) {
             throw new NotificationNotSent($message);
         }

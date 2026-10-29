@@ -119,6 +119,38 @@ class NotificationsApiTest extends TestCase
         Http::assertSentCount(1);
     }
 
+    public function test_daily_limit_fails_at_once_without_exposing_the_account_sid(): void
+    {
+        $this->configureTwilio();
+        Http::fake([self::TWILIO_URL => Http::response([
+            'code' => 63038,
+            'message' => 'Account AC' . '0123456789abcdef0123456789abcdef' . ' exceeded the 50 daily messages limit',
+        ], 429)]);
+
+        $order = $this->placeOrder();
+
+        $log = $this->logsFor($order['id'])->firstWhere('channel', 'sms');
+        $this->assertSame('failed', $log->status);
+        $this->assertStringContainsString('63038', $log->failure_reason);
+        $this->assertStringNotContainsString('AC0123456789abcdef', $log->failure_reason . json_encode($log->attempts_history));
+        Http::assertSentCount(1);
+    }
+
+    public function test_retry_clears_the_previous_provider_message_id(): void
+    {
+        $this->configureTwilio();
+        Http::fake([self::TWILIO_URL => Http::sequence()
+            ->push(['code' => 63038, 'message' => 'daily limit'], 429)
+            ->push(['sid' => 'SMsecondTry'], 201)]);
+        $order = $this->placeOrder();
+        $log = $this->logsFor($order['id'])->firstWhere('channel', 'sms');
+        $log->forceFill(['provider_message_id' => 'SMoldAttempt'])->save();
+
+        $this->actingAs($this->user('host'))->postJson("/api/v1/operations/notifications/{$log->id}/retry")->assertOk();
+
+        $this->assertSame('SMsecondTry', $log->fresh()->provider_message_id);
+    }
+
     public function test_temporary_twilio_outage_does_not_break_ordering(): void
     {
         $this->configureTwilio();

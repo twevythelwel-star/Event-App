@@ -105,6 +105,9 @@ class NotificationService
 
         $log->status = 'queued';
         $log->failure_reason = null;
+        // A retry is a new message; never let it be mistaken for the previous attempt
+        $log->provider_message_id = null;
+        $log->sent_at = null;
         $log->queued_at = now();
         $log->save();
         $log->logAttempt('queued', 'Retry requested by host.');
