@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\Http;
  */
 class TwilioSmsSender
 {
-    /** Twilio error codes that will fail the same way on every retry (bad or unreachable numbers, opt-outs). */
-    private const PERMANENT_ERRORS = [21211, 21214, 21408, 21610, 21612, 21614, 21606];
+    /**
+     * Twilio error codes that will fail the same way on every retry: bad or unreachable numbers, opt-outs,
+     * unsupported regions, and trial accounts texting a number that hasn't been verified (21608).
+     */
+    private const PERMANENT_ERRORS = [21211, 21214, 21408, 21606, 21608, 21610, 21612, 21614];
 
     public function isConfigured(): bool
     {
