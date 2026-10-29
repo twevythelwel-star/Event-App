@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\Order;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -134,6 +135,8 @@ class CashLedgerService
                 $order->verified_by = $user->name;
                 $order->verification_notes = "Cash receipt {$receipt->receipt_number} recorded by {$user->name}.";
                 $order->save();
+
+                NotificationService::notifyOrder($order, 'cash_receipt_recorded', ['amount' => $amount, 'receipt' => $receipt->receipt_number], $receipt->id);
             }
 
             $this->audit($user, 'cash_receipt_recorded', $receipt->id, "Cash receipt {$receipt->receipt_number}: {$currency} {$amount}" . ($order ? " for order {$order->order_number}" : ' (walk-up)') . '.');

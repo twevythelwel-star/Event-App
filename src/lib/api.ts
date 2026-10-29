@@ -6,6 +6,7 @@ import type {
   FulfillmentStatus,
   HandoverAuditEntry,
   MethodId,
+  NotificationLogEntry,
   TicketDispute,
   TicketOrder,
 } from "../types";
@@ -440,4 +441,26 @@ export async function uploadHostMenuPhoto(
     { method: "POST", body: imageForm("photo", image, filename) }
   );
   return body.data;
+}
+
+// ---- Customer notifications (SMS / email) ------------------------------------------------
+
+/** Real messages sent for orders this user can handle payments for. */
+export async function fetchMessageLog(): Promise<NotificationLogEntry[]> {
+  const body = await request<{ data: NotificationLogEntry[] }>("/operations/notifications");
+  return body.data;
+}
+
+export async function retryNotification(id: string): Promise<NotificationLogEntry> {
+  const body = await request<{ data: NotificationLogEntry }>(`/operations/notifications/${encodeURIComponent(id)}/retry`, {
+    method: "POST",
+  });
+  return body.data;
+}
+
+export async function sendEventReminders(eventId: string): Promise<number> {
+  const body = await request<{ reminded: number }>(`/operations/events/${encodeURIComponent(eventId)}/reminders`, {
+    method: "POST",
+  });
+  return body.reminded;
 }

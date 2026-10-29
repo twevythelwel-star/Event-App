@@ -181,6 +181,9 @@ Route::prefix('api/v1')->group(function () {
         Route::get('/operations/cash', [OrderOperationsController::class, 'cashLedger'])->name('api.operations.cash.index');
         Route::post('/operations/cash', [OrderOperationsController::class, 'recordCash'])->name('api.operations.cash.store')->middleware('throttle:60,1');
         Route::post('/operations/cash/{receiptId}/reverse', [OrderOperationsController::class, 'reverseCash'])->name('api.operations.cash.reverse');
+        Route::get('/operations/notifications', [OrderOperationsController::class, 'notifications'])->name('api.operations.notifications');
+        Route::post('/operations/notifications/{logId}/retry', [OrderOperationsController::class, 'retryNotification'])->name('api.operations.notifications.retry')->middleware('throttle:30,1');
+        Route::post('/operations/events/{eventId}/reminders', [OrderOperationsController::class, 'sendReminders'])->name('api.operations.reminders')->middleware('throttle:5,1');
 
         // Event Host editing of their own events and menus (organizer owners only; checked per event)
         Route::get('/host/events', [HostEventsController::class, 'index'])->name('api.host.events');

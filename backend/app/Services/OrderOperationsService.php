@@ -7,12 +7,15 @@ use App\Enums\TenantRole;
 use App\Exceptions\SecurityException;
 use App\Models\EventWorkerAssignment;
 use App\Models\HandoverAuditLog;
+use App\Models\NotificationLog;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrganizerUser;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -168,6 +171,12 @@ class OrderOperationsService
 
         $this->audit($user, 'order_payment_status_changed', $order, "Order {$order->order_number}: payment status {$previousStatus} -> {$status}.");
 
+        if ($status === 'paid' && $previousStatus !== 'paid') {
+            NotificationService::notifyOrder($order, 'payment_verified');
+        } elseif ($status === 'rejected' && $previousStatus !== 'rejected') {
+            NotificationService::notifyOrder($order, 'payment_rejected');
+        }
+
         return $order->fresh(['items', 'event']);
     }
 
@@ -182,8 +191,13 @@ class OrderOperationsService
             throw new \InvalidArgumentException('Mark portions as handed over (or close the order) before marking it collected.');
         }
 
+        $previousStatus = $order->fulfillment_status;
         $order->fulfillment_status = $status;
         $order->save();
+
+        if ($status === 'ready_for_pickup' && $previousStatus !== 'ready_for_pickup') {
+            NotificationService::notifyOrder($order, 'pickup_instructions');
+        }
 
         return $order->fresh(['items', 'event']);
     }
@@ -322,11 +336,15 @@ class OrderOperationsService
     {
         $items = $order->items()->get();
         $allDone = $items->isNotEmpty() && $items->every(fn (OrderItem $i) => (int) $i->collected_quantity >= $i->quantity);
+        $wasDone = (bool) $order->all_handed_over;
 
         $order->all_handed_over = $allDone;
         if ($allDone) {
             $order->fulfillment_status = 'collected';
             $order->closed_at = $order->closed_at ?? now();
+            if (!$wasDone) {
+                NotificationService::notifyOrder($order, 'order_collection_completed');
+            }
         } else {
             $order->closed_at = null;
             if ($order->fulfillment_status === 'collected') {
@@ -358,6 +376,54 @@ class OrderOperationsService
                 ->filter(fn (EventWorkerAssignment $assignment) => $assignment->isCurrentlyActive())
                 ->pluck('event_id'),
         ];
+    }
+
+    /**
+     * Customer messages for orders whose payments this user may handle (messages carry customer contact details).
+     */
+    public function notificationsQuery(User $user): Builder
+    {
+        $orderIds = $this->operableOrdersQuery($user)->get()
+            ->filter(fn (Order $order) => $this->capabilities($user, $order)['verify'])
+            ->pluck('id');
+
+        return NotificationLog::withoutGlobalScopes()->whereIn('order_id', $orderIds)->latest();
+    }
+
+    public function retryNotification(User $user, string $logId): NotificationLog
+    {
+        $log = $this->notificationsQuery($user)->whereKey($logId)->first();
+        if (!$log) {
+            throw (new ModelNotFoundException('Message not found.'))->setModel(NotificationLog::class);
+        }
+
+        return app(NotificationService::class)->retry($log);
+    }
+
+    /**
+     * Remind every ticket holder of an event (paid or authorized orders), at most once per day per order.
+     *
+     * @return int Number of orders reminded
+     */
+    public function sendEventReminders(User $user, string $eventId): int
+    {
+        $orders = $this->operableOrdersQuery($user)
+            ->where('event_id', $eventId)
+            ->whereNotIn('status', ['refunded', 'rejected'])
+            ->get()
+            ->filter(fn (Order $order) => $this->capabilities($user, $order)['verify'])
+            ->filter(fn (Order $order) => $order->status === 'paid' || $order->authorized_unpaid);
+
+        if ($orders->isEmpty()) {
+            throw new \InvalidArgumentException('There are no paid or authorized orders to remind for this event.');
+        }
+
+        $notifications = app(NotificationService::class);
+        foreach ($orders as $order) {
+            $notifications->queueForOrder($order, 'event_reminders', [], now()->format('Y-m-d'));
+        }
+
+        return $orders->count();
     }
 
     private function activeAssignment(User $user, string $eventId): ?EventWorkerAssignment

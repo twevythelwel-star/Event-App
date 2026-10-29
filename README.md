@@ -72,7 +72,7 @@ Open `http://localhost:5173/`. If the backend isn't running, the app shows a ban
 - Event Host applications: signed-in attendees apply from the Attendee tab; administrators approve or reject them in a review queue on the Administrator and System Administrator tabs. Approval grants the Event Host role and creates the applicant's own organizer;
 - ticket disputes: attendees file them on their own orders; administrators move them to under review, resolved or rejected (delegated admins only see the organizers assigned to them). Resolving a dispute never moves money; refunds stay with the event owner.
 
-Hosts and staff only see orders and cash for their own organizer's events or the events they are assigned to. Payment verifiers and cashiers can take cash; only the event owner can reverse cash or issue refunds. Money is append-only: corrections are linked reversal rows, never edits. Still browser-local demo data: SMS notifications, and the administrator dashboards' platform stats, users, fees, health and audit panels.
+Hosts and staff only see orders and cash for their own organizer's events or the events they are assigned to. Payment verifiers and cashiers can take cash; only the event owner can reverse cash or issue refunds. Money is append-only: corrections are linked reversal rows, never edits. Still browser-local demo data: the administrator dashboards' platform stats, users, fees, health and audit panels.
 
 Seeded demo data also includes four Kingston Harbour orders in different payment states and a food-station staff account assigned to that event (`DemoOrdersSeeder.php`). `DemoSupportRequestsSeeder.php` adds a pending host application (from a demo applicant account) and an open dispute.
 
@@ -85,5 +85,13 @@ cd backend && php tests/run_backend_tests.php   # legacy standalone service chec
 ```
 
 **Continuous integration:** `.github/workflows/ci.yml` runs on every push to `main` and on pull requests: the frontend type-check, build and Vitest suite, plus the backend PHPUnit tests, legacy service checks, PHP lint, and a full `migrate:fresh --seed`.
+
+**Customer messages:** customers get an SMS (and an email when their order has one) when an order is placed, payment is verified or rejected, cash is recorded, the order is ready for pickup, and everything has been handed over; hosts can also send event reminders. Messages go through the queue, so run a worker alongside the server:
+
+```sh
+cd backend && php artisan queue:work
+```
+
+SMS uses Twilio: set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` and `TWILIO_FROM` (or `TWILIO_MESSAGING_SERVICE_SID`) in `backend/.env`. Without them, SMS are recorded as **not sent** with the reason, never simulated. Email uses Laravel's mailer (`MAIL_MAILER`; the local default `log` writes emails to `storage/logs`). The host's SMS & Receipts view shows every message's real status, and failed messages can be retried. A message only becomes "delivered" when the provider's delivery callback confirms it.
 
 **Webhooks:** delivery callbacks are at `POST /api/webhooks/twilio/status-callback` and `POST /api/webhooks/email`. Set `TWILIO_AUTH_TOKEN`, `MAILGUN_WEBHOOK_SIGNING_KEY`, `EMAIL_WEBHOOK_BASIC_AUTH_USER` and `EMAIL_WEBHOOK_BASIC_AUTH_PASSWORD` in `backend/.env`; any callback without valid credentials gets a 403.

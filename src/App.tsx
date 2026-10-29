@@ -73,6 +73,7 @@ import {
   fetchCashLedger,
   fetchEvents,
   fetchHostEvents,
+  fetchMessageLog,
   fetchMyDisputes,
   fetchMyOrders,
   fetchOperationsOrders,
@@ -81,6 +82,8 @@ import {
   recordCashReceipt,
   recordHandover,
   removeHostFlyer,
+  retryNotification as retryNotificationLive,
+  sendEventReminders,
   setHostEventStatus,
   refundOrder as refundOrderLive,
   reverseCashReceipt,
@@ -388,14 +391,15 @@ export function App() {
       setHasOperableOrders(false);
       return;
     }
-    Promise.all([fetchMyOrders(), fetchOperationsOrders(), fetchCashLedger()])
-      .then(([myOrders, operableOrders, ledger]) => {
+    Promise.all([fetchMyOrders(), fetchOperationsOrders(), fetchCashLedger(), fetchMessageLog()])
+      .then(([myOrders, operableOrders, ledger, notifications]) => {
         const operableIds = new Set(operableOrders.map((o) => o.id));
         setHasOperableOrders(operableOrders.length > 0);
         setSavedState((curr) => ({
           ...curr,
           orders: [...operableOrders, ...myOrders.filter((o) => !operableIds.has(o.id))],
           cashLedger: ledger,
+          notificationLogs: notifications,
         }));
       })
       .catch((error) => console.warn("Unable to load orders.", error));
@@ -484,6 +488,11 @@ export function App() {
   // Helper to append a notification log entry
   function logNotification(newLog: Omit<NotificationLogEntry, "id" | "sentAt">) {
     const nowIso = new Date().toISOString();
+    if (isLiveSession) {
+      // Live messages are sent and logged by the server; pick up its log instead of simulating one
+      refreshNotifications();
+      return { id: "", sentAt: nowIso, ...newLog } as NotificationLogEntry;
+    }
     const entry: NotificationLogEntry = {
       id: `notif-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
       sentAt: nowIso,
@@ -498,7 +507,29 @@ export function App() {
   }
 
   // Resend / Retry a notification (e.g. after carrier delay)
+  function refreshNotifications() {
+    // The server queues messages after the action completes, so give it a moment
+    setTimeout(() => {
+      fetchMessageLog()
+        .then((notifications) => setSavedState((curr) => ({ ...curr, notificationLogs: notifications })))
+        .catch(() => undefined);
+    }, 1200);
+  }
+
   function handleRetryNotification(notifId: string) {
+    if (isLiveSession) {
+      retryNotificationLive(notifId)
+        .then((updated) => {
+          setSavedState((curr) => ({
+            ...curr,
+            notificationLogs: (curr.notificationLogs || []).map((n) => (n.id === updated.id ? updated : n)),
+          }));
+          showToast(updated.status === "sent" ? "Message re-sent." : `Message re-queued (${updated.status}).`);
+        })
+        .catch(reportLiveError);
+      return;
+    }
+
     setSavedState((curr) => ({
       ...curr,
       notificationLogs: (curr.notificationLogs || []).map((n) =>
@@ -564,6 +595,20 @@ export function App() {
 
   // Broadcast Event Approaching reminder to all orders
   function handleBroadcastEventReminder() {
+    if (isLiveSession) {
+      if (!hostLiveEvent?.id) {
+        showToast("No live event to send reminders for.");
+        return;
+      }
+      sendEventReminders(hostLiveEvent.id)
+        .then((count) => {
+          showToast(`Reminders queued for ${count} ticket holder${count === 1 ? "" : "s"}.`);
+          refreshNotifications();
+        })
+        .catch(reportLiveError);
+      return;
+    }
+
     let count = 0;
     orders.forEach((ord) => {
       count++;
@@ -653,6 +698,7 @@ export function App() {
         orders: INITIAL_SAVED_STATE.orders,
         cashLedger: INITIAL_SAVED_STATE.cashLedger,
         ticketDisputes: INITIAL_SAVED_STATE.ticketDisputes,
+        notificationLogs: INITIAL_SAVED_STATE.notificationLogs,
       }));
       showToast("Signed out.");
     }
@@ -847,6 +893,8 @@ export function App() {
       ...curr,
       orders: curr.orders.map((o) => (o.id === serverOrder.id ? serverOrder : o)),
     }));
+    // Payment, pickup and handover changes may have sent the customer a message
+    if (hasSessionRole("event_host")) refreshNotifications();
   }
 
   function reportLiveError(error: unknown) {

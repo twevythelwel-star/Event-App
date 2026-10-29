@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\Notifications\NotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -184,6 +185,8 @@ class OrderPlacementService
                     $itemData['order_id'] = $order->id;
                     OrderItem::create($itemData);
                 }
+
+                NotificationService::notifyOrder($order, 'order_received');
 
                 return [
                     'success' => true,

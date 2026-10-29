@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\CashPayment;
 use App\Models\HandoverAuditLog;
+use App\Models\NotificationLog;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\CashLedgerService;
@@ -107,6 +108,58 @@ class OrderOperationsController extends Controller
         ]);
 
         return $this->run($request, $orderId, fn (User $user, Order $order) => $this->operations->closeOrder($user, $order, $data['station'] ?? null));
+    }
+
+    public function notifications(Request $request): JsonResponse
+    {
+        $logs = $this->operations->notificationsQuery($request->user())->limit(500)->get();
+
+        return response()->json(['data' => $logs->map(fn (NotificationLog $log) => $this->presentNotification($log))->values()]);
+    }
+
+    public function retryNotification(Request $request, string $logId): JsonResponse
+    {
+        return $this->runMoney($request, fn (User $user) => [
+            'data' => $this->presentNotification($this->operations->retryNotification($user, $logId)),
+        ]);
+    }
+
+    public function sendReminders(Request $request, string $eventId): JsonResponse
+    {
+        return $this->runMoney($request, fn (User $user) => [
+            'reminded' => $this->operations->sendEventReminders($user, $eventId),
+        ]);
+    }
+
+    /**
+     * Message in the SPA's NotificationLogEntry shape.
+     */
+    private function presentNotification(NotificationLog $log): array
+    {
+        return [
+            'id' => $log->id,
+            'organizerId' => $log->organizer_id,
+            'orderId' => $log->order_id,
+            'orderNumber' => $log->order_number,
+            'customerName' => $log->customer_name,
+            'recipient' => $log->recipient,
+            'channel' => $log->channel,
+            'trigger' => $log->trigger,
+            'title' => $log->title,
+            'message' => $log->message,
+            'emailSubject' => $log->email_subject,
+            'status' => $log->status,
+            'provider' => $log->provider,
+            'sentAt' => ($log->sent_at ?? $log->queued_at ?? $log->created_at)?->toIso8601String(),
+            'createdAt' => $log->created_at?->toIso8601String(),
+            'deliveredAt' => $log->delivered_at?->toIso8601String(),
+            'failureReason' => $log->failure_reason,
+            'retryCount' => (int) $log->retry_count,
+            'idempotencyKey' => $log->idempotency_key,
+            'providerMessageId' => $log->provider_message_id,
+            'retrySuppressed' => (bool) $log->retry_suppressed,
+            'attempts' => $log->attempts_history ?? [],
+        ];
     }
 
     public function cashLedger(Request $request): JsonResponse

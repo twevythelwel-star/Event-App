@@ -14,6 +14,17 @@ return [
     |
     */
 
+    // SMS (and optional WhatsApp) notifications. Leave TWILIO_ACCOUNT_SID empty to disable sending:
+    // messages are then recorded as not sent instead of being simulated.
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+        'messaging_service_sid' => env('TWILIO_MESSAGING_SERVICE_SID'),
+        // Public base URL Twilio can reach for delivery callbacks (defaults to APP_URL when that is public)
+        'status_callback_base' => env('TWILIO_STATUS_CALLBACK_BASE'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
