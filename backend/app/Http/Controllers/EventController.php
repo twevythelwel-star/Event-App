@@ -88,12 +88,45 @@ class EventController extends Controller
         }
 
         try {
-            app(\App\Services\EventManagementService::class)->findEvent($request->user(), $event->id);
+            $this->managedEvent($request, (string) $event->id);
 
             return true;
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
             return false;
         }
+    }
+
+    /**
+     * The event, if the signed-in user may manage it (their organizer's event, or any event for a System
+     * Administrator). Anyone else gets "not found", the same as for an event that does not exist.
+     */
+    private function managedEvent(Request $request, string $id): Event
+    {
+        $user = $request->user();
+        if (!$user) {
+            abort(404);
+        }
+
+        return app(\App\Services\EventManagementService::class)->findEvent($user, $id);
+    }
+
+    /**
+     * The organizer a new event belongs to: the active organizer when the user may manage it, otherwise the
+     * user's only manageable organizer. Null when that is not clear (no organizer, or several and none chosen).
+     */
+    private function organizerForNewEvent(Request $request): ?string
+    {
+        $manageable = app(\App\Services\EventManagementService::class)->manageableOrganizerIds($request->user());
+        $active = TenantContext::id();
+
+        if ($manageable === null) {
+            return $active; // System Administrators act for the organizer they have switched into
+        }
+        if ($active !== null && $manageable->contains($active)) {
+            return $active;
+        }
+
+        return $manageable->count() === 1 ? (string) $manageable->first() : null;
     }
 
     /**
@@ -125,7 +158,7 @@ class EventController extends Controller
      */
     public function edit(Request $request, string $id): mixed
     {
-        $event = Event::findOrFail($id);
+        $event = $this->managedEvent($request, $id);
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -134,15 +167,11 @@ class EventController extends Controller
             ]);
         }
 
-        // The Event QR section is shown only to people who manage this event; ensureFor() also creates the
-        // identity for events made before QR codes existed.
-        $qr = null;
-        $qrDestination = null;
-        if ($request->user() && $this->canManage($request, $event)) {
-            $qrService = app(\App\Services\EventQr\EventQrService::class);
-            $qr = $qrService->ensureFor($event);
-            $qrDestination = $qrService->destinationUrl($qr);
-        }
+        // Only managers reach this screen (managedEvent). ensureFor() also creates the QR identity for events
+        // made before QR codes existed.
+        $qrService = app(\App\Services\EventQr\EventQrService::class);
+        $qr = $qrService->ensureFor($event);
+        $qrDestination = $qrService->destinationUrl($qr);
 
         return view('events.edit', compact('event', 'qr', 'qrDestination'));
     }
@@ -161,7 +190,15 @@ class EventController extends Controller
         }
 
         $validated = $request->validated();
-        $validated['organizer_id'] = TenantContext::id() ?? auth()->user()?->organizer_id ?? auth()->id() ?? 'default-org-uuid';
+        $organizerId = $user ? $this->organizerForNewEvent($request) : null;
+        if ($organizerId === null) {
+            $message = 'Choose the organizer this event belongs to. Your account is not linked to exactly one organizer you can manage.';
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $message], 403);
+            }
+            abort(403, $message);
+        }
+        $validated['organizer_id'] = $organizerId;
 
         if (empty($validated['slug'])) {
             $validated['slug'] = Str::slug($validated['title']) . '-' . Str::random(6);
@@ -205,7 +242,7 @@ class EventController extends Controller
      */
     public function update(StoreEventRequest $request, string $id): mixed
     {
-        $event = Event::findOrFail($id);
+        $event = $this->managedEvent($request, $id);
         $event->update($request->validated());
 
         if ($request->hasFile('flyer')) {
@@ -245,7 +282,7 @@ class EventController extends Controller
      */
     public function toggleOrdering(Request $request, string $id): mixed
     {
-        $event = Event::findOrFail($id);
+        $event = $this->managedEvent($request, $id);
         $event->is_ordering_open = !$event->is_ordering_open;
         $event->save();
 
@@ -265,7 +302,7 @@ class EventController extends Controller
      */
     public function uploadFlyer(UploadFlyerRequest $request, string $id): mixed
     {
-        $event = Event::findOrFail($id);
+        $event = $this->managedEvent($request, $id);
         $file = $request->file('flyer');
 
         $tenantId = TenantContext::id() ?? $event->organizer_id;
@@ -307,7 +344,7 @@ class EventController extends Controller
      */
     public function removeFlyer(Request $request, string $id): mixed
     {
-        $event = Event::findOrFail($id);
+        $event = $this->managedEvent($request, $id);
 
         if ($event->flyer_path && Storage::disk('s3_flyers')->exists($event->flyer_path)) {
             Storage::disk('s3_flyers')->delete($event->flyer_path);
@@ -338,7 +375,7 @@ class EventController extends Controller
      */
     public function publish(Request $request, string $id): mixed
     {
-        $event = Event::findOrFail($id);
+        $event = $this->managedEvent($request, $id);
         $event->status = 'published';
         $event->is_ordering_open = true;
         if ($event->flyer_path) {
@@ -364,7 +401,7 @@ class EventController extends Controller
      */
     public function unpublish(Request $request, string $id): mixed
     {
-        $event = Event::findOrFail($id);
+        $event = $this->managedEvent($request, $id);
         $event->status = 'unpublished';
         $event->is_ordering_open = false;
         $event->is_flyer_public = false;
@@ -386,7 +423,7 @@ class EventController extends Controller
      */
     public function cancel(Request $request, string $id): JsonResponse
     {
-        $event = Event::findOrFail($id);
+        $event = $this->managedEvent($request, $id);
         $event->status = 'cancelled';
         $event->is_ordering_open = false;
         $event->save();
