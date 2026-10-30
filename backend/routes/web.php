@@ -171,7 +171,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/terminal', [WorkerTerminalController::class, 'index'])->name('worker.terminal');
         Route::post('/scan', [WorkerTerminalController::class, 'scanTicket'])->name('worker.scan')->middleware('throttle:30,1');
         Route::post('/cash', [WorkerTerminalController::class, 'recordCash'])->name('worker.cash');
-        Route::post('/collect', [WorkerTerminalController::class, 'collectFood'])->name('worker.collect');
+        Route::post('/lookup', [WorkerTerminalController::class, 'lookupOrder'])->name('worker.lookup')->middleware('throttle:60,1');
+        Route::post('/collect', [WorkerTerminalController::class, 'collectFood'])->name('worker.collect')->middleware('throttle:60,1');
     });
 });
 

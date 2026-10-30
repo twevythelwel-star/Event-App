@@ -10,8 +10,10 @@ use App\Exceptions\SecurityException;
 use App\Models\Event;
 use App\Models\EventWorkerAssignment;
 use App\Models\Order;
+use App\Models\OrderItem;
 use App\Services\CashLedgerService;
 use App\Services\EventWorkerService;
+use App\Services\OrderOperationsService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,10 +28,20 @@ class WorkerTerminalController extends Controller
     {
         $user = $request->user();
 
-        try {
-            $assignment = EventWorkerService::assertActiveAssignmentValid($user, $event, 'view_relevant_orders');
-        } catch (SecurityException $e) {
-            abort(403, $e->getMessage());
+        // Any active assignment holding one of the terminal's actions may open it; each role then sees only its own panel.
+        // (Ticket checkers and food station workers do not hold 'view_relevant_orders'.)
+        $assignment = null;
+        $denied = null;
+        foreach (['view_relevant_orders', 'scan_qr_tickets', 'mark_quantities_collected', 'record_cash_received', 'oversee_assigned_operations'] as $action) {
+            try {
+                $assignment = EventWorkerService::assertActiveAssignmentValid($user, $event, $action);
+                break;
+            } catch (SecurityException $e) {
+                $denied = $e;
+            }
+        }
+        if ($assignment === null) {
+            abort(403, $denied?->getMessage() ?? 'You are not assigned to this event.');
         }
 
         // Active role defaults to assignment role or event_host
@@ -40,6 +52,7 @@ class WorkerTerminalController extends Controller
             'assignment' => $assignment,
             'workerRole' => $activeRole,
             'station' => $assignment->station_assignment ?? 'all',
+            'stats' => $activeRole === EventWorkerRole::EVENT_SUPERVISOR ? $this->supervisorStats($event) : null,
         ]);
     }
 
@@ -144,41 +157,155 @@ class WorkerTerminalController extends Controller
     }
 
     /**
-     * Partial and full food collection for Food Station Worker.
+     * Food station lookup: find an order at this event by ticket code, QR token or order number,
+     * and list its food lines with what is left to hand over. No prices or payment details.
      */
-    public function collectFood(Request $request, Event $event): JsonResponse
+    public function lookupOrder(Request $request, Event $event): JsonResponse
+    {
+        $request->validate(['code' => ['required', 'string', 'max:80']]);
+
+        try {
+            $assignment = EventWorkerService::assertActiveAssignmentValid($request->user(), $event, 'mark_quantities_collected');
+        } catch (SecurityException $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
+        }
+
+        $order = $this->findEventOrder($event, (string) $request->input('code'));
+        if (!$order) {
+            return response()->json(['success' => false, 'error' => 'No order with that code for this event.'], 404);
+        }
+
+        return response()->json(['success' => true, 'order' => $this->foodView($order, $assignment->station_assignment ?? 'all')]);
+    }
+
+    /**
+     * Partial and full food collection for Food Station Worker. Goes through the same handover service as the
+     * host screens: the item row is locked, quantities are capped, unpaid orders are refused and every handover
+     * is written to the handover audit log.
+     */
+    public function collectFood(Request $request, Event $event, OrderOperationsService $operations): JsonResponse
     {
         $request->validate([
             'order_id' => ['required', 'string'],
             'order_item_id' => ['required', 'string'],
-            'quantity' => ['required', 'integer', 'min:1'],
+            'quantity' => ['required', 'integer', 'min:1', 'max:100'],
         ]);
 
         $user = $request->user();
 
         try {
-            EventWorkerService::assertActiveAssignmentValid($user, $event, 'mark_quantities_collected');
+            $assignment = EventWorkerService::assertActiveAssignmentValid($user, $event, 'mark_quantities_collected');
         } catch (SecurityException $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
         }
 
-        $order = Order::where('id', $request->input('order_id'))
+        $order = Order::withoutGlobalScopes()->whereNull('deleted_at')
             ->where('event_id', $event->id)
-            ->firstOrFail();
+            ->whereKey($request->input('order_id'))
+            ->first();
+        if (!$order) {
+            return response()->json(['success' => false, 'error' => 'No such order for this event.'], 404);
+        }
+
+        $item = OrderItem::where('id', $request->input('order_item_id'))->where('order_id', $order->id)->first();
+        if (!$item || $item->menu_item_id === null) {
+            return response()->json(['success' => false, 'error' => 'That food item is not on this order.'], 422);
+        }
+
+        // A worker assigned to one station only hands over that station's items (station = item category)
+        $station = $assignment->station_assignment ?? 'all';
+        if (!$this->servesAt($item, $station)) {
+            return response()->json(['success' => false, 'error' => "This item is not served at the {$station} station."], 403);
+        }
 
         try {
-            $result = EventWorkerService::markFoodCollected(
-                worker: $user,
-                order: $order,
-                orderItemId: (string) $request->input('order_item_id'),
-                qtyToCollect: (int) $request->input('quantity')
-            );
-
-            return response()->json($result);
+            $result = $operations->recordHandover($user, $order, $item->id, (int) $request->input('quantity'), [
+                'action_type' => 'collection',
+                'station' => $station,
+            ]);
         } catch (SecurityException $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
         } catch (\InvalidArgumentException $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
+
+        return response()->json(['success' => true, 'order' => $this->foodView($result['order'], $station)]);
+    }
+
+    private function findEventOrder(Event $event, string $code): ?Order
+    {
+        $code = trim($code);
+
+        return Order::withoutGlobalScopes()->whereNull('deleted_at')
+            ->where('event_id', $event->id)
+            ->where(fn ($q) => $q->where('secure_ticket_token', $code)
+                ->orWhere('ticket_code', $code)
+                ->orWhere('order_number', $code))
+            ->with('items')
+            ->first();
+    }
+
+    /** What a food station may see of an order: its number, first name, payment state and food lines. */
+    private function foodView(Order $order, string $station): array
+    {
+        $order->loadMissing('items');
+
+        return [
+            'id' => $order->id,
+            'order_number' => $order->order_number,
+            'customer_first_name' => strtok((string) $order->customer_name, ' ') ?: 'Guest',
+            'payment_verified' => $order->isEligibleForHandover(),
+            'items' => $order->items
+                ->filter(fn (OrderItem $item) => $item->menu_item_id !== null)
+                ->map(fn (OrderItem $item) => [
+                    'id' => $item->id,
+                    'name' => $item->name,
+                    'options' => $item->selected_options_summary,
+                    'quantity' => (int) $item->quantity,
+                    'collected' => (int) $item->collected_quantity,
+                    'remaining' => max(0, (int) $item->quantity - (int) $item->collected_quantity),
+                    'category' => $item->category,
+                    'at_this_station' => $this->servesAt($item, $station),
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /** Same rule as EventWorkerRole::sanitizeOrderForWorker: a station name matches the item category. */
+    private function servesAt(OrderItem $item, string $station): bool
+    {
+        return $station === 'all' || strcasecmp((string) $item->category, $station) === 0;
+    }
+
+    /**
+     * Live figures for the supervisor desk: tickets admitted, food handed over, and staff on shift.
+     *
+     * @return array{tickets_admitted: int, tickets_valid: int, portions_collected: int, portions_ordered: int, staff_on_shift: int}
+     */
+    private function supervisorStats(Event $event): array
+    {
+        $orders = Order::withoutGlobalScopes()->whereNull('deleted_at')
+            ->where('event_id', $event->id)
+            ->whereNotIn('status', ['refunded', 'rejected', 'cancelled', 'expired'])
+            ->with('items')
+            ->get();
+
+        $ticketOrders = $orders->filter(fn (Order $o) => $o->items->contains(fn (OrderItem $i) => $i->ticket_tier_id !== null));
+        $foodItems = $orders->filter(fn (Order $o) => $o->isEligibleForHandover())
+            ->flatMap(fn (Order $o) => $o->items->filter(fn (OrderItem $i) => $i->menu_item_id !== null));
+
+        return [
+            'tickets_admitted' => $ticketOrders->whereNotNull('checked_in_at')->count(),
+            'tickets_valid' => $ticketOrders->filter(fn (Order $o) => in_array($o->status, ['paid', 'confirmed'], true))->count(),
+            'portions_collected' => (int) $foodItems->sum('collected_quantity'),
+            'portions_ordered' => (int) $foodItems->sum('quantity'),
+            'staff_on_shift' => EventWorkerAssignment::withoutGlobalScopes()
+                ->where('event_id', $event->id)
+                ->where('is_active', true)
+                ->get()
+                ->filter(fn (EventWorkerAssignment $a) => $a->isCurrentlyActive())
+                ->count(),
+        ];
     }
 }

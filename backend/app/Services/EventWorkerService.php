@@ -227,61 +227,6 @@ class EventWorkerService
     }
 
     /**
-     * Mark food quantities collected while strictly barring prices, financial reports, and unrelated customer PII.
-     */
-    public static function markFoodCollected(
-        User $worker,
-        Order $order,
-        string $orderItemId,
-        int $qtyToCollect
-    ): array {
-        $assignment = EventWorkerAssignment::where('user_id', $worker->id)
-            ->where(fn($q) => $q->where('event_id', $order->event_id)->orWhereNull('event_id'))
-            ->where('is_active', true)
-            ->first();
-
-        $canCollect = $worker->hasRole(AccountType::EVENT_HOST) ||
-            $worker->hasRole(AccountType::SYSTEM_ADMIN) ||
-            ($assignment && $assignment->canPerform('mark_quantities_collected'));
-
-        if (!$canCollect) {
-            throw new SecurityException("Unauthorized: Worker {$worker->email} is not permitted to mark food collection.");
-        }
-
-        $item = OrderItem::where('id', $orderItemId)->where('order_id', $order->id)->first();
-        if (!$item) {
-            throw new \InvalidArgumentException('Order item not found.');
-        }
-
-        // Station enforcement
-        if ($assignment && $assignment->station_assignment !== 'all') {
-            $itemStation = $item->menuItem?->station ?? 'all';
-            if ($itemStation !== 'all' && $itemStation !== $assignment->station_assignment) {
-                throw new SecurityException("Station Mismatch: Item belongs to '{$itemStation}', worker is assigned to '{$assignment->station_assignment}'.");
-            }
-        }
-
-        $remaining = $item->quantity - ($item->collected_quantity ?? 0);
-        if ($qtyToCollect > $remaining) {
-            throw new \InvalidArgumentException("Cannot collect {$qtyToCollect} portions; only {$remaining} portions remaining.");
-        }
-
-        $item->collected_quantity = ($item->collected_quantity ?? 0) + $qtyToCollect;
-        $item->last_collected_at = now();
-        $item->last_collected_by = $worker->id;
-        $item->save();
-
-        return [
-            'success' => true,
-            'item_id' => $item->id,
-            'item_name' => $item->name,
-            'collected_now' => $qtyToCollect,
-            'total_collected' => $item->collected_quantity,
-            'remaining_portions' => $item->quantity - $item->collected_quantity,
-        ];
-    }
-
-    /**
      * Create an expiring invitation for a worker to join an event with a specific role.
      *
      * @param array<string> $customPermissions
