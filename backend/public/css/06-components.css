@@ -198,3 +198,25 @@
   .eb-app-header .role-switcher-container label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
   .eb-app-header .role-switcher-container select { max-width: 7.5rem; padding-left: 0.5rem !important; padding-right: 1.5rem !important; }
 }
+
+/* ------------------------------------------------------------------
+   Event QR section (host event screen)
+   ------------------------------------------------------------------ */
+.eb-event-qr { margin-top: var(--space-6, 1.5rem); }
+.eb-event-qr .card-header { display: block; }
+.eb-event-qr .card-subtitle { margin-top: var(--space-1, 0.25rem); }
+.eb-event-qr-grid { display: grid; gap: var(--space-6, 1.5rem); grid-template-columns: minmax(0, 1fr); margin-top: var(--space-4, 1rem); }
+@media (min-width: 768px) { .eb-event-qr-grid { grid-template-columns: 280px minmax(0, 1fr); } }
+.eb-event-qr-preview { display: flex; align-items: center; justify-content: center; min-height: 220px; padding: var(--space-3, 0.75rem); border-radius: var(--radius-lg, 12px); background: var(--color-background-secondary); border: 1px solid var(--border-color, rgba(255,255,255,0.08)); }
+.eb-event-qr-preview img { width: 100%; max-width: 260px; height: auto; }
+.eb-event-qr-details { display: grid; gap: var(--space-4, 1rem); align-content: start; }
+.eb-event-qr-facts { display: grid; gap: var(--space-3, 0.75rem); grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin: 0; }
+.eb-event-qr-facts dt { font-size: 0.75rem; color: var(--color-text-secondary, #94A3B8); margin-bottom: 0.15rem; }
+.eb-event-qr-facts dd { margin: 0; font-weight: 600; color: var(--color-text-primary); }
+.eb-event-qr-note { display: block; font-weight: 400; font-size: 0.8rem; color: var(--color-warning-text, #FBBF24); }
+.eb-event-qr-muted { font-weight: 400; font-size: 0.8rem; color: var(--color-text-secondary, #94A3B8); }
+.eb-event-qr-actions { display: flex; flex-wrap: wrap; gap: var(--space-2, 0.5rem); }
+.eb-event-qr-redesign { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--space-2, 0.5rem); }
+.eb-event-qr-redesign .form-group { margin: 0; }
+.eb-event-qr-redesign p { flex-basis: 100%; margin: 0; }
+.eb-event-qr-flash { margin: var(--space-3, 0.75rem) 0 0; padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem); border-radius: var(--radius-md, 8px); background: var(--color-accent-subtle); border: 1px solid var(--color-accent-border); color: var(--color-text-primary); }

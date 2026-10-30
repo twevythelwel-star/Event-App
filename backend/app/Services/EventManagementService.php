@@ -147,6 +147,9 @@ class EventManagementService
 
         $this->audit($user, 'event_created', 'events', $event->id, "Draft event '{$event->title}' created via Event Wizard.");
 
+        // The event's promotional QR identity and artwork; artwork failure never fails event creation.
+        app(\App\Services\EventQr\EventQrService::class)->ensureFor($event);
+
         return $this->findEvent($user, $event->id);
     }
 

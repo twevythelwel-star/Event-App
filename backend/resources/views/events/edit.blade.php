@@ -330,6 +330,10 @@
         </div>
     </form>
 
+    @if ($qr ?? null)
+        @include('events.partials.event-qr')
+    @endif
+
     @if ($event->flyer_path)
         <form id="delete-flyer-form" action="{{ route('events.flyer.remove', $event->id) }}" method="POST" class="hidden">
             @csrf

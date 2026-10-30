@@ -193,3 +193,36 @@ None. All 169 Laravel tests, 525 standalone runner tests and 202 frontend tests 
 4. **H3 and H4:** payment transition table; locked refund with a restock policy.
 5. **H6:** choose the production stack, add CI on that database, and correct the runbook.
 6. Accessibility fixes (labels, select focus), host and staff shells (Phases 3–4), then pagination, query-count tests and the full accessibility pass (Phase 5).
+
+---
+
+## Added 2026-10-30: event QR codes
+
+**What was built** (`App\Services\EventQr\*`, `EventQrController`, `event_qr_codes` table, `events/partials/event-qr.blade.php`):
+- **One identity per event.** Every event created through the host form or the host API gets one promotional QR identity: a random 10-character public code, unique per event (enforced by a unique index on `event_id`). The code encodes `{APP_URL}/e/{code}`, which redirects to the public event page for **published events only**. Editing the event never changes it.
+- **Random approved design.** The look is picked at random (with `random_int`) from approved presets: Geometric, Circular, Neon, Premium Minimal, Festival, Editorial, Custom Event Theme (colours sampled from the flyer) and Random Combination. Each preset is a whitelist of module shapes, corner-marker shapes, tested colour pairs, borders, labels and an optional centre "bite" mark. The design is stored and reused until the host asks for a new one; a redesign keeps the same code.
+- **Scan rules.**
+  - Dark modules on a lighter plate. Dark styles put their darkness in the frame, not the code, because light-on-dark codes aren't read by every scanner.
+  - Contrast of at least 7:1, and a 4-module quiet zone.
+  - Error correction Q for dot modules and H for the centre mark.
+  - Anything else falls back to a classic black-on-white design.
+- **Decode check.** Every design is decoded with a real QR reader (the `chillerlan/php-qrcode` decoder, a ZXing port) at print size, at small size and after JPEG compression before it is saved. 42 random designs across all presets were also probed at four sizes and compression levels, with 0 failures.
+- **Host controls.** Preview, then download SVG, print-size PNG (24 px per module) or a poster layout (SVG with the event name, date and a call to action outside the code). Hosts can choose a new design or retry a failed generation.
+- **Failures.** A generation failure never fails event creation. The identity is kept as "failed" and can be retried; it is never duplicated.
+- **Admission.** Event codes can't admit anyone. The gate only admits by each ticket's own `tok_` token (H1).
+- **Tests:** `EventQrCodeTest` (11 tests) covers the 15 requirements, including decoding and a negative control showing the reader rejects unreadable artwork. CI now installs PHP `gd`.
+
+**Not done:**
+- No PDF download; there is no PDF library in the project, and SVG and PNG cover print.
+- The PNG omits the text label, because GD has no reliable font here; the SVG and poster include it.
+- Not yet scanned with a physical phone camera.
+- The public event page doesn't show the event QR; only the host screen does.
+
+## New findings (2026-10-30)
+
+| # | Severity | Finding | Evidence | Fix |
+|---|---|---|---|---|
+| C4 | **Critical** | **Event management by ID with no ownership check** | `EventController@edit`, `update`, `publish`, `unpublish`, `uploadFlyer`, `removeFlyer` and `toggleOrdering` all use `Event::findOrFail($id)`. With no tenant context, any signed-in user, including an attendee, can edit, publish, unpublish or change the flyer of any organizer's event. (The new QR actions use `EventManagementService::findEvent` and are not affected; the QR section is hidden from non-managers.) | Route these actions through `EventManagementService::findEvent`, with tests per action. |
+| — | Fixed here | Draft events were publicly viewable at `/events/{id}` | `EventController@show` loaded any event | Non-published events now return 404 unless the viewer manages the event (tested). |
+| M | Medium | `symfony/mime` advisory CVE-2026-45070 (email header injection) | `composer audit` | Update `symfony/mime` to a patched release (7.4.22+ or 8.1.10+). |
+| L | Low | The host event edit page is unstyled | `events/edit.blade.php` uses Tailwind classes the layout doesn't load. Flash messages set as `status` are never displayed. | Restyle with the shared components (Phase 4). The new QR section already uses them. |

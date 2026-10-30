@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\EmailVerificationController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventQrController;
 use App\Http\Controllers\HostApplicationController;
 use App\Http\Controllers\HostDashboardController;
 use App\Http\Controllers\MenuController;
@@ -60,6 +61,10 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
     return view('welcome');
 })->name('home');
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
+
+// Event QR short links: resolve only for published events; never used for admission
+Route::get('/e/{code}', [EventQrController::class, 'resolve'])->where('code', '[A-Za-z0-9]{10}')->name('event-qr.resolve')->middleware('throttle:120,1');
+Route::get('/e/{code}/qr.svg', [EventQrController::class, 'publicArtwork'])->where('code', '[A-Za-z0-9]{10}')->name('event-qr.public')->middleware('throttle:120,1');
 Route::get('/events/{eventSlug}/menu', [MenuController::class, 'index'])->name('events.menu.index');
 
 // Provider Delivery Webhooks (signature-verified; exempt from CSRF since providers cannot send a token)
@@ -126,6 +131,11 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/events/{id}/publish', [EventController::class, 'publish'])->name('events.publish');
     Route::post('/events/{id}/unpublish', [EventController::class, 'unpublish'])->name('events.unpublish');
     Route::post('/events/{id}/toggle-ordering', [EventController::class, 'toggleOrdering'])->name('events.toggle-ordering');
+
+    // Event QR artwork (only for events the user manages)
+    Route::get('/events/{id}/qr/{format}', [EventQrController::class, 'download'])->where('format', 'svg|png|poster')->name('events.qr.download')->middleware('throttle:60,1');
+    Route::post('/events/{id}/qr/design', [EventQrController::class, 'redesign'])->name('events.qr.redesign')->middleware('throttle:20,1');
+    Route::post('/events/{id}/qr/retry', [EventQrController::class, 'retry'])->name('events.qr.retry')->middleware('throttle:20,1');
 
     // Event Menu Management (Event Owners)
     Route::post('/events/{eventSlug}/menu', [MenuController::class, 'store'])->name('events.menu.store')->middleware('throttle:30,1');

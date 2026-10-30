@@ -53,6 +53,12 @@ class EventController extends Controller
 
         $event = Event::with('menuItems')->findOrFail($id);
 
+        // Only published events are public. Draft, unpublished and cancelled events are visible to the people
+        // who manage them, and behave as not found for everyone else (including via an event QR short link).
+        if ($event->status !== 'published' && !$this->canManage($request, $event)) {
+            abort(404);
+        }
+
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
@@ -73,6 +79,21 @@ class EventController extends Controller
         $fromPrice = $prices === [] ? null : min($prices);
 
         return view('events.show', compact('event', 'tiers', 'fromPrice', 'currency'));
+    }
+
+    private function canManage(Request $request, Event $event): bool
+    {
+        if (!$request->user()) {
+            return false;
+        }
+
+        try {
+            app(\App\Services\EventManagementService::class)->findEvent($request->user(), $event->id);
+
+            return true;
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException) {
+            return false;
+        }
     }
 
     /**
@@ -113,7 +134,17 @@ class EventController extends Controller
             ]);
         }
 
-        return view('events.edit', compact('event'));
+        // The Event QR section is shown only to people who manage this event; ensureFor() also creates the
+        // identity for events made before QR codes existed.
+        $qr = null;
+        $qrDestination = null;
+        if ($request->user() && $this->canManage($request, $event)) {
+            $qrService = app(\App\Services\EventQr\EventQrService::class);
+            $qr = $qrService->ensureFor($event);
+            $qrDestination = $qrService->destinationUrl($qr);
+        }
+
+        return view('events.edit', compact('event', 'qr', 'qrDestination'));
     }
 
     /**
@@ -153,6 +184,10 @@ class EventController extends Controller
             $event->is_flyer_public = ($event->status === 'published');
             $event->save();
         }
+
+        // Every new event gets its promotional QR identity and artwork. Failure here never fails the event:
+        // the identity is kept as "failed" and the host can retry from the event screen.
+        app(\App\Services\EventQr\EventQrService::class)->ensureFor($event);
 
         if ($request->wantsJson()) {
             return response()->json([
