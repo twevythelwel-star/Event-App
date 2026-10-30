@@ -67,18 +67,16 @@ class OrderPlacementService
         // Failures inside the transaction throw so any stock already reserved is rolled back
         try {
             return DB::transaction(function () use ($event, $payload, $customerName, $customerPhone, $itemsPayload, $currency, $authUser, $idempotencyKey) {
-                if ($idempotencyKey !== '') {
-                    $existing = Order::withoutGlobalScopes()
-                        ->where('event_id', $event->id)
-                        ->where('notes', 'LIKE', "%[idem:{$idempotencyKey}]%")
-                        ->with('items')
-                        ->first();
-                    if ($existing) {
-                        return [
-                            'success' => true,
-                            'order' => $existing,
-                        ];
-                    }
+                if ($idempotencyKey !== '' && ($existing = $this->findByIdempotencyKey($event, $idempotencyKey))) {
+                    return ['success' => true, 'order' => $existing];
+                }
+
+                // Lock the event row: ticket stock lives in its ticket_tiers JSON, so two checkouts
+                // must not both read the same remaining count. Re-read state that may have changed
+                // since the caller loaded the event (ordering closed, tickets sold).
+                $event = Event::withoutGlobalScopes()->where('id', $event->id)->lockForUpdate()->first();
+                if (!$event || !$event->is_ordering_open) {
+                    throw new OrderPlacementException('Ordering is currently paused by the organizer.');
                 }
 
                 $orderItemsToCreate = [];
@@ -89,8 +87,11 @@ class OrderPlacementService
                     $menuItemId = (string) ($entry['menu_item_id'] ?? '');
                     $quantity = (int) ($entry['quantity'] ?? 0);
 
-                    if ($quantity <= 0) {
-                        throw new OrderPlacementException("Invalid requested quantity: {$quantity}. Must be at least 1.");
+                    if ($quantity === 0) {
+                        continue; // Untouched rows on an order form, not a request.
+                    }
+                    if ($quantity < 0) {
+                        throw new OrderPlacementException("Invalid requested quantity: {$quantity}.");
                     }
 
                     // Lock menu item row for stock integrity (SELECT ... FOR UPDATE); items must belong to this event
@@ -153,6 +154,10 @@ class OrderPlacementService
                         'special_instructions' => $entry['special_instructions'] ?? null,
                         'handover_status' => 'pending',
                     ];
+                }
+
+                if ($orderItemsToCreate === []) {
+                    throw new OrderPlacementException('Your order must contain at least one ticket or food item.');
                 }
 
                 if ($ticketTiersModified) {
@@ -221,7 +226,8 @@ class OrderPlacementService
                     'authorized_unpaid' => $authorizedUnpaid,
                     'secure_ticket_token' => $secureToken,
                     'all_handed_over' => false,
-                    'notes' => trim(($payload['notes'] ?? '') . ($idempotencyKey !== '' ? " [idem:{$idempotencyKey}]" : '')) ?: null,
+                    'idempotency_key' => $idempotencyKey !== '' ? $idempotencyKey : null,
+                    'notes' => trim((string) ($payload['notes'] ?? '')) ?: null,
                 ]);
 
                 foreach ($orderItemsToCreate as $itemData) {
@@ -238,14 +244,26 @@ class OrderPlacementService
             });
         } catch (OrderPlacementException $e) {
             return ['success' => false, 'error' => $e->getMessage()];
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            // A duplicate submission raced past the first lookup; the unique index stopped it.
+            if ($idempotencyKey !== '' && ($existing = $this->findByIdempotencyKey($event, $idempotencyKey))) {
+                return ['success' => true, 'order' => $existing];
+            }
+            throw $e;
         }
+    }
+
+    private function findByIdempotencyKey(Event $event, string $key): ?Order
+    {
+        return Order::withoutGlobalScopes()
+            ->where('event_id', $event->id)
+            ->where('idempotency_key', $key)
+            ->with('items')
+            ->first();
     }
 
     private function isTicketTierItemId(string $itemId, array $ticketTiers): bool
     {
-        if (str_starts_with($itemId, 'tier-') || in_array($itemId, ['general-admission', 'vip-oceanfront', 'family-bundle'], true)) {
-            return true;
-        }
         foreach ($ticketTiers as $tier) {
             if (isset($tier['id']) && (string) $tier['id'] === $itemId) {
                 return true;
@@ -280,13 +298,19 @@ class OrderPlacementService
                     $ticketTiersModified = true;
                 }
 
-                $unitPrice = $currency === 'JMD'
-                    ? (float) ($tier['price_jmd'] ?? $tier['priceJMD'] ?? (($tier['price'] ?? 15) * 150))
-                    : (float) ($tier['price_usd'] ?? $tier['priceUSD'] ?? $tier['price'] ?? 15);
+                // Only the host's own price in the order currency; never a guessed or converted one.
+                $configuredPrice = $currency === 'JMD'
+                    ? ($tier['price_jmd'] ?? $tier['priceJMD'] ?? null)
+                    : ($tier['price_usd'] ?? $tier['priceUSD'] ?? null);
+                if ($configuredPrice === null || !is_numeric($configuredPrice) || (float) $configuredPrice < 0) {
+                    throw new OrderPlacementException("'{$name}' has no {$currency} price set by the organizer, so it can't be sold yet.");
+                }
+                $unitPrice = (float) $configuredPrice;
 
                 return [
                     'id' => (string) Str::uuid(),
-                    'menu_item_id' => $itemId,
+                    'menu_item_id' => null,
+                    'ticket_tier_id' => $itemId,
                     'name' => $name,
                     'category' => 'Tickets',
                     'pricing_type' => 'fixed',
@@ -304,45 +328,7 @@ class OrderPlacementService
             }
         }
 
-        // Standard default ticket tiers when event has no custom ticket_tiers array persisted yet
-        $defaults = [
-            'tier-ga' => ['name' => 'General Admission Pass', 'usd' => 15.0, 'jmd' => 2250.0, 'max' => 6],
-            'general-admission' => ['name' => 'General Admission Pass', 'usd' => 15.0, 'jmd' => 2250.0, 'max' => 6],
-            'tier-vip' => ['name' => 'VIP Oceanfront Lounge Pass', 'usd' => 45.0, 'jmd' => 6800.0, 'max' => 4],
-            'vip-oceanfront' => ['name' => 'VIP Oceanfront Lounge Pass', 'usd' => 45.0, 'jmd' => 6800.0, 'max' => 4],
-            'tier-eb' => ['name' => 'Early Bird Community Pass', 'usd' => 10.0, 'jmd' => 1500.0, 'max' => 2],
-            'tier-group' => ['name' => 'Group Cabana & Table Pass (4 Guests)', 'usd' => 140.0, 'jmd' => 21000.0, 'max' => 2],
-            'family-bundle' => ['name' => 'Family & Cabana Table Bundle (4 Guests)', 'usd' => 110.0, 'jmd' => 16500.0, 'max' => 2],
-        ];
-
-        if (!isset($defaults[$itemId])) {
-            throw new OrderPlacementException("Ticket tier '{$itemId}' is not available for this event.");
-        }
-
-        $spec = $defaults[$itemId];
-        if ($quantity > $spec['max']) {
-            throw new OrderPlacementException("Maximum {$spec['max']} '{$spec['name']}' tickets allowed per order.");
-        }
-
-        $unitPrice = $currency === 'JMD' ? $spec['jmd'] : $spec['usd'];
-
-        return [
-            'id' => (string) Str::uuid(),
-            'menu_item_id' => $itemId,
-            'name' => $spec['name'],
-            'category' => 'Tickets',
-            'pricing_type' => 'fixed',
-            'base_price' => $unitPrice,
-            'selected_options_summary' => ['Digital Admission Pass'],
-            'options_total_extra' => 0.0,
-            'custom_donation_amount' => null,
-            'final_item_price' => $unitPrice,
-            'currency' => $currency,
-            'quantity' => $quantity,
-            'collected_quantity' => 0,
-            'special_instructions' => null,
-            'handover_status' => 'pending',
-        ];
+        throw new OrderPlacementException("Ticket type '{$itemId}' is not on sale for this event.");
     }
 
     /**

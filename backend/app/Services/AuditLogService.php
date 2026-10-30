@@ -25,7 +25,8 @@ class AuditLogService
         ?string $eventId = null
     ): SecurityAuditLog {
         $actorRole = $actor ? $actor->getActiveRole()->value : 'system';
-        $request = app()->runningInConsole() ? null : request();
+        // The standalone test runner (tests/run_backend_tests.php) has no application container.
+        $request = function_exists('app') && !app()->runningInConsole() ? request() : null;
 
         return SecurityAuditLog::create([
             'id' => (string) Str::uuid(),
@@ -35,7 +36,7 @@ class AuditLogService
             'target_entity' => $targetEntity,
             'target_id' => $targetId,
             'ip_address' => $ipAddress ?? $request?->ip() ?? '127.0.0.1',
-            'user_agent' => $userAgent ?? Str::limit((string) ($request?->userAgent() ?? 'App/Backend'), 255, ''),
+            'user_agent' => $userAgent ?? substr((string) ($request?->userAgent() ?? 'App/Backend'), 0, 255),
             'details' => $details,
             'is_pii_access' => $isPiiAccess,
             'outcome' => $outcome,

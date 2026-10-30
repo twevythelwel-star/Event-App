@@ -295,3 +295,6 @@ body {
     --layout-max-width: 1400px;
   }
 }
+
+/* Visually hidden but announced by screen readers (form labels for compact quantity inputs, etc.) */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

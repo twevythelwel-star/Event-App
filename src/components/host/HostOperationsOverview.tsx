@@ -1119,7 +1119,7 @@ export function HostOperationsOverview({
                         {order.customerName}
                       </strong>
                       <span style={{ fontSize: "10px", color: "#64748B" }}>
-                        {order.customerEmail}
+                        {order.email}
                       </span>
                     </td>
                     <td style={{ padding: "10px 12px" }}>

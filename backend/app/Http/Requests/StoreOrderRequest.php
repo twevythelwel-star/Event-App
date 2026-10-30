@@ -24,7 +24,8 @@ class StoreOrderRequest extends FormRequest
             'sender_name' => ['nullable', 'string', 'max:120'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.menu_item_id' => ['required', 'string'],
-            'items.*.quantity' => ['required', 'integer', 'min:1', 'max:100'],
+            // 0 is allowed: untouched rows on the order form are skipped; the service still requires one line.
+            'items.*.quantity' => ['required', 'integer', 'min:0', 'max:100'],
             'items.*.selected_choices' => ['nullable', 'array'],
             'items.*.custom_donation_amount' => ['nullable', 'numeric', 'min:0'],
             'items.*.special_instructions' => ['nullable', 'string', 'max:300'],

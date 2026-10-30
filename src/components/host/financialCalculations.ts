@@ -753,8 +753,6 @@ export function computeHostSalesAnalyticsSeries(
     }
 
     const itemsCombined = orderTicketSubtotal + orderFoodSubtotal;
-    const foodShareRatio =
-      itemsCombined > 0 ? orderFoodSubtotal / itemsCombined : 1;
     const ticketShareRatio =
       itemsCombined > 0 ? orderTicketSubtotal / itemsCombined : 0;
 

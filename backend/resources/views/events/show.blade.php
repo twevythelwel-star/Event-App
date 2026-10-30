@@ -592,59 +592,120 @@
 
     <!-- Pre-Order Modal Dialog -->
     @auth
-        @if($event->is_ordering_open && !empty($event->menuItems) && count($event->menuItems) > 0)
-            <div id="preorder-modal" style="display: none; position: fixed; inset: 0; background: rgba(11, 19, 43, 0.8); backdrop-filter: blur(8px); z-index: 1000; overflow-y: auto; padding: 2rem 1rem;">
-                <div style="max-width: 580px; margin: 2rem auto; background: #162038; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5); padding: 2rem; color: #FFFFFF;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 1rem;">
+        @php
+            // Display only. Prices and availability are re-checked by OrderPlacementService on submit.
+            $orderCurrency = $event->currency === 'USD' ? 'USD' : 'JMD';
+            $priceKey = $orderCurrency === 'JMD' ? 'price_jmd' : 'price_usd';
+            $sellableTiers = collect(is_array($event->ticket_tiers) ? $event->ticket_tiers : [])
+                ->filter(fn ($tier) => isset($tier['id']) && is_numeric($tier[$priceKey] ?? ($orderCurrency === 'JMD' ? ($tier['priceJMD'] ?? null) : ($tier['priceUSD'] ?? null))))
+                ->values();
+            $formatPrice = fn ($amount) => ($orderCurrency === 'JMD' ? 'J$' : 'US$') . number_format((float) $amount, 2);
+            $lineIndex = 0;
+        @endphp
+        @if($event->is_ordering_open && (count($event->menuItems) > 0 || $sellableTiers->isNotEmpty()))
+            <div id="preorder-modal" role="dialog" aria-modal="true" aria-labelledby="preorder-title"
+                 style="display: {{ session('error') || $errors->any() ? 'block' : 'none' }}; position: fixed; inset: 0; background: rgba(7, 17, 31, 0.8); backdrop-filter: blur(8px); z-index: 1000; overflow-y: auto; padding: 2rem 1rem;">
+                <div class="eb-card" style="max-width: 580px; margin: 2rem auto; padding: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-border-subtle); padding-bottom: 1rem;">
                         <div>
-                            <h3 style="font-size: 1.35rem; font-weight: 800; color: #FFFFFF; margin: 0;">Pre-Order Event Dining & Passes</h3>
-                            <p style="font-size: 0.85rem; color: #94A3B8; margin-top: 0.2rem;">Select your portions for {{ $event->title }}.</p>
+                            <h3 id="preorder-title" style="font-size: 1.35rem; font-weight: 800; margin: 0;">Tickets &amp; food</h3>
+                            <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-top: 0.2rem;">{{ $event->title }} · prices in {{ $orderCurrency }}</p>
                         </div>
-                        <button type="button" onclick="document.getElementById('preorder-modal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; color: #94A3B8; cursor: pointer;">✕</button>
+                        <button type="button" aria-label="Close" onclick="document.getElementById('preorder-modal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; color: var(--color-text-secondary); cursor: pointer;">✕</button>
                     </div>
+
+                    @if(session('error'))
+                        <div class="eb-alert eb-alert-error" role="alert" style="margin-bottom: 1rem;">{{ session('error') }}</div>
+                    @endif
+                    @if($errors->any())
+                        <div class="eb-alert eb-alert-error" role="alert" style="margin-bottom: 1rem;">
+                            @foreach($errors->all() as $message)<div>{{ $message }}</div>@endforeach
+                        </div>
+                    @endif
 
                     <form action="{{ route('orders.store', $event->slug ?? $event->id) }}" method="POST" id="order-form">
                         @csrf
-                        <input type="hidden" name="currency" value="USD">
+                        <input type="hidden" name="currency" value="{{ $orderCurrency }}">
                         <input type="hidden" name="customer_name" value="{{ Auth::user()->name }}">
                         <input type="hidden" name="email" value="{{ Auth::user()->email }}">
+                        {{-- One key per form: a double submit returns the first order instead of creating another. --}}
+                        <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', (string) \Illuminate\Support\Str::uuid()) }}">
 
-                        <div style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
-                            <div style="font-weight: 700; font-size: 0.88rem; color: #818CF8;">Select Dishes:</div>
-                            @foreach($event->menuItems as $idx => $item)
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; background: #0F172A;">
-                                    <div>
-                                        <div style="font-weight: 700; font-size: 0.9rem; color: #FFFFFF;">{{ $item->name }}</div>
-                                        <div style="font-size: 0.8rem; color: #38BDF8; font-weight: 600;">${{ number_format($item->price_usd ?? $item->price, 2) }} USD</div>
+                        @if($sellableTiers->isNotEmpty())
+                            <fieldset style="border: 0; padding: 0; margin: 0 0 1.25rem;">
+                                <legend style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">Tickets</legend>
+                                @foreach($sellableTiers as $tier)
+                                    @php
+                                        $tierPrice = $tier[$priceKey] ?? ($orderCurrency === 'JMD' ? $tier['priceJMD'] : $tier['priceUSD']);
+                                        $left = $tier['quantity_available'] ?? $tier['quantityAvailable'] ?? $tier['availableStock'] ?? null;
+                                        $soldOut = $left !== null && (int) $left <= 0;
+                                        $max = min(20, (int) ($tier['max_per_order'] ?? $tier['maxPerOrder'] ?? 10), $left === null ? 20 : max(0, (int) $left));
+                                        $i = $lineIndex++;
+                                    @endphp
+                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--color-border-subtle); border-radius: 12px; margin-bottom: 0.5rem;">
+                                        <div>
+                                            <div style="font-weight: 700;">{{ $tier['name'] ?? 'Ticket' }}</div>
+                                            <div style="font-size: 0.85rem; color: var(--color-text-secondary);">
+                                                {{ $formatPrice($tierPrice) }}
+                                                @if($soldOut) · <strong style="color: var(--color-error-text);">Sold out</strong>
+                                                @elseif($left !== null && (int) $left <= 10) · {{ (int) $left }} left
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="items[{{ $i }}][menu_item_id]" value="{{ $tier['id'] }}">
+                                        <label class="sr-only" for="qty-{{ $i }}">Quantity of {{ $tier['name'] ?? 'Ticket' }}</label>
+                                        <input id="qty-{{ $i }}" type="number" name="items[{{ $i }}][quantity]" value="{{ old("items.$i.quantity", 0) }}" min="0" max="{{ $max }}" @disabled($soldOut)
+                                               class="eb-input" style="width: 72px; text-align: center; font-weight: 700;">
                                     </div>
-                                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <input type="hidden" name="items[{{ $idx }}][menu_item_id]" value="{{ $item->id }}">
-                                        <label style="font-size: 0.8rem; color: #94A3B8;">Qty:</label>
-                                        <input type="number" name="items[{{ $idx }}][quantity]" value="{{ $idx === 0 ? 1 : 0 }}" min="0" max="20" style="width: 60px; padding: 0.35rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 6px; text-align: center; font-weight: 700; background: #1E293B; color: #FFFFFF;">
+                                @endforeach
+                            </fieldset>
+                        @endif
+
+                        @if(count($event->menuItems) > 0)
+                            <fieldset style="border: 0; padding: 0; margin: 0 0 1.25rem;">
+                                <legend style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">Food &amp; drinks</legend>
+                                @foreach($event->menuItems as $item)
+                                    @php
+                                        $i = $lineIndex++;
+                                        $soldOut = $item->available_stock !== null && (int) $item->available_stock <= 0;
+                                    @endphp
+                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--color-border-subtle); border-radius: 12px; margin-bottom: 0.5rem;">
+                                        <div>
+                                            <div style="font-weight: 700;">{{ $item->name }}</div>
+                                            <div style="font-size: 0.85rem; color: var(--color-text-secondary);">
+                                                {{ $item->pricing_type === 'customizable' ? 'From ' : '' }}{{ $formatPrice($orderCurrency === 'JMD' ? $item->price_jmd : $item->price_usd) }}
+                                                @if($soldOut) · <strong style="color: var(--color-error-text);">Sold out</strong>
+                                                @elseif($item->available_stock !== null && (int) $item->available_stock <= 10) · {{ (int) $item->available_stock }} left
+                                                @endif
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="items[{{ $i }}][menu_item_id]" value="{{ $item->id }}">
+                                        <label class="sr-only" for="qty-{{ $i }}">Quantity of {{ $item->name }}</label>
+                                        <input id="qty-{{ $i }}" type="number" name="items[{{ $i }}][quantity]" value="{{ old("items.$i.quantity", 0) }}" min="0" max="20" @disabled($soldOut)
+                                               class="eb-input" style="width: 72px; text-align: center; font-weight: 700;">
                                     </div>
-                                </div>
-                            @endforeach
-                        </div>
+                                @endforeach
+                            </fieldset>
+                        @endif
 
                         <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
                             <div>
-                                <label style="font-size: 0.82rem; font-weight: 600; color: #CBD5E1; display: block; margin-bottom: 0.25rem;">Contact Mobile Phone (for SMS Pass)</label>
-                                <input type="tel" name="customer_phone" value="{{ Auth::user()->phone ?? '+1 (305) 555-0199' }}" required style="width: 100%; padding: 0.65rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; background: #0F172A; color: #FFFFFF;">
+                                <label for="order-phone" class="eb-text-label" style="display: block; margin-bottom: 0.25rem;">Phone or WhatsApp (your ticket is texted here)</label>
+                                <input id="order-phone" type="tel" name="customer_phone" class="eb-input" value="{{ old('customer_phone', Auth::user()->phone) }}" required minlength="7" autocomplete="tel" placeholder="+1 876 555 0142" style="width: 100%;">
                             </div>
-
                             <div>
-                                <label style="font-size: 0.82rem; font-weight: 600; color: #CBD5E1; display: block; margin-bottom: 0.25rem;">Payment Method</label>
-                                <select name="method" required style="width: 100%; padding: 0.65rem; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 8px; background: #0F172A; color: #FFFFFF;">
-                                    <option value="cash">Cash on Arrival (Pay at Venue)</option>
-                                    <option value="bank">US Domestic Bank Transfer (ACH / Wire)</option>
-                                    <option value="zelle">Zelle Transfer</option>
+                                <label for="order-method" class="eb-text-label" style="display: block; margin-bottom: 0.25rem;">Payment method</label>
+                                <select id="order-method" name="method" class="eb-input" required style="width: 100%;">
+                                    <option value="bank" @selected(old('method') === 'bank')>Bank transfer</option>
+                                    <option value="cash" @selected(old('method') === 'cash')>Cash at pickup</option>
                                 </select>
+                                <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0.35rem 0 0;">Your ticket shows Pending until the organiser confirms payment.</p>
                             </div>
                         </div>
 
                         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                            <button type="button" class="btn btn-secondary" onclick="document.getElementById('preorder-modal').style.display='none'">Cancel</button>
-                            <button type="submit" class="btn btn-primary" style="font-weight: 700; background: linear-gradient(135deg, #7C3AED 0%, #EC4899 100%); border: none;">Confirm & Place Pre-Order</button>
+                            <button type="button" class="eb-btn eb-btn-secondary" onclick="document.getElementById('preorder-modal').style.display='none'">Cancel</button>
+                            <button type="submit" class="eb-btn eb-btn-primary" data-prevent-double-submit="true">Place order</button>
                         </div>
                     </form>
                 </div>

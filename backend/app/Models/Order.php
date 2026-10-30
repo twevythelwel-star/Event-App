@@ -40,6 +40,7 @@ class Order extends Model
         'refund_details',
         'authorized_unpaid',
         'secure_ticket_token',
+        'idempotency_key',
         'all_handed_over',
         'closed_at',
         'notes',
