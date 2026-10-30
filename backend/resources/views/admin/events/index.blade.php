@@ -28,7 +28,7 @@
                     <option value="closed" @selected(($filters['ordering'] ?? '') === 'closed')>Closed</option>
                 </select>
             </div>
-            <button class="ac-btn ac-btn-dark" type="submit">Apply</button>
+            <button class="ac-btn ac-btn-dark" type="submit" data-loading-text="Loading…">Apply</button>
             @if(array_filter($filters))<a class="ac-btn" href="{{ route('admin.console.events.index') }}">Clear</a>@endif
         </form>
 

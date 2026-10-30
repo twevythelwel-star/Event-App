@@ -544,4 +544,40 @@ class AdminConsoleSecurityTest extends TestCase
         $this->actingAs($admin)->get('/admin/console/settings')->assertForbidden();
         $this->actingAs($admin)->post('/admin/console/settings', ['platform_name' => 'Hijacked'])->assertForbidden();
     }
+
+    // ---- Old dashboards and audit scope ----------------------------------------------------
+
+    public function test_old_dashboards_send_people_to_the_console(): void
+    {
+        $root = $this->systemAdmin();
+        $admin = $this->delegatedAdmin(['can_support_orders' => true], [], 'all');
+
+        // The old system dashboard showed placeholder health numbers; browsers now land on the console instead.
+        $this->actingAs($root)->get('/system-admin/dashboard')->assertRedirect(route('admin.console.overview'));
+        $this->actingAs($admin)->get('/admin/dashboard')->assertRedirect(route('admin.console.overview'));
+
+        // API clients keep their JSON responses.
+        $this->actingAs($root)->getJson('/system-admin/dashboard')->assertOk()->assertJsonStructure(['metrics']);
+    }
+
+    public function test_audit_log_shows_the_event_and_organizer_scope(): void
+    {
+        $root = $this->systemAdmin();
+        $event = $this->eventOf(self::KINGSTON);
+        SecurityAuditLog::create([
+            'id' => (string) \Illuminate\Support\Str::uuid(), 'actor_role' => 'system', 'action' => 'scope_marker_action',
+            'target_entity' => 'events', 'target_id' => $event->id, 'details' => 'scope marker',
+            'organizer_id' => self::KINGSTON, 'event_id' => $event->id, 'created_at' => now(),
+        ]);
+        SecurityAuditLog::create([
+            'id' => (string) \Illuminate\Support\Str::uuid(), 'actor_role' => 'system', 'action' => 'platform_marker_action',
+            'target_entity' => 'system_platform_settings', 'details' => 'platform marker', 'created_at' => now(),
+        ]);
+
+        $this->actingAs($root)->get('/admin/console/audit-logs?action=scope_marker_action')->assertOk()
+            ->assertSee('Scope')
+            ->assertSee($event->title)
+            ->assertSee(\App\Models\Organizer::find(self::KINGSTON)->name);
+        $this->actingAs($root)->get('/admin/console/audit-logs?action=platform_marker_action')->assertOk()->assertSee('Platform');
+    }
 }

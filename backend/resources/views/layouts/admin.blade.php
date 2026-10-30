@@ -144,7 +144,22 @@
             if (form.dataset.submitting === 'true') { event.preventDefault(); return; }
             form.dataset.submitting = 'true';
             var button = form.querySelector('button[type="submit"]');
-            if (button && button.dataset.loadingText) { button.textContent = button.dataset.loadingText; }
+            if (button && button.dataset.loadingText) {
+                button.dataset.originalText = button.textContent;
+                button.textContent = button.dataset.loadingText;
+                button.setAttribute('aria-busy', 'true');
+            }
+        });
+        // Going Back can restore a page whose form is still marked as submitting; make it usable again.
+        window.addEventListener('pageshow', function () {
+            document.querySelectorAll('form[data-submitting="true"]').forEach(function (form) {
+                delete form.dataset.submitting;
+                var button = form.querySelector('button[type="submit"]');
+                if (button && button.dataset.originalText) {
+                    button.textContent = button.dataset.originalText;
+                    button.removeAttribute('aria-busy');
+                }
+            });
         });
     })();
 </script>

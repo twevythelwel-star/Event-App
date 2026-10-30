@@ -23,7 +23,7 @@ class SystemAdminDashboardController extends Controller
     /**
      * System Administrator Dashboard Overview and Health Indicators.
      */
-    public function index(Request $request): JsonResponse|View
+    public function index(Request $request): JsonResponse|View|\Illuminate\Http\RedirectResponse
     {
         $user = $request->user();
 
@@ -36,6 +36,11 @@ class SystemAdminDashboardController extends Controller
                 ], 403);
             }
             return redirect()->route('attendee.dashboard')->with('error', 'Unauthorized access: System Administrator privileges required.');
+        }
+
+        // People use the administration console; this endpoint stays for API clients only.
+        if (!$request->wantsJson()) {
+            return redirect()->route('admin.console.overview');
         }
 
         $platform = SystemPlatformSetting::first();

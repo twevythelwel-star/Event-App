@@ -30,7 +30,7 @@
                     @foreach($events as $event)<option value="{{ $event->id }}" @selected(($filters['event'] ?? '') === (string) $event->id)>{{ $event->title }}</option>@endforeach
                 </select>
             </div>
-            <button class="ac-btn ac-btn-dark" type="submit">Update</button>
+            <button class="ac-btn ac-btn-dark" type="submit" data-loading-text="Loading…">Update</button>
         </form>
         @unless($canExport)
             <p class="ac-hint" style="margin:0;padding:10px 18px">Financial figures and the CSV export need both the Reports and Payment oversight permissions.</p>

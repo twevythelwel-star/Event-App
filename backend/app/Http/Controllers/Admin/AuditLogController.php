@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Event;
+use App\Models\Organizer;
 use App\Models\SecurityAuditLog;
 use App\Support\AdminAuthorization as Admin;
 use Illuminate\Http\Request;
@@ -55,9 +57,16 @@ class AuditLogController extends Controller
         }
 
         $showFullDetails = Admin::isSystemAdmin($admin);
+        $logs = $query->latest('created_at')->paginate(50)->withQueryString();
+
+        // Names for the Scope column, looked up once per page rather than per row.
+        $organizerNames = Organizer::whereIn('id', $logs->pluck('organizer_id')->filter()->unique())->pluck('name', 'id');
+        $eventTitles = Event::allTenants()->withTrashed()->whereIn('id', $logs->pluck('event_id')->filter()->unique())->pluck('title', 'id');
 
         return view('admin.audit.index', [
-            'logs' => $query->latest('created_at')->paginate(50)->withQueryString(),
+            'logs' => $logs,
+            'organizerNames' => $organizerNames,
+            'eventTitles' => $eventTitles,
             'filters' => $filters,
             'actions' => (clone $base)->distinct()->orderBy('action')->pluck('action'),
             'redact' => fn (?string $text) => $showFullDetails ? (string) $text : self::redact((string) $text),

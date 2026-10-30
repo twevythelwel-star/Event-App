@@ -41,7 +41,7 @@
                 <label for="to">to</label>
                 <input class="ac-input" id="to" name="to" type="date" value="{{ $filters['to'] ?? '' }}">
             </div>
-            <button class="ac-btn ac-btn-dark" type="submit">Apply</button>
+            <button class="ac-btn ac-btn-dark" type="submit" data-loading-text="Loading…">Apply</button>
             @if(array_filter($filters))<a class="ac-btn" href="{{ route('admin.console.orders.index') }}">Clear</a>@endif
         </form>
 

@@ -29,7 +29,7 @@
             <div class="ac-field" style="min-width:140px"><label for="from">From</label><input class="ac-input" id="from" type="date" name="from" value="{{ $filters['from'] ?? '' }}"></div>
             <div class="ac-field" style="min-width:140px"><label for="to">To</label><input class="ac-input" id="to" type="date" name="to" value="{{ $filters['to'] ?? '' }}"></div>
             <label class="ac-check" style="align-self:center"><input type="checkbox" name="pii" value="1" @checked(!empty($filters['pii']))> Personal data views only</label>
-            <button class="ac-btn ac-btn-dark" type="submit">Apply</button>
+            <button class="ac-btn ac-btn-dark" type="submit" data-loading-text="Loading…">Apply</button>
             @if(array_filter($filters))<a class="ac-btn" href="{{ route('admin.console.audit.index') }}">Clear</a>@endif
         </form>
 
@@ -41,7 +41,7 @@
             <div class="ac-table-wrap"><table class="ac-table">
                 <caption class="sr-only">Audit log entries</caption>
                 <thead><tr>
-                    <th scope="col">When</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Target</th>
+                    <th scope="col">When</th><th scope="col">Actor</th><th scope="col">Action</th><th scope="col">Target</th><th scope="col">Scope</th>
                     <th scope="col">Outcome</th><th scope="col">Details</th>
                 </tr></thead>
                 <tbody>
@@ -51,6 +51,16 @@
                         <td>{{ $log->user?->name ?? 'System' }}<span class="ac-cell-sub">{{ \App\Enums\AccountType::tryFrom((string) $log->actor_role)?->label() ?? $log->actor_role }}</span></td>
                         <td>{{ str_replace('_', ' ', $log->action) }}@if($log->is_pii_access)<span class="ac-cell-sub"><span class="ac-badge warning">Personal data</span></span>@endif</td>
                         <td>{{ $log->target_entity }}<span class="ac-cell-sub">{{ $log->target_id ? \Illuminate\Support\Str::limit($log->target_id, 13) : '' }}</span></td>
+                        <td style="min-width:160px">
+                            @if($log->event_id)
+                                {{ $eventTitles[$log->event_id] ?? 'Deleted event' }}
+                                <span class="ac-cell-sub">{{ $organizerNames[$log->organizer_id] ?? '' }}</span>
+                            @elseif($log->organizer_id)
+                                {{ $organizerNames[$log->organizer_id] ?? 'Unknown organizer' }}
+                            @else
+                                <span class="ac-cell-sub" style="display:inline">Platform</span>
+                            @endif
+                        </td>
                         <td><span class="ac-badge {{ ($log->outcome ?? 'success') === 'success' ? 'success' : 'danger' }}">{{ ucfirst($log->outcome ?? 'success') }}</span></td>
                         <td style="min-width:260px">{{ \Illuminate\Support\Str::limit($redact($log->details), 220) }}</td>
                     </tr>
