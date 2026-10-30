@@ -276,77 +276,8 @@
         @if(!empty($orders) && count($orders) > 0)
             <div class="grid-2">
                 @foreach($orders as $order)
-                    <div style="background: var(--color-bg-page); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem;">
-                        <!-- Ticket Header -->
-                        <div>
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                                <div>
-                                    <span style="font-size: 0.72rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Digital Pass</span>
-                                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--color-navy); margin-top: 0.15rem;">{{ $order->ticket_code }}</h3>
-                                    <p style="font-size: 0.82rem; color: var(--color-text-secondary);">Order #{{ $order->order_number }}</p>
-                                </div>
-                                @include('components.status-indicator', ['status' => $order->status])
-                            </div>
-
-                            <!-- QR Code Simulated Graphic (Clean Scalable SVG) -->
-                            <div style="background: var(--color-white); border: 1px dashed var(--color-border); border-radius: var(--radius-md); padding: 1.25rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem; margin: 1rem 0;">
-                                <svg width="128" height="128" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="QR Code">
-                                    <!-- QR Frame -->
-                                    <rect width="100" height="100" rx="8" fill="#F8FAFC"/>
-                                    <!-- Top-Left Corner Box -->
-                                    <rect x="10" y="10" width="26" height="26" rx="4" fill="#101828"/>
-                                    <rect x="14" y="14" width="18" height="18" rx="2" fill="#FFFFFF"/>
-                                    <rect x="18" y="18" width="10" height="10" rx="1" fill="#4F46E5"/>
-                                    <!-- Top-Right Corner Box -->
-                                    <rect x="64" y="10" width="26" height="26" rx="4" fill="#101828"/>
-                                    <rect x="68" y="14" width="18" height="18" rx="2" fill="#FFFFFF"/>
-                                    <rect x="72" y="18" width="10" height="10" rx="1" fill="#4F46E5"/>
-                                    <!-- Bottom-Left Corner Box -->
-                                    <rect x="10" y="64" width="26" height="26" rx="4" fill="#101828"/>
-                                    <rect x="14" y="68" width="18" height="18" rx="2" fill="#FFFFFF"/>
-                                    <rect x="18" y="72" width="10" height="10" rx="1" fill="#4F46E5"/>
-                                    <!-- Random QR Bits -->
-                                    <rect x="42" y="12" width="6" height="6" fill="#101828"/>
-                                    <rect x="52" y="18" width="6" height="6" fill="#101828"/>
-                                    <rect x="44" y="32" width="14" height="6" fill="#4F46E5"/>
-                                    <rect x="14" y="44" width="6" height="12" fill="#101828"/>
-                                    <rect x="28" y="48" width="8" height="6" fill="#101828"/>
-                                    <rect x="42" y="46" width="16" height="8" fill="#101828"/>
-                                    <rect x="66" y="44" width="10" height="6" fill="#101828"/>
-                                    <rect x="80" y="52" width="8" height="8" fill="#4F46E5"/>
-                                    <rect x="42" y="66" width="8" height="16" fill="#101828"/>
-                                    <rect x="56" y="72" width="12" height="6" fill="#101828"/>
-                                    <rect x="72" y="66" width="16" height="6" fill="#101828"/>
-                                    <rect x="70" y="80" width="18" height="8" fill="#4F46E5"/>
-                                </svg>
-                                <span style="font-size: 0.72rem; color: var(--color-text-muted); font-family: monospace;">Signed Token Verified</span>
-                            </div>
-
-                            <!-- Fulfillment & Meal Portions -->
-                            <div style="background: var(--color-white); border-radius: var(--radius-sm); padding: 0.75rem 1rem; border: 1px solid var(--color-border); font-size: 0.85rem;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
-                                    <span style="color: var(--color-text-secondary);">Total Charged:</span>
-                                    <strong style="color: var(--color-navy);">{{ $order->currency }} ${{ number_format($order->total_amount, 2) }}</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span style="color: var(--color-text-secondary);">Kitchen Collection:</span>
-                                    <span style="font-weight: 600; color: {{ $order->all_handed_over ? 'var(--color-success)' : 'var(--color-warning)' }};">
-                                        {{ $order->all_handed_over ? '✓ All Portions Collected' : 'Awaiting On-Site Pickup' }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Ticket Footer Action -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border); padding-top: 1rem;">
-                            <span style="font-size: 0.75rem; color: var(--color-text-muted);">
-                                Ordered: {{ date('M d, Y', strtotime($order->created_at)) }}
-                            </span>
-                            <button class="btn btn-secondary btn-sm" onclick="window.print()">
-                                🖨️ Print Pass
-                            </button>
-                        </div>
-                    </div>
+                    {{-- The scannable QR code lives on the ticket page. --}}
+                    <x-ticket-card :order="$order" :href="route('tickets.show', $order)" />
                 @endforeach
             </div>
         @else
@@ -400,11 +331,11 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <strong style="color: var(--color-navy);">{{ $order->currency }} ${{ number_format($order->total_amount, 2) }}</strong>
+                                    <strong style="color: var(--color-navy);">{{ \App\Support\Money::format($order->total_amount, $order->currency) }}</strong>
                                 </td>
                                 <td>
                                     <span style="color: var(--color-text-secondary); font-size: 0.84rem;">
-                                        ~{{ $preferred_display_currency ?? 'JMD' }} ${{ number_format($order->total_amount, 2) }}
+                                        {{ $order->currency === ($preferred_display_currency ?? 'JMD') ? '—' : '~' . ($ordersWithEstimates->firstWhere('id', $order->id)['display_estimate'] ?? '') }}
                                     </span>
                                 </td>
                                 <td style="text-align: right;">

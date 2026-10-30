@@ -254,3 +254,6 @@ Route::get('/events/{id}', [EventController::class, 'show'])->name('events.show'
 
 // Administration console (permission-scoped platform oversight)
 require __DIR__ . '/admin.php';
+
+// Customer ordering flow (tickets, food, checkout, digital ticket)
+require __DIR__ . '/customer.php';

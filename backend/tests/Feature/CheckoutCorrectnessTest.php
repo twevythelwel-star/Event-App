@@ -170,16 +170,17 @@ class CheckoutCorrectnessTest extends TestCase
         $this->assertSame('form-abc-123', $first['order']->fresh()->idempotency_key);
     }
 
-    public function test_event_page_shows_the_order_form_in_the_events_currency(): void
+    public function test_event_page_shows_real_tickets_in_the_events_currency(): void
     {
+        // Ordering itself moved to the checkout flow (CustomerCheckoutFlowTest); the event page
+        // lists the host's priced ticket types and links into that flow.
         $this->buyer->forceFill(['phone' => null])->save();
 
         $this->actingAs($this->buyer)->get('/events/' . $this->event->id)->assertOk()
-            ->assertSee('name="currency" value="JMD"', false)
             ->assertSee('General Admission')
             ->assertSee('J$2,000.00')
             ->assertDontSee('Unpriced Pass')
-            ->assertSee('name="idempotency_key"', false)
+            ->assertSee(route('checkout.tickets', $this->event), false)
             ->assertDontSee('555-0199');
     }
 
@@ -227,6 +228,45 @@ class CheckoutCorrectnessTest extends TestCase
             'currency' => 'JMD',
             'items' => [['menu_item_id' => $this->dish->id, 'quantity' => 1]],
         ])->assertCreated()->assertJsonPath('status', 'awaiting_payment');
+    }
+
+    public function test_currency_is_always_the_events(): void
+    {
+        $result = $this->place([['menu_item_id' => $this->dish->id, 'quantity' => 1]], ['currency' => 'USD']);
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('JMD', $result['order']->currency);
+        $this->assertEquals(1500, (float) $result['order']->total_amount);
+    }
+
+    public function test_option_choices_must_exist(): void
+    {
+        $plate = MenuItem::allTenants()->create([
+            'organizer_id' => $this->event->organizer_id, 'event_id' => $this->event->id, 'name' => 'Jerk Plate',
+            'category' => 'Mains', 'pricing_type' => 'customizable', 'price_usd' => 8, 'price_jmd' => 1200, 'is_active' => true,
+            'custom_option_groups' => [['id' => 'size', 'title' => 'Size', 'choices' => [['label' => 'Regular', 'extraPriceJMD' => 0], ['label' => 'Large', 'extraPriceJMD' => 300]]]],
+        ]);
+
+        $bad = $this->place([['menu_item_id' => $plate->id, 'quantity' => 1, 'selected_choices' => ['size' => 9]]]);
+        $this->assertFalse($bad['success']);
+
+        $good = $this->place([['menu_item_id' => $plate->id, 'quantity' => 1, 'selected_choices' => ['size' => 1]]]);
+        $this->assertEquals(1500, (float) $good['order']->items->first()->final_item_price);
+    }
+
+    public function test_donation_amount_respects_the_hosts_minimum(): void
+    {
+        $donation = MenuItem::allTenants()->create([
+            'organizer_id' => $this->event->organizer_id, 'event_id' => $this->event->id, 'name' => 'Youth Fund',
+            'category' => 'Donations', 'pricing_type' => 'custom_amount', 'price_usd' => 0, 'price_jmd' => 0, 'is_active' => true,
+            'custom_amount_config' => ['minJMD' => 500, 'minUSD' => 5],
+        ]);
+
+        $this->assertFalse($this->place([['menu_item_id' => $donation->id, 'quantity' => 1, 'custom_donation_amount' => 100]])['success']);
+        $this->assertFalse($this->place([['menu_item_id' => $donation->id, 'quantity' => 1]])['success']);
+        $ok = $this->place([['menu_item_id' => $donation->id, 'quantity' => 1, 'custom_donation_amount' => 750]]);
+        $this->assertTrue($ok['success']);
+        $this->assertEquals(750, (float) $ok['order']->total_amount);
     }
 
     public function test_ordering_closed_after_page_load_is_respected(): void

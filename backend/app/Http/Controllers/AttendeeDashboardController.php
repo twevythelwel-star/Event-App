@@ -22,17 +22,21 @@ class AttendeeDashboardController extends Controller
     {
         $user = $request->user();
 
-        // Scope orders strictly to this attendee
-        $orders = Order::where(function ($q) use ($user) {
-            if (!empty($user->email)) {
-                $q->where('email', $user->email);
-            }
-            if (!empty($user->phone)) {
-                $q->orWhere('customer_phone', $user->phone);
-            }
-        })
-        ->orderByDesc('created_at')
-        ->get();
+        // Scope orders strictly to this attendee: their account, or their verified email / phone.
+        // The user_id condition always applies, so the filter can never be empty.
+        $orders = Order::withoutGlobalScopes()
+            ->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+                if (!empty($user->email)) {
+                    $q->orWhere('email', $user->email);
+                }
+                if (!empty($user->phone)) {
+                    $q->orWhere('customer_phone', $user->phone);
+                }
+            })
+            ->with(['items', 'event' => fn ($q) => $q->withoutGlobalScopes()])
+            ->orderByDesc('created_at')
+            ->get();
 
         $displayCurrency = $user->preferred_display_currency ?? 'JMD';
 

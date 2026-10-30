@@ -154,3 +154,47 @@
   font-size: 1.5rem; line-height: 1; cursor: pointer; padding: var(--space-1);
 }
 .eb-modal-close:hover { color: var(--color-text-primary); }
+
+/* --------------------------------------------------------------------------
+   Customer ordering flow (checkout/*.blade.php): one narrow column, mobile first
+   -------------------------------------------------------------------------- */
+.eb-checkout { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-4); padding-bottom: 96px; }
+.eb-checkout-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.eb-checkout-event { display: flex; gap: var(--space-3); align-items: center; }
+.eb-checkout-event img { width: 64px; height: 64px; border-radius: var(--radius-md); object-fit: cover; flex-shrink: 0; }
+.eb-checkout-steps ol { list-style: none; display: flex; gap: var(--space-2); margin: 0; padding: 0; flex-wrap: wrap; }
+.eb-checkout-steps li { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1); border-radius: var(--radius-pill); background: var(--color-surface); border: 1px solid var(--color-border); font-size: 0.875rem; color: var(--color-text-secondary); }
+.eb-checkout-steps li a { color: inherit; }
+.eb-checkout-steps li.is-current { border-color: var(--color-accent); color: var(--color-text-primary); font-weight: 700; }
+.eb-checkout-step-num { width: 1.5rem; height: 1.5rem; display: grid; place-items: center; border-radius: 50%; background: var(--color-background-secondary); font-size: 0.75rem; font-weight: 700; }
+.eb-checkout-steps li.is-current .eb-checkout-step-num { background: var(--color-accent); color: var(--color-accent-text); }
+.eb-checkout-row { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); }
+.eb-checkout-row[aria-disabled="true"] { opacity: 0.6; }
+.eb-checkout-bar {
+  position: sticky; bottom: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  margin: var(--space-2) 0 0; padding: var(--space-3) var(--space-4);
+  background: rgba(11, 25, 43, 0.96); backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border); border-radius: var(--radius-lg);
+}
+.eb-checkout-details summary { cursor: pointer; color: var(--color-text-secondary); font-weight: 600; margin-top: var(--space-4); }
+.eb-checkout-instructions { white-space: pre-wrap; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-background-secondary); border: 1px solid var(--color-border); font-weight: 600; color: var(--color-text-primary); }
+@media (max-width: 1023px) {
+  /* Keep the action bar above the customer bottom navigation, which shows below 1024px. */
+  .eb-checkout-bar { bottom: var(--layout-bottom-nav-height); }
+}
+
+/* --------------------------------------------------------------------------
+   App header on phones (layouts/app): let the breadcrumb shrink so the header
+   actions (role switcher, settings, sign out) never push the page sideways.
+   -------------------------------------------------------------------------- */
+@media (max-width: 480px) {
+  .eb-app-header .header-left { min-width: 0; flex: 1 1 auto; gap: var(--space-2); }
+  .eb-app-header .breadcrumb-wrap { min-width: 0; overflow: hidden; }
+  .eb-app-header .breadcrumb-wrap .breadcrumb-item,
+  .eb-app-header .breadcrumb-wrap .breadcrumb-separator { display: none; }
+  .eb-app-header .breadcrumb-current { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .eb-app-header .header-actions { gap: var(--space-1); flex-shrink: 0; }
+  .eb-app-header .role-switcher-container label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+  .eb-app-header .role-switcher-container select { max-width: 7.5rem; padding-left: 0.5rem !important; padding-right: 1.5rem !important; }
+}

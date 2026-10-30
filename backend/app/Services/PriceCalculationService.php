@@ -39,6 +39,13 @@ class PriceCalculationService
     ): array {
         if ($item->pricing_type === 'custom_amount') {
             $amt = $customDonationAmount ?? 0.0;
+            $config = is_array($item->custom_amount_config) ? $item->custom_amount_config : [];
+            $minimum = (float) ($currency === 'JMD' ? ($config['minJMD'] ?? $config['min_jmd'] ?? 0) : ($config['minUSD'] ?? $config['min_usd'] ?? 0));
+            if ($amt <= 0 || $amt < $minimum) {
+                throw new OrderPlacementException(
+                    "Enter an amount for '{$item->name}'" . ($minimum > 0 ? ' of at least ' . $currency . ' ' . number_format($minimum, 2) : '') . '.'
+                );
+            }
             $amtMinor = self::toMinorUnits($amt, $currency);
             return [
                 'base_price' => $amt,
@@ -61,6 +68,10 @@ class PriceCalculationService
                 $groupId = $group['id'] ?? '';
                 $selectedIndex = $selectedChoiceIndices[$groupId] ?? 0;
                 $choice = $group['choices'][$selectedIndex] ?? null;
+                if (!$choice && array_key_exists($groupId, $selectedChoiceIndices)) {
+                    // A choice that doesn't exist must not silently drop its price.
+                    throw new OrderPlacementException("That option for '{$item->name}' ({$group['title']}) isn't available.");
+                }
 
                 if ($choice) {
                     $extra = $currency === 'JMD'

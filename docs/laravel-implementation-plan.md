@@ -65,7 +65,15 @@ New in `resources/views/components/`, styled from the existing token sheets: `ev
 Reused: `icon`, `button`, `card`, `empty-state`, `form-field`, `confirmation-dialog`, `customer-bottom-nav`, `management-sidebar`.
 The admin console partials move onto the shared `status-badge` and `pagination` components.
 
-### Phase 2: customer shell and workflow (Blade)
+### Phase 2: customer shell and workflow (Blade): **done 2026-10-30**
+Built: `CheckoutController` and `routes/customer.php`; `checkout/{tickets,food,review,ticket}` pages; services `Checkout\{CheckoutCart, OrderQuoteService, TicketTierCatalog, PaymentOptions, CustomerPaymentService}`; `App\Support\QrCode` (PHP port of `src/lib/qrCodeMatrix.ts`, versions 1–5, plus the second format-information copy).
+Also fixed:
+- **Event page:** the hard-coded "$15 / $45" ticket tiers and their JavaScript totals are replaced with the host's real ticket types and a server-side "From" price.
+- **Wallet:** the unscannable "QR Code Simulated" drawing is replaced with ticket cards linking to the real QR. The query now also matches by account (`user_id`) and loads events and items up front.
+- **Checkout pricing:** the event currency is enforced, invalid option choices are rejected, and the donation minimum is enforced.
+- **App header:** no longer causes sideways scrolling on phones.
+
+Not done: customer-initiated cancellation (no existing business rule to follow); scanning the QR with a physical device (the encoding was checked against the TS generator and the specification only).
 `layouts/customer.blade.php` (mobile-first, bottom nav) plus pages:
 discovery (`events/index`) → event detail (`events/show`) → **new** `orders/tickets` (ticket selection) → **new** `orders/food` → **new** `orders/checkout` (bank transfer or cash, from the host's settings) → **new** `orders/confirmation` (payment instructions, Pending status) → **new** `tickets/show` (QR from the existing `secure_ticket_token`, with what-now status).
 Cart state is kept in the session per event and re-priced on the server at every step. It handles changed prices, sold-out items, expired sessions, double submissions, leaving checkout, and cancelled orders.

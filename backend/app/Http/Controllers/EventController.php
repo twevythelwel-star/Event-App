@@ -63,7 +63,16 @@ class EventController extends Controller
             ]);
         }
 
-        return view('events.show', compact('event'));
+        // Real ticket types and the lowest price to show as "From"; ordering itself happens in CheckoutController.
+        $currency = $event->currency ?: 'JMD';
+        $tiers = \App\Services\Checkout\TicketTierCatalog::sellable($event);
+        $prices = array_merge(
+            array_column($tiers, 'price'),
+            $event->menuItems->where('is_active', true)->map(fn ($item) => (float) ($currency === 'USD' ? $item->price_usd : $item->price_jmd))->filter(fn ($p) => $p > 0)->all(),
+        );
+        $fromPrice = $prices === [] ? null : min($prices);
+
+        return view('events.show', compact('event', 'tiers', 'fromPrice', 'currency'));
     }
 
     /**

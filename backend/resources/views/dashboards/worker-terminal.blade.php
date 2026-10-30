@@ -80,31 +80,32 @@
                 <p style="font-size: 0.85rem; color: var(--text-secondary);">Record physical cash receipts with mandatory immutable audit trail.</p>
             </div>
 
-            <form onsubmit="event.preventDefault(); recordPayment();" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+            <form id="cash_form" onsubmit="event.preventDefault(); recordPayment();" data-url="{{ route('worker.cash', $event->id) }}" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
                 <div>
-                    <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Order Number</label>
+                    <label for="cash_order_num" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Order Number</label>
                     <input type="text" id="cash_order_num" placeholder="ORD-2026-XXXX" required
                         style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: var(--text-primary);">
                 </div>
 
                 <div>
-                    <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Cash Received ($ Amount)</label>
-                    <input type="number" step="0.01" id="cash_amount" placeholder="0.00" required
+                    <label for="cash_amount" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Cash Received ({{ $event->currency ?: 'JMD' }})</label>
+                    <input type="number" step="0.01" min="0.01" id="cash_amount" placeholder="0.00" required
                         style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: var(--text-primary);">
                 </div>
 
                 <div style="grid-column: span 2;">
-                    <label style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Receipt Notes (Optional)</label>
+                    <label for="cash_notes" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Receipt Notes (Optional)</label>
                     <input type="text" id="cash_notes" placeholder="e.g. Paid in cash at Gate B register"
                         style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: var(--text-primary);">
                 </div>
 
                 <div style="grid-column: span 2; display: flex; justify-content: flex-end;">
-                    <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-weight: 700;">
+                    <button type="submit" id="cash_submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-weight: 700;">
                         Submit Cash Receipt (Record Audit Trail)
                     </button>
                 </div>
             </form>
+            <p id="cash_result" role="status" aria-live="polite" style="margin-top: 1rem; font-size: 0.9rem;"></p>
         </div>
 
     @elseif ($workerRole->value === 'food_station_worker')
@@ -184,10 +185,43 @@ function validateTicket() {
     details.innerText = 'Pass Verified &bull; Gate Entry Recorded for ' + code;
 }
 
-function recordPayment() {
-    const orderNum = document.getElementById('cash_order_num').value;
-    const amount = document.getElementById('cash_amount').value;
-    alert('Cash Receipt Recorded: $' + amount + ' for ' + orderNum + '. Immutable audit log generated.');
+// Posts to the server; the result shown is what the cash ledger actually recorded.
+async function recordPayment() {
+    const form = document.getElementById('cash_form');
+    const button = document.getElementById('cash_submit');
+    const result = document.getElementById('cash_result');
+    button.disabled = true;
+    result.textContent = 'Recording…';
+    try {
+        const response = await fetch(form.dataset.url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            },
+            body: JSON.stringify({
+                order_number: document.getElementById('cash_order_num').value.trim(),
+                amount: document.getElementById('cash_amount').value,
+                notes: document.getElementById('cash_notes').value,
+            }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
+            result.style.color = 'var(--accent-emerald)';
+            result.textContent = `Receipt ${data.receipt_number} recorded for ${data.order_number}. `
+                + `Paid ${data.currency} ${data.amount_paid.toFixed(2)}; balance ${data.currency} ${data.balance.toFixed(2)} (${data.status.replace('_', ' ')}).`;
+            form.reset();
+        } else {
+            result.style.color = 'var(--accent-rose, #f87171)';
+            result.textContent = data.error || data.message || 'The cash receipt was not recorded.';
+        }
+    } catch (e) {
+        result.style.color = 'var(--accent-rose, #f87171)';
+        result.textContent = 'Could not reach the server. The cash receipt was not recorded.';
+    } finally {
+        button.disabled = false;
+    }
 }
 </script>
 @endsection

@@ -6,6 +6,7 @@ use App\Models\Event;
 use App\Models\MenuItem;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\Checkout\TicketTierCatalog;
 use App\Services\Notifications\NotificationService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -60,7 +61,8 @@ class OrderPlacementService
             return ['success' => false, 'error' => 'Your order must contain at least one food or beverage item.'];
         }
 
-        $currency = $payload['currency'] ?? $event->currency ?? 'USD';
+        // The event's currency is authoritative; a different currency in the request is ignored.
+        $currency = PriceCalculationService::lockAuthoritativeCurrency((string) ($event->currency ?: 'JMD'), $payload['currency'] ?? null);
         $idempotencyKey = isset($payload['idempotency_key']) ? trim((string) $payload['idempotency_key']) : '';
 
         // 3. Database Transaction & Atomic Stock Reservation
@@ -283,13 +285,13 @@ class OrderPlacementService
         foreach ($ticketTiers as $idx => $tier) {
             if (isset($tier['id']) && (string) $tier['id'] === $itemId) {
                 $name = (string) ($tier['name'] ?? 'Admission Ticket');
-                $maxPerCustomer = (int) ($tier['max_per_order'] ?? $tier['maxPerOrder'] ?? $tier['maxPerCustomer'] ?? 10);
+                $maxPerCustomer = TicketTierCatalog::maxPerOrder($tier);
                 if ($maxPerCustomer > 0 && $quantity > $maxPerCustomer) {
                     throw new OrderPlacementException("Maximum {$maxPerCustomer} '{$name}' tickets allowed per order.");
                 }
 
-                $availKey = isset($tier['quantity_available']) ? 'quantity_available' : (isset($tier['quantityAvailable']) ? 'quantityAvailable' : 'availableStock');
-                if (isset($tier[$availKey]) && $tier[$availKey] !== null) {
+                $availKey = TicketTierCatalog::availabilityKey($tier);
+                if ($availKey !== null) {
                     $avail = (int) $tier[$availKey];
                     if ($avail < $quantity) {
                         throw new OrderPlacementException("Insufficient ticket inventory for '{$name}'. Available: {$avail}, Requested: {$quantity}.");
@@ -299,13 +301,10 @@ class OrderPlacementService
                 }
 
                 // Only the host's own price in the order currency; never a guessed or converted one.
-                $configuredPrice = $currency === 'JMD'
-                    ? ($tier['price_jmd'] ?? $tier['priceJMD'] ?? null)
-                    : ($tier['price_usd'] ?? $tier['priceUSD'] ?? null);
-                if ($configuredPrice === null || !is_numeric($configuredPrice) || (float) $configuredPrice < 0) {
+                $unitPrice = TicketTierCatalog::priceFor($tier, $currency);
+                if ($unitPrice === null) {
                     throw new OrderPlacementException("'{$name}' has no {$currency} price set by the organizer, so it can't be sold yet.");
                 }
-                $unitPrice = (float) $configuredPrice;
 
                 return [
                     'id' => (string) Str::uuid(),

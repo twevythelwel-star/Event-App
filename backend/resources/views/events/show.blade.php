@@ -335,75 +335,36 @@
                     </button>
                 </div>
 
-                <!-- TAB 1: TICKETS -->
+                <!-- TAB 1: TICKETS (host-configured types from TicketTierCatalog) -->
                 <div class="tab-pane active" id="pane-tickets">
-                    <div style="display: flex; flex-direction: column; gap: 14px;">
-                        <!-- Tier 1: General Admission -->
-                        <div class="card-navy" style="padding: 20px;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                <div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">General Admission Pass</h3>
-                                        <span style="background: rgba(99, 102, 241, 0.2); color: #818CF8; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">POPULAR</span>
-                                    </div>
-                                    <p style="font-size: 13px; color: #94A3B8; margin: 4px 0 10px;">
-                                        Includes full event entry, access to live reggae performance stage, and mobile QR pass.
-                                    </p>
-                                </div>
-                                <div style="text-align: right; flex-shrink: 0;">
-                                    <div style="font-size: 20px; font-weight: 900; color: #FFFFFF;">$15.00</div>
-                                    <div style="font-size: 10px; color: #94A3B8;">USD per pass</div>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; font-size: 12px; color: #CBD5E1;">
-                                <div>✓ Admission to waterfront grounds & stage</div>
-                                <div>✓ Instant digital QR ticket delivered to mobile</div>
-                            </div>
-
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-                                <span style="font-size: 12px; color: #94A3B8;">Passes available: <strong style="color: #10B981;">200 remaining</strong></span>
-                                <div style="display: flex; align-items: center; gap: 10px; background: #0F172A; padding: 4px 8px; border-radius: 8px;">
-                                    <button type="button" onclick="adjustQty('ga', -1)" style="background: none; border: none; color: #FFFFFF; font-size: 16px; cursor: pointer; padding: 0 4px;">-</button>
-                                    <span id="qty-ga" style="font-size: 14px; font-weight: 800; min-width: 20px; text-align: center;">1</span>
-                                    <button type="button" onclick="adjustQty('ga', 1)" style="background: none; border: none; color: #FFFFFF; font-size: 16px; cursor: pointer; padding: 0 4px;">+</button>
-                                </div>
-                            </div>
+                    @if(empty($tiers))
+                        <div class="card-navy" style="text-align: center; padding: 36px 20px;">
+                            <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No tickets on sale</h3>
+                            <p style="font-size: 13px; color: #94A3B8; margin: 0;">
+                                {{ count($event->menuItems) > 0 ? 'This event sells food only. See the Food tab.' : 'The organiser hasn’t put tickets on sale yet.' }}
+                            </p>
                         </div>
-
-                        <!-- Tier 2: VIP Waterfront Lounge -->
-                        <div class="card-navy" style="padding: 20px;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                <div>
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">VIP Waterfront Lounge</h3>
-                                        <span style="background: rgba(236, 72, 153, 0.2); color: #F472B6; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 9999px;">VIP LOUNGE</span>
+                    @else
+                        <div style="display: flex; flex-direction: column; gap: 14px;">
+                            @foreach($tiers as $tier)
+                                <div class="card-navy" style="padding: 20px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+                                    <div style="min-width: 0;">
+                                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $tier['name'] }}</h3>
+                                        @if($tier['description'])<p style="font-size: 13px; color: #94A3B8; margin: 4px 0 0;">{{ $tier['description'] }}</p>@endif
+                                        @if($tier['sold_out'])
+                                            <span class="eb-badge eb-badge-error" style="margin-top: 8px;">Sold out</span>
+                                        @elseif($tier['available'] !== null && $tier['available'] <= 10)
+                                            <span class="eb-badge eb-badge-warning" style="margin-top: 8px;">{{ $tier['available'] }} left</span>
+                                        @endif
                                     </div>
-                                    <p style="font-size: 13px; color: #94A3B8; margin: 4px 0 10px;">
-                                        Express VIP lane entry, reserved shaded oceanfront seating, and 1 complimentary island rum punch voucher.
-                                    </p>
+                                    <div style="text-align: right; flex-shrink: 0;">
+                                        <div style="font-size: 20px; font-weight: 900; color: #FFFFFF;">{{ \App\Support\Money::format($tier['price'], $currency) }}</div>
+                                        <div style="font-size: 11px; color: #94A3B8;">per ticket</div>
+                                    </div>
                                 </div>
-                                <div style="text-align: right; flex-shrink: 0;">
-                                    <div style="font-size: 20px; font-weight: 900; color: #FFFFFF;">$45.00</div>
-                                    <div style="font-size: 10px; color: #94A3B8;">USD per pass</div>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; font-size: 12px; color: #CBD5E1;">
-                                <div>✓ Express check-in lane & dedicated bar server</div>
-                                <div>✓ 1 Complimentary artisanal beverage included</div>
-                            </div>
-
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-                                <span style="font-size: 12px; color: #94A3B8;">Passes available: <strong style="color: #10B981;">45 remaining</strong></span>
-                                <div style="display: flex; align-items: center; gap: 10px; background: #0F172A; padding: 4px 8px; border-radius: 8px;">
-                                    <button type="button" onclick="adjustQty('vip', -1)" style="background: none; border: none; color: #FFFFFF; font-size: 16px; cursor: pointer; padding: 0 4px;">-</button>
-                                    <span id="qty-vip" style="font-size: 14px; font-weight: 800; min-width: 20px; text-align: center;">0</span>
-                                    <button type="button" onclick="adjustQty('vip', 1)" style="background: none; border: none; color: #FFFFFF; font-size: 16px; cursor: pointer; padding: 0 4px;">+</button>
-                                </div>
-                            </div>
+                            @endforeach
                         </div>
-                    </div>
+                    @endif
                 </div>
 
                 <!-- TAB 2: FOOD & DINING -->
@@ -424,11 +385,11 @@
                                         <p style="font-size: 12px; color: #94A3B8; margin: 0 0 12px; line-height: 1.4;">{{ $item->description ?? 'Authentic Island dish freshly prepared.' }}</p>
                                     </div>
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-                                        <span style="font-size: 16px; font-weight: 800; color: #FFFFFF;">${{ number_format($item->price_usd ?? $item->price, 2) }}</span>
+                                        <span style="font-size: 16px; font-weight: 800; color: #FFFFFF;">{{ \App\Support\Money::format($currency === 'USD' ? $item->price_usd : $item->price_jmd, $currency) }}</span>
                                         @auth
-                                            <button type="button" onclick="document.getElementById('preorder-modal').style.display='block'" style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.35); color: #818CF8; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer;">
-                                                Pre-Order
-                                            </button>
+                                            <a href="{{ route('checkout.food', $event) }}" style="background: rgba(199, 255, 69, 0.14); border: 1px solid rgba(199, 255, 69, 0.35); color: #C7FF45; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; text-decoration: none;">
+                                                Pre-order
+                                            </a>
                                         @else
                                             <a href="{{ route('login') }}" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #CBD5E1; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 700; text-decoration: none;">
                                                 Sign In to Order
@@ -533,45 +494,31 @@
         <!-- RIGHT COLUMN: Sticky Ticket Reservation Panel -->
         <div style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px;">
             <div class="card-navy" style="box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.12);">
-                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px;">
-                    <div>
-                        <div style="font-size: 10px; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Starting From</div>
-                        <div style="font-size: 26px; font-weight: 900; color: #FFFFFF;">$15.00</div>
-                    </div>
-                    <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34D399; padding: 3px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
-                        ✓ Live Inventory
-                    </span>
+                <div style="margin-bottom: 14px;">
+                    @if($fromPrice !== null)
+                        <div style="font-size: 11px; color: #94A3B8; font-weight: 700;">From</div>
+                        <div style="font-size: 26px; font-weight: 900; color: #FFFFFF;">{{ \App\Support\Money::format($fromPrice, $currency) }}</div>
+                    @else
+                        <div style="font-size: 15px; font-weight: 700; color: #FFFFFF;">Nothing on sale yet</div>
+                    @endif
+                    @unless($event->is_ordering_open)
+                        <span class="eb-badge eb-badge-warning" style="margin-top: 6px;">Ordering paused</span>
+                    @endunless
                 </div>
 
-                <!-- Live Subtotal Summary -->
-                <div style="background: #0F172A; border-radius: 12px; padding: 14px; margin-bottom: 18px; border: 1px solid rgba(255, 255, 255, 0.06);">
-                    <div style="display: flex; justify-content: space-between; font-size: 13px; color: #CBD5E1; margin-bottom: 6px;">
-                        <span>Selected Passes:</span>
-                        <strong id="summary-qty-label" style="color: #FFFFFF;">1 pass</strong>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 15px; font-weight: 800; color: #FFFFFF; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-                        <span>Total Amount:</span>
-                        <span id="summary-total-label" style="color: #38BDF8;">$15.00 USD</span>
-                    </div>
-                </div>
-
-                <!-- Purchase Button -->
                 @auth
-                    @if($event->is_ordering_open)
-                        <button type="button" class="btn-gradient-purchase" id="btn-blade-purchase-tickets" onclick="document.getElementById('preorder-modal').style.display='block'">
-                            <span>🎟️</span>
-                            <span id="btn-purchase-label">Get Tickets & Pre-Order Meals</span>
-                        </button>
+                    @if($event->is_ordering_open && $fromPrice !== null)
+                        <a href="{{ route('checkout.tickets', $event) }}" class="btn-gradient-purchase" id="btn-blade-purchase-tickets">
+                            <span>{{ empty($tiers) ? 'Order food' : 'Get tickets' }}</span>
+                        </a>
                     @else
                         <a href="{{ route('attendee.dashboard') }}" class="btn-gradient-purchase" id="btn-blade-view-tickets">
-                            <span>🎟️</span>
-                            <span>View Digital Tickets</span>
+                            <span>My tickets</span>
                         </a>
                     @endif
                 @else
                     <a href="{{ route('login') }}" class="btn-gradient-purchase" id="btn-blade-signin-purchase">
-                        <span>🔒</span>
-                        <span>Sign In to Get Tickets</span>
+                        <span>Sign in to get tickets</span>
                     </a>
                 @endauth
 
@@ -584,134 +531,12 @@
                 @endif
 
                 <div style="margin-top: 14px; font-size: 11px; color: #94A3B8; text-align: center; line-height: 1.4;">
-                    🔒 Instant QR pass issuance. Authorized Island Events Payments guarantee.
+                    Your QR ticket appears in My tickets after you order.
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Pre-Order Modal Dialog -->
-    @auth
-        @php
-            // Display only. Prices and availability are re-checked by OrderPlacementService on submit.
-            $orderCurrency = $event->currency === 'USD' ? 'USD' : 'JMD';
-            $priceKey = $orderCurrency === 'JMD' ? 'price_jmd' : 'price_usd';
-            $sellableTiers = collect(is_array($event->ticket_tiers) ? $event->ticket_tiers : [])
-                ->filter(fn ($tier) => isset($tier['id']) && is_numeric($tier[$priceKey] ?? ($orderCurrency === 'JMD' ? ($tier['priceJMD'] ?? null) : ($tier['priceUSD'] ?? null))))
-                ->values();
-            $formatPrice = fn ($amount) => ($orderCurrency === 'JMD' ? 'J$' : 'US$') . number_format((float) $amount, 2);
-            $lineIndex = 0;
-        @endphp
-        @if($event->is_ordering_open && (count($event->menuItems) > 0 || $sellableTiers->isNotEmpty()))
-            <div id="preorder-modal" role="dialog" aria-modal="true" aria-labelledby="preorder-title"
-                 style="display: {{ session('error') || $errors->any() ? 'block' : 'none' }}; position: fixed; inset: 0; background: rgba(7, 17, 31, 0.8); backdrop-filter: blur(8px); z-index: 1000; overflow-y: auto; padding: 2rem 1rem;">
-                <div class="eb-card" style="max-width: 580px; margin: 2rem auto; padding: 2rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; border-bottom: 1px solid var(--color-border-subtle); padding-bottom: 1rem;">
-                        <div>
-                            <h3 id="preorder-title" style="font-size: 1.35rem; font-weight: 800; margin: 0;">Tickets &amp; food</h3>
-                            <p style="font-size: 0.9rem; color: var(--color-text-secondary); margin-top: 0.2rem;">{{ $event->title }} · prices in {{ $orderCurrency }}</p>
-                        </div>
-                        <button type="button" aria-label="Close" onclick="document.getElementById('preorder-modal').style.display='none'" style="background: none; border: none; font-size: 1.5rem; color: var(--color-text-secondary); cursor: pointer;">✕</button>
-                    </div>
-
-                    @if(session('error'))
-                        <div class="eb-alert eb-alert-error" role="alert" style="margin-bottom: 1rem;">{{ session('error') }}</div>
-                    @endif
-                    @if($errors->any())
-                        <div class="eb-alert eb-alert-error" role="alert" style="margin-bottom: 1rem;">
-                            @foreach($errors->all() as $message)<div>{{ $message }}</div>@endforeach
-                        </div>
-                    @endif
-
-                    <form action="{{ route('orders.store', $event->slug ?? $event->id) }}" method="POST" id="order-form">
-                        @csrf
-                        <input type="hidden" name="currency" value="{{ $orderCurrency }}">
-                        <input type="hidden" name="customer_name" value="{{ Auth::user()->name }}">
-                        <input type="hidden" name="email" value="{{ Auth::user()->email }}">
-                        {{-- One key per form: a double submit returns the first order instead of creating another. --}}
-                        <input type="hidden" name="idempotency_key" value="{{ old('idempotency_key', (string) \Illuminate\Support\Str::uuid()) }}">
-
-                        @if($sellableTiers->isNotEmpty())
-                            <fieldset style="border: 0; padding: 0; margin: 0 0 1.25rem;">
-                                <legend style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">Tickets</legend>
-                                @foreach($sellableTiers as $tier)
-                                    @php
-                                        $tierPrice = $tier[$priceKey] ?? ($orderCurrency === 'JMD' ? $tier['priceJMD'] : $tier['priceUSD']);
-                                        $left = $tier['quantity_available'] ?? $tier['quantityAvailable'] ?? $tier['availableStock'] ?? null;
-                                        $soldOut = $left !== null && (int) $left <= 0;
-                                        $max = min(20, (int) ($tier['max_per_order'] ?? $tier['maxPerOrder'] ?? 10), $left === null ? 20 : max(0, (int) $left));
-                                        $i = $lineIndex++;
-                                    @endphp
-                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--color-border-subtle); border-radius: 12px; margin-bottom: 0.5rem;">
-                                        <div>
-                                            <div style="font-weight: 700;">{{ $tier['name'] ?? 'Ticket' }}</div>
-                                            <div style="font-size: 0.85rem; color: var(--color-text-secondary);">
-                                                {{ $formatPrice($tierPrice) }}
-                                                @if($soldOut) · <strong style="color: var(--color-error-text);">Sold out</strong>
-                                                @elseif($left !== null && (int) $left <= 10) · {{ (int) $left }} left
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <input type="hidden" name="items[{{ $i }}][menu_item_id]" value="{{ $tier['id'] }}">
-                                        <label class="sr-only" for="qty-{{ $i }}">Quantity of {{ $tier['name'] ?? 'Ticket' }}</label>
-                                        <input id="qty-{{ $i }}" type="number" name="items[{{ $i }}][quantity]" value="{{ old("items.$i.quantity", 0) }}" min="0" max="{{ $max }}" @disabled($soldOut)
-                                               class="eb-input" style="width: 72px; text-align: center; font-weight: 700;">
-                                    </div>
-                                @endforeach
-                            </fieldset>
-                        @endif
-
-                        @if(count($event->menuItems) > 0)
-                            <fieldset style="border: 0; padding: 0; margin: 0 0 1.25rem;">
-                                <legend style="font-weight: 700; font-size: 0.95rem; margin-bottom: 0.5rem;">Food &amp; drinks</legend>
-                                @foreach($event->menuItems as $item)
-                                    @php
-                                        $i = $lineIndex++;
-                                        $soldOut = $item->available_stock !== null && (int) $item->available_stock <= 0;
-                                    @endphp
-                                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.75rem 1rem; border: 1px solid var(--color-border-subtle); border-radius: 12px; margin-bottom: 0.5rem;">
-                                        <div>
-                                            <div style="font-weight: 700;">{{ $item->name }}</div>
-                                            <div style="font-size: 0.85rem; color: var(--color-text-secondary);">
-                                                {{ $item->pricing_type === 'customizable' ? 'From ' : '' }}{{ $formatPrice($orderCurrency === 'JMD' ? $item->price_jmd : $item->price_usd) }}
-                                                @if($soldOut) · <strong style="color: var(--color-error-text);">Sold out</strong>
-                                                @elseif($item->available_stock !== null && (int) $item->available_stock <= 10) · {{ (int) $item->available_stock }} left
-                                                @endif
-                                            </div>
-                                        </div>
-                                        <input type="hidden" name="items[{{ $i }}][menu_item_id]" value="{{ $item->id }}">
-                                        <label class="sr-only" for="qty-{{ $i }}">Quantity of {{ $item->name }}</label>
-                                        <input id="qty-{{ $i }}" type="number" name="items[{{ $i }}][quantity]" value="{{ old("items.$i.quantity", 0) }}" min="0" max="20" @disabled($soldOut)
-                                               class="eb-input" style="width: 72px; text-align: center; font-weight: 700;">
-                                    </div>
-                                @endforeach
-                            </fieldset>
-                        @endif
-
-                        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem;">
-                            <div>
-                                <label for="order-phone" class="eb-text-label" style="display: block; margin-bottom: 0.25rem;">Phone or WhatsApp (your ticket is texted here)</label>
-                                <input id="order-phone" type="tel" name="customer_phone" class="eb-input" value="{{ old('customer_phone', Auth::user()->phone) }}" required minlength="7" autocomplete="tel" placeholder="+1 876 555 0142" style="width: 100%;">
-                            </div>
-                            <div>
-                                <label for="order-method" class="eb-text-label" style="display: block; margin-bottom: 0.25rem;">Payment method</label>
-                                <select id="order-method" name="method" class="eb-input" required style="width: 100%;">
-                                    <option value="bank" @selected(old('method') === 'bank')>Bank transfer</option>
-                                    <option value="cash" @selected(old('method') === 'cash')>Cash at pickup</option>
-                                </select>
-                                <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0.35rem 0 0;">Your ticket shows Pending until the organiser confirms payment.</p>
-                            </div>
-                        </div>
-
-                        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-                            <button type="button" class="eb-btn eb-btn-secondary" onclick="document.getElementById('preorder-modal').style.display='none'">Cancel</button>
-                            <button type="submit" class="eb-btn eb-btn-primary" data-prevent-double-submit="true">Place order</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        @endif
-    @endauth
 </div>
 
 <script>
@@ -727,30 +552,6 @@
         if (targetPane) targetPane.classList.add('active');
     }
 
-    // Ticket Quantities & Live Subtotal Calculator
-    let gaQty = 1;
-    let vipQty = 0;
-
-    function adjustQty(tier, delta) {
-        if (tier === 'ga') {
-            gaQty = Math.max(0, gaQty + delta);
-            document.getElementById('qty-ga').innerText = gaQty;
-        } else if (tier === 'vip') {
-            vipQty = Math.max(0, vipQty + delta);
-            document.getElementById('qty-vip').innerText = vipQty;
-        }
-
-        const totalQty = gaQty + vipQty;
-        const totalCost = (gaQty * 15) + (vipQty * 45);
-
-        document.getElementById('summary-qty-label').innerText = totalQty + (totalQty === 1 ? ' pass' : ' passes');
-        document.getElementById('summary-total-label').innerText = '$' + totalCost.toFixed(2) + ' USD';
-        
-        const purchaseLabel = document.getElementById('btn-purchase-label');
-        if (purchaseLabel) {
-            purchaseLabel.innerText = totalQty > 0 ? 'Get ' + totalQty + ' Ticket' + (totalQty > 1 ? 's' : '') + ' • $' + totalCost.toFixed(2) : 'Select Passes to Continue';
-        }
-    }
 
     // Favorite Toggle
     let isFaved = false;

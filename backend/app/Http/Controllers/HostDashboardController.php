@@ -61,16 +61,33 @@ class HostDashboardController extends Controller
             abort(403, 'You are not authorized to access this event organizer workspace.');
         }
 
-        $eventsQuery = Event::query();
-        $ordersQuery = Order::query();
-        $cashQuery = CashPayment::query();
-        $workersQuery = EventWorkerAssignment::query();
-
+        // Scope every query to organizers this user belongs to. Without a tenant context, a host sees all of
+        // their own organizers, never the whole platform; only a system administrator sees everything.
         if ($tenantId) {
-            $eventsQuery->where('organizer_id', $tenantId);
-            $ordersQuery->where('organizer_id', $tenantId);
-            $cashQuery->where('organizer_id', $tenantId);
-            $workersQuery->where('organizer_id', $tenantId);
+            $organizerIds = [$tenantId];
+        } elseif ($user->hasRole(AccountType::SYSTEM_ADMIN)) {
+            $organizerIds = null;
+        } else {
+            $organizerIds = OrganizerUser::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->pluck('organizer_id')
+                ->toArray();
+            if (count($organizerIds) === 1) {
+                $tenantId = $organizerIds[0];
+                $membership = OrganizerUser::where('organizer_id', $tenantId)->where('user_id', $user->id)->where('is_active', true)->first();
+            }
+        }
+
+        $eventsQuery = Event::withoutGlobalScopes()->whereNull('deleted_at');
+        $ordersQuery = Order::withoutGlobalScopes()->whereNull('deleted_at');
+        $cashQuery = CashPayment::withoutGlobalScopes();
+        $workersQuery = EventWorkerAssignment::withoutGlobalScopes();
+
+        if ($organizerIds !== null) {
+            $eventsQuery->whereIn('organizer_id', $organizerIds);
+            $ordersQuery->whereIn('organizer_id', $organizerIds);
+            $cashQuery->whereIn('organizer_id', $organizerIds);
+            $workersQuery->whereIn('organizer_id', $organizerIds);
         }
 
         $events = $eventsQuery->orderByDesc('created_at')->get();

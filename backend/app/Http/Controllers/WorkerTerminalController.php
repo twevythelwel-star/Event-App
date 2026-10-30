@@ -10,7 +10,9 @@ use App\Exceptions\SecurityException;
 use App\Models\Event;
 use App\Models\EventWorkerAssignment;
 use App\Models\Order;
+use App\Services\CashLedgerService;
 use App\Services\EventWorkerService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -83,13 +85,15 @@ class WorkerTerminalController extends Controller
     }
 
     /**
-     * Record cash received with mandatory audit trail for Payment Clerk.
+     * Record cash received at the event (Payment Clerk). Goes through the cash ledger, which locks the order,
+     * caps the amount at the outstanding balance, enforces the order's currency and writes the audit record.
      */
-    public function recordCash(Request $request, Event $event): JsonResponse
+    public function recordCash(Request $request, Event $event, CashLedgerService $ledger): JsonResponse
     {
         $request->validate([
-            'order_id' => ['required', 'string'],
-            'amount_cents' => ['required', 'integer', 'min:1'],
+            'order_number' => ['required_without:order_id', 'nullable', 'string', 'max:40'],
+            'order_id' => ['required_without:order_number', 'nullable', 'string'],
+            'amount' => ['required', 'numeric', 'min:0.01'],
             'notes' => ['nullable', 'string', 'max:255'],
         ]);
 
@@ -101,22 +105,42 @@ class WorkerTerminalController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
         }
 
-        $order = Order::where('id', $request->input('order_id'))
+        $order = Order::withoutGlobalScopes()
             ->where('event_id', $event->id)
-            ->firstOrFail();
+            ->when($request->filled('order_id'),
+                fn ($q) => $q->whereKey($request->input('order_id')),
+                fn ($q) => $q->where('order_number', trim((string) $request->input('order_number'))))
+            ->first();
+
+        if (!$order) {
+            return response()->json(['success' => false, 'error' => 'No order with that number for this event.'], 404);
+        }
 
         try {
-            $result = EventWorkerService::recordCashReceipt(
-                worker: $user,
-                order: $order,
-                centsReceived: (int) $request->input('amount_cents'),
-                receiptNotes: (string) ($request->input('notes') ?? '')
-            );
-
-            return response()->json($result);
+            $result = $ledger->recordReceipt($user, [
+                'order_id' => $order->id,
+                'amount' => $request->input('amount'),
+                'notes' => $request->input('notes'),
+            ]);
         } catch (SecurityException $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
+        } catch (ModelNotFoundException) {
+            return response()->json(['success' => false, 'error' => 'No order with that number for this event.'], 404);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
+
+        $paidOrder = $result['order'];
+
+        return response()->json([
+            'success' => true,
+            'receipt_number' => $result['receipt']->receipt_number,
+            'order_number' => $paidOrder->order_number,
+            'currency' => $paidOrder->currency,
+            'amount_paid' => (float) $paidOrder->amount_paid,
+            'balance' => round((float) $paidOrder->total_amount - (float) $paidOrder->amount_paid, 2),
+            'status' => $paidOrder->status,
+        ]);
     }
 
     /**
