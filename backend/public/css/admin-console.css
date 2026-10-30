@@ -177,3 +177,13 @@ form[data-submitting="true"] button[type="submit"] { opacity: 0.6; pointer-event
   .ac-dl { grid-template-columns: 1fr; gap: 2px; }
   .ac-dl dd { margin-bottom: 8px; }
 }
+
+/* Shared Blade components on the light admin canvas (status-indicator, pagination) */
+.ac-body .eb-badge { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--ac-neutral-bg); color: var(--ac-neutral); }
+.ac-body .eb-badge-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.8; }
+.ac-body .eb-badge-success { background: var(--ac-ok-bg); color: var(--ac-ok); }
+.ac-body .eb-badge-warning { background: var(--ac-warn-bg); color: var(--ac-warn); }
+.ac-body .eb-badge-error { background: var(--ac-bad-bg); color: var(--ac-bad); }
+.ac-body .eb-badge-purple, .ac-body .eb-badge-info { background: var(--ac-info-bg); color: var(--ac-info); }
+.ac-body .eb-pagination-nav { display: flex; gap: 6px; align-items: center; }
+.ac-body .eb-pagination-current { color: var(--ac-text); font-weight: 600; padding: 0 6px; }

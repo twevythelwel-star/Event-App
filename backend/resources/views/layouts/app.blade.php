@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="/css/03-buttons-forms.css">
     <link rel="stylesheet" href="/css/04-surfaces-cards.css">
     <link rel="stylesheet" href="/css/05-navigation-motion.css">
+    <link rel="stylesheet" href="/css/06-components.css">
 
     <style>
         :root {

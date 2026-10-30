@@ -32,6 +32,11 @@ final class PaymentStatusPresenter
         'closed' => ['label' => 'Cancelled or expired', 'statuses' => ['cancelled', 'expired']],
     ];
 
+    public static function isPaymentStatus(?string $status): bool
+    {
+        return isset(self::STATUSES[(string) $status]);
+    }
+
     public static function label(?string $status): string
     {
         return self::STATUSES[$status]['label'] ?? ucwords(str_replace('_', ' ', (string) $status));

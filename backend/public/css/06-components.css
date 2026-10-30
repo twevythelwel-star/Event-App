@@ -1,0 +1,156 @@
+/* ==========================================================================
+   EVENTBITE DESIGN SYSTEM — MODULE 06: SHARED BLADE COMPONENT PIECES
+   Only what modules 01–05 did not already provide. Uses the module 01 tokens.
+   ========================================================================== */
+
+/* Info alert (success / warning / error live in module 04) */
+.eb-alert-info {
+  background-color: var(--color-info-bg);
+  border-color: var(--color-info-border);
+  color: var(--color-info-text);
+}
+
+/* --------------------------------------------------------------------------
+   Card text shared by event, food and ticket cards
+   -------------------------------------------------------------------------- */
+.eb-card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+.eb-card-meta-row { display: flex; align-items: center; gap: var(--space-2); }
+.eb-card-meta-row .eb-icon { flex-shrink: 0; color: var(--color-text-muted); }
+.eb-card-chip {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 1;
+}
+.eb-card-chip-end { left: auto; right: var(--space-3); }
+.eb-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.eb-card-link { text-decoration: none; color: inherit; }
+.eb-card-link:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; border-radius: var(--radius-lg); }
+
+/* Food card: row layout on phones, card on wider screens */
+@media (max-width: 600px) {
+  .eb-food-card.eb-food-card-row { flex-direction: row; }
+  .eb-food-card.eb-food-card-row .eb-food-card-media { width: 104px; aspect-ratio: auto; flex-shrink: 0; }
+  .eb-food-card.eb-food-card-row .eb-food-card-body { padding: var(--space-3); min-width: 0; }
+}
+
+/* Ticket card inner layout */
+.eb-ticket-card-head { position: relative; aspect-ratio: 16 / 7; background: var(--color-background-secondary); overflow: hidden; }
+.eb-ticket-card-head img { width: 100%; height: 100%; object-fit: cover; }
+.eb-ticket-card-body { padding: var(--layout-card-padding); display: flex; flex-direction: column; gap: var(--space-3); }
+.eb-ticket-card-code { font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+.eb-ticket-card-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* --------------------------------------------------------------------------
+   Payment method radio cards
+   -------------------------------------------------------------------------- */
+.eb-payment-option { position: relative; display: block; cursor: pointer; }
+.eb-payment-option input[type="radio"] { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.eb-payment-option .eb-payment-card { flex-direction: row; align-items: center; gap: var(--space-3); transition: border-color var(--duration-fast) var(--ease-standard); }
+.eb-payment-option:hover .eb-payment-card { border-color: var(--color-border-strong); }
+.eb-payment-option input:checked + .eb-payment-card {
+  background-color: var(--color-surface-elevated);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 1px var(--color-accent);
+}
+.eb-payment-option input:focus-visible + .eb-payment-card { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+.eb-payment-option input:disabled + .eb-payment-card { opacity: 0.5; cursor: not-allowed; }
+.eb-payment-icon {
+  width: 2.5rem; height: 2.5rem; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--color-background-secondary);
+  color: var(--color-text-primary);
+}
+.eb-payment-option input:checked + .eb-payment-card .eb-payment-icon { background: var(--color-accent); color: var(--color-accent-text); }
+.eb-payment-text { flex: 1; min-width: 0; }
+.eb-payment-text strong { display: block; color: var(--color-text-primary); }
+.eb-payment-text span { font-size: 0.85rem; color: var(--color-text-secondary); }
+.eb-payment-radio {
+  width: 1.25rem; height: 1.25rem; flex-shrink: 0;
+  border: 2px solid var(--color-border-strong); border-radius: 50%;
+}
+.eb-payment-option input:checked + .eb-payment-card .eb-payment-radio {
+  border-color: var(--color-accent);
+  background: radial-gradient(circle, var(--color-accent) 0 45%, transparent 50%);
+}
+
+/* --------------------------------------------------------------------------
+   Quantity control (works as a plain number input without JavaScript)
+   -------------------------------------------------------------------------- */
+.eb-qty {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-background-secondary);
+}
+.eb-qty-btn {
+  width: 2.25rem; height: 2.25rem;
+  display: grid; place-items: center;
+  border: 0; border-radius: var(--radius-sm);
+  background: var(--color-surface-elevated); color: var(--color-text-primary);
+  font-size: 1.1rem; font-weight: 700; cursor: pointer;
+}
+.eb-qty-btn[data-qty="up"] { background: var(--color-accent); color: var(--color-accent-text); }
+.eb-qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.eb-qty-input {
+  width: 3rem; border: 0; background: transparent; text-align: center;
+  font: inherit; font-weight: 700; color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums; -moz-appearance: textfield;
+}
+.eb-qty-input::-webkit-outer-spin-button, .eb-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.eb-qty-input:focus-visible { outline: 2px solid var(--color-border-focus); border-radius: var(--radius-xs); }
+
+/* --------------------------------------------------------------------------
+   Price summary
+   -------------------------------------------------------------------------- */
+.eb-price-summary { display: flex; flex-direction: column; gap: var(--space-2); margin: 0; font-variant-numeric: tabular-nums; }
+.eb-price-row { display: flex; justify-content: space-between; gap: var(--space-4); color: var(--color-text-secondary); }
+.eb-price-row dt, .eb-price-row dd { margin: 0; }
+.eb-price-row dd { color: var(--color-text-primary); font-weight: 600; white-space: nowrap; }
+.eb-price-row-total { padding-top: var(--space-3); border-top: 1px solid var(--color-border); color: var(--color-text-primary); font-weight: 700; }
+.eb-price-row-total dd { font-size: 1.25rem; font-weight: 800; }
+.eb-price-note { margin: var(--space-2) 0 0; font-size: 0.8rem; color: var(--color-text-muted); }
+
+/* --------------------------------------------------------------------------
+   Pagination
+   -------------------------------------------------------------------------- */
+.eb-pagination {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: var(--space-3) 0; font-size: 0.875rem; color: var(--color-text-secondary);
+}
+.eb-pagination-nav { display: flex; gap: var(--space-2); align-items: center; }
+.eb-pagination-current { color: var(--color-text-primary); font-weight: 600; }
+
+/* --------------------------------------------------------------------------
+   Loading state
+   -------------------------------------------------------------------------- */
+.eb-loading { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--color-text-secondary); font-size: 0.9rem; }
+.eb-loading-block { display: flex; justify-content: center; padding: var(--space-10) var(--space-4); }
+.eb-spinner {
+  width: 1.25rem; height: 1.25rem; flex-shrink: 0;
+  border: 2px solid var(--color-border-strong); border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: eb-spin 0.8s linear infinite;
+}
+@keyframes eb-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .eb-spinner { animation-duration: 2.4s; } }
+
+/* Modal header used by the modal component */
+.eb-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+.eb-modal-close {
+  border: 0; background: none; color: var(--color-text-secondary);
+  font-size: 1.5rem; line-height: 1; cursor: pointer; padding: var(--space-1);
+}
+.eb-modal-close:hover { color: var(--color-text-primary); }

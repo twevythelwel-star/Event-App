@@ -1,2 +1,2 @@
-{{-- Payment status badge: label and colour come from the stored order status. --}}
-<span class="ac-badge {{ \App\Support\PaymentStatusPresenter::tone($status) }}">{{ \App\Support\PaymentStatusPresenter::label($status) }}</span>
+{{-- Payment status badge: the shared status-indicator component (one wording across the app). --}}
+@include('components.status-indicator', ['status' => $status])

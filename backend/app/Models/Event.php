@@ -112,6 +112,23 @@ class Event extends Model
     }
 
     /**
+     * Image to show for this event. Uploaded flyers go through the access-checked media route;
+     * seeded events point at a public /images path; anything else falls back to a stock photo.
+     */
+    public function getDisplayImageUrlAttribute(): string
+    {
+        $path = (string) ($this->flyer_path ?? '');
+        if (\App\Services\MediaStorageService::isStoredPath($path)) {
+            return route('api.media.flyer', $this->id);
+        }
+        if (str_starts_with($path, '/images/') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return '/images/island_festival_sunset.jpg';
+    }
+
+    /**
      * Generate the unique, shareable public URL for this event.
      */
     public function getShareableUrlAttribute(): string

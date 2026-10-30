@@ -58,4 +58,18 @@ class MenuItem extends Model
 
         return $this->available_stock >= $requestedQty;
     }
+
+    /**
+     * Photo to show for this dish: an uploaded photo via the access-checked media route,
+     * otherwise a public image URL, otherwise null (the card shows no photo).
+     */
+    public function getDisplayImageUrlAttribute(): ?string
+    {
+        if (\App\Services\MediaStorageService::isStoredPath($this->image_path ?? null)) {
+            return route('api.media.menu-photo', $this->id);
+        }
+        $url = (string) ($this->image_url ?? '');
+
+        return (str_starts_with($url, '/') || str_starts_with($url, 'https://')) ? $url : null;
+    }
 }
