@@ -202,7 +202,8 @@ class OrderPlacementService
                 do {
                     $randNum = (string) random_int(100000, 999999);
                     $orderNumber = "ORD-{$year}-{$randNum}";
-                    $ticketCode = "SFF-{$randNum}";
+                    // Independent of the order number, so knowing one does not give away the other
+                    $ticketCode = 'SFF-' . self::randomTicketSuffix();
                 } while (Order::withoutGlobalScopes()->where('order_number', $orderNumber)->orWhere('ticket_code', $ticketCode)->exists());
                 $secureToken = 'tok_' . Str::random(32);
 
@@ -391,6 +392,18 @@ class OrderPlacementService
     /**
      * Helper to verify if an authenticated user owns or is authorized to view an order.
      */
+    /** Eight characters from an alphabet without look-alikes (no 0/O, 1/I/L). */
+    private static function randomTicketSuffix(): string
+    {
+        $alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        $suffix = '';
+        for ($i = 0; $i < 8; $i++) {
+            $suffix .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+
+        return $suffix;
+    }
+
     public function isUserAuthorizedForOrder(Order $order, \App\Models\User $user): bool
     {
         if ($user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN)) {

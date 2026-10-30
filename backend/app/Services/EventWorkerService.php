@@ -14,6 +14,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class EventWorkerService
@@ -115,7 +116,8 @@ class EventWorkerService
     public static function scanAndValidateTicket(
         User $worker,
         Order $order,
-        ?string $expectedEventId = null
+        ?string $expectedEventId = null,
+        bool $manual = false
     ): array {
         // 6. Authorized redemption check
         $scanningEventId = $expectedEventId ?? $order->event_id;
@@ -139,6 +141,32 @@ class EventWorkerService
             throw new SecurityException("Unauthorized: Worker {$worker->email} is not permitted to scan tickets.");
         }
 
+        // The check and the admission run on the order row locked for update, so two scanners reading the
+        // same ticket at the same moment cannot both admit it: the second waits and then sees the check-in.
+        return DB::transaction(function () use ($worker, $order, $expectedEventId, $manual, $assignment) {
+            $locked = Order::query()->withoutGlobalScopes()->where('id', $order->id)->lockForUpdate()->first();
+            if ($locked !== null && $locked !== $order) {
+                $order->checked_in_at = $locked->checked_in_at;
+                $order->checked_in_by = $locked->checked_in_by;
+                $order->status = $locked->status;
+            }
+
+            return self::admitLockedTicket($worker, $locked ?? $order, $order, $expectedEventId, $manual, $assignment);
+        });
+    }
+
+    /**
+     * @param Order $locked The order row as read under the lock (the same object as $order outside a database)
+     * @param Order $order  The caller's copy, kept in step with the admission
+     */
+    private static function admitLockedTicket(
+        User $worker,
+        Order $locked,
+        Order $order,
+        ?string $expectedEventId,
+        bool $manual,
+        ?EventWorkerAssignment $assignment
+    ): array {
         // 1. Authenticity check: Genuine ticket code & order number must exist
         $isAuthentic = !empty($order->ticket_code) && !empty($order->order_number);
         $rejectionReason = null;
@@ -175,15 +203,20 @@ class EventWorkerService
         $isSuccess = $isAuthentic && $isEventMatched && $isPeriodValid && $isStatusValid && !$isAlreadyAdmitted;
 
         if ($isSuccess) {
-            $order->checked_in_at = now();
-            $order->checked_in_by = $worker->id;
-            $order->save();
+            $locked->checked_in_at = now();
+            $locked->checked_in_by = $worker->id;
+            $locked->save();
+            if ($locked !== $order) {
+                $order->checked_in_at = $locked->checked_in_at;
+                $order->checked_in_by = $locked->checked_in_by;
+            }
 
             AuditLogService::log(
                 action: 'ticket_redemption_verified',
                 targetEntity: 'orders',
                 targetId: (string) $order->id,
-                details: "Ticket {$order->ticket_code} (Order #{$order->order_number}) successfully verified and redeemed by {$worker->email}.",
+                details: "Ticket {$order->ticket_code} (Order #{$order->order_number}) successfully verified and redeemed by {$worker->email}"
+                    . ($manual ? ' using a typed code (manual check).' : ' by QR.'),
                 actor: $worker
             );
         } else {

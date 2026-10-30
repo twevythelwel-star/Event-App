@@ -80,7 +80,7 @@ class TicketCheckInTest extends TestCase
     {
         $order = $this->order('paid', 'GATE-PAID');
 
-        $this->scan($order->ticket_code)->assertOk()->assertJson(['success' => true, 'already_admitted' => false]);
+        $this->scan($order->secure_ticket_token)->assertOk()->assertJson(['success' => true, 'already_admitted' => false]);
 
         $order->refresh();
         $this->assertInstanceOf(\DateTimeInterface::class, $order->checked_in_at);
@@ -90,7 +90,7 @@ class TicketCheckInTest extends TestCase
         $firstCheckIn = $order->checked_in_at->toDateTimeString();
 
         // The second scan reads the stored check-in back from the database and refuses entry.
-        $this->scan($order->ticket_code)->assertOk()->assertJson(['success' => false, 'already_admitted' => true]);
+        $this->scan($order->secure_ticket_token)->assertOk()->assertJson(['success' => false, 'already_admitted' => true]);
         $this->assertSame($firstCheckIn, $order->fresh()->checked_in_at->toDateTimeString());
         $this->assertDatabaseHas('security_audit_logs', ['action' => 'ticket_redemption_rejected', 'target_id' => $order->id]);
     }
@@ -99,7 +99,7 @@ class TicketCheckInTest extends TestCase
     {
         $order = $this->order('payment_submitted', 'GATE-UNPAID');
 
-        $this->scan($order->ticket_code)->assertOk()->assertJson(['success' => false, 'already_admitted' => false]);
+        $this->scan($order->secure_ticket_token)->assertOk()->assertJson(['success' => false, 'already_admitted' => false]);
 
         $this->assertNull($order->fresh()->checked_in_at);
         $this->assertNull($order->fresh()->checked_in_by);
@@ -110,18 +110,77 @@ class TicketCheckInTest extends TestCase
         $order = $this->order('paid', 'GATE-STRANGER');
         $stranger = User::create(['name' => 'Not Staff', 'email' => 'stranger@example.test', 'password' => bcrypt('password'), 'status' => 'active']);
 
-        $this->scan($order->ticket_code, $stranger)->assertForbidden();
+        $this->scan($order->secure_ticket_token, $stranger)->assertForbidden();
         $this->assertNull($order->fresh()->checked_in_at);
     }
 
     public function test_deleting_the_checker_keeps_the_check_in_time(): void
     {
         $order = $this->order('paid', 'GATE-DELETE');
-        $this->scan($order->ticket_code)->assertOk()->assertJson(['success' => true]);
+        $this->scan($order->secure_ticket_token)->assertOk()->assertJson(['success' => true]);
 
         $this->checker->forceDelete();
 
         $this->assertNotNull($order->fresh()->checked_in_at);
         $this->assertNull($order->fresh()->checked_in_by);
+    }
+
+    public function test_a_ticket_checker_cannot_admit_by_a_typed_ticket_code_or_order_number(): void
+    {
+        $order = $this->order('paid', 'GATE-TYPED');
+
+        $this->scan($order->ticket_code)->assertForbidden()->assertJson(['success' => false]);
+        $this->scan($order->order_number)->assertForbidden();
+
+        $this->assertNull($order->fresh()->checked_in_at);
+    }
+
+    public function test_a_supervisor_may_admit_by_typed_code_and_it_is_logged_as_manual(): void
+    {
+        $supervisor = User::create(['name' => 'Gate Supervisor', 'email' => 'super@example.test', 'password' => bcrypt('password'), 'status' => 'active']);
+        EventWorkerAssignment::create([
+            'organizer_id' => $this->event->organizer_id,
+            'event_id' => $this->event->id,
+            'user_id' => $supervisor->id,
+            'worker_role' => 'event_supervisor',
+            'status' => 'active',
+            'is_active' => true,
+        ]);
+        $order = $this->order('paid', 'GATE-MANUAL');
+
+        $this->scan($order->ticket_code, $supervisor)->assertOk()->assertJson(['success' => true]);
+        $this->assertNotNull($order->fresh()->checked_in_at);
+        $this->assertTrue(\App\Models\SecurityAuditLog::where('action', 'ticket_redemption_verified')
+            ->where('target_id', $order->id)->where('details', 'like', '%manual check%')->exists());
+
+        // The QR of the now-used ticket is refused for everyone.
+        $this->scan($order->secure_ticket_token)->assertOk()->assertJson(['success' => false, 'already_admitted' => true]);
+    }
+
+    public function test_admission_reads_the_stored_check_in_not_a_stale_copy(): void
+    {
+        // Simulates two scanners: the second holds a copy loaded before the first admitted the guest.
+        $order = $this->order('paid', 'GATE-RACE');
+        $staleCopy = Order::allTenants()->find($order->id);
+
+        $this->scan($order->secure_ticket_token)->assertOk()->assertJson(['success' => true]);
+        $firstCheckIn = $order->fresh()->checked_in_at->toDateTimeString();
+
+        $result = \App\Services\EventWorkerService::scanAndValidateTicket($this->checker, $staleCopy, (string) $this->event->id);
+
+        $this->assertFalse($result['success']);
+        $this->assertTrue($result['already_admitted']);
+        $this->assertSame($firstCheckIn, $order->fresh()->checked_in_at->toDateTimeString());
+    }
+
+    public function test_new_ticket_codes_are_not_derived_from_the_order_number(): void
+    {
+        $method = new \ReflectionMethod(\App\Services\OrderPlacementService::class, 'randomTicketSuffix');
+        $codes = array_map(fn () => $method->invoke(null), range(1, 50));
+
+        foreach ($codes as $code) {
+            $this->assertMatchesRegularExpression('/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{8}$/', $code);
+        }
+        $this->assertCount(50, array_unique($codes));
     }
 }

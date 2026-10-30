@@ -34,28 +34,7 @@
 
     <!-- Dynamic Interface Based on Worker Role -->
     @if ($workerRole->value === 'ticket_checker')
-        <!-- TICKET CHECKER: every code is checked by the server; the result shown is the server's verdict -->
-        <div class="card">
-            <div class="card-header">
-                <h2 style="font-size: 1.25rem; font-weight: 700;">Ticket Check-in</h2>
-                <p style="font-size: 0.85rem; color: var(--text-secondary);">Scan the QR on the guest's ticket with a handheld scanner into the box below, or type the ticket code. Each ticket admits once.</p>
-            </div>
-
-            <form id="scan_form" data-url="{{ route('worker.scan', $event->id) }}" onsubmit="event.preventDefault(); validateTicket();" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
-                <div>
-                    <label for="ticket_input" style="font-size: 0.8rem; color: var(--text-secondary); display: block; margin-bottom: 0.25rem;">Ticket QR or code</label>
-                    <input type="text" id="ticket_input" autocomplete="off" autocapitalize="characters" spellcheck="false" autofocus required
-                        style="width: 100%; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: var(--text-primary); font-family: monospace; font-size: 1rem;">
-                </div>
-                <button type="submit" id="scan_submit" class="btn btn-primary" style="padding: 0.75rem; font-weight: 700;">Check ticket</button>
-            </form>
-
-            <div id="scan_result" role="status" aria-live="assertive" hidden
-                style="margin-top: 1rem; padding: 1rem; border-radius: var(--radius-md); border: 2px solid var(--border-color);">
-                <strong id="scan_verdict" style="font-size: 1.1rem; display: block;"></strong>
-                <div id="scan_details" style="font-size: 0.85rem; margin-top: 0.35rem; color: var(--text-secondary);"></div>
-            </div>
-        </div>
+        @include('dashboards.partials.ticket-check-in')
 
     @elseif ($workerRole->value === 'payment_clerk')
         <!-- 💵 PAYMENT CLERK INTERFACE -->
@@ -126,6 +105,8 @@
         </div>
 
         @else
+        @include('dashboards.partials.ticket-check-in')
+
         <!-- EVENT SUPERVISOR: live figures for this event -->
         <div class="card">
             <div class="card-header">

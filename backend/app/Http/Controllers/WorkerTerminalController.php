@@ -57,40 +57,52 @@ class WorkerTerminalController extends Controller
     }
 
     /**
-     * Server-side ticket validation endpoint for Ticket Checker.
+     * Ticket check-in. The QR on a ticket carries its secret token, and that is what admits a guest.
+     * A typed ticket code or order number is printed on receipts and staff screens, so it is not proof of a
+     * ticket on its own: only a supervisor (or the event's host or a system administrator) may admit by it,
+     * and that admission is audited as a manual check.
      */
     public function scanTicket(Request $request, Event $event): JsonResponse
     {
         $request->validate([
-            'ticket_code' => ['required', 'string'],
+            'ticket_code' => ['required', 'string', 'max:80'],
         ]);
 
         $user = $request->user();
-        $ticketCode = trim((string) $request->input('ticket_code'));
+        $code = trim((string) $request->input('ticket_code'));
 
         try {
-            EventWorkerService::assertActiveAssignmentValid($user, $event, 'scan_qr_tickets');
+            $assignment = EventWorkerService::assertActiveAssignmentValid($user, $event, 'scan_qr_tickets');
         } catch (SecurityException $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
         }
 
-        $order = Order::where('event_id', $event->id)
-            ->where(function ($q) use ($ticketCode) {
-                $q->where('ticket_code', $ticketCode)
-                  ->orWhere('secure_ticket_token', $ticketCode);
-            })
+        $isToken = str_starts_with($code, 'tok_');
+        if (!$isToken && $assignment->worker_role !== EventWorkerRole::EVENT_SUPERVISOR) {
+            return response()->json([
+                'success' => false,
+                'valid' => false,
+                'error' => 'Scan the QR code on the ticket. A typed ticket code or order number needs a supervisor.',
+            ], 403);
+        }
+
+        $order = Order::withoutGlobalScopes()->whereNull('deleted_at')
+            ->where('event_id', $event->id)
+            ->when($isToken,
+                fn ($q) => $q->where('secure_ticket_token', $code),
+                fn ($q) => $q->where(fn ($w) => $w->where('ticket_code', $code)->orWhere('order_number', $code)))
             ->first();
 
         if (!$order) {
             return response()->json([
                 'success' => false,
                 'valid' => false,
-                'error' => 'Invalid ticket code or ticket does not belong to this event.',
+                'error' => 'No ticket for this event matches that code.',
             ], 404);
         }
 
         try {
-            $scanResult = EventWorkerService::scanAndValidateTicket($user, $order, (string) $event->id);
+            $scanResult = EventWorkerService::scanAndValidateTicket($user, $order, (string) $event->id, manual: !$isToken);
             return response()->json($scanResult);
         } catch (SecurityException $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);

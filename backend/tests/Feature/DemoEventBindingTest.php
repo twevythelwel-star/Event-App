@@ -49,7 +49,7 @@ class DemoEventBindingTest extends TestCase
         $order = Order::allTenants()->where('event_id', self::EVENT)->where('status', 'paid')->firstOrFail();
 
         $this->actingAs($this->checker)
-            ->postJson('/worker/events/' . self::EVENT . '/scan', ['ticket_code' => $order->ticket_code])
+            ->postJson('/worker/events/' . self::EVENT . '/scan', ['ticket_code' => $order->secure_ticket_token])
             ->assertOk()
             ->assertJson(['success' => true]);
 
