@@ -69,3 +69,61 @@ jobs:
         run: |
           touch database/database.sqlite
           php artisan migrate:fresh --seed --force
+
+  backend-mysql:
+    # Production runs on MySQL 8 (see docs/production_deployment_and_operations.md). The main backend job uses
+    # in-memory SQLite for speed; this job runs every migration, the seeders and the full PHPUnit suite on the
+    # real engine, so MySQL-only failures (strict mode, column types, index limits) show up before release.
+    name: Backend on MySQL 8 (migrations, seeders, PHPUnit)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci-only-password
+          MYSQL_DATABASE: eventbite_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -pci-only-password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      # Real environment variables take precedence over the SQLite defaults in phpunit.xml and .env
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: eventbite_test
+      DB_USERNAME: root
+      DB_PASSWORD: ci-only-password
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: mbstring, pdo_mysql, intl, gd
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ runner.os }}-${{ hashFiles('backend/composer.lock') }}
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Migrations and seeders run cleanly on MySQL
+        run: php artisan migrate:fresh --seed --force
+
+      - name: PHPUnit on MySQL
+        run: php artisan test

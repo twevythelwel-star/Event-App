@@ -47,6 +47,17 @@ return [
             'report' => false,
         ],
 
+        // Flyers uploaded through the host's event form. Same private root as 'local', because that is where
+        // MediaStorageService and the public flyer route (api.media.flyer) read uploaded flyers from.
+        // Moving flyers to S3 later means changing both this disk and MediaStorageService::DISK together
+        // (and installing league/flysystem-aws-s3-v3).
+        's3_flyers' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
