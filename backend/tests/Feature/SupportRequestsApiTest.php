@@ -86,7 +86,9 @@ class SupportRequestsApiTest extends TestCase
         $this->assertTrue(UserRole::where('user_id', $applicant->id)->where('role', 'event_host')->where('is_active', true)->exists());
         $membership = OrganizerUser::where('user_id', $applicant->id)->firstOrFail();
         $this->assertSame('event_owner', $membership->role->value);
-        $this->assertSame('Treasure Beach Sunset Collective', $membership->organizer->name);
+        $this->assertSame('Miami Community Food & Arts Collective', $membership->organizer->name);
+        $this->assertSame('US', $membership->organizer->business_location);
+        $this->assertSame('USD', $membership->organizer->default_currency);
 
         // The new host's session now offers the host dashboard for their organizer
         $this->actingAs($applicant->fresh())->getJson('/api/v1/session')
@@ -130,7 +132,7 @@ class SupportRequestsApiTest extends TestCase
             'order_id' => $paid->id,
             'dispute_type' => 'customer_complaint',
             'reason' => 'One of the meals was missing at pickup.',
-            'amount' => 1200,
+            'amount' => 5,
         ])->assertCreated()->assertJsonPath('data.status', 'open')->assertJsonPath('data.orderNumber', $paid->order_number);
 
         // Second open dispute on the same order, an excessive amount, and someone else's order are refused

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'System Administrator Console — Island Events')
+@section('title', 'System Administrator Console — EventBite')
 @section('page-title', 'Platform Governance')
 
 @section('navigation')

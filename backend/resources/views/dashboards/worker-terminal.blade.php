@@ -52,7 +52,7 @@
                 </div>
 
                 <div>
-                    <label for="cash_amount" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Cash Received ({{ $event->currency ?: 'JMD' }})</label>
+                    <label for="cash_amount" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Cash Received ({{ $event->currency ?: 'USD' }})</label>
                     <input type="number" step="0.01" min="0.01" id="cash_amount" placeholder="0.00" required
                         style="width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: var(--text-primary);">
                 </div>

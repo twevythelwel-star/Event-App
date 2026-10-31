@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { BrandLogo } from "../BrandLogo";
 import {
   BarChart3,
   Calendar,
@@ -210,37 +211,15 @@ export function HostNavigation({
           flexWrap: "wrap",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div
-            style={{
-              width: "32px",
-              height: "32px",
-              borderRadius: "9px",
-              background: "#C7FF45",
-              color: "#14210A",
-              display: "grid",
-              placeItems: "center",
-              fontWeight: 900,
-              fontSize: "13px",
-              boxShadow: "0 4px 12px rgba(199, 255, 69, 0.25)",
-              flexShrink: 0,
-            }}
-          >
-            EB
-          </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+          <BrandLogo
+            variant={isCollapsed ? "icon" : "compact"}
+            decorative={isCollapsed}
+            style={isCollapsed ? undefined : { width: 120, height: "auto" }}
+          />
           {!isCollapsed && (
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <strong
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: 900,
-                    color: "#F8FAFC",
-                    letterSpacing: "-0.3px",
-                  }}
-                >
-                  EventBite
-                </strong>
                 <span
                   style={{
                     fontSize: "9px",
@@ -450,4 +429,3 @@ export function HostNavigation({
     </nav>
   );
 }
-

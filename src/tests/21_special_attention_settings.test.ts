@@ -31,15 +31,11 @@ describe("Phase 21: Settings That Need Special Attention", () => {
     it("configures defaults for currency, timezone, location, order deadline, instructions, and branding", () => {
       const defaults: HostEventDefaults = { ...DEFAULT_HOST_EVENT_DEFAULTS };
 
-      // Default currency: JMD or USD
-      expect(["JMD", "USD"]).toContain(defaults.defaultCurrency);
-      expect(defaults.defaultCurrency).toBe("JMD");
+      expect(defaults.defaultCurrency).toBe("USD");
 
-      // Default timezone
-      expect(defaults.defaultTimezone).toBe("America/Jamaica");
+      expect(defaults.defaultTimezone).toBe("America/New_York");
 
-      // Default event location
-      expect(defaults.defaultLocation).toContain("Hope Gardens");
+      expect(defaults.defaultLocation).toContain("Miami, FL");
 
       // Default order deadline (hours before kickoff)
       expect(defaults.defaultOrderDeadlineHours).toBe(24);
@@ -49,7 +45,7 @@ describe("Phase 21: Settings That Need Special Attention", () => {
 
       // Default flyer and branding preferences
       expect(defaults.defaultFlyerAspectRatio).toBe("4:5");
-      expect(defaults.defaultBrandTheme).toBe("caribbean_emerald");
+      expect(defaults.defaultBrandTheme).toBe("eventbite_navy");
     });
   });
 
@@ -61,7 +57,8 @@ describe("Phase 21: Settings That Need Special Attention", () => {
       const policies: HostPaymentPolicySettings = { ...DEFAULT_HOST_PAYMENT_POLICIES };
 
       expect(policies.enableCash).toBe(true);
-      expect(policies.bankTransferInstructions).toContain("NCB Chequing");
+      expect(policies.bankTransferInstructions).toContain("U.S. ACH");
+      expect(policies.bankTransferInstructions).toContain("DEMO ONLY");
       expect(policies.requireSenderName).toBe(true);
       expect(policies.requireTransferReference).toBe(true);
       expect(policies.requireReceiptSnapshot).toBe(true);
@@ -153,7 +150,7 @@ describe("Phase 21: Settings That Need Special Attention", () => {
 
       expect(ops.stations.length).toBeGreaterThanOrEqual(2);
       expect(ops.stations[0].name).toContain("Station A");
-      expect(ops.stations[0].staffAssigned).toBe("Sister Beverly Campbell");
+      expect(ops.stations[0].staffAssigned).toBe("Chef Marcus Johnson");
       expect(ops.maxEventCapacity).toBe(500);
       expect(ops.maxPerItemPortions).toBe(10);
       expect(ops.enforceAntiDuplicateRedemption).toBe(true);
@@ -234,12 +231,12 @@ describe("Phase 21: Settings That Need Special Attention", () => {
       const attendeeSettings = { ...DEFAULT_ATTENDEE_ACCOUNT_SETTINGS };
 
       expect(attendeeSettings.fullName).toBe("Marcus Bailey");
-      expect(attendeeSettings.phone).toBe("+1 (876) 555-4321");
+      expect(attendeeSettings.phone).toBe("+1 (305) 555-4321");
       expect(attendeeSettings.email).toBe("marcus.bailey@islandevents.example");
       expect(attendeeSettings.isPhoneVerified).toBe(true);
       expect(attendeeSettings.isEmailVerified).toBe(true);
       expect(attendeeSettings.twoFactorEnabled).toBe(true);
-      expect(attendeeSettings.preferredDisplayCurrency).toBe("JMD");
+      expect(attendeeSettings.preferredDisplayCurrency).toBe("USD");
       expect(attendeeSettings.activeSessionsCount).toBe(2);
     });
 
@@ -336,16 +333,16 @@ describe("Phase 21: Settings That Need Special Attention", () => {
     it("configures platform branding, currencies, storage health, providers, and audit retention", () => {
       const sysSettings: SystemPlatformSettings = { ...DEFAULT_SYSTEM_PLATFORM_SETTINGS };
 
-      expect(sysSettings.platformName).toBe("Island Events & Ticketing");
-      expect(sysSettings.logoUrl).toBe("/assets/island-events-logo.svg");
-      expect(sysSettings.brandTheme).toBe("caribbean_emerald");
-      expect(sysSettings.supportedCurrencies).toEqual(["JMD", "USD"]);
+      expect(sysSettings.platformName).toBe("EventBite");
+      expect(sysSettings.logoUrl).toBe("/brand/eventbite-wordmark.webp");
+      expect(sysSettings.brandTheme).toBe("eventbite_navy");
+      expect(sysSettings.supportedCurrencies).toEqual(["USD"]);
       expect(sysSettings.supportedPaymentMethods).toContain("cash");
       expect(sysSettings.supportedPaymentMethods).toContain("bank");
 
       // File storage health
       expect(sysSettings.fileStorageStatus).toBe("healthy");
-      expect(sysSettings.storageBucket).toBe("island-events-flyers-prod");
+      expect(sysSettings.storageBucket).toBe("eventbite-flyers-prod");
       expect(sysSettings.storageProvider).toBe("s3_compatible_r2");
 
       // Notification providers

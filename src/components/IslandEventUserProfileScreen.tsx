@@ -25,6 +25,7 @@ import {
   Flame,
 } from "lucide-react";
 import { AttendeeProfile, Currency, EventDetails, NotificationLogEntry, TicketOrder } from "../types";
+import { BrandLogo } from "./BrandLogo";
 import { updateProfile, updatePassword, signOut, fetchNotifications, markNotificationRead, markAllNotificationsRead } from "../lib/api";
 
 type ProfileTab = "menu" | "edit_profile" | "notifications" | "settings" | "orders" | "saved_events" | "food_orders" | "support";
@@ -67,8 +68,8 @@ export const IslandEventUserProfileScreen: React.FC<Props> = ({
   // Profile Form State
   const [nameInput, setNameInput] = useState(currentUser?.name || attendeeProfile?.name || "Akeem Campbell");
   const [emailInput, setEmailInput] = useState(currentUser?.email || attendeeProfile?.email || "akeem.c@islandevents.example");
-  const [phoneInput, setPhoneInput] = useState(currentUser?.phone || attendeeProfile?.phone || "+1 (876) 555-9011");
-  const [bioInput, setBioInput] = useState((currentUser as any)?.bio || attendeeProfile?.bio || "Caribbean music & cultural festival enthusiast.");
+  const [phoneInput, setPhoneInput] = useState(currentUser?.phone || attendeeProfile?.phone || "+1 (305) 555-9011");
+  const [bioInput, setBioInput] = useState((currentUser as any)?.bio || attendeeProfile?.bio || "Food, music, and cultural events enthusiast.");
   const [avatarInput, setAvatarInput] = useState((currentUser as any)?.avatarUrl || (currentUser as any)?.avatar_url || attendeeProfile?.avatarUrl || "");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileFeedback, setProfileFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
@@ -379,7 +380,8 @@ export const IslandEventUserProfileScreen: React.FC<Props> = ({
                   color: "#F97316",
                 }}
               >
-                🌴 Island Event
+                <BrandLogo variant="icon" decorative style={{ width: 18, height: 18, display: "inline-block", verticalAlign: "middle", marginRight: 5 }} />
+                EventBite
               </span>
               <h1
                 id="profile-screen-title"
@@ -1319,7 +1321,7 @@ export const IslandEventUserProfileScreen: React.FC<Props> = ({
                   id="input-profile-phone"
                   value={phoneInput}
                   onChange={(e) => setPhoneInput(e.target.value)}
-                  placeholder="e.g. +1 (876) 555-9011"
+                  placeholder="e.g. +1 (305) 555-9011"
                   style={{
                     width: "100%",
                     padding: "12px 14px",
@@ -2671,7 +2673,7 @@ export const IslandEventUserProfileScreen: React.FC<Props> = ({
                 </p>
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   <a
-                    href="mailto:support@islandevents.example"
+                    href="mailto:support@eventbite.example"
                     style={{
                       background: "rgba(255, 255, 255, 0.08)",
                       border: "1px solid rgba(255, 255, 255, 0.16)",
@@ -2687,10 +2689,10 @@ export const IslandEventUserProfileScreen: React.FC<Props> = ({
                     }}
                   >
                     <Mail size={13} />
-                    <span>support@islandevents.example</span>
+                    <span>support@eventbite.example</span>
                   </a>
                   <a
-                    href="tel:+18765550199"
+                    href="tel:+13055550199"
                     style={{
                       background: "rgba(255, 255, 255, 0.08)",
                       border: "1px solid rgba(255, 255, 255, 0.16)",
@@ -2706,7 +2708,7 @@ export const IslandEventUserProfileScreen: React.FC<Props> = ({
                     }}
                   >
                     <Smartphone size={13} />
-                    <span>+1 (876) 555-0199</span>
+                    <span>+1 (305) 555-0199</span>
                   </a>
                 </div>
               </div>

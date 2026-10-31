@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreEventRequest;
 use App\Http\Requests\UploadFlyerRequest;
 use App\Models\Event;
+use App\Models\TargetMarket;
+use App\Models\UsState;
+use App\Services\LocationAddressNormalizer;
 use App\Services\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +38,11 @@ class EventController extends Controller
             ]);
         }
 
-        return view('events.index', compact('events'));
+        return view('events.index', [
+            'events' => $events,
+            'states' => UsState::where('is_enabled', true)->orderBy('name')->get(),
+            'markets' => TargetMarket::where('is_enabled', true)->orderBy('city')->get(),
+        ]);
     }
 
     /**
@@ -70,7 +77,7 @@ class EventController extends Controller
         }
 
         // Real ticket types and the lowest price to show as "From"; ordering itself happens in CheckoutController.
-        $currency = $event->currency ?: 'JMD';
+        $currency = $event->currency ?: 'USD';
         $tiers = \App\Services\Checkout\TicketTierCatalog::sellable($event);
         $prices = array_merge(
             array_column($tiers, 'price'),
@@ -150,7 +157,11 @@ class EventController extends Controller
             ]);
         }
 
-        return view('events.create');
+        return view('events.create', [
+            'states' => UsState::where('is_enabled', true)->orderBy('name')->get(),
+            'markets' => TargetMarket::where('is_enabled', true)->orderByDesc('is_featured')->orderBy('discovery_priority')->get(),
+            'timezones' => LocationAddressNormalizer::supportedTimezones(),
+        ]);
     }
 
     /**
@@ -173,7 +184,14 @@ class EventController extends Controller
         $qr = $qrService->ensureFor($event);
         $qrDestination = $qrService->destinationUrl($qr);
 
-        return view('events.edit', compact('event', 'qr', 'qrDestination'));
+        return view('events.edit', [
+            'event' => $event,
+            'qr' => $qr,
+            'qrDestination' => $qrDestination,
+            'states' => UsState::where('is_enabled', true)->orderBy('name')->get(),
+            'markets' => TargetMarket::where('is_enabled', true)->orderByDesc('is_featured')->orderBy('discovery_priority')->get(),
+            'timezones' => LocationAddressNormalizer::supportedTimezones(),
+        ]);
     }
 
     /**
@@ -189,7 +207,7 @@ class EventController extends Controller
             return redirect()->route('host.apply')->with('error', 'You must apply and be approved as an Event Host to create events.');
         }
 
-        $validated = $request->validated();
+        $validated = app(LocationAddressNormalizer::class)->normalize($request->validated());
         $organizerId = $user ? $this->organizerForNewEvent($request) : null;
         if ($organizerId === null) {
             $message = 'Choose the organizer this event belongs to. Your account is not linked to exactly one organizer you can manage.';
@@ -243,7 +261,18 @@ class EventController extends Controller
     public function update(StoreEventRequest $request, string $id): mixed
     {
         $event = $this->managedEvent($request, $id);
-        $event->update($request->validated());
+        $location = [
+            'street_address' => $event->street_address,
+            'venue_building_name' => $event->venue_building_name,
+            'city' => $event->city,
+            'state_code' => $event->state_code,
+            'zip_code' => $event->zip_code,
+            'country_code' => $event->country_code,
+            'latitude' => $event->latitude,
+            'longitude' => $event->longitude,
+            'timezone' => $event->timezone,
+        ];
+        $event->update(app(LocationAddressNormalizer::class)->normalize(array_merge($location, $request->validated())));
 
         if ($request->hasFile('flyer')) {
             $file = $request->file('flyer');

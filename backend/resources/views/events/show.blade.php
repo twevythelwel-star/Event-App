@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($event->title ?? 'Event Details') . ' — Island Events')
+@section('title', ($event->title ?? 'Event Details') . ' — EventBite')
 @section('page-title', $event->title ?? 'Event Details')
 
 @section('content')
@@ -461,7 +461,7 @@
                     </div>
                     <div>
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $event->organizer_name ?? 'Island Events Host' }}</h3>
+                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $event->organizer_name ?? 'EventBite Host' }}</h3>
                             <span style="color: #10B981;">✓</span>
                         </div>
                         <div style="font-size: 11px; color: #10B981; font-weight: 600;">Verified Event Producer</div>

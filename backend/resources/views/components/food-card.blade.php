@@ -1,12 +1,12 @@
 {{--
     Menu item card. Shows the dish, its price in the order currency and stock state;
     the action (usually a quantity-control) goes in the slot.
-    Props: item (App\Models\MenuItem), currency ('JMD' | 'USD'),
+    Props: item (App\Models\MenuItem), currency ('USD' | 'JMD'),
            layout ('card' | 'row'; 'row' becomes a compact row on phones).
 --}}
 @props([
     'item',
-    'currency' => 'JMD',
+    'currency' => 'USD',
     'layout' => 'card',
 ])
 

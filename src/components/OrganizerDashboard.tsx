@@ -365,7 +365,7 @@ export function OrganizerDashboard({
         name: dishName.trim(),
         category: dishCategory,
         pricingType: dishPricingType,
-        description: dishDescription.trim() || "Freshly prepared Jamaican fish fry dish.",
+        description: dishDescription.trim() || "Freshly prepared for your event menu.",
         priceUSD: usd,
         priceJMD: jmd,
         imageUrl: dishImage.trim() || "/images/escovitch_fish.jpg",
@@ -634,7 +634,7 @@ export function OrganizerDashboard({
           onCopyShareLink={() =>
             copyShareUrl(
               eventDetails.shareableUrl ||
-                `https://islandevents.app/e/${eventDetails.slug || eventDetails.id}`
+                `${window.location.origin}/e/${eventDetails.slug || eventDetails.id}`
             )
           }
           onNavigateTool={setActiveTool}

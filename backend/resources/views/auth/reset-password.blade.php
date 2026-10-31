@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Set New Password — Island Events & Ticketing')
+@section('title', 'Set New Password — EventBite')
 
 @section('content')
 <style>

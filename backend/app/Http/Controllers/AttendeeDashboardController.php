@@ -38,7 +38,7 @@ class AttendeeDashboardController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $displayCurrency = $user->preferred_display_currency ?? 'JMD';
+        $displayCurrency = $user->preferred_display_currency ?? 'USD';
 
         $ordersWithEstimates = $orders->map(function ($order) use ($displayCurrency) {
             $estimate = AccountSettingsService::formatDisplayEstimate($order, $displayCurrency);

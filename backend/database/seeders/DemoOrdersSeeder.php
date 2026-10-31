@@ -12,7 +12,7 @@ use App\Services\TenantContext;
 use Illuminate\Database\Seeder;
 
 /**
- * Local development orders for the Kingston Harbour event (owned by the demo host), in each payment state
+ * Local development orders for the Miami cultural food festival (owned by the demo host), in each payment state
  * the host verification queue handles, plus a food-station staff account assigned to that event.
  * Never run in production.
  */
@@ -25,25 +25,25 @@ class DemoOrdersSeeder extends Seeder
         }
 
         $attendee = User::where('email', 'attendee@islandevents.example')->firstOrFail();
-        $event = TenantContext::withoutTenantScope(fn () => Event::where('slug', 'kingston-harbour-fishfry')->firstOrFail());
+        $event = TenantContext::withoutTenantScope(fn () => Event::where('slug', 'miami-waterfront-cultural-food-festival')->firstOrFail());
 
         $demoOrders = [
             // Transfer submitted with a bank reference: waiting in the host's verification queue
-            ['method' => 'bank', 'payment_reference' => 'NCB-882104', 'name' => 'Shanice Brown', 'items' => [['menu_item_id' => 'kgn-escovitch', 'quantity' => 2, 'selected_choices' => ['fish-size' => 1, 'sides' => 0]]]],
-            // Zelle-style transfer with a sender name only
+            ['method' => 'bank', 'payment_reference' => 'DEMO-ACH-882104', 'name' => 'Shanice Brown', 'items' => [['menu_item_id' => 'kgn-escovitch', 'quantity' => 2, 'selected_choices' => ['fish-size' => 1, 'sides' => 0]]]],
+            // Demo transfer with a sender name only; no real payment was made
             ['method' => 'bank', 'sender_name' => 'Marcus Reid', 'name' => 'Marcus Reid', 'items' => [['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 3]]],
             // Cash at pickup: authorized unpaid, so the kitchen can prepare it
             ['method' => 'cash', 'name' => 'Paulette Grant', 'items' => [['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 1], ['menu_item_id' => 'kgn-escovitch', 'quantity' => 1]]],
             // Verified and paid: ready for the scanner
-            ['method' => 'bank', 'payment_reference' => 'SCOTIA-55127', 'name' => 'Andre Campbell', 'paid' => true, 'items' => [['menu_item_id' => 'kgn-escovitch', 'quantity' => 1], ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 2]]],
+            ['method' => 'bank', 'payment_reference' => 'DEMO-ACH-55127', 'name' => 'Andre Campbell', 'paid' => true, 'items' => [['menu_item_id' => 'kgn-escovitch', 'quantity' => 1], ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 2]]],
         ];
 
         foreach ($demoOrders as $demo) {
             $result = TenantContext::withoutTenantScope(fn () => $orders->placeOrder($event, [
                 'customer_name' => $demo['name'],
-                'customer_phone' => '+1 876 555 01' . random_int(10, 99),
+                'customer_phone' => '+1 305 555 01' . random_int(10, 99),
                 'method' => $demo['method'],
-                'currency' => 'JMD',
+                'currency' => 'USD',
                 'payment_reference' => $demo['payment_reference'] ?? null,
                 'sender_name' => $demo['sender_name'] ?? null,
                 'items' => $demo['items'],
@@ -66,10 +66,10 @@ class DemoOrdersSeeder extends Seeder
             }
         }
 
-        // Food-station staff member working the Kingston event through a staff assignment (not organizer membership)
+        // Food-station staff member assigned to the demo event, not to the organizer membership
         $staff = User::updateOrCreate(['email' => 'staff@islandevents.example'], [
             'name' => 'Demo Food Station Staff',
-            'phone' => '+1 (876) 555-0177',
+            'phone' => '+1 (305) 555-0177',
             'password' => password_hash(DemoAccountsSeeder::DEMO_PASSWORD, PASSWORD_DEFAULT),
             'status' => 'active',
             'email_verified_at' => now(),

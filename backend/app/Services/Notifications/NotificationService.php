@@ -77,7 +77,7 @@ class NotificationService
                 'trigger' => $trigger,
                 'title' => $title,
                 'message' => $text,
-                'email_subject' => $channel === 'email' ? "Island Events: {$title}" : null,
+                'email_subject' => $channel === 'email' ? "EventBite: {$title}" : null,
                 'status' => 'queued',
                 'provider' => $channel === 'sms' ? 'Twilio SMS' : 'Email (' . config('mail.default') . ')',
                 'retry_count' => 0,
@@ -144,40 +144,40 @@ class NotificationService
         return match ($trigger) {
             'order_received' => [
                 'Order received',
-                "Island Events: we got your order {$order->order_number} for {$event} ({$total}). "
+                "EventBite: we got your order {$order->order_number} for {$event} ({$total}). "
                     . ($order->status === 'paid' || $order->authorized_unpaid
                         ? 'Your ticket is ' . $code . '.'
                         : "Payment is being checked; your ticket {$code} activates once it is verified."),
             ],
             'payment_verified' => [
                 'Payment verified',
-                "Island Events: payment of " . self::money((float) $order->amount_paid, $order->currency)
+                "EventBite: payment of " . self::money((float) $order->amount_paid, $order->currency)
                     . " for order {$order->order_number} is confirmed. Show ticket {$code} at pickup for {$event}.",
             ],
             'payment_rejected' => [
                 'Payment not verified',
-                "Island Events: we could not verify payment for order {$order->order_number}"
+                "EventBite: we could not verify payment for order {$order->order_number}"
                     . ($order->rejection_reason ? " ({$order->rejection_reason})" : '')
                     . '. Please contact the organizer.',
             ],
             'cash_receipt_recorded' => [
                 'Cash payment received',
-                'Island Events: cash payment of ' . self::money((float) ($context['amount'] ?? 0), $order->currency)
+                'EventBite: cash payment of ' . self::money((float) ($context['amount'] ?? 0), $order->currency)
                     . " recorded for order {$order->order_number}" . (isset($context['receipt']) ? " (receipt {$context['receipt']})" : '')
                     . '. Balance due: ' . self::money(max(0, (float) $order->total_amount - (float) $order->amount_paid), $order->currency) . '.',
             ],
             'pickup_instructions' => [
                 'Order ready for pickup',
-                "Island Events: your order {$order->order_number} is ready! Show ticket {$code} at {$event}."
+                "EventBite: your order {$order->order_number} is ready! Show ticket {$code} at {$event}."
                     . ($order->event?->pickup_instructions ? ' ' . $order->event->pickup_instructions : ''),
             ],
             'order_collection_completed' => [
                 'Order collected',
-                "Island Events: all items for ticket {$code} have been handed over. Enjoy {$event}!",
+                "EventBite: all items for ticket {$code} have been handed over. Enjoy {$event}!",
             ],
             'event_reminders' => [
                 'Event reminder',
-                "Island Events: reminder, {$event} is on " . ($order->event?->date_str ?? 'soon')
+                "EventBite: reminder, {$event} is on " . ($order->event?->date_str ?? 'soon')
                     . ($order->event?->time_str ? ", {$order->event->time_str}" : '') . ". Your ticket: {$code}.",
             ],
         };

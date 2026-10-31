@@ -26,48 +26,56 @@ import {
   TicketDispute,
   TicketOrder,
 } from "../types";
+import { TEN_FISH_FRY_EVENTS } from "./fishFryEvents";
+import {
+  US_DEMO_CASH_LEDGER,
+  US_DEMO_NOTIFICATION_LOGS,
+  US_DEMO_ORDERS,
+} from "./usDemoTransactions";
 
-export const DEFAULT_EVENT_DETAILS: EventDetails = {
-  id: "evt-kingston-fishfry-2026",
-  organizerId: "org-kingston-youth",
-  slug: "kingston-fishfry-2026",
-  title: "Sunday Fish Fry — Community Fundraiser",
-  tagline: "Authentic Escovitch, Fried Chicken & Island Drinks for Kingston Youth Center",
-  dateStr: "Sunday, November 22, 2026",
-  timeStr: "12:00 PM – 8:00 PM",
-  timezone: "America/Jamaica",
-  venueName: "Kingston Waterfront Pier",
-  venueAddress: "Ocean Boulevard, Downtown Kingston, Jamaica",
-  coordinates: "18° 00' N · 76° 48' W",
+export const LEGACY_DEFAULT_EVENT_DETAILS: EventDetails = {
+  id: "evt-us-miami-festival-2026",
+  organizerId: "org-us-caribbean-heritage",
+  slug: "miami-waterfront-seafood-fest-2026",
+  title: "Miami Waterfront Seafood & Cultural Cookout",
+  tagline: "Authentic Caribbean snapper, live music, and multicultural food experiences by the bay",
+  dateStr: "Saturday, November 28, 2026",
+  timeStr: "1:00 PM – 9:00 PM EST",
+  timezone: "America/New_York",
+  venueName: "Biscayne Bay Waterfront Park Amphitheater",
+  venueAddress: "301 Biscayne Blvd, Miami, FL 33132, United States",
+  coordinates: "25.7743° N, 80.1878° W",
   description:
-    "Join us for our annual community fish fry! Every ticket directly funds youth skills development and sports equipment in Downtown Kingston. Order your meals in advance to guarantee freshness and rapid pickup.",
-  currency: "JMD",
-  organizerName: "Kingston Youth Foundation & Community Council",
-  organizerPhone: "+1 (876) 926-3849",
-  organizerWhatsApp: "+1 (876) 555-4321",
-  organizerEmail: "fishfry@kingstonyouth.example",
-  advanceOrderDeadline: "Friday, Nov 20, 2026 at 8:00 PM",
+    "Celebrate a U.S.-wide multicultural food and culture experience in downtown Miami. Every ticket supports local community programming, neighborhood vendors, and cultural education initiatives across South Florida.",
+  currency: "USD",
+  organizerName: "Caribbean Heritage Cultural Foundation of South Florida",
+  organizerPhone: "+1 (305) 555-0199",
+  organizerWhatsApp: "+1 (305) 555-0199",
+  organizerEmail: "info@caribbeanheritage-mia.example",
+  advanceOrderDeadline: "Thursday, Nov 26, 2026 at 8:00 PM EST",
   isOrderingOpen: true,
   status: "published",
   pickupInstructions:
-    "Food Collection Tent B, Kingston Waterfront Pier. Present your digital ticket QR code or SMS reference on arrival. Drive-thru and walk-up pickup lanes available.",
-  packagingFeeUSD: 0.75,
-  packagingFeeJMD: 100,
+    "Pickup Tent Alpha, North Promenade, Biscayne Bay Waterfront Park. Show your digital ticket QR pass or reference code upon arrival.",
+  packagingFeeUSD: 1.5,
+  packagingFeeJMD: 0,
   flyerUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
-  flyerStoragePath: "tenants/org-kingston-youth/flyers/1763842100_flyer_hero.jpg",
+  flyerStoragePath: "tenants/org-us-caribbean-heritage/flyers/miami_cookout_hero.jpg",
   flyerMimeType: "image/jpeg",
-  flyerSizeBytes: 1024 * 720,
+  flyerSizeBytes: 1024 * 650,
   flyerDimensions: { width: 1200, height: 800 },
   isFlyerPublic: true,
-  shareableUrl: "https://islandevents.app/e/kingston-fishfry-2026",
+  shareableUrl: "https://islandevents.app/e/miami-waterfront-seafood-fest-2026",
   socialSharingMeta: {
-    ogTitle: "Sunday Fish Fry — Community Fundraiser | Island Events",
-    ogDescription: "Authentic Escovitch, Fried Chicken & Island Drinks for Kingston Youth Center at Ocean Boulevard, Kingston.",
+    ogTitle: "Miami Waterfront Seafood & Cultural Cookout | EventBite",
+    ogDescription: "Multicultural food, music, and community culture in Miami, FL.",
     ogImage: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
   },
 };
 
-export const DEFAULT_MENU: MenuItem[] = [
+export const DEFAULT_EVENT_DETAILS: EventDetails = TEN_FISH_FRY_EVENTS[0];
+
+export const LEGACY_DEFAULT_MENU: MenuItem[] = [
   {
     id: "item-escovitch-fish",
     name: "Escovitch Fish Meal",
@@ -340,44 +348,46 @@ export const DEFAULT_MENU: MenuItem[] = [
   },
 ];
 
+export const DEFAULT_MENU: MenuItem[] = TEN_FISH_FRY_EVENTS[0].menu;
+
 export const DEFAULT_SETTINGS: Settings = {
-  businessLocation: "JM",
-  currency: "JMD",
-  ticketPriceUSD: 10,
-  ticketPriceJMD: 1500,
+  businessLocation: "US",
+  currency: "USD",
+  ticketPriceUSD: 15,
+  ticketPriceJMD: 0,
   methods: {
     bank: {
       enabled: true,
       eligible: true,
       details:
-        "National Commercial Bank (NCB) Jamaica\nAccount: 351-928-114 | Branch: Half Way Tree (00351)\nType: Non-Profit Chequing | Name: Kingston Youth Foundation\nReference: Use your Ticket Reference Code",
+        "DEMO ONLY: Example U.S. ACH instructions are not a real payment account. Configure verified payout details before accepting transfers.",
     },
     zelle: {
-      enabled: false,
-      eligible: false,
-      details: "donations@kingstonyouth.example (US Partner Entity)",
+      enabled: true,
+      eligible: true,
+      details: "DEMO ONLY: Configure a verified U.S. Zelle recipient before accepting transfers.",
     },
     cashapp: {
-      enabled: false,
-      eligible: false,
-      details: "$KingstonYouthFund",
+      enabled: true,
+      eligible: true,
+      details: "DEMO ONLY: Configure a verified Cash App recipient before accepting transfers.",
     },
     cash: {
       enabled: true,
       eligible: true,
       details:
-        "Kingston Youth Center (Mon–Fri 9am–4pm) or in-person to an authorized collector. Receipt issued immediately upon cash payment.",
+        "On-site Box Office & Food Pickup Tent. Cash receipts issued immediately upon authorized collection.",
     },
     card: {
       enabled: false,
       eligible: true,
       details:
-        "Direct card payment via WiPay Caribbean / NCB Merchant Gateway. Instant automated clearance.",
+        "Direct credit/debit card payment (Visa, Mastercard, Amex). US payment processor ready.",
     },
   },
 };
 
-export const DEFAULT_CASH_LEDGER: CashPaymentRecord[] = [
+export const LEGACY_DEFAULT_CASH_LEDGER: CashPaymentRecord[] = [
   {
     id: "cash-rec-1",
     transactionType: "receipt",
@@ -408,7 +418,9 @@ export const DEFAULT_CASH_LEDGER: CashPaymentRecord[] = [
   },
 ];
 
-export const SEED_ORDERS: TicketOrder[] = [
+export const DEFAULT_CASH_LEDGER: CashPaymentRecord[] = US_DEMO_CASH_LEDGER;
+
+export const LEGACY_SEED_ORDERS: TicketOrder[] = [
   {
     id: "ord-fishfry-1",
     ticketCode: "SFF-2026-8492",
@@ -805,7 +817,7 @@ export const SEED_ORDERS: TicketOrder[] = [
     fulfillmentStatus: "ready_for_pickup",
     paymentReference: "STRIPE-CH-9011",
     verifiedAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-    verifiedBy: "Island Events Gateway",
+    verifiedBy: "EventBite Gateway",
     createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString(),
     secureTicketToken: "tok-secure-akeem-9011",
     allHandedOver: false,
@@ -893,7 +905,7 @@ export const SEED_ORDERS: TicketOrder[] = [
     fulfillmentStatus: "collected",
     paymentReference: "CARD-AUTH-8802",
     verifiedAt: "2026-04-12T16:00:00Z",
-    verifiedBy: "Island Events Terminal",
+    verifiedBy: "EventBite Terminal",
     createdAt: "2026-04-10T11:00:00Z",
     closedAt: "2026-04-12T23:00:00Z",
     secureTicketToken: "tok-secure-akeem-8802",
@@ -941,7 +953,7 @@ export const SEED_ORDERS: TicketOrder[] = [
     fulfillmentStatus: "ready_for_pickup",
     paymentReference: "CARD-AUTH-9014",
     verifiedAt: "2026-05-02T11:00:00Z",
-    verifiedBy: "Island Events Gateway",
+    verifiedBy: "EventBite Gateway",
     createdAt: "2026-05-01T10:00:00Z",
     secureTicketToken: "tok-secure-akeem-9014",
     allHandedOver: false,
@@ -1026,7 +1038,7 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplateDefinition[] = [
       <a href="{trackingUrl}" class="cta-button">View Order & Payment Instructions &rarr;</a>
     </div>
     <div class="email-footer">
-      Sent by {organizerName} via Island Events Notification Engine.<br>
+      Sent by {organizerName} via EventBite Notification Engine.<br>
       Automated system message. Invariant: Order receipt is not proof of payment.
     </div>
   </div>
@@ -1101,7 +1113,7 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplateDefinition[] = [
       <a href="{submissionUrl}" class="cta-button">Submit Transfer Reference or Screenshot &rarr;</a>
     </div>
     <div class="email-footer">
-      Questions? Contact organizer at {organizerPhone} &bull; Island Events Verification Hub
+      Questions? Contact organizer at {organizerPhone} &bull; EventBite Verification Hub
     </div>
   </div>
 </body>
@@ -1174,7 +1186,7 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplateDefinition[] = [
       <a href="{trackingUrl}" class="cta-button">Check Live Verification Status &rarr;</a>
     </div>
     <div class="email-footer">
-      Island Events &bull; Anti-Fraud Ledger Protocol &bull; Zero Unauthorized Admissions
+      EventBite &bull; Anti-Fraud Ledger Protocol &bull; Zero Unauthorized Admissions
     </div>
   </div>
 </body>
@@ -1247,7 +1259,7 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplateDefinition[] = [
       <a href="{ticketUrl}" class="cta-button">Open Digital Ticket & QR Code &rarr;</a>
     </div>
     <div class="email-footer">
-      Verified by {verifierName} &bull; Island Events Digital Box Office
+      Verified by {verifierName} &bull; EventBite Digital Box Office
     </div>
   </div>
 </body>
@@ -1400,7 +1412,7 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplateDefinition[] = [
       <a href="{ticketUrl}" class="cta-button">Open Live QR Barcode &rarr;</a>
     </div>
     <div class="email-footer">
-      Organized by {organizerName} &bull; Island Events Ticketing Service
+      Organized by {organizerName} &bull; EventBite Ticketing Service
     </div>
   </div>
 </body>
@@ -1613,7 +1625,7 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplateDefinition[] = [
       <a href="{trackingUrl}" class="cta-button">View Order Fulfillment Audit Log &rarr;</a>
     </div>
     <div class="email-footer">
-      Kingston Youth Foundation &bull; Island Events Fulfillment Audit Protocol
+      Kingston Youth Foundation &bull; EventBite Fulfillment Audit Protocol
     </div>
   </div>
 </body>
@@ -1639,7 +1651,9 @@ export const NOTIFICATION_TEMPLATES: NotificationTemplateDefinition[] = [
   },
 ];
 
-export const DEFAULT_NOTIFICATION_LOGS: NotificationLogEntry[] = [
+export const SEED_ORDERS = LEGACY_SEED_ORDERS;
+
+export const LEGACY_DEFAULT_NOTIFICATION_LOGS: NotificationLogEntry[] = [
   {
     id: "notif-1",
     orderId: "ord-fishfry-1",
@@ -1865,7 +1879,9 @@ export const DEFAULT_NOTIFICATION_LOGS: NotificationLogEntry[] = [
   },
 ];
 
-export const DEFAULT_HANDOVER_AUDIT_LOGS: HandoverAuditEntry[] = [
+export const DEFAULT_NOTIFICATION_LOGS: NotificationLogEntry[] = US_DEMO_NOTIFICATION_LOGS;
+
+export const LEGACY_DEFAULT_HANDOVER_AUDIT_LOGS: HandoverAuditEntry[] = [
   {
     id: "audit-1",
     orderId: "ord-fishfry-prompt-1024",
@@ -1913,107 +1929,207 @@ export const DEFAULT_HANDOVER_AUDIT_LOGS: HandoverAuditEntry[] = [
   },
 ];
 
+export const DEFAULT_HANDOVER_AUDIT_LOGS: HandoverAuditEntry[] = [];
+
 export const DEFAULT_ORGANIZERS: OrganizerProfile[] = [
   {
     id: "org-kingston-youth",
-    name: "Kingston Youth Foundation & Community Council",
-    slug: "kingstonyouth",
-    status: "active",
-    defaultCurrency: "JMD",
-    businessLocation: "JM",
-    flyerStoragePrefix: "/tenants/org-kingston-youth/flyers/",
-    contactEmail: "fishfry@kingstonyouth.example",
-    contactPhone: "+1 (876) 926-3849",
-    contactWhatsApp: "+1 (876) 555-4321",
-    tagline: "Empowering Kingston youth through community culture and sports",
-    createdAt: "2026-01-15T10:00:00.000Z",
-  },
-  {
-    id: "org-portmore-guild",
-    name: "Portmore Seafood & Culinary Guild",
-    slug: "portmoreguild",
-    status: "active",
-    defaultCurrency: "JMD",
-    businessLocation: "JM",
-    flyerStoragePrefix: "/tenants/org-portmore-guild/flyers/",
-    contactEmail: "events@portmoreculinary.example",
-    contactPhone: "+1 (876) 988-1200",
-    contactWhatsApp: "+1 (876) 555-8910",
-    tagline: "Annual Portmore Crab, Conch & Escovitch Festival",
-    createdAt: "2026-03-20T14:30:00.000Z",
-  },
-  {
-    id: "org-mobay-culture",
-    name: "Montego Bay Heritage & Culture Society",
-    slug: "mobayculture",
+    name: "South Florida Cultural Foundation",
+    slug: "southfloridaculture",
     status: "active",
     defaultCurrency: "USD",
     businessLocation: "US",
-    flyerStoragePrefix: "/tenants/org-mobay-culture/flyers/",
-    contactEmail: "fundraiser@mobayheritage.example",
-    contactPhone: "+1 (305) 555-7890",
-    contactWhatsApp: "+1 (305) 555-7891",
-    tagline: "Diaspora Cultural Exchange & Charity Fund",
+    flyerStoragePrefix: "/tenants/org-kingston-youth/flyers/",
+    contactEmail: "events@southfloridaculture.example",
+    contactPhone: "+1 (305) 555-0199",
+    contactWhatsApp: "+1 (305) 555-0199",
+    tagline: "Connecting South Florida communities through food, music, and culture",
+    createdAt: "2026-01-15T10:00:00.000Z",
+  },
+  {
+    id: "org-hellshire-fishers",
+    name: "New York Neighborhood Arts Collective",
+    slug: "nyartscollective",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-hellshire-fishers/flyers/",
+    contactEmail: "market@nyartscollective.example",
+    contactPhone: "+1 (212) 555-0148",
+    contactWhatsApp: "+1 (212) 555-0148",
+    tagline: "Supporting neighborhood arts, food vendors, and community events",
+    createdAt: "2026-03-20T14:30:00.000Z",
+  },
+  {
+    id: "org-portroyal-heritage",
+    name: "Chicago Diaspora Arts & Culture Council",
+    slug: "chicagodiaspora",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-portroyal-heritage/flyers/",
+    contactEmail: "hello@chicagodiaspora.example",
+    contactPhone: "+1 (312) 555-0182",
+    contactWhatsApp: "+1 (312) 555-0182",
+    tagline: "Celebrating African and African diaspora cultures",
+    createdAt: "2026-06-01T09:00:00.000Z",
+  },
+  {
+    id: "org-ochorios-coop",
+    name: "Historic Filipinotown Community Association",
+    slug: "historicfilipinotown",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-ochorios-coop/flyers/",
+    contactEmail: "market@historicfilipinotown.example",
+    contactPhone: "+1 (213) 555-0166",
+    contactWhatsApp: "+1 (213) 555-0166",
+    tagline: "Supporting Filipino American artists, businesses, and community",
+    createdAt: "2026-06-01T09:00:00.000Z",
+  },
+  {
+    id: "org-negril-sunset",
+    name: "Houston Neighborhood Food & Music Alliance",
+    slug: "houstonfoodmusic",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-negril-sunset/flyers/",
+    contactEmail: "hello@houstonfoodmusic.example",
+    contactPhone: "+1 (713) 555-0127",
+    contactWhatsApp: "+1 (713) 555-0127",
+    tagline: "Bringing neighbors together through regional food and music",
+    createdAt: "2026-06-01T09:00:00.000Z",
+  },
+  {
+    id: "org-mobay-marine",
+    name: "Greater Boston Latino Community Network",
+    slug: "bostonlatinonetwork",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-mobay-marine/flyers/",
+    contactEmail: "events@bostonlatinonetwork.example",
+    contactPhone: "+1 (617) 555-0173",
+    contactWhatsApp: "+1 (617) 555-0173",
+    tagline: "Connecting Greater Boston's Latino communities",
+    createdAt: "2026-06-01T09:00:00.000Z",
+  },
+  {
+    id: "org-southcoast-fishers",
+    name: "Atlanta Latin Community Arts Association",
+    slug: "atlantalatinarts",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-southcoast-fishers/flyers/",
+    contactEmail: "events@atlantalatinarts.example",
+    contactPhone: "+1 (404) 555-0134",
+    contactWhatsApp: "+1 (404) 555-0134",
+    tagline: "Celebrating Mexican and Central American food, music, and arts",
+    createdAt: "2026-06-01T09:00:00.000Z",
+  },
+  {
+    id: "org-portland-cookout",
+    name: "Bay Area Mediterranean Community Council",
+    slug: "bayareamediterranean",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-portland-cookout/flyers/",
+    contactEmail: "hello@bayareamediterranean.example",
+    contactPhone: "+1 (415) 555-0142",
+    contactWhatsApp: "+1 (415) 555-0142",
+    tagline: "Connecting Bay Area communities through Mediterranean heritage and food",
+    createdAt: "2026-06-01T09:00:00.000Z",
+  },
+  {
+    id: "org-whitehouse-fishers",
+    name: "Nashville Black Arts & Community Alliance",
+    slug: "nashvilleblackarts",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-whitehouse-fishers/flyers/",
+    contactEmail: "events@nashvilleblackarts.example",
+    contactPhone: "+1 (615) 555-0161",
+    contactWhatsApp: "+1 (615) 555-0161",
+    tagline: "Celebrating soul food, blues, and Black community arts",
+    createdAt: "2026-06-01T09:00:00.000Z",
+  },
+  {
+    id: "org-runaway-events",
+    name: "Phoenix Native Community Arts Partnership",
+    slug: "phoenixnativearts",
+    status: "active",
+    defaultCurrency: "USD",
+    businessLocation: "US",
+    flyerStoragePrefix: "/tenants/org-runaway-events/flyers/",
+    contactEmail: "hello@phoenixnativearts.example",
+    contactPhone: "+1 (602) 555-0188",
+    contactWhatsApp: "+1 (602) 555-0188",
+    tagline: "Supporting Native-led arts, food, and community programming",
     createdAt: "2026-06-01T09:00:00.000Z",
   },
 ];
 
 export const DEFAULT_TENANT_USERS: TenantUserMember[] = [
   {
-    id: "user-pastor-brown",
+    id: "user-south-florida-director",
     organizerId: "org-kingston-youth",
-    name: "Pastor Dennis Brown",
-    email: "dennis.brown@kingstonyouth.example",
+    name: "Ariana Campbell",
+    email: "ariana.campbell@southfloridaculture.example",
     role: "event_owner",
     stationAssignment: "all",
     isActive: true,
     lastActiveAt: new Date(Date.now() - 1000 * 60 * 12).toISOString(),
   },
   {
-    id: "user-treasurer-davis",
+    id: "user-us-finance-verifier",
     organizerId: "org-kingston-youth",
-    name: "Treasurer Sandra Davis",
-    email: "sandra.davis@kingstonyouth.example",
+    name: "Jordan Alvarez",
+    email: "jordan.alvarez@southfloridaculture.example",
     role: "payment_verifier",
     stationAssignment: "all",
     isActive: true,
     lastActiveAt: new Date(Date.now() - 1000 * 60 * 35).toISOString(),
   },
   {
-    id: "user-chef-marcus",
+    id: "user-miami-kitchen-lead",
     organizerId: "org-kingston-youth",
-    name: "Chef Marcus Campbell",
-    email: "marcus.c@kingstonyouth.example",
+    name: "Chef Marcus Johnson",
+    email: "marcus.johnson@southfloridaculture.example",
     role: "food_collector",
     stationAssignment: "mains",
     isActive: true,
     lastActiveAt: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
   },
   {
-    id: "user-evelyn-reid",
+    id: "user-miami-side-lead",
     organizerId: "org-kingston-youth",
-    name: "Sister Evelyn Reid",
-    email: "evelyn.r@kingstonyouth.example",
+    name: "Evelyn Reed",
+    email: "evelyn.reed@southfloridaculture.example",
     role: "food_collector",
     stationAssignment: "sides",
     isActive: true,
     lastActiveAt: new Date(Date.now() - 1000 * 60 * 18).toISOString(),
   },
   {
-    id: "user-nadine-miller",
-    organizerId: "org-portmore-guild",
-    name: "Chef Nadine Miller",
-    email: "nadine@portmoreculinary.example",
+    id: "user-new-york-host",
+    organizerId: "org-hellshire-fishers",
+    name: "Chef Mei Chen",
+    email: "mei.chen@nyartscollective.example",
     role: "event_owner",
     stationAssignment: "all",
     isActive: true,
     lastActiveAt: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
   },
   {
-    id: "user-andre-watson",
-    organizerId: "org-portmore-guild",
-    name: "Andre Watson (Cashier)",
-    email: "andre@portmoreculinary.example",
+    id: "user-new-york-verifier",
+    organizerId: "org-hellshire-fishers",
+    name: "Andre Watson",
+    email: "andre.watson@nyartscollective.example",
     role: "payment_verifier",
     stationAssignment: "all",
     isActive: true,
@@ -2034,45 +2150,45 @@ export const DEFAULT_TENANT_USERS: TenantUserMember[] = [
 export const CROSS_TENANT_DEMO_RECORDS = {
   portmoreOrder: {
     id: "ord-portmore-9011",
-    organizerId: "org-portmore-guild",
-    orderNumber: "ORD-PORT-9011",
-    ticketCode: "PCF-2026-9011",
+    organizerId: "org-hellshire-fishers",
+    orderNumber: "ORD-NY-9011",
+    ticketCode: "EB-NY-2026-9011",
     customerName: "Akeem Campbell",
-    customerPhone: "+1 (876) 555-9011",
-    totalAmount: 4500,
-    currency: "JMD",
+    customerPhone: "+1 (212) 555-9011",
+    totalAmount: 37,
+    currency: "USD",
     status: "paid",
-    eventName: "Portmore Crab & Seafood Festival",
-    details: "3x Garlic Crab Meal, 2x Festival, 2x Fresh Coconut Water",
+    eventName: "New York Lunar New Year Food & Arts Market",
+    details: "Vegetable dumplings, chicken adobo, and ginger citrus tea",
   },
   portmoreCashReceipt: {
     id: "csh-portmore-101",
-    organizerId: "org-portmore-guild",
-    receiptNumber: "CR-PORT-101",
+    organizerId: "org-hellshire-fishers",
+    receiptNumber: "CR-NY-101",
     customerName: "Charmaine Bailey",
-    amount: 3200,
-    currency: "JMD",
-    receivedBy: "Andre Watson (Cashier)",
+    amount: 24,
+    currency: "USD",
+    receivedBy: "Andre Watson",
   },
   mobayOrder: {
     id: "ord-mobay-4402",
-    organizerId: "org-mobay-culture",
-    orderNumber: "ORD-MB-4402",
-    ticketCode: "MHC-2026-4402",
-    customerName: "Rohan Sterling (Miami)",
-    customerPhone: "+1 (305) 555-4402",
-    totalAmount: 45.00,
+    organizerId: "org-mobay-marine",
+    orderNumber: "ORD-BOS-4402",
+    ticketCode: "EB-BOS-2026-4402",
+    customerName: "Rohan Sterling",
+    customerPhone: "+1 (617) 555-4402",
+    totalAmount: 45,
     currency: "USD",
     status: "paid",
-    eventName: "Montego Bay Heritage Gala & Dinner",
+    eventName: "Boston Latino Harvest & Community Celebration",
   },
 };
 
 export const DEFAULT_PLATFORM_STATS: PlatformOverviewStats = {
   totalGrossMerchandiseValueUSD: 128450,
-  totalGrossMerchandiseValueJMD: 19850000,
+  totalGrossMerchandiseValueJMD: 0,
   totalPlatformFeesCollectedUSD: 3211.25,
-  totalPlatformFeesCollectedJMD: 496250,
+  totalPlatformFeesCollectedJMD: 0,
   totalRegisteredHosts: 42,
   totalActiveEvents: 18,
   totalTicketsIssued: 5420,
@@ -2154,13 +2270,10 @@ export const DEFAULT_PLATFORM_FEE_SETTINGS: PlatformFeeSettings = {
   enabled: true,
   takeRatePercent: 2.5,
   fixedFeeUSD: 0.30,
-  fixedFeeJMD: 50,
+  fixedFeeJMD: 0,
   nonProfitDiscountRatePercent: 1.0,
-  supportedCurrencies: ["JMD", "USD"],
+  supportedCurrencies: ["USD"],
   supportedGateways: [
-    { id: "wipay", name: "WiPay Caribbean", enabled: true, region: "JM" },
-    { id: "fygaro", name: "Fygaro", enabled: true, region: "JM" },
-    { id: "ncb", name: "NCB Merchant E-Commerce", enabled: true, region: "JM" },
     { id: "stripe", name: "Stripe", enabled: true, region: "US" },
     { id: "square", name: "Square", enabled: true, region: "US" },
   ],
@@ -2192,34 +2305,34 @@ export const DEFAULT_SECURITY_AUDIT_LOGS: SecurityAuditLog[] = [
     actorRole: "system_admin",
     action: "assign_administrator_scope",
     targetEntity: "admin_scope",
-    targetId: "adm-scope-jm",
+    targetId: "adm-scope-us",
     ipAddress: "192.168.1.10",
     severity: "info",
-    details: "Assigned Jamaica regional operational scope to Administrator Sister Beverly Campbell.",
+    details: "Assigned U.S. regional operational scope to Administrator Jordan Alvarez.",
     isPiiAccess: false,
   },
   {
     id: "sec-99118",
     timestamp: "2026-10-25T12:05:00Z",
-    actorId: "user-admin-beverly",
-    actorName: "Sister Beverly Campbell",
+    actorId: "user-admin-marcus",
+    actorName: "Marcus Sterling",
     actorRole: "admin",
     action: "order_dispute_review",
     targetEntity: "ticket_disputes",
     targetId: "DSP-2026-001",
     ipAddress: "172.16.4.12",
     severity: "info",
-    details: "Reviewed customer refund request for Portmore Crab Festival due to rescheduling. PII access audited.",
+    details: "Reviewed a customer payment mismatch for a U.S. event. PII access audited.",
     isPiiAccess: true,
   },
 ];
 
 export const DEFAULT_ADMIN_SCOPES: AdminAssignedScope[] = [
   {
-    id: "adm-scope-jm",
+    id: "adm-scope-miami",
     adminUserId: "user-admin-beverly",
-    adminName: "Sister Beverly Campbell (Jamaica Operations)",
-    assignedRegion: "JM",
+    adminName: "Beverly Campbell (South Florida Operations)",
+    assignedRegion: "US",
     canManageEvents: true,
     canAssistHostPublishing: true,
     canResolveDisputes: true,
@@ -2230,9 +2343,9 @@ export const DEFAULT_ADMIN_SCOPES: AdminAssignedScope[] = [
     canViewUnmaskedCredentials: false,
   },
   {
-    id: "adm-scope-us",
+    id: "adm-scope-national",
     adminUserId: "user-admin-marcus",
-    adminName: "Marcus Sterling (US Diaspora Operations)",
+    adminName: "Marcus Sterling (U.S. Operations)",
     assignedRegion: "US",
     canManageEvents: true,
     canAssistHostPublishing: true,
@@ -2249,58 +2362,58 @@ export const DEFAULT_TICKET_DISPUTES: TicketDispute[] = [
   {
     id: "DSP-2026-001",
     disputeNumber: "DSP-2026-001",
-    orderNumber: "ORD-PORT-9011",
-    ticketCode: "PCF-2026-9011",
+    orderNumber: "ORD-MIA-9011",
+    ticketCode: "EB-MIA-2026-9011",
     customerName: "Akeem Campbell",
-    customerPhone: "+1 (876) 555-9011",
-    organizerId: "org-portmore-guild",
-    organizerName: "Portmore Culinary Guild",
-    eventName: "Portmore Crab & Seafood Festival",
-    disputeType: "ticket_refund",
+    customerPhone: "+1 (305) 555-9011",
+    organizerId: "org-kingston-youth",
+    organizerName: "South Florida Cultural Foundation",
+    eventName: "Miami Waterfront Cultural Food Festival",
+    disputeType: "payment_mismatch",
     status: "open",
-    amount: 4500,
-    currency: "JMD",
-    reason: "Customer requested rescheduling refund due to emergency travel.",
+    amount: 45,
+    currency: "USD",
+    reason: "Customer submitted a transfer reference and is waiting for host verification.",
     createdAt: "2026-10-25T11:20:00Z",
     updatedAt: "2026-10-25T11:20:00Z",
-    assignedAdminName: "Sister Beverly Campbell",
+    assignedAdminName: "Marcus Sterling",
   },
   {
     id: "DSP-2026-002",
     disputeNumber: "DSP-2026-002",
-    orderNumber: "ORD-MB-4402",
-    ticketCode: "MHC-2026-4402",
+    orderNumber: "ORD-NY-4402",
+    ticketCode: "EB-NY-2026-4402",
     customerName: "Rohan Sterling (Miami)",
-    customerPhone: "+1 (305) 555-4402",
-    organizerId: "org-mobay-culture",
-    organizerName: "Montego Bay Cultural Society",
-    eventName: "Montego Bay Heritage Gala & Dinner",
+    customerPhone: "+1 (212) 555-4402",
+    organizerId: "org-hellshire-fishers",
+    organizerName: "New York Neighborhood Arts Collective",
+    eventName: "New York Lunar New Year Food & Arts Market",
     disputeType: "payment_mismatch",
     status: "resolved",
     amount: 45,
     currency: "USD",
-    reason: "Zelle sender name differed from attendee registration. Admin verified transfer screenshot.",
+    reason: "Transfer sender name differed from attendee registration; host verified the payment.",
     createdAt: "2026-10-24T16:10:00Z",
     updatedAt: "2026-10-25T09:30:00Z",
     assignedAdminName: "Marcus Sterling (US Diaspora Operations)",
-    resolutionNotes: "Verified transaction ID #ZEL-8829-MB matches banking statement. Ticket status validated.",
+    resolutionNotes: "Verified the transfer record against the host's bank statement. Ticket status validated.",
   },
 ];
 
 export const DEFAULT_ATTENDEE_PROFILE: AttendeeProfile = {
-  id: "att-akeem-campbell",
-  name: "Akeem Campbell",
-  phone: "+1 (876) 555-9011",
-  email: "akeem.c@islandevents.example",
+  id: "att-marcus-bailey",
+  name: "Marcus Bailey",
+  phone: "+1 (305) 555-4321",
+  email: "marcus.bailey@islandevents.example",
   savedEvents: [
     {
-      eventId: "evt-kingston-fishfry-2026",
+      eventId: "evt-kingston-harbour-fry",
       organizerId: "org-kingston-youth",
-      title: "Sunday Fish Fry — Community Fundraiser",
-      dateStr: "Sunday, November 22, 2026",
-      venueName: "Kingston Waterfront Pier",
-      flyerUrl: "/images/escovitch_fish.jpg",
-      currency: "JMD",
+      title: "Miami Waterfront Cultural Food Festival",
+      dateStr: "Saturday, November 28, 2026",
+      venueName: "Biscayne Bay Waterfront Park Amphitheater",
+      flyerUrl: "/images/island_festival_sunset.jpg",
+      currency: "USD",
       savedAt: "2026-10-24T18:00:00Z",
     },
   ],
@@ -2317,7 +2430,7 @@ export const INITIAL_SAVED_STATE: SavedState = {
   eventDetails: DEFAULT_EVENT_DETAILS,
   menu: DEFAULT_MENU,
   settings: DEFAULT_SETTINGS,
-  orders: SEED_ORDERS,
+  orders: US_DEMO_ORDERS,
   cashLedger: DEFAULT_CASH_LEDGER,
   notificationLogs: DEFAULT_NOTIFICATION_LOGS,
   handoverAuditLogs: DEFAULT_HANDOVER_AUDIT_LOGS,
@@ -2544,20 +2657,20 @@ export const MASTER_ACCOUNT_SETTINGS: AccountSettingDefinition[] = [
 ];
 
 export const DEFAULT_HOST_EVENT_DEFAULTS: HostEventDefaults = {
-  defaultCurrency: "JMD",
-  defaultTimezone: "America/Jamaica",
-  defaultLocation: "Hope Gardens Pavilion, Old Hope Rd, Kingston 6, Jamaica",
+  defaultCurrency: "USD",
+  defaultTimezone: "America/New_York",
+  defaultLocation: "Biscayne Bay Waterfront Park, 301 Biscayne Blvd, Miami, FL 33132",
   defaultOrderDeadlineHours: 24,
-  defaultPickupInstructions: "Show digital ticket QR pass at Kitchen Pickup Station A or B. Pre-orders held until 7:00 PM.",
+  defaultPickupInstructions: "Show digital ticket QR pass at Kitchen Pickup Station A or B. Pre-orders held until 8:00 PM.",
   defaultFlyerAspectRatio: "4:5",
-  defaultBrandTheme: "caribbean_emerald",
+  defaultBrandTheme: "eventbite_navy",
 };
 
 export const DEFAULT_HOST_PAYMENT_POLICIES: HostPaymentPolicySettings = {
   enableCash: true,
-  zelleInstructions: "Send to payments@islandevents.example (eligible US bank required)",
-  cashAppInstructions: "$IslandEventsJA",
-  bankTransferInstructions: "NCB Chequing #102938475 · Half-Way Tree Branch · Branch Transit: 00213",
+  zelleInstructions: "DEMO ONLY: Configure a verified U.S. Zelle recipient before accepting transfers.",
+  cashAppInstructions: "DEMO ONLY: Configure a verified Cash App recipient before accepting transfers.",
+  bankTransferInstructions: "DEMO ONLY: Configure verified U.S. ACH details before accepting transfers.",
   requireTransferReference: true,
   requireSenderName: true,
   requireReceiptSnapshot: true,
@@ -2570,16 +2683,16 @@ export const DEFAULT_HOST_PAYMENT_POLICIES: HostPaymentPolicySettings = {
 };
 
 export const DEFAULT_HOST_COMMUNICATION_TEMPLATES: HostCommunicationTemplates = {
-  orderConfirmationTemplate: "Hi {customer_name}! Your fish fry order {order_number} has been received. Ticket pass: {ticket_code}. Total: {total_amount}.",
+  orderConfirmationTemplate: "Hi {customer_name}! Your EventBite order {order_number} has been received. Ticket pass: {ticket_code}. Total: {total_amount}.",
   paymentConfirmationTemplate: "Payment of {total_amount} verified for order {order_number}. Your food portions are guaranteed for pickup!",
-  eventReminderTemplate: "Reminder: Sunday Fish Fry kicks off today at {venue_name}! Present your digital QR pass at the collection station.",
+  eventReminderTemplate: "Reminder: {event_name} starts today at {venue_name}! Present your digital QR pass at the collection station.",
   collectionConfirmationTemplate: "Your meal portions for order {order_number} have been collected at Station {station_id}. Enjoy your meal!",
 };
 
 export const DEFAULT_HOST_OPERATIONAL_RULES: HostOperationalRules = {
   stations: [
-    { id: "station-a", name: "Station A — Escovitch Fish & Festivals", staffAssigned: "Sister Beverly Campbell" },
-    { id: "station-b", name: "Station B — Jerk Chicken & Bammy", staffAssigned: "Chef Devon Campbell" },
+    { id: "station-a", name: "Station A — Main courses", staffAssigned: "Chef Marcus Johnson" },
+    { id: "station-b", name: "Station B — Sides & drinks", staffAssigned: "Evelyn Reed" },
   ],
   maxEventCapacity: 500,
   maxPerItemPortions: 10,
@@ -2589,20 +2702,20 @@ export const DEFAULT_HOST_OPERATIONAL_RULES: HostOperationalRules = {
 };
 
 export const DEFAULT_SYSTEM_PLATFORM_SETTINGS: SystemPlatformSettings = {
-  platformName: "Island Events & Ticketing",
-  logoUrl: "/assets/island-events-logo.svg",
-  brandTheme: "caribbean_emerald",
-  supportedCurrencies: ["JMD", "USD"],
+  platformName: "EventBite",
+  logoUrl: "/brand/eventbite-wordmark.webp",
+  brandTheme: "eventbite_navy",
+  supportedCurrencies: ["USD"],
   supportedPaymentMethods: ["cash", "bank", "zelle", "cashapp", "card"],
   fileStorageStatus: "healthy",
-  storageBucket: "island-events-flyers-prod",
+  storageBucket: "eventbite-flyers-prod",
   storageProvider: "s3_compatible_r2",
   notificationProviderStatus: "operational",
   mandatory2FaForAdmins: true,
   adminSessionTimeoutMinutes: 30,
   attendeeSessionTimeoutDays: 30,
-  defaultTimezone: "America/Jamaica",
-  defaultLocale: "en-JM",
+  defaultTimezone: "America/New_York",
+  defaultLocale: "en-US",
   auditRetentionDays: 365,
   piiScrubDays: 90,
   databasePoolMax: 100,
@@ -2611,56 +2724,18 @@ export const DEFAULT_SYSTEM_PLATFORM_SETTINGS: SystemPlatformSettings = {
 
 export const DEFAULT_ATTENDEE_ACCOUNT_SETTINGS: AttendeeAccountSettings = {
   fullName: "Marcus Bailey",
-  phone: "+1 (876) 555-4321",
+  phone: "+1 (305) 555-4321",
   email: "marcus.bailey@islandevents.example",
   isPhoneVerified: true,
   isEmailVerified: true,
   twoFactorEnabled: true,
-  preferredDisplayCurrency: "JMD",
+  preferredDisplayCurrency: "USD",
   activeSessionsCount: 2,
 };
 
 export { TEN_FISH_FRY_EVENTS, type FishFryEventItem } from "./fishFryEvents";
 
-export const DEFAULT_US_LAUNCH_EVENT_DETAILS: EventDetails = {
-  id: "evt-us-miami-fishfry-2026",
-  organizerId: "org-us-caribbean-heritage",
-  slug: "miami-waterfront-seafood-fest-2026",
-  title: "Miami Waterfront Seafood & Caribbean Cookout",
-  tagline: "Authentic Caribbean Snapper, Lobster, Fried Plantains & Tropical Refreshments",
-  dateStr: "Saturday, November 28, 2026",
-  timeStr: "1:00 PM – 9:00 PM EST",
-  timezone: "America/New_York",
-  venueName: "Biscayne Bay Waterfront Park Amphitheater",
-  venueAddress: "301 Biscayne Blvd, Miami, FL 33132, United States",
-  coordinates: "25.7743° N, 80.1878° W",
-  description:
-    "Join our annual Caribbean community culinary celebration in downtown Miami! Authentic whole fried snapper with spicy pickled scotch bonnet slaw, sweet fried plantains, grilled lobster tails, and chilled tropical refreshments. All proceeds support local community youth programs.",
-  currency: "USD",
-  organizerName: "Caribbean Heritage Cultural Foundation of South Florida",
-  organizerPhone: "+1 (305) 555-0199",
-  organizerWhatsApp: "+1 (305) 555-0199",
-  organizerEmail: "info@caribbeanheritage-mia.example",
-  advanceOrderDeadline: "Thursday, Nov 26, 2026 at 8:00 PM EST",
-  isOrderingOpen: true,
-  status: "published",
-  pickupInstructions:
-    "Pickup Tent Alpha, North Promenade, Biscayne Bay Waterfront Park. Show your digital ticket QR pass or reference code upon arrival.",
-  packagingFeeUSD: 1.50,
-  packagingFeeJMD: 0,
-  flyerUrl: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
-  flyerStoragePath: "tenants/org-us-caribbean-heritage/flyers/miami_cookout_hero.jpg",
-  flyerMimeType: "image/jpeg",
-  flyerSizeBytes: 1024 * 650,
-  flyerDimensions: { width: 1200, height: 800 },
-  isFlyerPublic: true,
-  shareableUrl: "https://islandevents.app/e/miami-waterfront-seafood-fest-2026",
-  socialSharingMeta: {
-    ogTitle: "Miami Waterfront Seafood & Caribbean Cookout | Island Events",
-    ogDescription: "Authentic Caribbean Snapper, Lobster & Plantains in Miami, FL.",
-    ogImage: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=1200&q=80",
-  },
-};
+export const DEFAULT_US_LAUNCH_EVENT_DETAILS: EventDetails = TEN_FISH_FRY_EVENTS[0];
 
 export const DEFAULT_US_HOST_EVENT_DEFAULTS: HostEventDefaults = {
   defaultCurrency: "USD",
@@ -2669,7 +2744,7 @@ export const DEFAULT_US_HOST_EVENT_DEFAULTS: HostEventDefaults = {
   defaultOrderDeadlineHours: 24,
   defaultPickupInstructions: "Show digital ticket QR pass at Kitchen Pickup Station A or B. Pre-orders held until 8:00 PM.",
   defaultFlyerAspectRatio: "4:5",
-  defaultBrandTheme: "caribbean_emerald",
+  defaultBrandTheme: "eventbite_navy",
 };
 
 export const DEFAULT_US_SETTINGS: Settings = {
@@ -2682,17 +2757,17 @@ export const DEFAULT_US_SETTINGS: Settings = {
       enabled: true,
       eligible: true,
       details:
-        "US Domestic ACH / Wire Transfer\nBank: Chase Bank NA | Routing: 021000021\nAccount: 882910492 | Name: Caribbean Heritage Foundation Inc\nReference: Use your Ticket Reference Code",
+        "DEMO ONLY: Example U.S. ACH instructions are not a real payment account. Configure verified payout details before accepting transfers.",
     },
     zelle: {
       enabled: true,
       eligible: true,
-      details: "payments@caribbeanheritage-mia.example (Chase Business Checking)",
+      details: "DEMO ONLY: Configure a verified U.S. Zelle recipient before accepting transfers.",
     },
     cashapp: {
       enabled: true,
       eligible: true,
-      details: "$MiamiCaribbeanFest (Verified Business Entity)",
+      details: "DEMO ONLY: Configure a verified Cash App recipient before accepting transfers.",
     },
     cash: {
       enabled: true,
@@ -2725,6 +2800,3 @@ export const DEFAULT_US_SYSTEM_PLATFORM_SETTINGS: SystemPlatformSettings = {
   defaultTimezone: "America/New_York",
   defaultLocale: "en-US",
 };
-
-
-

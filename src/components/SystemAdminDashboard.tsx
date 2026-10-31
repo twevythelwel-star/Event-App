@@ -213,12 +213,12 @@ export const SystemAdminDashboard: React.FC<Props> = ({
             <div className="metric-card gmv-card">
               <span className="metric-kicker">GROSS MERCHANDISE VALUE (USD)</span>
               <h3>{formatMoney(stats.totalGrossMerchandiseValueUSD, "USD")}</h3>
-              <p className="metric-sub">Across all Caribbean & Diaspora events</p>
+              <p className="metric-sub">Across U.S. events</p>
             </div>
             <div className="metric-card gmv-card">
               <span className="metric-kicker">GROSS MERCHANDISE VALUE (JMD)</span>
               <h3>{formatMoney(stats.totalGrossMerchandiseValueJMD, "JMD")}</h3>
-              <p className="metric-sub">Direct settlement to Jamaican hosts</p>
+              <p className="metric-sub">Historical JMD transactions only</p>
             </div>
             <div className="metric-card fee-card">
               <span className="metric-kicker">TOTAL PLATFORM FEES (USD)</span>
@@ -608,7 +608,7 @@ export const SystemAdminDashboard: React.FC<Props> = ({
                   }}
                   className="form-input"
                 />
-                <span className="field-hint">Flat transaction fee for Jamaican domestic orders</span>
+                <span className="field-hint">Historical JMD transaction fee; new U.S. events use USD</span>
               </div>
 
               <div className="form-group">

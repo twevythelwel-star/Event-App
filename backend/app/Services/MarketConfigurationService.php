@@ -9,7 +9,7 @@ use InvalidArgumentException;
 /**
  * MarketConfigurationService
  *
- * Enforces United States-only launch configuration for Island Event.
+ * Enforces United States-only launch configuration for EventBite.
  * Manages default country, currency, address validation, timezones, and
  * provides a modular registry for future international expansion.
  */

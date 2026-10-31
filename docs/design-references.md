@@ -8,7 +8,7 @@ Sources: eight Dribbble shots, viewed in full size, and the app running locally 
 and `src/styles.css`.
 
 Treat the shots as inspiration only. Take the principle behind each one, not its colours, type or
-layout. Island Events should still look like a Jamaican night out, not an airline or an AI tool.
+layout. EventBite should still look like a Jamaican night out, not an airline or an AI tool.
 
 ---
 
@@ -66,9 +66,8 @@ already appear in it, which is a good sign.
 7. **The Event Details page needs a few more facts:** host/organiser, the **advance food-order
    deadline**, and pickup instructions. The app has all three, and attendees need them before they
    buy.
-8. **The name.** The board says *EventBite*, but the app and backend say *Island Events*. This is
-   the owner's decision. Until they decide, build against the layout and tokens, and keep the brand
-   text in one constant.
+8. **The name and logo.** EventBite is the official platform brand. The original `EventBite fork.jpg`
+   is the authoritative logo source; use the shared logo component rather than recreating the mark.
 
 ### Tokens sampled from the board (starting values; tune with real contrast checks)
 | Token | Value | Use |

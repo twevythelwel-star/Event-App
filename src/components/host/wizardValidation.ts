@@ -14,62 +14,153 @@ export type TimezoneOption = {
 
 export const SUPPORTED_EVENT_TIMEZONES: TimezoneOption[] = [
   {
-    id: "America/Jamaica",
-    label: "Jamaica Time (Kingston / Montego Bay)",
-    utcOffsetLabel: "UTC-05:00 (EST · No DST)",
-    region: "Caribbean",
-  },
-  {
-    id: "America/Port_of_Spain",
-    label: "Eastern Caribbean Time (Trinidad / Barbados)",
-    utcOffsetLabel: "UTC-04:00 (AST · No DST)",
-    region: "Caribbean",
-  },
-  {
     id: "America/New_York",
     label: "US Eastern Time (Miami / New York / Atlanta)",
     utcOffsetLabel: "UTC-05:00 / UTC-04:00 (ET)",
-    region: "North America",
+    region: "United States",
   },
   {
-    id: "America/Toronto",
-    label: "Canada Eastern Time (Toronto / Montreal)",
+    id: "America/Detroit",
+    label: "Eastern Time (Detroit / Michigan)",
     utcOffsetLabel: "UTC-05:00 / UTC-04:00 (ET)",
-    region: "North America",
+    region: "United States",
+  },
+  {
+    id: "America/Indiana/Indianapolis",
+    label: "Eastern Time (Indianapolis)",
+    utcOffsetLabel: "UTC-05:00 / UTC-04:00 (ET)",
+    region: "United States",
   },
   {
     id: "America/Chicago",
     label: "US Central Time (Chicago / Houston)",
     utcOffsetLabel: "UTC-06:00 / UTC-05:00 (CT)",
-    region: "North America",
+    region: "United States",
+  },
+  {
+    id: "America/North_Dakota/Center",
+    label: "Central Time (North Dakota)",
+    utcOffsetLabel: "UTC-06:00 / UTC-05:00 (CT)",
+    region: "United States",
   },
   {
     id: "America/Denver",
     label: "US Mountain Time (Denver / Phoenix)",
     utcOffsetLabel: "UTC-07:00 / UTC-06:00 (MT)",
-    region: "North America",
+    region: "United States",
+  },
+  {
+    id: "America/Boise",
+    label: "Mountain Time (Boise)",
+    utcOffsetLabel: "UTC-07:00 / UTC-06:00 (MT)",
+    region: "United States",
   },
   {
     id: "America/Los_Angeles",
     label: "US Pacific Time (Los Angeles / Seattle)",
     utcOffsetLabel: "UTC-08:00 / UTC-07:00 (PT)",
-    region: "North America",
+    region: "United States",
   },
   {
-    id: "Europe/London",
-    label: "UK Time (London / Birmingham)",
-    utcOffsetLabel: "UTC+00:00 / UTC+01:00 (GMT/BST)",
-    region: "Europe",
+    id: "America/Phoenix",
+    label: "Arizona Time (Phoenix)",
+    utcOffsetLabel: "UTC-07:00 (MST)",
+    region: "United States",
+  },
+  {
+    id: "America/Anchorage",
+    label: "Alaska Time (Anchorage)",
+    utcOffsetLabel: "UTC-09:00 / UTC-08:00 (AKT)",
+    region: "United States",
+  },
+  {
+    id: "America/Juneau",
+    label: "Alaska Time (Juneau)",
+    utcOffsetLabel: "UTC-09:00 / UTC-08:00 (AKT)",
+    region: "United States",
+  },
+  {
+    id: "America/Adak",
+    label: "Hawaii-Aleutian Time (Adak)",
+    utcOffsetLabel: "UTC-10:00 / UTC-09:00",
+    region: "United States",
+  },
+  {
+    id: "Pacific/Honolulu",
+    label: "Hawaii Time (Honolulu)",
+    utcOffsetLabel: "UTC-10:00 (HST)",
+    region: "United States",
+  },
+  {
+    id: "America/Puerto_Rico",
+    label: "Atlantic Time (Puerto Rico)",
+    utcOffsetLabel: "UTC-04:00 (AST)",
+    region: "U.S. Territory",
+  },
+  {
+    id: "America/St_Thomas",
+    label: "Atlantic Time (U.S. Virgin Islands)",
+    utcOffsetLabel: "UTC-04:00 (AST)",
+    region: "U.S. Territory",
+  },
+  {
+    id: "Pacific/Guam",
+    label: "Chamorro Standard Time (Guam)",
+    utcOffsetLabel: "UTC+10:00 (ChST)",
+    region: "U.S. Territory",
+  },
+  {
+    id: "Pacific/Saipan",
+    label: "Chamorro Standard Time (Northern Mariana Islands)",
+    utcOffsetLabel: "UTC+10:00 (ChST)",
+    region: "U.S. Territory",
+  },
+  {
+    id: "Pacific/Pago_Pago",
+    label: "Samoa Standard Time (American Samoa)",
+    utcOffsetLabel: "UTC-11:00 (SST)",
+    region: "U.S. Territory",
   },
 ];
 
+const additionalUsTimezoneIds = [
+  "America/Indiana/Knox",
+  "America/Indiana/Marengo",
+  "America/Indiana/Petersburg",
+  "America/Indiana/Tell_City",
+  "America/Indiana/Vevay",
+  "America/Indiana/Vincennes",
+  "America/Indiana/Winamac",
+  "America/Kentucky/Louisville",
+  "America/Kentucky/Monticello",
+  "America/Menominee",
+  "America/Metlakatla",
+  "America/North_Dakota/Beulah",
+  "America/North_Dakota/New_Salem",
+  "America/Nome",
+  "America/Sitka",
+  "America/Yakutat",
+];
+SUPPORTED_EVENT_TIMEZONES.push(
+  ...additionalUsTimezoneIds.map((id) => ({
+    id,
+    label: id,
+    utcOffsetLabel: "Uses local daylight-saving rules",
+    region: "United States",
+  }))
+);
+
 export const SUPPORTED_EVENT_CATEGORIES: string[] = [
-  "Seafood & Fish Fry",
-  "Reggae & Live Music",
-  "Cultural Festival",
-  "Community Fundraiser",
+  "Food & Drink",
+  "Music & Live Performance",
+  "Cultural & Heritage",
+  "Community & Fundraiser",
   "Sports & Outdoors",
-  "Nightlife & Lounge",
+  "Nightlife & Parties",
+  "Arts & Performance",
+  "Family & Kids",
+  "Markets & Vendor Fairs",
+  "Other",
 ];
 
 export type WizardStepDefinition = {
@@ -134,14 +225,14 @@ export function isValidIanaTimezone(tz: string | undefined | null): boolean {
  */
 export function formatEventTimestampWithTimezone(
   isoOrDateStr: string | undefined,
-  timezone: string = "America/Jamaica"
+  timezone: string = "America/New_York"
 ): {
   isValid: boolean;
   ianaTimezone: string;
   utcIso: string;
   localDisplay: string;
 } {
-  const safeTz = isValidIanaTimezone(timezone) ? timezone : "America/Jamaica";
+  const safeTz = isValidIanaTimezone(timezone) ? timezone : "America/New_York";
   if (!isoOrDateStr || isoOrDateStr.trim().length === 0) {
     return {
       isValid: false,
@@ -263,7 +354,7 @@ export function validateWizardBasicDetails(
     fieldErrors.title = "Event name cannot exceed 200 characters.";
   }
 
-  const category = event.category || "Seafood & Fish Fry";
+  const category = event.category || "Food & Drink";
   if (!category || category.trim().length === 0) {
     fieldErrors.category = "Please select an event category.";
   }
@@ -292,7 +383,7 @@ export function validateWizardBasicDetails(
 
   if (!event.flyerUrl || event.flyerUrl.trim().length === 0) {
     warnings.push(
-      "No custom event flyer uploaded yet — a default Caribbean culinary banner will be used until you upload one."
+      "No custom event flyer uploaded yet — a neutral EventBite fallback image will be used until you upload one."
     );
   }
 
@@ -329,7 +420,7 @@ export function validateWizardDateLocation(
     }
   }
 
-  const tz = event.timezone || "America/Jamaica";
+  const tz = event.timezone || "America/New_York";
   if (!isValidIanaTimezone(tz)) {
     fieldErrors.timezone = `Invalid IANA timezone '${tz}'. Select a valid region timezone.`;
   }
@@ -339,7 +430,31 @@ export function validateWizardDateLocation(
   }
 
   if (!event.venueAddress || event.venueAddress.trim().length < 5) {
-    fieldErrors.venueAddress = "Full street or parish venue address is required.";
+    fieldErrors.venueAddress = "Full U.S. venue address is required.";
+  }
+
+  const hasStructuredAddress = Boolean(
+    event.countryCode === "US" ||
+    event.streetAddress ||
+    event.city ||
+    event.stateCode ||
+    event.zipCode
+  );
+  if (hasStructuredAddress) {
+    if (!event.streetAddress?.trim()) fieldErrors.streetAddress = "Street address is required.";
+    if (!event.city?.trim()) fieldErrors.city = "City or town is required.";
+    if (!/^[A-Z]{2}$/.test(event.stateCode || "")) fieldErrors.stateCode = "Select a valid U.S. state or territory code.";
+    if (!/^\d{5}(?:-\d{4})?$/.test(event.zipCode || "")) fieldErrors.zipCode = "Enter a valid ZIP code.";
+  }
+
+  if ((event.latitude == null) !== (event.longitude == null)) {
+    fieldErrors.latitude = "Enter both latitude and longitude, or leave both blank.";
+  }
+  if (event.latitude != null && (event.latitude < -90 || event.latitude > 90)) {
+    fieldErrors.latitude = "Latitude must be between -90 and 90.";
+  }
+  if (event.longitude != null && (event.longitude < -180 || event.longitude > 180)) {
+    fieldErrors.longitude = "Longitude must be between -180 and 180.";
   }
 
   if (!event.advanceOrderDeadline || event.advanceOrderDeadline.trim().length === 0) {
@@ -706,7 +821,7 @@ export function evaluateWizardPublishReadiness(
       stepId: "basic_details",
       label: "Basic Event Details & Host Contact",
       detail: basic.isValid
-        ? `${event.title} · ${event.category || "Seafood & Fish Fry"} · Host: ${event.organizerName}`
+        ? `${event.title} · ${event.category || "Food & Drink"} · Host: ${event.organizerName}`
         : Object.values(basic.fieldErrors)[0] || "Missing basic event fields.",
       passed: basic.isValid,
       requiredForPublish: true,
@@ -717,7 +832,7 @@ export function evaluateWizardPublishReadiness(
       label: "Event Promotional Artwork / Flyer",
       detail: event.flyerUrl
         ? "Official promotional flyer verified and attached"
-        : "Using high-resolution Caribbean fallback banner (upload optional)",
+        : "Using a high-resolution EventBite fallback image (upload optional)",
       passed: Boolean(event.flyerUrl),
       requiredForPublish: false,
     },
@@ -727,7 +842,7 @@ export function evaluateWizardPublishReadiness(
       label: "Date, Venue Address & IANA Timezone",
       detail: dateLoc.isValid
         ? `${event.dateStr} (${event.timeStr}) · ${event.venueName} · TZ: ${
-            event.timezone || "America/Jamaica"
+            event.timezone || "America/New_York"
           }`
         : Object.values(dateLoc.fieldErrors)[0] ||
           "Missing schedule or location fields.",
@@ -785,4 +900,3 @@ export function evaluateWizardPublishReadiness(
     checklist,
   };
 }
-

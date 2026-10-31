@@ -31,7 +31,7 @@ class AccountSettingsService
                 'phone' => CredentialMaskingService::maskPhoneNumber($user->phone ?? ''),
                 'raw_phone' => $user->phone,
                 'status' => $user->status,
-                'preferred_display_currency' => $user->preferred_display_currency ?? 'JMD',
+                'preferred_display_currency' => $user->preferred_display_currency ?? 'USD',
                 'is_2fa_enabled' => !empty($user->two_factor_confirmed_at),
                 'is_email_verified' => !empty($user->email_verified_at),
                 'is_phone_verified' => !empty($user->phone_verified_at),
@@ -42,16 +42,16 @@ class AccountSettingsService
         if ($role === AccountType::SYSTEM_ADMIN) {
             $sys = SystemPlatformSetting::first();
             $settings['system_platform'] = [
-                'platform_name' => $sys->platform_name ?? 'Island Events & Ticketing',
-                'supported_currencies' => $sys->supported_currencies ?? ['JMD', 'USD'],
+                'platform_name' => $sys->platform_name ?? 'EventBite',
+                'supported_currencies' => $sys->supported_currencies ?? ['USD'],
                 'supported_payment_methods' => $sys->supported_payment_methods ?? ['cash', 'bank', 'zelle', 'cashapp', 'card'],
                 'file_storage_status' => $sys->file_storage_status ?? 'healthy',
-                'storage_bucket' => $sys->storage_bucket ?? 'island-events-flyers-prod',
+                'storage_bucket' => $sys->storage_bucket ?? 'eventbite-flyers-prod',
                 'storage_provider' => $sys->storage_provider ?? 's3_compatible_r2',
                 'notification_provider_status' => $sys->notification_provider_status ?? 'operational',
                 'mandatory_2fa_for_admins' => $sys->mandatory_2fa_for_admins ?? true,
                 'admin_session_timeout_minutes' => $sys->admin_session_timeout_minutes ?? 30,
-                'default_timezone' => $sys->default_timezone ?? 'America/Jamaica',
+                'default_timezone' => $sys->default_timezone ?? 'America/New_York',
                 'audit_retention_days' => $sys->audit_retention_days ?? 365,
                 'pii_scrub_days' => $sys->pii_scrub_days ?? 90,
                 'database_pool_max' => $sys->database_pool_max ?? 100,
@@ -111,7 +111,7 @@ class AccountSettingsService
      */
     public static function formatDisplayEstimate(Order|array $order, string $preferredCurrency, float $exchangeRate = 158.0): array
     {
-        $chargedCurrency = is_array($order) ? ($order['currency'] ?? 'JMD') : $order->currency;
+        $chargedCurrency = is_array($order) ? ($order['currency'] ?? 'USD') : $order->currency;
         $chargedAmount = is_array($order) ? ($order['total_amount'] ?? 0.0) : (float) $order->total_amount;
 
         $estimatedAmount = $chargedAmount;

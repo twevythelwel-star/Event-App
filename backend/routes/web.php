@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\HostEventsController;
 use App\Http\Controllers\Api\MediaController;
+use App\Http\Controllers\Api\LocationCatalogController;
 use App\Http\Controllers\Api\OrderOperationsController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\SupportRequestsController;
@@ -33,7 +34,7 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes - Island Events Enterprise Ticketing & Authentication
+| Web Routes - EventBite Enterprise Ticketing & Authentication
 |--------------------------------------------------------------------------
 */
 
@@ -61,6 +62,7 @@ Route::get('/', function (\Illuminate\Http\Request $request) {
     return view('welcome');
 })->name('home');
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
+Route::get('/locations', [LocationCatalogController::class, 'index'])->name('locations.catalog');
 
 // Event QR short links: resolve only for published events; never used for admission
 Route::get('/e/{code}', [EventQrController::class, 'resolve'])->where('code', '[A-Za-z0-9]{10}')->name('event-qr.resolve')->middleware('throttle:120,1');
@@ -192,6 +194,7 @@ Route::prefix('api/v1')->group(function () {
     Route::post('/session', [SessionController::class, 'store'])->name('api.session.store')->middleware('throttle:login');
     Route::post('/register', [SessionController::class, 'register'])->name('api.register')->middleware('throttle:10,1');
     Route::get('/events', [CatalogController::class, 'events'])->name('api.events.index');
+    Route::get('/locations', [LocationCatalogController::class, 'index'])->name('api.locations.index');
 
     // Uploaded images: public for published events, otherwise only for accounts that manage the event
     Route::get('/media/events/{eventId}/flyer', [MediaController::class, 'flyer'])->name('api.media.flyer');

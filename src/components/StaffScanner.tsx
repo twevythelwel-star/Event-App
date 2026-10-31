@@ -1280,7 +1280,7 @@ export const StaffScanner: React.FC<Props> = ({
                   .filter((l) => l.actionType === "collection")
                   .reduce((sum, l) => sum + l.quantityCollected, 0)}
               </strong>
-              <span className="stat-sub">Authentic Jamaican meals & drinks</span>
+              <span className="stat-sub">Food and drink orders for this event</span>
             </div>
 
             <div className="audit-stat-card">

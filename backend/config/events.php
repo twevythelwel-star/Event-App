@@ -51,7 +51,7 @@ return [
     | Operating Market & Regional Configuration (US-Only Initial Launch)
     |--------------------------------------------------------------------------
     |
-    | Island Event is configured to operate in the United States only for initial
+    | EventBite is configured to operate in the United States only for initial
     | launch. United States is the default country for event venues, addresses,
     | account-related location fields, and business operations.
     | Architecture remains modular for future international expansion.

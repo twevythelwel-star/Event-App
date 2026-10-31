@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Account Settings — Island Events')
+@section('title', 'Account Settings — EventBite')
 @section('page-title', 'Account Settings')
 
 @section('navigation')
@@ -153,7 +153,6 @@
                     <label class="form-label">Default Currency</label>
                     <select name="default_currency" class="form-input">
                         <option value="USD" selected>USD (US Dollar - $)</option>
-                        <option value="JMD">JMD (Jamaican Dollar - Coming Soon)</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -162,7 +161,10 @@
                         <option value="America/New_York" selected>America/New_York (Eastern Time - EDT/EST)</option>
                         <option value="America/Chicago">America/Chicago (Central Time)</option>
                         <option value="America/Los_Angeles">America/Los_Angeles (Pacific Time)</option>
-                        <option value="America/Jamaica">America/Jamaica (EST / UTC-5)</option>
+                        <option value="America/Denver">America/Denver (Mountain Time)</option>
+                        <option value="America/Phoenix">America/Phoenix (Arizona Time)</option>
+                        <option value="America/Anchorage">America/Anchorage (Alaska Time)</option>
+                        <option value="Pacific/Honolulu">Pacific/Honolulu (Hawaii Time)</option>
                     </select>
                 </div>
                 <div class="form-group">

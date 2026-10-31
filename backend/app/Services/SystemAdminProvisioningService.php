@@ -30,7 +30,7 @@ class SystemAdminProvisioningService
         // 3. Create or elevate user
         $user = User::firstOrNew(['email' => strtolower(trim($data['email']))]);
         $user->name = trim($data['name']);
-        $user->phone = $data['phone'] ?? '+1 (876) 555-0100';
+        $user->phone = $data['phone'] ?? '+1 (305) 555-0100';
         $user->password = password_hash($data['password'], PASSWORD_DEFAULT);
         $user->status = 'active';
         $user->is_system_admin = true;

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Island Events - Backend Tenancy & Policies Test Suite
+ * EventBite - Backend Tenancy & Policies Test Suite
  * Validates TenantRole enum logic, TenantContext scoping, Cross-Tenant authorization rules,
  * four enterprise account types, dual-acting user role switching, and specialized event-worker roles.
  */
@@ -973,7 +973,7 @@ class TestRunner
         $this->assert($shareableUrl === "https://islandevents.app/e/kingston-fishfry-2026", "Shareable URL formatted accurately with event slug");
 
         $socialMeta = [
-            'og_title' => "Sunday Fish Fry | Island Events",
+            'og_title' => "Sunday Fish Fry | EventBite",
             'og_image' => "https://islandevents.app/storage/{$path}",
             'og_url' => $shareableUrl,
         ];

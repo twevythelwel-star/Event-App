@@ -500,7 +500,7 @@ export function HostModals({
                   onChange={(e) => setCustomChannel(e.target.value as "sms" | "email" | "whatsapp")}
                   style={inputStyle}
                 >
-                  <option value="sms">SMS (+1-876 / +1)</option>
+                  <option value="sms">SMS (+1 U.S. number)</option>
                   <option value="email">Transactional Email</option>
                   <option value="whatsapp">WhatsApp Cloud</option>
                 </select>

@@ -50,19 +50,24 @@ class EventQrCodeTest extends TestCase
         return $user;
     }
 
-    private function createEvent(string $title = 'Port Royal Sunset Seafood Night'): Event
+    private function createEvent(string $title = 'Atlanta Community Seafood Night'): Event
     {
         $id = $this->actingAs($this->user('host'))->postJson('/api/v1/host/events', [
             'title' => $title,
-            'category' => 'Seafood & Fish Fry',
+            'category' => 'Seafood Festival',
             'date_str' => 'Saturday, December 19, 2026',
             'event_date_iso' => '2026-12-19',
             'time_str' => '4:00 PM – 11:00 PM',
-            'timezone' => 'America/Jamaica',
-            'venue_name' => 'Port Royal Historic Dockyard',
-            'venue_address' => '1 Dockyard Lane, Port Royal, Kingston',
-            'organizer_name' => 'Kingston Youth Foundation',
-            'organizer_phone' => '+1 (876) 926-3849',
+            'timezone' => 'America/New_York',
+            'venue_name' => 'Atlanta Community Park',
+            'street_address' => '100 Park Place',
+            'city' => 'Atlanta',
+            'state_code' => 'GA',
+            'zip_code' => '30303',
+            'country_code' => 'US',
+            'venue_address' => '100 Park Place, Atlanta, GA, 30303, United States',
+            'organizer_name' => 'Atlanta Community Foundation',
+            'organizer_phone' => '+1 (404) 555-0188',
             'advance_order_deadline' => '2026-12-18 18:00',
             'supports_food_ordering' => true,
         ])->assertCreated()->json('data.id');

@@ -1,4 +1,4 @@
-# Island Events — Event Ticketing, Food Pre-Ordering & Kitchen Fulfillment Platform
+# EventBite — Event Ticketing, Food Pre-Ordering & Kitchen Fulfillment Platform
 
 A comprehensive, production-grade event ticketing, culinary pre-ordering, and kitchen fulfillment platform built for cross-border Jamaican and US events.
 

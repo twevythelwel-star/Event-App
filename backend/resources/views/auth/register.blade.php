@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Create Account — Island Events & Ticketing')
+@section('title', 'Create Account — EventBite')
 
 @section('content')
 <style>
@@ -90,6 +90,7 @@
         border: 1px solid #a7f3d0;
         margin-bottom: 0.85rem;
     }
+
 
     .auth-title {
         font-size: 1.75rem;
@@ -352,10 +353,10 @@
         <!-- Header -->
         <div class="auth-header">
             <span class="auth-brand-badge">
-                <span>🌴</span>
-                <span>Attendee Registration</span>
+                <x-brand-logo variant="icon" class="auth-brand-icon" />
+                <span>EventBite Registration</span>
             </span>
-            <h1 class="auth-title">Join Island Events</h1>
+            <h1 class="auth-title">Join EventBite</h1>
             <p class="auth-subtitle">Create your attendee account to order culinary dishes and receive digital QR passes.</p>
         </div>
 
@@ -571,8 +572,8 @@
                         </svg>
                     </span>
                     <select id="preferred_display_currency" name="preferred_display_currency" class="auth-select">
-                        <option value="JMD" {{ old('preferred_display_currency', 'JMD') === 'JMD' ? 'selected' : '' }}>JMD — Jamaican Dollar (J$)</option>
-                        <option value="USD" {{ old('preferred_display_currency') === 'USD' ? 'selected' : '' }}>USD — United States Dollar (US$)</option>
+                        <option value="USD" {{ old('preferred_display_currency', 'USD') === 'USD' ? 'selected' : '' }}>USD — United States Dollar (US$)</option>
+                        <option value="JMD" {{ old('preferred_display_currency') === 'JMD' ? 'selected' : '' }}>JMD — Jamaican Dollar (historical transactions)</option>
                     </select>
                 </div>
             </div>

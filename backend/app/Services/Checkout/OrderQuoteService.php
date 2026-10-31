@@ -22,7 +22,7 @@ final class OrderQuoteService
      */
     public function quote(Event $event, array $cart): array
     {
-        $currency = PriceCalculationService::lockAuthoritativeCurrency((string) ($event->currency ?: 'JMD'));
+        $currency = PriceCalculationService::lockAuthoritativeCurrency((string) ($event->currency ?: 'USD'));
         $lines = [];
         $problems = [];
 

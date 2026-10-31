@@ -118,16 +118,14 @@ export function EventCreationWizard({
   const [newDishCategory, setNewDishCategory] = useState<MenuCategory>("Mains");
   const [newDishPricingType, setNewDishPricingType] = useState<MenuPricingType>("fixed");
   const [newDishPriceUSD, setNewDishPriceUSD] = useState("16");
-  const [newDishPriceJMD, setNewDishPriceJMD] = useState("2500");
+  const [newDishPriceJMD, setNewDishPriceJMD] = useState("0");
   const [newDishStock, setNewDishStock] = useState("85");
   const [newDishDescription] = useState(
-    "Freshly prepared island specialty with traditional sides."
+    "Freshly prepared for your event menu."
   );
-  const [newDishImageUrl, setNewDishImageUrl] = useState("/images/escovitch_fish.jpg");
-  const [newDishAddOnTitle, setNewDishAddOnTitle] = useState("Choice of Side");
-  const [newDishAddOnChoices, setNewDishAddOnChoices] = useState(
-    "Festival (+J$0), Bammy (+J$200), Rice & Peas (+J$250)"
-  );
+  const [newDishImageUrl, setNewDishImageUrl] = useState("");
+  const [newDishAddOnTitle, setNewDishAddOnTitle] = useState("Choose an option");
+  const [newDishAddOnChoices, setNewDishAddOnChoices] = useState("");
   const [dishUploadError, setDishUploadError] = useState<string | null>(null);
 
   const ticketTiers: EventTicketTier[] = useMemo(
@@ -184,6 +182,28 @@ export function EventCreationWizard({
       ...eventDetails,
       [key]: value,
     });
+  };
+
+  const updateAddressField = (
+    key: "streetAddress" | "venueBuildingName" | "city" | "stateCode" | "zipCode",
+    value: string
+  ) => {
+    const updated = {
+      ...eventDetails,
+      [key]: value,
+      countryCode: "US",
+      ...(key === "city" || key === "stateCode" ? { timezone: "" } : {}),
+    };
+    const state = updated.stateCode?.trim().toUpperCase() || "";
+    updated.venueAddress = [
+      updated.streetAddress?.trim(),
+      updated.venueBuildingName?.trim(),
+      updated.city?.trim(),
+      state,
+      updated.zipCode?.trim(),
+      "United States",
+    ].filter(Boolean).join(", ");
+    onUpdateEventDetails(updated);
   };
 
   const handleUpdateTier = (
@@ -872,7 +892,7 @@ export function EventCreationWizard({
                     value={eventDetails.title}
                     disabled={!permissions.canManageEventsAndMenus}
                     onChange={(e) => updateField("title", e.target.value)}
-                    placeholder="e.g., Kingston Harbour Sunday Fish Fry"
+                    placeholder="e.g., Miami Neighborhood Food & Arts Festival"
                     style={inputStyle}
                   />
                   {fieldErrorText(basicValidation.fieldErrors.title)}
@@ -887,7 +907,7 @@ export function EventCreationWizard({
                   </label>
                   <select
                     id="wizard-event-category-select"
-                    value={eventDetails.category || "Seafood & Fish Fry"}
+                    value={eventDetails.category || "Food & Drink"}
                     disabled={!permissions.canManageEventsAndMenus}
                     onChange={(e) => updateField("category", e.target.value)}
                     style={inputStyle}
@@ -1455,15 +1475,16 @@ export function EventCreationWizard({
                 >
                   <div>
                     <label htmlFor="wizard-timezone-select" style={labelStyle}>
-                      Applicable Event Timezone (IANA) *
+                      Event Timezone (IANA)
                     </label>
                     <select
                       id="wizard-timezone-select"
-                      value={eventDetails.timezone || "America/Jamaica"}
+                      value={eventDetails.timezone || ""}
                       disabled={!permissions.canManageEventsAndMenus}
                       onChange={(e) => updateField("timezone", e.target.value)}
                       style={inputStyle}
                     >
+                      <option value="">Automatic from city and state</option>
                       {SUPPORTED_EVENT_TIMEZONES.map((tz) => (
                         <option key={tz.id} value={tz.id}>
                           {tz.id} — {tz.label} ({tz.utcOffsetLabel})
@@ -1520,7 +1541,7 @@ export function EventCreationWizard({
                     <strong>
                       {dateLocationValidation.localDeadlineDisplay}
                     </strong>{" "}
-                    ({eventDetails.timezone || "America/Jamaica"})
+                    ({eventDetails.timezone || "America/New_York"})
                   </span>
                   {dateLocationValidation.utcDeadlineIso && (
                     <span style={{ color: "#94A3B8" }}>
@@ -1549,7 +1570,7 @@ export function EventCreationWizard({
                     value={eventDetails.venueName}
                     disabled={!permissions.canManageEventsAndMenus}
                     onChange={(e) => updateField("venueName", e.target.value)}
-                    placeholder="Kingston Waterfront Pier"
+                    placeholder="Biscayne Bay Waterfront Park Amphitheater"
                     style={inputStyle}
                   />
                   {fieldErrorText(dateLocationValidation.fieldErrors.venueName)}
@@ -1565,28 +1586,45 @@ export function EventCreationWizard({
                     value={eventDetails.coordinates}
                     disabled={!permissions.canManageEventsAndMenus}
                     onChange={(e) => updateField("coordinates", e.target.value)}
-                    placeholder="17.9647° N, 76.7936° W"
+                    placeholder="26.14, -80.21"
                     style={inputStyle}
                   />
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="wizard-venue-address-input" style={labelStyle}>
-                  Full Street & Parish / City Address *
-                </label>
-                <input
-                  id="wizard-venue-address-input"
-                  type="text"
-                  value={eventDetails.venueAddress}
-                  disabled={!permissions.canManageEventsAndMenus}
-                  onChange={(e) => updateField("venueAddress", e.target.value)}
-                  placeholder="Ocean Boulevard, Downtown Kingston, Jamaica"
-                  style={inputStyle}
-                />
-                {fieldErrorText(
-                  dateLocationValidation.fieldErrors.venueAddress
-                )}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: "12px" }}>
+                <div>
+                  <label htmlFor="wizard-street-address" style={labelStyle}>Street address *</label>
+                  <input id="wizard-street-address" type="text" value={eventDetails.streetAddress || ""} disabled={!permissions.canManageEventsAndMenus} onChange={(e) => updateAddressField("streetAddress", e.target.value)} autoComplete="street-address" style={inputStyle} />
+                  {fieldErrorText(dateLocationValidation.fieldErrors.streetAddress)}
+                </div>
+                <div>
+                  <label htmlFor="wizard-building-name" style={labelStyle}>Building / venue name</label>
+                  <input id="wizard-building-name" type="text" value={eventDetails.venueBuildingName || ""} disabled={!permissions.canManageEventsAndMenus} onChange={(e) => updateAddressField("venueBuildingName", e.target.value)} style={inputStyle} />
+                </div>
+                <div>
+                  <label htmlFor="wizard-city" style={labelStyle}>City or town *</label>
+                  <input id="wizard-city" type="text" value={eventDetails.city || ""} disabled={!permissions.canManageEventsAndMenus} onChange={(e) => updateAddressField("city", e.target.value)} autoComplete="address-level2" style={inputStyle} />
+                  {fieldErrorText(dateLocationValidation.fieldErrors.city)}
+                </div>
+                <div>
+                  <label htmlFor="wizard-state-code" style={labelStyle}>State / territory code *</label>
+                  <input id="wizard-state-code" type="text" value={eventDetails.stateCode || ""} disabled={!permissions.canManageEventsAndMenus} onChange={(e) => updateAddressField("stateCode", e.target.value.toUpperCase())} maxLength={2} placeholder="FL" autoComplete="address-level1" style={inputStyle} />
+                  {fieldErrorText(dateLocationValidation.fieldErrors.stateCode)}
+                </div>
+                <div>
+                  <label htmlFor="wizard-zip-code" style={labelStyle}>ZIP code *</label>
+                  <input id="wizard-zip-code" type="text" value={eventDetails.zipCode || ""} disabled={!permissions.canManageEventsAndMenus} onChange={(e) => updateAddressField("zipCode", e.target.value)} maxLength={10} inputMode="numeric" autoComplete="postal-code" placeholder="12345" style={inputStyle} />
+                  {fieldErrorText(dateLocationValidation.fieldErrors.zipCode)}
+                </div>
+                <div>
+                  <label htmlFor="wizard-latitude" style={labelStyle}>Latitude (optional)</label>
+                  <input id="wizard-latitude" type="number" step="any" min="-90" max="90" value={eventDetails.latitude ?? ""} disabled={!permissions.canManageEventsAndMenus} onChange={(e) => updateField("latitude", e.target.value === "" ? null : Number(e.target.value))} style={inputStyle} />
+                </div>
+                <div>
+                  <label htmlFor="wizard-longitude" style={labelStyle}>Longitude (optional)</label>
+                  <input id="wizard-longitude" type="number" step="any" min="-180" max="180" value={eventDetails.longitude ?? ""} disabled={!permissions.canManageEventsAndMenus} onChange={(e) => updateField("longitude", e.target.value === "" ? null : Number(e.target.value))} style={inputStyle} />
+                </div>
               </div>
 
               <div>
@@ -2657,7 +2695,7 @@ export function EventCreationWizard({
                     readOnly
                     value={
                       eventDetails.shareableUrl ||
-                      `https://islandevents.app/e/${
+                      `${window.location.origin}/e/${
                         eventDetails.slug || eventDetails.id
                       }`
                     }
@@ -2669,7 +2707,7 @@ export function EventCreationWizard({
                     onClick={() =>
                       onCopyShareUrl(
                         eventDetails.shareableUrl ||
-                          `https://islandevents.app/e/${
+                          `${window.location.origin}/e/${
                             eventDetails.slug || eventDetails.id
                           }`
                       )
@@ -2969,7 +3007,7 @@ export function EventCreationWizard({
                   border: "1px solid rgba(56, 189, 248, 0.4)",
                 }}
               >
-                {eventDetails.category || "Seafood & Fish Fry"}
+                {eventDetails.category || "Food & Drink"}
               </span>
               <span
                 style={{
@@ -3040,7 +3078,7 @@ export function EventCreationWizard({
                 <Clock size={13} color="#A78BFA" />
                 <span>
                   Timezone:{" "}
-                  <strong>{eventDetails.timezone || "America/Jamaica"}</strong>
+                  <strong>{eventDetails.timezone || "America/New_York"}</strong>
                 </span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>

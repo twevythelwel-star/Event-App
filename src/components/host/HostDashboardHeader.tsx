@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BrandLogo } from "../BrandLogo";
 import {
   Bell,
   Building2,
@@ -10,7 +11,6 @@ import {
   RefreshCw,
   Settings,
   ShieldCheck,
-  Sparkles,
   UserCheck,
   Users,
   X,
@@ -185,7 +185,7 @@ export function HostDashboardHeader({
           flexWrap: "wrap",
         }}
       >
-        {/* Left: Island Event Branding & Host Dashboard Title */}
+        {/* Left: EventBite Branding & Host Dashboard Title */}
         <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
           <div
             style={{
@@ -199,21 +199,7 @@ export function HostDashboardHeader({
               boxShadow: "0 4px 14px rgba(0, 0, 0, 0.25)",
             }}
           >
-            <div
-              style={{
-                width: "34px",
-                height: "34px",
-                borderRadius: "9px",
-                background: "linear-gradient(135deg, #4F46E5 0%, #3730A3 60%, #1E1B4B 100%)",
-                border: "1px solid rgba(212, 175, 55, 0.45)",
-                display: "grid",
-                placeItems: "center",
-                color: "#FBBF24",
-                flexShrink: 0,
-              }}
-            >
-              <Sparkles size={17} />
-            </div>
+            <BrandLogo variant="compact" style={{ width: 132, height: "auto" }} />
             <div>
               <div
                 style={{
@@ -225,7 +211,7 @@ export function HostDashboardHeader({
                   lineHeight: 1.1,
                 }}
               >
-                EventBite · Island Event
+                Island Event Host
               </div>
               <div
                 style={{

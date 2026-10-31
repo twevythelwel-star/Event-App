@@ -8,6 +8,7 @@
         ['route' => 'admin.console.users.index', 'match' => 'admin.console.users.*', 'label' => 'Users', 'icon' => 'users', 'can' => Admin::USERS_VIEW],
         ['route' => 'admin.console.roles.index', 'match' => 'admin.console.roles.*', 'label' => 'Roles & Permissions', 'icon' => 'roles', 'can' => Admin::ROLES_VIEW],
         ['route' => 'admin.console.events.index', 'match' => 'admin.console.events.*', 'label' => 'Events', 'icon' => 'events', 'can' => Admin::EVENTS_VIEW],
+        ['route' => 'admin.console.locations.index', 'match' => 'admin.console.locations.*', 'label' => 'Locations', 'icon' => 'events', 'can' => Admin::SETTINGS_MANAGE],
         ['route' => 'admin.console.orders.index', 'match' => 'admin.console.orders.*', 'label' => 'Orders & Payments', 'icon' => 'payment', 'can' => Admin::PAYMENTS_VIEW],
         ['route' => 'admin.console.reports.index', 'match' => 'admin.console.reports.*', 'label' => 'Reports', 'icon' => 'reports', 'can' => Admin::REPORTS_VIEW],
         ['route' => 'admin.console.audit.index', 'match' => 'admin.console.audit.*', 'label' => 'Audit Logs', 'icon' => 'audit', 'can' => Admin::AUDIT_VIEW],
@@ -24,20 +25,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex, nofollow">
+    <meta name="theme-color" content="#11172f">
+    <meta property="og:site_name" content="EventBite">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('icons/eventbite-32.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     <title>@yield('title', 'Administration') · EventBite Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/admin-console.css">
+    <link rel="stylesheet" href="{{ asset('css/brand.css') }}">
 </head>
 <body class="ac-body">
 <a class="sr-only" href="#ac-main">Skip to content</a>
 <div class="ac-shell" id="acShell" data-nav-open="false">
     <aside class="ac-sidebar" aria-label="Administration">
         <a class="ac-brand" href="{{ route('admin.console.overview') }}">
-            <span class="ac-brand-mark" aria-hidden="true"><x-icon name="tickets" size="md" /></span>
             <span>
-                <span class="ac-brand-name">EventBite</span>
+                <x-brand-logo variant="compact" />
                 <span class="ac-brand-sub">Administration</span>
             </span>
         </a>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Administrator Operations Desk — Island Events')
+@section('title', 'Administrator Operations Desk — EventBite')
 @section('page-title', 'Administrator Operations')
 
 @section('navigation')

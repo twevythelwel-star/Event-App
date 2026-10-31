@@ -83,9 +83,9 @@ class SendNotificationJob implements ShouldQueue
 
     private function sendEmail(NotificationLog $log): ?string
     {
-        $sent = Mail::raw($log->message, function (Message $message) use ($log) {
+        $sent = Mail::send(['html' => 'emails.notification', 'text' => 'emails.notification-text'], ['log' => $log], function (Message $message) use ($log) {
             $message->to($log->recipient, $log->customer_name)
-                ->subject($log->email_subject ?: "Island Events: {$log->title}");
+                ->subject($log->email_subject ?: "EventBite: {$log->title}");
             $message->getHeaders()->addTextHeader('X-Idempotency-Key', $log->idempotency_key);
         });
 

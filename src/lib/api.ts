@@ -187,6 +187,28 @@ export async function fetchEvents(params?: { search?: string; category?: string 
   return body.data;
 }
 
+export type LocationCatalog = {
+  country: string;
+  countryCode: string;
+  states: Array<{ code: string; name: string; default_timezone: string; is_state_or_dc: boolean }>;
+  markets: Array<{
+    id: string;
+    city: string;
+    stateCode: string;
+    stateName: string;
+    timezone: string;
+    zipCodes: string[];
+    featured: boolean;
+    priority: number;
+    publishedEvents: number;
+    participatingHosts: number;
+  }>;
+};
+
+export async function fetchLocationCatalog(): Promise<LocationCatalog> {
+  return request<LocationCatalog>("/api/v1/locations");
+}
+
 export async function placeOrder(eventSlug: string, order: OrderRequest): Promise<TicketOrder> {
   const body = await request<{ data: TicketOrder }>(`/events/${encodeURIComponent(eventSlug)}/orders`, {
     method: "POST",
@@ -431,6 +453,15 @@ export type EventPatch = Partial<{
   time_str: string;
   venue_name: string;
   venue_address: string;
+  street_address: string | null;
+  venue_building_name: string | null;
+  city: string | null;
+  state_code: string | null;
+  zip_code: string | null;
+  country_code: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  target_market_id: string | null;
   coordinates: string | null;
   description: string | null;
   pickup_instructions: string | null;

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Sign In — Island Events & Ticketing')
+@section('title', 'Sign In — EventBite')
 
 @section('content')
 <style>
@@ -90,6 +90,7 @@
         border: 1px solid #e0e7ff;
         margin-bottom: 0.85rem;
     }
+
 
     .auth-title {
         font-size: 1.75rem;
@@ -491,8 +492,8 @@
         <!-- Header -->
         <div class="auth-header">
             <span class="auth-brand-badge">
-                <span>🌴</span>
-                <span>Island Events Platform</span>
+                <x-brand-logo variant="icon" class="auth-brand-icon" />
+                <span>EventBite Platform</span>
             </span>
             <h1 class="auth-title">Welcome Back</h1>
             <p class="auth-subtitle">Sign in to view tickets, kitchen orders, or management desks.</p>

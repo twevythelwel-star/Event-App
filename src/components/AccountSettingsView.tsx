@@ -19,6 +19,7 @@ import {
   TicketDispute,
   TicketOrder,
 } from "../types";
+import { BrandLogo } from "./BrandLogo";
 import {
   DEFAULT_HOST_COMMUNICATION_TEMPLATES,
   DEFAULT_HOST_EVENT_DEFAULTS,
@@ -119,12 +120,12 @@ export const AccountSettingsView: React.FC<Props> = ({
 
   // Common Profile Edit State
   const [nameInput, setNameInput] = useState(
-    currentUser?.name || (accountType === "system_admin" ? "Platform Administrator" : "Sister Beverly Campbell")
+    currentUser?.name || (accountType === "system_admin" ? "Platform Administrator" : "Demo Event Host")
   );
   const [emailInput, setEmailInput] = useState(
     currentUser?.email || (accountType === "system_admin" ? "superadmin@islandevents.example" : "host@islandevents.example")
   );
-  const [phoneInput, setPhoneInput] = useState(currentUser?.phone || attendeeProfile?.phone || "+1 (876) 555-0199");
+  const [phoneInput, setPhoneInput] = useState(currentUser?.phone || attendeeProfile?.phone || "+1 (305) 555-0199");
   const [profileSuccessMsg, setProfileSuccessMsg] = useState("");
 
   // Verification state (Attendee)
@@ -161,7 +162,7 @@ export const AccountSettingsView: React.FC<Props> = ({
   // ==========================================
   // Specialized State: Attendee Settings
   // ==========================================
-  const [preferredDisplayCurrency, setPreferredDisplayCurrency] = useState<Currency>("JMD");
+  const [preferredDisplayCurrency, setPreferredDisplayCurrency] = useState<Currency>("USD");
   const [retrievalQuery, setRetrievalQuery] = useState("");
   const [retrievalResult, setRetrievalResult] = useState<TicketOrder | null>(null);
   const [retrievalError, setRetrievalError] = useState("");
@@ -462,7 +463,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                       className="settings-input"
                       value={phoneInput}
                       onChange={(e) => setPhoneInput(e.target.value)}
-                      placeholder="+1 (876) 555-0199"
+                      placeholder="+1 (305) 555-0199"
                     />
                     {accountType === "attendee" && (
                       <span className={`verified-badge ${isPhoneVerified ? "active" : ""}`}>
@@ -885,12 +886,13 @@ export const AccountSettingsView: React.FC<Props> = ({
                 <div className="config-card">
                   <h4>Platform Name & Branding</h4>
                   <p>Name: <strong>{platformSettings.platformName}</strong></p>
-                  <p>Theme: <code>{platformSettings.brandTheme}</code> · Logo: <code>{platformSettings.logoUrl}</code></p>
+                  <BrandLogo variant="compact" />
+                  <p>Theme: <code>{platformSettings.brandTheme}</code> · Official EventBite logo</p>
                 </div>
                 <div className="config-card">
                   <h4>Supported Platform Currencies</h4>
-                  <p>Currencies: <strong>JMD (Jamaican Dollar)</strong> & <strong>USD (US Dollar)</strong></p>
-                  <p>Exchange Reference: Fixed 1 USD = 158.0 JMD estimation</p>
+                  <p>Launch currency: <strong>USD (U.S. Dollar)</strong></p>
+                  <p>Historical JMD orders retain their recorded transaction currency.</p>
                 </div>
                 <div className="config-card">
                   <h4>File-Storage Configuration Status</h4>
@@ -920,7 +922,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                 <div className="config-card">
                   <h4>Global Platform Take Rates</h4>
                   <p>
-                    Platform Fee: <strong>{platformFeeSettings?.takeRatePercent ?? 2.5}%</strong> · Per-Ticket: USD <strong>${(platformFeeSettings?.fixedFeeUSD ?? 50) / 100}</strong> / JMD <strong>${(platformFeeSettings?.fixedFeeJMD ?? 7500) / 100}</strong>
+                    Platform Fee: <strong>{platformFeeSettings?.takeRatePercent ?? 2.5}%</strong> · Per-Ticket: USD <strong>${(platformFeeSettings?.fixedFeeUSD ?? 0.3).toFixed(2)}</strong>
                   </p>
                 </div>
               </div>
@@ -945,7 +947,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                 <div className="event-defaults-form">
                   <h4 className="subheading-title">Event Defaults Configuration</h4>
                   <p className="subheading-desc">
-                    Configure baseline defaults applied when creating fish fries and community fundraisers.
+                    Configure baseline defaults for new U.S. events and community fundraisers.
                   </p>
 
                   <div className="settings-grid-2col">
@@ -957,7 +959,6 @@ export const AccountSettingsView: React.FC<Props> = ({
                         value={eventDefaults.defaultCurrency}
                         onChange={(e) => setEventDefaults({ ...eventDefaults, defaultCurrency: e.target.value as Currency })}
                       >
-                        <option value="JMD">JMD — Jamaican Dollar (J$)</option>
                         <option value="USD">USD — United States Dollar (US$)</option>
                       </select>
                     </div>
@@ -970,8 +971,13 @@ export const AccountSettingsView: React.FC<Props> = ({
                         value={eventDefaults.defaultTimezone}
                         onChange={(e) => setEventDefaults({ ...eventDefaults, defaultTimezone: e.target.value })}
                       >
-                        <option value="America/Jamaica">America/Jamaica (EST, no DST)</option>
                         <option value="America/New_York">America/New_York (Eastern Time)</option>
+                        <option value="America/Chicago">America/Chicago (Central Time)</option>
+                        <option value="America/Denver">America/Denver (Mountain Time)</option>
+                        <option value="America/Los_Angeles">America/Los_Angeles (Pacific Time)</option>
+                        <option value="America/Phoenix">America/Phoenix (Arizona Time)</option>
+                        <option value="America/Anchorage">America/Anchorage (Alaska Time)</option>
+                        <option value="Pacific/Honolulu">Pacific/Honolulu (Hawaii Time)</option>
                       </select>
                     </div>
                   </div>
@@ -1110,15 +1116,15 @@ export const AccountSettingsView: React.FC<Props> = ({
                       <span className="badge-eligible">Always Eligible</span>
                     </div>
 
-                    {/* Bank Transfer (Jamaica) */}
+                    {/* U.S. bank transfer */}
                     <div className="eligibility-card">
                       <div className="card-top">
                         <Wallet size={16} />
-                        <strong>Jamaican Bank Transfers</strong>
+                        <strong>U.S. Bank Transfers / ACH</strong>
                         <span className="status-badge-active">Active</span>
                       </div>
-                      <p>NCB, Scotiabank, and Lynk transfers in JMD.</p>
-                      <span className="badge-eligible">Eligible (JM Entity)</span>
+                      <p>Enable only after verified U.S. payout instructions are configured.</p>
+                      <span className="badge-eligible">U.S. market</span>
                     </div>
 
                     {/* Zelle (US Only) */}
@@ -1132,7 +1138,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                       </div>
                       <p>Requires verified US entity and US routing/account numbers.</p>
                       <div className="eligibility-note">
-                        {evaluateHostPaymentEligibility(settings?.businessLocation || "JM", "zelle").requirement}
+                        {evaluateHostPaymentEligibility(settings?.businessLocation || "US", "zelle").requirement}
                       </div>
                     </div>
 
@@ -1388,7 +1394,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                         </span>
                       </div>
                       <div className="ticket-card-body">
-                        <p>Order: <strong>{retrievalResult.orderNumber}</strong> · Event: <strong>{eventDetails?.title || "Community Fish Fry"}</strong></p>
+                        <p>Order: <strong>{retrievalResult.orderNumber}</strong> · Event: <strong>{eventDetails?.title || "Community event"}</strong></p>
                         <p>Total: <strong>{formatMoney(retrievalResult.totalAmount, retrievalResult.currency)}</strong></p>
                         <p>Meal Handover Progress: <strong>{retrievalResult.items.reduce((sum, itm) => sum + (itm.collectedQuantity || 0), 0)} of {retrievalResult.items.reduce((sum, itm) => sum + itm.quantity, 0) || 1} portions collected</strong></p>
                       </div>
@@ -1475,7 +1481,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                     <p>
                       {accountType === "event_host"
                         ? `Own event financial reports: total sales across ${orders.length} orders in JMD/USD, cash reconciliation, and kitchen prep forecasts.`
-                        : `Aggregated platform financial metrics (e.g. sample revenue: ${formatMoney(1200000, "JMD")}) and fee settlement reports.`}
+                        : `Aggregated U.S. platform financial metrics (e.g. sample revenue: ${formatMoney(12000, "USD")}) and fee settlement reports.`}
                     </p>
                   </div>
                 </div>
@@ -1501,8 +1507,8 @@ export const AccountSettingsView: React.FC<Props> = ({
                       value={preferredDisplayCurrency}
                       onChange={(e) => setPreferredDisplayCurrency(e.target.value as Currency)}
                     >
-                      <option value="JMD">JMD — Jamaican Dollar (J$)</option>
                       <option value="USD">USD — United States Dollar (US$)</option>
+                      <option value="JMD">JMD — Jamaican Dollar (historical transactions)</option>
                     </select>
                   </div>
 
@@ -1512,7 +1518,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                     <div>
                       <strong>Critical Currency Protection Rule:</strong>
                       <p>
-                        The preferred display currency must NOT change the currency actually charged for an order. Orders for Jamaican events are strictly charged in <strong>JMD</strong>; orders for US events are charged in <strong>USD</strong>.
+                        The preferred display currency never changes the amount or currency charged. New U.S. event orders are charged in <strong>USD</strong>; historical orders retain their original currency.
                       </p>
                     </div>
                   </div>
@@ -1540,7 +1546,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                     <input
                       type="text"
                       className="settings-input disabled-input"
-                      value={settings?.currency || "JMD"}
+                      value={settings?.currency || "USD"}
                       disabled
                     />
                   </div>
@@ -1549,7 +1555,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                     <input
                       type="text"
                       className="settings-input disabled-input"
-                      value="America/Jamaica"
+                      value={eventDefaults.defaultTimezone || "America/New_York"}
                       disabled
                     />
                   </div>
@@ -1571,7 +1577,7 @@ export const AccountSettingsView: React.FC<Props> = ({
                 <div className="privacy-card">
                   <h4>Data Portability & Manifest Export</h4>
                   <p>
-                    In accordance with the Jamaican Data Protection Act and GDPR standards, you can download a complete archive of your purchase records, contact info, and tickets.
+                    You can download a complete archive of your purchase records, contact information, and tickets for your own records and applicable privacy requests.
                   </p>
                   <button
                     type="button"

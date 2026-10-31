@@ -16,7 +16,7 @@ export const HostApplicationCard: React.FC<Props> = ({ defaultPhone, onNotify })
   const [isOpen, setIsOpen] = useState(false);
   const [organizationName, setOrganizationName] = useState("");
   const [description, setDescription] = useState("");
-  const [country, setCountry] = useState<"JM" | "US">("JM");
+  const [country, setCountry] = useState<"JM" | "US">("US");
   const [contactPhone, setContactPhone] = useState(defaultPhone ?? "");
   const [website, setWebsite] = useState("");
   const [error, setError] = useState("");
@@ -59,7 +59,7 @@ export const HostApplicationCard: React.FC<Props> = ({ defaultPhone, onNotify })
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
         <div>
           <h2 id="host-apply-title" style={{ display: "flex", alignItems: "center", gap: "8px", margin: 0, fontSize: "15px" }}>
-            <Building2 size={16} /> Run your own fish fry
+            <Building2 size={16} />             Run your own events
           </h2>
           <p style={{ fontSize: "12px", color: "#475569", margin: "2px 0 0" }}>
             {latest?.status === "pending" && `Your application for ${latest.organizationName} is waiting for review.`}
@@ -90,8 +90,8 @@ export const HostApplicationCard: React.FC<Props> = ({ defaultPhone, onNotify })
           <label className="field-label" style={{ margin: 0 }}>
             Country *
             <select value={country} onChange={(e) => setCountry(e.target.value as "JM" | "US")}>
-              <option value="JM">Jamaica</option>
               <option value="US">United States</option>
+              <option value="JM">Jamaica</option>
             </select>
           </label>
           <label className="field-label" style={{ margin: 0 }}>

@@ -346,7 +346,7 @@ export function HostPaymentsLedgerView({
                   type="text"
                   required
                   disabled={!permissions.canVerifyPaymentsAndCash}
-                  placeholder="+1 (876) 555-0622"
+                  placeholder="+1 (305) 555-0622"
                   value={cashFormPhone}
                   onChange={(e) => setCashFormPhone(e.target.value)}
                   style={{

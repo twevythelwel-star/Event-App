@@ -34,11 +34,11 @@ class AccountSettings extends Component
             $this->name = $user->name;
             $this->email = $user->email;
             $this->phone = $user->phone;
-            $this->preferredDisplayCurrency = $user->preferred_display_currency ?? 'JMD';
+            $this->preferredDisplayCurrency = $user->preferred_display_currency ?? 'USD';
 
             if ($user->hasRole(AccountType::SYSTEM_ADMIN)) {
                 $sys = SystemPlatformSetting::first();
-                $this->platformName = $sys->platform_name ?? 'Island Events & Ticketing';
+                $this->platformName = $sys->platform_name ?? 'EventBite';
                 $this->adminSessionTimeout = $sys->admin_session_timeout_minutes ?? 30;
                 $this->auditRetentionDays = $sys->audit_retention_days ?? 365;
             }

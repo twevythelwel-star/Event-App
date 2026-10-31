@@ -44,7 +44,7 @@ describe("17: Event Management and Flyer Upload Comprehensive Suite", () => {
     isFlyerPublic: true,
     shareableUrl: "https://islandevents.app/e/kingston-fishfry-2026",
     socialSharingMeta: {
-      ogTitle: "Sunday Fish Fry — Community Fundraiser | Island Events",
+      ogTitle: "Sunday Fish Fry — Community Fundraiser | EventBite",
       ogDescription: "Authentic Escovitch, Fried Chicken & Island Drinks at Ocean Boulevard.",
       ogImage: "https://islandevents.app/storage/tenants/org-kingston-youth/flyers/initial_flyer.jpg",
     },

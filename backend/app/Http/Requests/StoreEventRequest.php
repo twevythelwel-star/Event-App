@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use App\Services\LocationAddressNormalizer;
 
 class StoreEventRequest extends FormRequest
 {
@@ -19,9 +21,18 @@ class StoreEventRequest extends FormRequest
             'tagline' => 'nullable|string|max:255',
             'date_str' => 'required|string|max:128',
             'time_str' => 'required|string|max:128',
-            'timezone' => 'nullable|string|max:64',
+            'timezone' => ['nullable', Rule::in(LocationAddressNormalizer::supportedTimezones())],
             'venue_name' => 'required|string|max:255',
-            'venue_address' => 'required|string',
+            'venue_address' => 'nullable|string|max:500',
+            'street_address' => 'nullable|string|max:255',
+            'venue_building_name' => 'nullable|string|max:180',
+            'city' => 'nullable|string|max:120',
+            'state_code' => ['nullable', 'string', 'size:2', Rule::exists('us_states', 'code')->where('is_enabled', true)],
+            'target_market_id' => ['nullable', 'uuid', Rule::exists('target_markets', 'id')->where('is_enabled', true)],
+            'zip_code' => ['nullable', 'regex:/^\d{5}(?:-\d{4})?$/'],
+            'country_code' => ['nullable', Rule::in(['US'])],
+            'latitude' => ['nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'coordinates' => 'nullable|string|max:64',
             'description' => 'nullable|string',
             'currency' => 'nullable|in:JMD,USD',

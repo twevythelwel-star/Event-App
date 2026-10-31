@@ -4,7 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'EventBite — Island Events Ticketing & Food Operations')</title>
+    <meta name="theme-color" content="#11172f">
+    <meta name="description" content="Discover events, order food, and manage EventBite tickets and payments.">
+    <meta property="og:site_name" content="EventBite">
+    <meta property="og:title" content="@yield('title', 'EventBite — Events, Tickets & Food')">
+    <meta property="og:image" content="{{ asset('images/brand/eventbite-wordmark.webp') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('icons/eventbite-32.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+    <title>@yield('title', 'EventBite — Events, Tickets & Food')</title>
 
     <!-- Modern Sans-Serif Typography with System Fallbacks -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,6 +28,7 @@
     <link rel="stylesheet" href="/css/04-surfaces-cards.css">
     <link rel="stylesheet" href="/css/05-navigation-motion.css">
     <link rel="stylesheet" href="/css/06-components.css">
+    <link rel="stylesheet" href="{{ asset('css/brand.css') }}">
 
     <style>
         :root {
@@ -42,14 +53,6 @@
         .brand-text-wrap {
             display: flex;
             flex-direction: column;
-        }
-
-        .brand-name {
-            font-family: var(--font-display);
-            font-size: 0.98rem;
-            font-weight: 800;
-            letter-spacing: -0.015em;
-            color: var(--color-text-primary);
         }
 
         .brand-subtitle {
@@ -185,12 +188,9 @@
         <!-- Management & Platform Sidebar -->
         <aside class="eb-management-sidebar app-sidebar" id="appSidebar">
             <a href="{{ route('home') }}" class="eb-sidebar-brand sidebar-brand">
-                <div class="eb-brand-mark brand-logo-icon" aria-hidden="true">
-                    <x-icon name="tickets" size="md" />
-                </div>
                 <div class="brand-text-wrap">
-                    <span class="brand-name">EventBite</span>
-                    <span class="brand-subtitle">Island Events Platform</span>
+                    <x-brand-logo variant="compact" />
+                    <span class="brand-subtitle">Events, tickets &amp; food</span>
                 </div>
             </a>
 

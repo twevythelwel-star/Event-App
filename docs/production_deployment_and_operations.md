@@ -1,4 +1,4 @@
-# Island Events Platform: Production Deployment & Operations Architecture
+# EventBite Platform: Production Deployment & Operations Architecture
 
 Rewritten 2026-10-30 to match what the code actually contains. Earlier versions described PostgreSQL with
 pgBackRest, Redis with Laravel Horizon, `spatie/laravel-backup`, scheduled commands, JSON logging and Sentry.

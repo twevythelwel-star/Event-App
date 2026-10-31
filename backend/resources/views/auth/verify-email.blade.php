@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Verify Email — Island Events & Ticketing')
+@section('title', 'Verify Email — EventBite')
 
 @section('content')
 <div class="max-w-md mx-auto my-8 sm:my-14">

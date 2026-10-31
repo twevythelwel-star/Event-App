@@ -1,0 +1,28 @@
+{
+  "states": [
+    ["AL","Alabama","America/Chicago"],["AK","Alaska","America/Anchorage"],["AZ","Arizona","America/Phoenix"],["AR","Arkansas","America/Chicago"],["CA","California","America/Los_Angeles"],["CO","Colorado","America/Denver"],["CT","Connecticut","America/New_York"],["DE","Delaware","America/New_York"],["DC","District of Columbia","America/New_York"],["FL","Florida","America/New_York"],["GA","Georgia","America/New_York"],["HI","Hawaii","Pacific/Honolulu"],["ID","Idaho","America/Boise"],["IL","Illinois","America/Chicago"],["IN","Indiana","America/Indiana/Indianapolis"],["IA","Iowa","America/Chicago"],["KS","Kansas","America/Chicago"],["KY","Kentucky","America/New_York"],["LA","Louisiana","America/Chicago"],["ME","Maine","America/New_York"],["MD","Maryland","America/New_York"],["MA","Massachusetts","America/New_York"],["MI","Michigan","America/Detroit"],["MN","Minnesota","America/Chicago"],["MS","Mississippi","America/Chicago"],["MO","Missouri","America/Chicago"],["MT","Montana","America/Denver"],["NE","Nebraska","America/Chicago"],["NV","Nevada","America/Los_Angeles"],["NH","New Hampshire","America/New_York"],["NJ","New Jersey","America/New_York"],["NM","New Mexico","America/Denver"],["NY","New York","America/New_York"],["NC","North Carolina","America/New_York"],["ND","North Dakota","America/Chicago"],["OH","Ohio","America/New_York"],["OK","Oklahoma","America/Chicago"],["OR","Oregon","America/Los_Angeles"],["PA","Pennsylvania","America/New_York"],["RI","Rhode Island","America/New_York"],["SC","South Carolina","America/New_York"],["SD","South Dakota","America/Chicago"],["TN","Tennessee","America/Chicago"],["TX","Texas","America/Chicago"],["UT","Utah","America/Denver"],["VT","Vermont","America/New_York"],["VA","Virginia","America/New_York"],["WA","Washington","America/Los_Angeles"],["WV","West Virginia","America/New_York"],["WI","Wisconsin","America/Chicago"],["WY","Wyoming","America/Denver"],
+    ["AS","American Samoa","Pacific/Pago_Pago"],["GU","Guam","Pacific/Guam"],["MP","Northern Mariana Islands","Pacific/Saipan"],["PR","Puerto Rico","America/Puerto_Rico"],["VI","U.S. Virgin Islands","America/St_Thomas"]
+  ],
+  "markets": [
+    {"city":"Lauderhill","state":"FL","timezone":"America/New_York","zip_codes":["33311","33313","33319"],"featured":true,"priority":1},
+    {"city":"Miramar","state":"FL","timezone":"America/New_York","zip_codes":["33023","33025","33027","33029"],"featured":true,"priority":2},
+    {"city":"Miami Gardens","state":"FL","timezone":"America/New_York","zip_codes":["33054","33055","33056"],"featured":true,"priority":3},
+    {"city":"Sunrise","state":"FL","timezone":"America/New_York","zip_codes":["33313","33322","33323","33351"],"featured":true,"priority":4},
+    {"city":"Tamarac","state":"FL","timezone":"America/New_York","zip_codes":["33309","33319","33321"],"featured":true,"priority":5},
+    {"city":"Orlando","state":"FL","timezone":"America/New_York","zip_codes":["32801","32803","32804","32806"],"featured":true,"priority":6},
+    {"city":"Tampa","state":"FL","timezone":"America/New_York","zip_codes":["33602","33603","33605","33606"],"featured":true,"priority":7},
+    {"city":"Jacksonville","state":"FL","timezone":"America/New_York","zip_codes":["32202","32204","32206","32207"],"featured":true,"priority":8},
+    {"city":"Brooklyn","state":"NY","timezone":"America/New_York","zip_codes":["11201","11211","11215","11217"],"featured":true,"priority":9},
+    {"city":"Queens","state":"NY","timezone":"America/New_York","zip_codes":["11101","11354","11368","11432"],"featured":true,"priority":10},
+    {"city":"Mount Vernon","state":"NY","timezone":"America/New_York","zip_codes":["10550","10552","10553"],"featured":true,"priority":11},
+    {"city":"Hempstead","state":"NY","timezone":"America/New_York","zip_codes":["11550","11551"],"featured":true,"priority":12},
+    {"city":"East Orange","state":"NJ","timezone":"America/New_York","zip_codes":["07017","07018"],"featured":true,"priority":13},
+    {"city":"Newark","state":"NJ","timezone":"America/New_York","zip_codes":["07102","07103","07104","07105"],"featured":true,"priority":14},
+    {"city":"Hartford","state":"CT","timezone":"America/New_York","zip_codes":["06103","06105","06106"],"featured":true,"priority":15},
+    {"city":"Bridgeport","state":"CT","timezone":"America/New_York","zip_codes":["06604","06605","06606"],"featured":true,"priority":16},
+    {"city":"Atlanta","state":"GA","timezone":"America/New_York","zip_codes":["30303","30308","30309","30312"],"featured":true,"priority":17},
+    {"city":"Philadelphia","state":"PA","timezone":"America/New_York","zip_codes":["19103","19104","19106","19107"],"featured":true,"priority":18},
+    {"city":"Boston","state":"MA","timezone":"America/New_York","zip_codes":["02108","02109","02110","02111"],"featured":true,"priority":19},
+    {"city":"Baltimore","state":"MD","timezone":"America/New_York","zip_codes":["21201","21202","21205","21217"],"featured":true,"priority":20}
+  ]
+}

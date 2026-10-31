@@ -199,7 +199,7 @@ export function HostSettingsSection({
             email: activeOrganizer.contactEmail,
             phone: activeOrganizer.contactPhone,
             roleLabel: permissions.roleLabel,
-            region: activeOrganizer.businessLocation === "JM" ? "Kingston, Jamaica" : "United States",
+            region: activeOrganizer.businessLocation === "JM" ? "Legacy international organizer" : "United States",
           }}
           eventDetails={eventDetails}
           settings={settings}
@@ -315,8 +315,8 @@ export function HostSettingsSection({
                   fontWeight: 700,
                 }}
               >
-                <option value="JMD">JMD — Jamaican Dollar (J$)</option>
                 <option value="USD">USD — United States Dollar ($)</option>
+                <option value="JMD">JMD — Jamaican Dollar (historical transactions)</option>
               </select>
             </div>
 
@@ -351,8 +351,8 @@ export function HostSettingsSection({
                   fontWeight: 700,
                 }}
               >
-                <option value="JM">Jamaica (JM — NCB / Scotiabank / WiPay)</option>
                 <option value="US">United States (US — ACH / Zelle / Cash App / Stripe)</option>
+                <option value="JM">Jamaica (legacy organizers only)</option>
               </select>
             </div>
           </div>

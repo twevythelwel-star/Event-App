@@ -136,10 +136,13 @@
                 <div>
                     <label for="timezone" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">Applicable Timezone <span class="text-rose-500">*</span></label>
                     <select id="timezone" name="timezone" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
-                        <option value="America/Jamaica" {{ $event->timezone === 'America/Jamaica' ? 'selected' : '' }}>America/Jamaica (EST / UTC-5)</option>
                         <option value="America/New_York" {{ $event->timezone === 'America/New_York' ? 'selected' : '' }}>America/New_York (EDT / UTC-4)</option>
                         <option value="America/Chicago" {{ $event->timezone === 'America/Chicago' ? 'selected' : '' }}>America/Chicago (CDT / UTC-5)</option>
+                        <option value="America/Denver" {{ $event->timezone === 'America/Denver' ? 'selected' : '' }}>America/Denver (Mountain Time)</option>
                         <option value="America/Los_Angeles" {{ $event->timezone === 'America/Los_Angeles' ? 'selected' : '' }}>America/Los_Angeles (PDT / UTC-7)</option>
+                        <option value="America/Phoenix" {{ $event->timezone === 'America/Phoenix' ? 'selected' : '' }}>America/Phoenix (Arizona Time)</option>
+                        <option value="America/Anchorage" {{ $event->timezone === 'America/Anchorage' ? 'selected' : '' }}>America/Anchorage (Alaska Time)</option>
+                        <option value="Pacific/Honolulu" {{ $event->timezone === 'Pacific/Honolulu' ? 'selected' : '' }}>Pacific/Honolulu (Hawaii Time)</option>
                     </select>
                 </div>
 

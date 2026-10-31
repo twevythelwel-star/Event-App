@@ -16,11 +16,11 @@ import {
   Check,
   X,
   ExternalLink,
-  Flame,
   ChevronRight,
   UtensilsCrossed,
 } from "lucide-react";
 import { AttendeeProfile, Currency, EventDetails, TicketOrder } from "../types";
+import { BrandLogo } from "./BrandLogo";
 import { generateQrMatrix } from "../lib/qrCodeMatrix";
 
 interface Props {
@@ -56,17 +56,17 @@ export const IslandEventDigitalTicketScreen: React.FC<Props> = ({
   const eventTitle =
     ticket.eventTitle ||
     eventDetails?.title ||
-    "Island Reggae & Sound Festival 2026";
+    "Miami Waterfront Cultural Food Festival";
 
   const eventVenue =
     ticket.venueName ||
     eventDetails?.venueName ||
-    "Ocho Rios Oceanfront Ampitheater, St. Ann";
+    "Biscayne Bay Waterfront Park Amphitheater";
 
   const eventAddress =
     ticket.venueLocation ||
     eventDetails?.venueAddress ||
-    "Main Street, Ocho Rios, Jamaica";
+    "301 Biscayne Blvd, Miami, FL 33132, United States";
 
   const eventDate =
     ticket.eventDateStr ||
@@ -259,22 +259,8 @@ export const IslandEventDigitalTicketScreen: React.FC<Props> = ({
             <span>Return to Tickets</span>
           </button>
 
-          {/* Island Event Brand Mark */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div
-              style={{
-                width: "28px",
-                height: "28px",
-                borderRadius: "8px",
-                background: "var(--att-accent)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "var(--att-on-accent)",
-              }}
-            >
-              <Flame size={16} />
-            </div>
+            <BrandLogo variant="icon" decorative style={{ width: 28, height: 28 }} />
             <div style={{ textAlign: "right" }}>
               <span
                 style={{
@@ -286,7 +272,7 @@ export const IslandEventDigitalTicketScreen: React.FC<Props> = ({
                   display: "block",
                 }}
               >
-                Island Event
+                EventBite
               </span>
               <span style={{ fontSize: "10px", color: "var(--att-accent)", fontWeight: 700 }}>
                 Live the Moment
@@ -1548,7 +1534,7 @@ export const IslandEventDigitalTicketScreen: React.FC<Props> = ({
             <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: "var(--att-text-body)", lineHeight: 1.6 }}>
               <p>
                 <strong>1. Cryptographic Gate Scanning:</strong> Every digital pass is embedded with a dynamic
-                cryptographic verification token signed by Island Events. Our gate turnstiles verify authenticity in
+                cryptographic verification token signed by EventBite. Our gate turnstiles verify authenticity in
                 real-time against our event master ledger.
               </p>
               <p>

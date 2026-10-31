@@ -10,6 +10,7 @@ use App\Models\MenuItem;
 use App\Models\OrganizerUser;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
+use App\Services\LocationAddressNormalizer;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -97,7 +98,10 @@ class EventManagementService
             $organizerId = $requestedOrgId ?: 'org-kingston-youth';
         }
 
-        $timezone = $data['timezone'] ?? 'America/Jamaica';
+        $data = app(LocationAddressNormalizer::class)->normalize($data);
+        $data['organizer_id'] = $organizerId;
+
+        $timezone = $data['timezone'] ?? config('events.market.default_timezone', 'America/New_York');
         $this->assertValidTimezone($timezone);
 
         if (isset($data['ticket_tiers']) && is_array($data['ticket_tiers'])) {
@@ -107,7 +111,7 @@ class EventManagementService
         $deadlineRaw = $data['advance_order_deadline'] ?? now($timezone)->addDays(14)->toIso8601String();
         $deadlineUtc = Carbon::parse($deadlineRaw, $timezone)->utc();
 
-        $title = trim((string) ($data['title'] ?? 'Untitled Island Event'));
+        $title = trim((string) ($data['title'] ?? 'Untitled Community Event'));
         $slug = !empty($data['slug'])
             ? $data['slug']
             : Str::slug($title) . '-' . strtolower(Str::random(6));
@@ -118,7 +122,7 @@ class EventManagementService
             'slug' => $slug,
             'title' => $title,
             'tagline' => $data['tagline'] ?? '',
-            'category' => $data['category'] ?? 'Seafood & Fish Fry',
+            'category' => $data['category'] ?? 'Community',
             'date_str' => $data['date_str'] ?? '',
             'event_date_iso' => $data['event_date_iso'] ?? null,
             'time_str' => $data['time_str'] ?? '',
@@ -126,12 +130,21 @@ class EventManagementService
             'end_time' => $data['end_time'] ?? null,
             'timezone' => $timezone,
             'venue_name' => $data['venue_name'] ?? '',
+            'venue_building_name' => $data['venue_building_name'] ?? null,
+            'street_address' => $data['street_address'] ?? null,
+            'city' => $data['city'] ?? null,
+            'state_code' => $data['state_code'] ?? null,
+            'target_market_id' => $data['target_market_id'] ?? null,
+            'zip_code' => $data['zip_code'] ?? null,
+            'country_code' => $data['country_code'] ?? 'US',
+            'latitude' => $data['latitude'] ?? null,
+            'longitude' => $data['longitude'] ?? null,
             'venue_address' => $data['venue_address'] ?? '',
             'coordinates' => $data['coordinates'] ?? '',
             'description' => $data['description'] ?? '',
-            'currency' => $data['currency'] ?? 'JMD',
+            'currency' => $data['currency'] ?? config('events.market.default_currency', 'USD'),
             'organizer_name' => $data['organizer_name'] ?? $user->name,
-            'organizer_phone' => $data['organizer_phone'] ?? ($user->phone ?? '+1 (876) 555-0100'),
+            'organizer_phone' => $data['organizer_phone'] ?? ($user->phone ?? '+1 (305) 555-0100'),
             'organizer_whatsapp' => $data['organizer_whatsapp'] ?? '',
             'organizer_email' => $data['organizer_email'] ?? $user->email,
             'advance_order_deadline' => $deadlineUtc,
@@ -159,6 +172,18 @@ class EventManagementService
     public function updateEvent(User $user, string $eventId, array $data): Event
     {
         $event = $this->findEvent($user, $eventId);
+        $data = app(LocationAddressNormalizer::class)->normalize(array_merge([
+            'street_address' => $event->street_address,
+            'venue_building_name' => $event->venue_building_name,
+            'city' => $event->city,
+            'state_code' => $event->state_code,
+            'zip_code' => $event->zip_code,
+            'country_code' => $event->country_code ?? 'US',
+            'latitude' => $event->latitude,
+            'longitude' => $event->longitude,
+            'venue_address' => $event->venue_address,
+            'timezone' => $event->timezone,
+        ], $data));
 
         if (array_key_exists('timezone', $data) && $data['timezone'] !== null) {
             $this->assertValidTimezone((string) $data['timezone']);
@@ -168,7 +193,7 @@ class EventManagementService
             $this->assertTicketTiersValid($data['ticket_tiers']);
         }
 
-        $effectiveTimezone = $data['timezone'] ?? $event->timezone ?: 'America/Jamaica';
+        $effectiveTimezone = $data['timezone'] ?? $event->timezone ?: config('events.market.default_timezone', 'America/New_York');
 
         if (array_key_exists('advance_order_deadline', $data)) {
             // Deadlines are entered in the event's own timezone

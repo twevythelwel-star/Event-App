@@ -417,12 +417,12 @@ export const DelegatedAdminDashboard: React.FC<Props> = ({
             <div className="report-stat-card">
               <span>VERIFIED VOLUME (JMD)</span>
               <h3>J${scopedGMVJMD.toLocaleString()}</h3>
-              <p>Settled to Jamaican event accounts</p>
+              <p>Historical JMD transactions only</p>
             </div>
             <div className="report-stat-card">
               <span>VERIFIED VOLUME (USD)</span>
               <h3>${scopedGMVUSD.toFixed(2)}</h3>
-              <p>Settled to US Diaspora event accounts</p>
+              <p>Settled to U.S. event accounts</p>
             </div>
           </div>
         </div>
@@ -451,19 +451,19 @@ export const DelegatedAdminDashboard: React.FC<Props> = ({
               <tbody>
                 <tr>
                   <td>
-                    <strong>Kingston Youth Foundation</strong>
+                    <strong>South Florida Cultural Foundation</strong>
                     <span className="sub-text">org-kingston-youth</span>
                   </td>
                   <td>
-                    <span>fishfry@kingstonyouth.example</span>
-                    <span className="sub-text">+1 (876) 926-3849</span>
+                    <span>events@southfloridaculture.example</span>
+                    <span className="sub-text">+1 (305) 555-0199</span>
                   </td>
-                  <td>Jamaica (JM)</td>
+                  <td>Miami, Florida (US)</td>
                   <td>
                     <button
                       type="button"
                       className="btn-action-sm btn-recover"
-                      onClick={() => handleTriggerRecovery("fishfry@kingstonyouth.example")}
+                      onClick={() => handleTriggerRecovery("events@southfloridaculture.example")}
                     >
                       <RefreshCw size={12} /> Dispatch Recovery Token
                     </button>
@@ -471,19 +471,19 @@ export const DelegatedAdminDashboard: React.FC<Props> = ({
                 </tr>
                 <tr>
                   <td>
-                    <strong>Portmore Culinary Guild</strong>
+                    <strong>New York Neighborhood Arts Collective</strong>
                     <span className="sub-text">org-portmore-guild</span>
                   </td>
                   <td>
-                    <span>nadine@portmoreculinary.example</span>
-                    <span className="sub-text">+1 (876) 555-9011</span>
+                    <span>market@nyartscollective.example</span>
+                    <span className="sub-text">+1 (212) 555-0148</span>
                   </td>
-                  <td>Jamaica (JM)</td>
+                  <td>New York, New York (US)</td>
                   <td>
                     <button
                       type="button"
                       className="btn-action-sm btn-recover"
-                      onClick={() => handleTriggerRecovery("nadine@portmoreculinary.example")}
+                      onClick={() => handleTriggerRecovery("market@nyartscollective.example")}
                     >
                       <RefreshCw size={12} /> Dispatch Recovery Token
                     </button>

@@ -39,6 +39,15 @@ class Event extends Model
         'end_time',
         'timezone',
         'venue_name',
+        'venue_building_name',
+        'street_address',
+        'city',
+        'state_code',
+        'target_market_id',
+        'zip_code',
+        'country_code',
+        'latitude',
+        'longitude',
         'venue_address',
         'coordinates',
         'description',
@@ -80,6 +89,16 @@ class Event extends Model
     public function menuItems(): HasMany
     {
         return $this->hasMany(MenuItem::class, 'event_id');
+    }
+
+    public function state(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(UsState::class, 'state_code', 'code');
+    }
+
+    public function targetMarket(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(TargetMarket::class);
     }
 
     public function orders(): HasMany
@@ -143,7 +162,7 @@ class Event extends Model
     public function getSocialMetadataAttribute(): array
     {
         return [
-            'og_title' => "{$this->title} | Island Events",
+            'og_title' => "{$this->title} | EventBite",
             'og_description' => $this->tagline ?: ($this->description ? substr($this->description, 0, 150) . '...' : ''),
             'og_image' => $this->flyer_path ? "https://islandevents.app/storage/{$this->flyer_path}" : "https://islandevents.app/images/default_caribbean_feast.jpg",
             'og_url' => $this->shareable_url,

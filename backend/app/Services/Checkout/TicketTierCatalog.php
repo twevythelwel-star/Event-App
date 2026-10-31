@@ -55,7 +55,7 @@ final class TicketTierCatalog
      */
     public static function sellable(Event $event): array
     {
-        $currency = (string) ($event->currency ?: 'JMD');
+        $currency = (string) ($event->currency ?: 'USD');
         $tiers = [];
         foreach (is_array($event->ticket_tiers) ? $event->ticket_tiers : [] as $tier) {
             if (!is_array($tier) || !isset($tier['id'])) {

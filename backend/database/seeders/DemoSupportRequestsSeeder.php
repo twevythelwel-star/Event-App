@@ -23,7 +23,7 @@ class DemoSupportRequestsSeeder extends Seeder
 
         $applicant = User::updateOrCreate(['email' => 'applicant@islandevents.example'], [
             'name' => 'Demo Host Applicant',
-            'phone' => '+1 (876) 555-0155',
+            'phone' => '+1 (305) 555-0155',
             'password' => password_hash(DemoAccountsSeeder::DEMO_PASSWORD, PASSWORD_DEFAULT),
             'status' => 'active',
             'email_verified_at' => now(),
@@ -31,11 +31,11 @@ class DemoSupportRequestsSeeder extends Seeder
         UserRole::updateOrCreate(['user_id' => $applicant->id, 'role' => 'attendee'], ['is_active' => true, 'assigned_at' => now()]);
 
         HostApplicationService::submitApplication($applicant, [
-            'organization_name' => 'Treasure Beach Sunset Collective',
-            'description' => 'Monthly beachside fish fry and live music nights supporting the local fishing co-op.',
-            'country' => 'JM',
-            'contact_phone' => '+1 (876) 555-0155',
-            'website_or_social' => 'instagram.com/treasurebeachsunset',
+            'organization_name' => 'Miami Community Food & Arts Collective',
+            'description' => 'Community food, music, and arts events featuring local cultural organizations and independent vendors.',
+            'country' => 'US',
+            'contact_phone' => '+1 (305) 555-0155',
+            'website_or_social' => 'instagram.com/miamicommunityarts',
         ]);
 
         $attendee = User::where('email', 'attendee@islandevents.example')->firstOrFail();

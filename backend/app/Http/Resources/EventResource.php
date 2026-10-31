@@ -13,7 +13,7 @@ class EventResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-        $timezone = $this->timezone ?: 'America/Jamaica';
+        $timezone = $this->timezone ?: config('events.market.default_timezone', 'America/New_York');
 
         return [
             'id' => $this->id,
@@ -21,7 +21,7 @@ class EventResource extends JsonResource
             'slug' => $this->slug,
             'title' => $this->title,
             'tagline' => $this->tagline ?? '',
-            'category' => $this->category ?? 'Seafood & Fish Fry',
+            'category' => $this->category ?? 'Community',
             'dateStr' => $this->date_str,
             'eventDateIso' => $this->event_date_iso,
             'timeStr' => $this->time_str,
@@ -29,6 +29,16 @@ class EventResource extends JsonResource
             'endTime' => $this->end_time,
             'timezone' => $timezone,
             'venueName' => $this->venue_name,
+            'venueBuildingName' => $this->venue_building_name ?? '',
+            'streetAddress' => $this->street_address ?? '',
+            'city' => $this->city ?? '',
+            'stateCode' => $this->state_code ?? '',
+            'stateName' => $this->state?->name ?? '',
+            'zipCode' => $this->zip_code ?? '',
+            'countryCode' => $this->country_code ?? '',
+            'latitude' => $this->latitude === null ? null : (float) $this->latitude,
+            'longitude' => $this->longitude === null ? null : (float) $this->longitude,
+            'targetMarketId' => $this->target_market_id,
             'venueAddress' => $this->venue_address,
             'coordinates' => $this->coordinates ?? '',
             'description' => $this->description ?? '',

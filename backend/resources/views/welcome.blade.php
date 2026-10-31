@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Island Event — Live the Moment')
-@section('page-title', 'Welcome to Island Event')
+@section('title', 'EventBite — Live the Moment')
+@section('page-title', 'Welcome to EventBite')
 
 @section('navigation')
     <div class="nav-section-title">Discovery</div>
@@ -57,7 +57,7 @@
 @section('content')
 <style>
     /* ==========================================================================
-       Island Event Cinematic Welcome & Onboarding Experience
+       EventBite Cinematic Welcome & Onboarding Experience
        ========================================================================== */
     .welcome-screen-wrap {
         position: relative;
@@ -316,8 +316,8 @@
         <div class="hero-content">
             <!-- Brand Badge -->
             <div class="hero-brand-badge">
-                <span>🌴</span>
-                <span>Island Event Platform</span>
+                <x-brand-logo variant="icon" class="hero-brand-icon" />
+                <span>EventBite Platform</span>
             </div>
 
             <!-- Headline -->
@@ -367,7 +367,7 @@
             <!-- Discreet Login Link for Returning Users -->
             @guest
                 <div class="returning-user-row">
-                    <span>Already have an Island Event account?</span>
+                    <span>Already have an EventBite account?</span>
                     <a href="{{ route('login') }}" id="welcome-discreet-login-link">Sign In</a>
                 </div>
             @else

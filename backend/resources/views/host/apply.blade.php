@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Apply for Event Host Privileges - Island Events')
+@section('title', 'Apply for Event Host Privileges - EventBite')
 
 @section('content')
 <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
@@ -75,7 +75,7 @@
 
                     <div>
                         <label for="organization_name" class="block text-sm font-semibold text-slate-900">Organization / Brand / Promoter Name <span class="text-rose-500">*</span></label>
-                        <input type="text" id="organization_name" name="organization_name" value="{{ old('organization_name', $existingApplication?->organization_name) }}" required minlength="3" placeholder="e.g. Kingston Sunsplash Promoters" class="mt-2 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                        <input type="text" id="organization_name" name="organization_name" value="{{ old('organization_name', $existingApplication?->organization_name) }}" required minlength="3" placeholder="e.g. South Florida Cultural Foundation" class="mt-2 block w-full px-4 py-3 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
                         <p class="text-xs text-slate-500 mt-1">This name will appear on published event flyers, tickets, and official customer receipts.</p>
                     </div>
 

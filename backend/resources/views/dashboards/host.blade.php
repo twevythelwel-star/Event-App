@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Event Host Command Center — Island Events')
+@section('title', 'Event Host Command Center — EventBite')
 @section('page-title', 'Host Command Center')
 
 @section('navigation')
@@ -255,7 +255,7 @@
                                 </td>
                                 <td>
                                     <div style="font-weight: 500;">{{ $event->venue ?? 'Main Grounds' }}</div>
-                                    <span style="font-size: 0.78rem; color: var(--color-text-muted);">{{ $event->address ?? 'Kingston / St. Andrew' }}</span>
+                                    <span style="font-size: 0.78rem; color: var(--color-text-muted);">{{ $event->address ?? 'United States' }}</span>
                                 </td>
                                 <td>
                                     <div style="font-weight: 600;">{{ !empty($event->start_time) ? date('M d, Y', strtotime($event->start_time)) : 'Upcoming' }}</div>
@@ -263,7 +263,7 @@
                                 </td>
                                 <td>
                                     <span class="badge" style="background: var(--color-indigo-soft); color: var(--color-indigo); font-weight: 700;">
-                                        {{ $event->currency ?? 'JMD' }}
+                                        {{ $event->currency ?? 'USD' }}
                                     </span>
                                 </td>
                                 <td>

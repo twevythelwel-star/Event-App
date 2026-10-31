@@ -17,6 +17,11 @@
             <div class="ac-card-head"><h2 id="brand-heading">Branding and region</h2></div>
             <div class="ac-card-body ac-form-row">
                 <div class="ac-field">
+                    <label>Official EventBite logo</label>
+                    <x-brand-logo variant="compact" />
+                    <span class="ac-hint">This logo is shared across the platform and sourced from EventBite fork.jpg.</span>
+                </div>
+                <div class="ac-field">
                     <label for="platform_name">Platform name</label>
                     <input class="ac-input" id="platform_name" name="platform_name" value="{{ $value('platform_name') }}" required maxlength="80" @error('platform_name') aria-invalid="true" @enderror>
                     @error('platform_name')<span class="ac-error">{{ $message }}</span>@enderror

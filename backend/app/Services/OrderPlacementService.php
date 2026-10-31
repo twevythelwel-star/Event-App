@@ -28,7 +28,7 @@ class OrderPlacementService
         if (!$authUser && empty($payload['_allow_guest_test'])) {
             return [
                 'success' => false,
-                'error' => 'Authentication required: You must be registered and signed in to place an order on Island Events.',
+                'error' => 'Authentication required: You must be registered and signed in to place an order on EventBite.',
                 'status_code' => 401,
             ];
         }
@@ -62,7 +62,7 @@ class OrderPlacementService
         }
 
         // The event's currency is authoritative; a different currency in the request is ignored.
-        $currency = PriceCalculationService::lockAuthoritativeCurrency((string) ($event->currency ?: 'JMD'), $payload['currency'] ?? null);
+        $currency = PriceCalculationService::lockAuthoritativeCurrency((string) ($event->currency ?: 'USD'), $payload['currency'] ?? null);
         $idempotencyKey = isset($payload['idempotency_key']) ? trim((string) $payload['idempotency_key']) : '';
 
         // 3. Database Transaction & Atomic Stock Reservation

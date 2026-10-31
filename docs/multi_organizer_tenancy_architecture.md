@@ -2,14 +2,14 @@
 
 > **Document Classification:** Production Architectural Specification & Tenancy Blueprint  
 > **Status:** Implemented & Verified  
-> **Target Platform:** Island Events Platform (Laravel 11 Backend + React 18 TypeScript Frontend)  
+> **Target Platform:** EventBite (Laravel 11 Backend + React 18 TypeScript Frontend)
 > **Tenancy Model:** Single-Database Row-Level Tenant Scoping with Multi-Layer Defense-in-Depth  
 
 ---
 
 ## 1. Executive Summary & Design Philosophy
 
-The Island Events platform was initially conceived to support the owner's premier community events (such as the annual **Sunday Fish Fry** in Kingston, Jamaica). However, to scale commercially across Jamaica, the wider Caribbean, and US diaspora hubs, the system has been architected so **hundreds of independent event organizers can operate autonomously on the platform without rebuilding or refactoring the core application**.
+The EventBite platform was initially conceived to support the owner's premier community events (such as the annual **Sunday Fish Fry** in Kingston, Jamaica). However, to scale commercially across Jamaica, the wider Caribbean, and US diaspora hubs, the system has been architected so **hundreds of independent event organizers can operate autonomously on the platform without rebuilding or refactoring the core application**.
 
 ---
 

@@ -700,8 +700,8 @@ export const AttendeeTicketManagementScreen: React.FC<Props> = ({
               const eventTitle =
                 ticket.eventTitle ||
                 (ticket.items.length > 0 && ticket.items[0].name.includes("Snapper")
-                  ? "Kingston Harbour Waterfront Sunday Fish Fry"
-                  : "Island Reggae & Sound Festival 2026");
+                  ? "Miami Waterfront Cultural Food Festival"
+                  : "U.S. Community Music & Food Festival");
 
               const eventDate =
                 ticket.eventDateStr ||
@@ -712,7 +712,7 @@ export const AttendeeTicketManagementScreen: React.FC<Props> = ({
               const eventVenue =
                 ticket.venueName ||
                 ticket.venueLocation ||
-                "Ocho Rios Oceanfront Ampitheater, St. Ann";
+                "Biscayne Bay Waterfront Park Amphitheater, Miami, FL";
 
               const eventImg =
                 ticket.eventThumbnail ||
@@ -720,7 +720,7 @@ export const AttendeeTicketManagementScreen: React.FC<Props> = ({
                   ? "/images/island_culture_carnival.jpg"
                   : eventTitle.includes("Hellshire")
                   ? "/images/island_festival_sunset.jpg"
-                  : eventTitle.includes("Kingston")
+                  : eventTitle.includes("Miami")
                   ? "/images/escovitch_fish.jpg"
                   : "/images/island_music_reggae_concert.jpg");
 
@@ -1050,7 +1050,7 @@ export const AttendeeTicketManagementScreen: React.FC<Props> = ({
                     margin: "2px 0 0",
                   }}
                 >
-                  {selectedTicket.eventTitle || "Island Reggae & Sound Festival 2026"}
+                  {selectedTicket.eventTitle || "Miami Waterfront Cultural Food Festival"}
                 </h2>
               </div>
               <button
@@ -1180,7 +1180,7 @@ export const AttendeeTicketManagementScreen: React.FC<Props> = ({
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
                 <span style={{ color: "var(--att-text-2)" }}>Event Venue:</span>
                 <strong style={{ color: "#FFFFFF", textAlign: "right", maxWidth: "240px" }}>
-                  {selectedTicket.venueName || "Ocho Rios Oceanfront Ampitheater"}
+                  {selectedTicket.venueName || "Biscayne Bay Waterfront Park Amphitheater"}
                 </strong>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>

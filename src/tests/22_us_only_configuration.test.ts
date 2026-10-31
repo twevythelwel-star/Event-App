@@ -11,12 +11,19 @@ import {
   validateUSAddress,
 } from "../services/marketConfiguration";
 import {
+  DEFAULT_EVENT_DETAILS,
+  DEFAULT_SETTINGS,
+  INITIAL_SAVED_STATE,
   DEFAULT_US_HOST_EVENT_DEFAULTS,
   DEFAULT_US_LAUNCH_EVENT_DETAILS,
   DEFAULT_US_SETTINGS,
   DEFAULT_US_SYSTEM_PLATFORM_SETTINGS,
+  DEFAULT_ORGANIZERS,
+  DEFAULT_TICKET_DISPUTES,
+  TEN_FISH_FRY_EVENTS,
 } from "../data/defaultData";
 import { TicketOrder } from "../types";
+import { readSavedState } from "../App";
 
 describe("Phase 22: United States-Only Configuration Suite", () => {
   // =========================================================================
@@ -29,6 +36,109 @@ describe("Phase 22: United States-Only Configuration Suite", () => {
       expect(US_MARKET_CONFIG.allowedCountries).toEqual(["US"]);
       expect(US_MARKET_CONFIG.isUSOnlyLaunch).toBe(true);
       expect(DEFAULT_US_LAUNCH_EVENT_DETAILS.venueAddress).toContain("United States");
+    });
+
+    it("uses U.S. locations and USD across the default event and multicultural launch catalogue", () => {
+      expect(DEFAULT_EVENT_DETAILS.venueAddress).toContain("United States");
+      expect(DEFAULT_EVENT_DETAILS.currency).toBe("USD");
+      expect(DEFAULT_SETTINGS.businessLocation).toBe("US");
+      expect(DEFAULT_SETTINGS.currency).toBe("USD");
+      expect(INITIAL_SAVED_STATE.orders.every((order) => order.currency === "USD")).toBe(true);
+      expect(TEN_FISH_FRY_EVENTS).toHaveLength(10);
+      expect(TEN_FISH_FRY_EVENTS.every((event) => event.venueAddress.includes("United States"))).toBe(true);
+      expect(TEN_FISH_FRY_EVENTS.every((event) => event.currency === "USD")).toBe(true);
+      expect(new Set(TEN_FISH_FRY_EVENTS.map((event) => event.cuisine)).size).toBeGreaterThanOrEqual(8);
+      expect(TEN_FISH_FRY_EVENTS.map((event) => event.cuisine).join(" ")).toMatch(/Asian|African|Latino|Mediterranean|Native/i);
+      expect(DEFAULT_ORGANIZERS).toHaveLength(10);
+      expect(DEFAULT_ORGANIZERS.every((organizer) => organizer.businessLocation === "US" && organizer.defaultCurrency === "USD")).toBe(true);
+      expect(DEFAULT_TICKET_DISPUTES.every((dispute) => dispute.currency === "USD")).toBe(true);
+    });
+
+    it("migrates only legacy bundled data and preserves user-created historical transactions", () => {
+      const historicalOrder: TicketOrder = {
+        ...INITIAL_SAVED_STATE.orders[0],
+        id: "ord-user-historical-jmd",
+        ticketCode: "USER-JMD-001",
+        currency: "JMD",
+        eventId: "evt-user-created",
+      };
+      const legacyOrder: TicketOrder = {
+        ...historicalOrder,
+        id: "ord-fishfry-old-demo",
+        ticketCode: "SFF-2026-OLD",
+      };
+      const customOrganizer = {
+        ...INITIAL_SAVED_STATE.organizers![0],
+        id: "org-user-created",
+        name: "User Community Organization",
+      };
+      const customTenantUser = {
+        ...INITIAL_SAVED_STATE.tenantUsers![0],
+        id: "user-user-created",
+        organizerId: customOrganizer.id,
+      };
+      const customSavedEvent = {
+        ...INITIAL_SAVED_STATE.attendeeProfile!.savedEvents[0],
+        eventId: "evt-user-saved",
+      };
+      const saved = {
+        ...INITIAL_SAVED_STATE,
+        eventDetails: {
+          ...DEFAULT_EVENT_DETAILS,
+          id: "evt-kingston-harbour-fry",
+          slug: "kingston-harbour-fishfry",
+          timezone: "America/Jamaica",
+          venueAddress: "Ocean Boulevard, Downtown Kingston, Jamaica",
+          currency: "JMD",
+        },
+        settings: {
+          ...DEFAULT_SETTINGS,
+          currency: "JMD" as const,
+          businessLocation: "JM" as const,
+          ticketPriceUSD: 22.5,
+        },
+        orders: [legacyOrder, historicalOrder],
+        organizers: [
+          { ...INITIAL_SAVED_STATE.organizers![0], id: "org-portmore-guild" },
+          customOrganizer,
+        ],
+        activeOrganizerId: customOrganizer.id,
+        tenantUsers: [
+          { ...INITIAL_SAVED_STATE.tenantUsers![0], id: "user-pastor-brown" },
+          customTenantUser,
+        ],
+        attendeeProfile: {
+          ...INITIAL_SAVED_STATE.attendeeProfile,
+          id: "attendee-user-created",
+          name: "User Attendee",
+          savedEvents: [customSavedEvent],
+        },
+        cashLedger: [
+          ...INITIAL_SAVED_STATE.cashLedger,
+          { ...INITIAL_SAVED_STATE.cashLedger[0], id: "cash-user-historical" },
+        ],
+      };
+
+      const migrated = readSavedState(JSON.stringify(saved));
+
+      expect(migrated.eventDetails.id).toBe(DEFAULT_EVENT_DETAILS.id);
+      expect(migrated.eventDetails.slug).toBe(DEFAULT_EVENT_DETAILS.slug);
+      expect(migrated.settings.currency).toBe("USD");
+      expect(migrated.settings.businessLocation).toBe("US");
+      expect(migrated.settings.ticketPriceUSD).toBe(22.5);
+      expect(migrated.orders.some((order) => order.id === "ord-fishfry-old-demo")).toBe(false);
+      expect(migrated.orders.find((order) => order.id === historicalOrder.id)).toMatchObject({
+        currency: "JMD",
+        eventId: "evt-user-created",
+      });
+      expect(migrated.cashLedger.some((entry) => entry.id === "cash-user-historical")).toBe(true);
+      expect(migrated.organizers?.some((organizer) => organizer.id === customOrganizer.id)).toBe(true);
+      expect(migrated.organizers?.some((organizer) => organizer.id === "org-portmore-guild")).toBe(false);
+      expect(migrated.activeOrganizerId).toBe(customOrganizer.id);
+      expect(migrated.tenantUsers?.some((user) => user.id === customTenantUser.id)).toBe(true);
+      expect(migrated.tenantUsers?.some((user) => user.id === "user-pastor-brown")).toBe(false);
+      expect(migrated.attendeeProfile?.name).toBe("User Attendee");
+      expect(migrated.attendeeProfile?.savedEvents.some((event) => event.eventId === customSavedEvent.eventId)).toBe(true);
     });
 
     it("verifies US event defaults for venue, timezone, and packaging fees", () => {
@@ -107,7 +217,8 @@ describe("Phase 22: United States-Only Configuration Suite", () => {
   describe("3. US Payment Workflows & Verification Rules", () => {
     it("configures US-compatible payment methods (ACH, Zelle, Cash App, Cash)", () => {
       expect(DEFAULT_US_SETTINGS.methods.bank.enabled).toBe(true);
-      expect(DEFAULT_US_SETTINGS.methods.bank.details).toContain("US Domestic ACH");
+      expect(DEFAULT_US_SETTINGS.methods.bank.details).toContain("U.S. ACH");
+      expect(DEFAULT_US_SETTINGS.methods.bank.details).toContain("DEMO ONLY");
       expect(DEFAULT_US_SETTINGS.methods.zelle.enabled).toBe(true);
       expect(DEFAULT_US_SETTINGS.methods.cashapp.enabled).toBe(true);
       expect(DEFAULT_US_SETTINGS.methods.cash.enabled).toBe(true);

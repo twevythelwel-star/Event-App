@@ -59,6 +59,7 @@ import {
 } from "../types";
 import { METHOD_INFO } from "../App";
 import type { OrderRequest } from "../lib/api";
+import type { LocationCatalog } from "../lib/api";
 import {
   calculateItemFinalPrice,
   calculateOrderTotals,
@@ -94,6 +95,8 @@ type Props = {
     eventName: string;
   }) => void;
   allEvents?: (EventDetails & { menu?: MenuItem[]; locationCategory?: string })[];
+  markets?: LocationCatalog["markets"];
+  states?: LocationCatalog["states"];
   onSelectEvent?: (index: number) => void;
   selectedEventIndex?: number;
   isLoggedIn?: boolean;
@@ -132,6 +135,8 @@ export const GuestMenuCheckout: React.FC<Props> = ({
   attendeeProfile,
   onSubmitDispute,
   allEvents,
+  markets,
+  states,
   onSelectEvent,
   selectedEventIndex = 0,
   isLoggedIn = false,
@@ -591,6 +596,8 @@ export const GuestMenuCheckout: React.FC<Props> = ({
       {activeStep === "discovery" && allEvents && allEvents.length > 0 && (
         <EventDiscoveryHomepage
           events={allEvents}
+          markets={markets}
+          states={states}
           selectedEventIndex={selectedEventIndex}
           onSelectEvent={(idx) => {
             if (onSelectEvent) onSelectEvent(idx);
@@ -974,7 +981,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#cbd5e1" }}>
-              <span>Already have an Island Event account?</span>
+              <span>Already have an EventBite account?</span>
               <button
                 type="button"
                 onClick={onLogin}
@@ -1181,7 +1188,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "20px" }}>👤</span>
             <div style={{ fontSize: "13px", color: "#312E81" }}>
-              Signed in as <strong>{attendeeProfile?.name || "Marcus Attendee"}</strong> (<code>{attendeeProfile?.email || "attendee@islandevents.app"}</code>) &bull; <span style={{ fontWeight: 600 }}>Attendee Account Active (Ordering & Digital Wallet Enabled)</span>
+              Signed in as <strong>{attendeeProfile?.name || "EventBite Attendee"}</strong> (<code>{attendeeProfile?.email || "attendee@example.com"}</code>) &bull; <span style={{ fontWeight: 600 }}>Attendee Account Active (Ordering & Digital Wallet Enabled)</span>
             </div>
           </div>
           <button
@@ -1517,7 +1524,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                   <Clock3 size={13} /> {eventDetails.timeStr}
                 </span>
                 <span className="meta-chip">
-                  <Globe size={13} /> {eventDetails.timezone || "America/Jamaica"}
+                  <Globe size={13} /> {eventDetails.timezone || "America/New_York"}
                 </span>
                 <span className="meta-chip">
                   <MapPin size={13} /> {eventDetails.venueName} · {eventDetails.venueAddress}
@@ -1809,7 +1816,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                       id="cust-phone"
                       type="tel"
                       required
-                      placeholder="+1 (876) 555-0142"
+                      placeholder="+1 (305) 555-0142"
                       value={customerPhone}
                       onChange={(e) => setCustomerPhone(e.target.value)}
                     />
@@ -2345,7 +2352,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                 <div className="saved-meta">
                   <span><Calendar size={13} /> {eventDetails.dateStr}</span>
                   <span><MapPin size={13} /> {eventDetails.venueName}</span>
-                  <span>Currency: <strong>{eventDetails.currency || "JMD"}</strong></span>
+                  <span>Currency: <strong>{eventDetails.currency || "USD"}</strong></span>
                 </div>
                 <button
                   type="button"
@@ -2738,7 +2745,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
           >
             <div className="sms-phone-header">
               <span className="sms-carrier">Digicel / Flow 4G</span>
-              <span className="sms-contact-name">Island Events Fish Fry</span>
+              <span className="sms-contact-name">EventBite</span>
               <button
                 type="button"
                 className="modal-close-btn"
@@ -2832,7 +2839,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
               </div>
 
               <p style={{ fontSize: "13px", color: "#475569", lineHeight: "1.5" }}>
-                Per Island Event security policies, every customer must have an authenticated Attendee account before meal pre-orders are sent to the kitchen stations.
+                Per EventBite security policies, every customer must have an authenticated Attendee account before meal pre-orders are sent to the kitchen stations.
               </p>
 
               <div style={{ marginTop: "18px", display: "flex", flexDirection: "column", gap: "10px" }}>

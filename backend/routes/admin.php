@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\LocationManagementController;
 use App\Http\Controllers\Admin\EventOversightController;
 use App\Http\Controllers\Admin\OrderOversightController;
 use App\Http\Controllers\Admin\OverviewController;
@@ -45,4 +46,10 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
 
         Route::get('/settings', [PlatformSettingsController::class, 'edit'])->name('settings.edit');
         Route::post('/settings', [PlatformSettingsController::class, 'update'])->name('settings.update')->middleware('throttle:10,1');
+
+        Route::get('/locations', [LocationManagementController::class, 'index'])->name('locations.index');
+        Route::post('/locations/states', [LocationManagementController::class, 'storeState'])->name('locations.states.store')->middleware('throttle:20,1');
+        Route::patch('/locations/states/{state}', [LocationManagementController::class, 'updateState'])->name('locations.states.update')->middleware('throttle:30,1');
+        Route::post('/locations/markets', [LocationManagementController::class, 'storeMarket'])->name('locations.markets.store')->middleware('throttle:20,1');
+        Route::patch('/locations/markets/{market}', [LocationManagementController::class, 'updateMarket'])->name('locations.markets.update')->middleware('throttle:30,1');
     });

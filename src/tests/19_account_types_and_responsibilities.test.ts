@@ -36,7 +36,7 @@ describe("Phase 19: Enterprise Account Types and Responsibilities Standard", () 
     it("provides platform-wide overview statistics across JMD and USD currencies", () => {
       const stats: PlatformOverviewStats = DEFAULT_PLATFORM_STATS;
       expect(stats.totalGrossMerchandiseValueUSD).toBeGreaterThan(0);
-      expect(stats.totalGrossMerchandiseValueJMD).toBeGreaterThan(0);
+      expect(stats.totalGrossMerchandiseValueJMD).toBe(0);
       expect(stats.totalRegisteredHosts).toBe(42);
       expect(stats.totalActiveEvents).toBe(18);
       expect(stats.systemUptimePercentage).toBe(99.98);
@@ -96,7 +96,7 @@ describe("Phase 19: Enterprise Account Types and Responsibilities Standard", () 
 
     it("supports user account administration: activation, suspension, and audited security logging", () => {
       const users = [...DEFAULT_TENANT_USERS];
-      const hostUser = users.find((u) => u.id === "user-evelyn-reid");
+      const hostUser = users.find((u) => u.id === "user-south-florida-director");
       expect(hostUser?.isActive).toBe(true);
 
       // Suspend user
@@ -123,29 +123,29 @@ describe("Phase 19: Enterprise Account Types and Responsibilities Standard", () 
      2. ADMINISTRATOR ACCOUNT (DELEGATED OPERATIONS)
      ========================================================================== */
   describe("2. Administrator — Delegated Operational Duties & Explicit Scoping", () => {
-    const jmScope: AdminAssignedScope = DEFAULT_ADMIN_SCOPES[0];
+    const usScope: AdminAssignedScope = DEFAULT_ADMIN_SCOPES[0];
 
     it("confirms Administrators do NOT receive superadmin privileges by default", () => {
       // Forbidden: modifying global platform fees
-      const feeCheck = verifyAccountAction("admin", "configure_platform_fees", jmScope);
+      const feeCheck = verifyAccountAction("admin", "configure_platform_fees", usScope);
       expect(feeCheck.allowed).toBe(false);
       expect(feeCheck.reason).toContain("Privilege boundary");
 
       // Forbidden: assigning administrator scopes
-      const scopeCheck = verifyAccountAction("admin", "assign_administrator_scope", jmScope);
+      const scopeCheck = verifyAccountAction("admin", "assign_administrator_scope", usScope);
       expect(scopeCheck.allowed).toBe(false);
 
       // Forbidden: viewing unmasked third-party secrets
-      const secretCheck = verifyAccountAction("admin", "view_unmasked_secrets", jmScope);
+      const secretCheck = verifyAccountAction("admin", "view_unmasked_secrets", usScope);
       expect(secretCheck.allowed).toBe(false);
     });
 
     it("allows Administrator to manage events and assist hosts within assigned regional scope", () => {
-      expect(jmScope.assignedRegion).toBe("JM");
-      expect(jmScope.canAssistHostPublishing).toBe(true);
-      expect(jmScope.canViewScopedReports).toBe(true);
+      expect(usScope.assignedRegion).toBe("US");
+      expect(usScope.canAssistHostPublishing).toBe(true);
+      expect(usScope.canViewScopedReports).toBe(true);
 
-      const assistCheck = verifyAccountAction("admin", "assist_host_publishing", jmScope);
+      const assistCheck = verifyAccountAction("admin", "assist_host_publishing", usScope);
       expect(assistCheck.allowed).toBe(true);
     });
 
@@ -158,13 +158,13 @@ describe("Phase 19: Enterprise Account Types and Responsibilities Standard", () 
         disputes,
         "DSP-2026-001",
         "resolved",
-        jmScope.adminName,
+        usScope.adminName,
         "Verified customer emergency travel ticket. Issued refund voucher."
       );
 
       const updated = resolved.find((d) => d.id === "DSP-2026-001")!;
       expect(updated.status).toBe("resolved");
-      expect(updated.assignedAdminName).toBe(jmScope.adminName);
+      expect(updated.assignedAdminName).toBe(usScope.adminName);
       expect(updated.resolutionNotes).toContain("refund voucher");
     });
 
@@ -181,8 +181,8 @@ describe("Phase 19: Enterprise Account Types and Responsibilities Standard", () 
       expect(maskedEmail.endsWith("@islandevents.example")).toBe(true);
 
       const piiLog = createSecurityAuditLog(
-        jmScope.adminUserId,
-        jmScope.adminName,
+        usScope.adminUserId,
+        usScope.adminName,
         "admin",
         "order_dispute_review",
         "ticket_disputes",
@@ -230,7 +230,7 @@ describe("Phase 19: Enterprise Account Types and Responsibilities Standard", () 
       const profile: AttendeeProfile = DEFAULT_ATTENDEE_PROFILE;
       expect(profile.isGuest).toBe(false);
       expect(profile.savedEvents).toHaveLength(1);
-      expect(profile.savedEvents[0].title).toContain("Sunday Fish Fry");
+      expect(profile.savedEvents[0].title).toContain("Miami Waterfront Cultural Food Festival");
     });
 
     it("tracks meal collection status and remaining portions in the Attendee Digital Wallet", () => {

@@ -44,12 +44,12 @@ class NotificationsApiTest extends TestCase
 
     private function placeOrder(array $overrides = []): array
     {
-        return $this->actingAs($this->user('attendee'))->postJson('/api/v1/events/kingston-harbour-fishfry/orders', array_merge([
+        return $this->actingAs($this->user('attendee'))->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', array_merge([
             'customer_name' => 'Notify Guest',
-            'customer_phone' => '876 555 0123',
+            'customer_phone' => '305 555 0123',
             'method' => 'bank',
-            'currency' => 'JMD',
-            'payment_reference' => 'NCB-777',
+            'currency' => 'USD',
+            'payment_reference' => 'ACH-777',
             'items' => [['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 1]],
         ], $overrides))->assertCreated()->json('data');
     }
@@ -72,7 +72,7 @@ class NotificationsApiTest extends TestCase
 
         Http::assertSent(function (HttpRequest $request) use ($order) {
             return $request->url() === self::TWILIO_URL
-                && $request['To'] === '+18765550123'
+                && $request['To'] === '+13055550123'
                 && $request['From'] === '+18765550000'
                 && str_contains($request['Body'], $order['orderNumber'])
                 && $request['StatusCallback'] === 'https://events.example.com/api/webhooks/twilio/status-callback'
@@ -190,10 +190,10 @@ class NotificationsApiTest extends TestCase
         Http::fake([self::TWILIO_URL => Http::response(['sid' => 'SMc'], 201)]);
         $cashOrder = Order::withoutGlobalScopes()->where('event_id', 'evt-kingston-harbour-fry')->where('method', 'cash')->firstOrFail();
 
-        $this->actingAs($this->user('host'))->postJson('/api/v1/operations/cash', ['order_id' => $cashOrder->id, 'amount' => 1000])->assertCreated();
+        $this->actingAs($this->user('host'))->postJson('/api/v1/operations/cash', ['order_id' => $cashOrder->id, 'amount' => 5])->assertCreated();
 
         $log = $this->logsFor($cashOrder->id)->firstWhere('trigger', 'cash_receipt_recorded');
-        $this->assertStringContainsString('J$1,000', $log->message);
+        $this->assertStringContainsString('$5.00', $log->message);
     }
 
     public function test_host_sees_and_retries_messages_but_staff_and_other_hosts_cannot(): void

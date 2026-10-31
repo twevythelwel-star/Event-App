@@ -29,10 +29,10 @@ class SpaApiTest extends TestCase
     {
         return array_merge([
             'customer_name' => 'Demo Attendee',
-            'customer_phone' => '+1 876 555 0199',
+            'customer_phone' => '+1 305 555 0199',
             'method' => 'bank',
-            'currency' => 'JMD',
-            'payment_reference' => 'NCB-REF-001',
+            'currency' => 'USD',
+            'payment_reference' => 'ACH-REF-001',
             'items' => $items,
         ], $overrides);
     }
@@ -80,24 +80,34 @@ class SpaApiTest extends TestCase
     {
         $response = $this->getJson('/api/v1/events')->assertOk();
 
-        $response->assertJsonCount(10, 'data');
-        $kingston = collect($response->json('data'))->firstWhere('id', 'evt-kingston-harbour-fry');
-        $this->assertSame('kingston-harbour-fishfry', $kingston['slug']);
-        $this->assertNotEmpty($kingston['menu']);
-        $this->assertSame('kgn-escovitch', $kingston['menu'][0]['id']);
-        $this->assertSame('customizable', $kingston['menu'][0]['pricingType']);
+        $events = collect($response->json('data'));
+        $this->assertCount(10, $events);
+        $this->assertTrue($events->every(
+            fn (array $event) => $event['currency'] === 'USD'
+                && str_ends_with($event['venueAddress'], 'United States')
+                && str_starts_with($event['timezone'], 'America/')
+        ));
+
+        $miami = $events->firstWhere('id', 'evt-kingston-harbour-fry');
+        $this->assertSame('miami-waterfront-cultural-food-festival', $miami['slug']);
+        $this->assertSame('USD', $miami['currency']);
+        $this->assertSame('America/New_York', $miami['timezone']);
+        $this->assertStringContainsString('United States', $miami['venueAddress']);
+        $this->assertNotEmpty($miami['menu']);
+        $this->assertSame('kgn-escovitch', $miami['menu'][0]['id']);
+        $this->assertSame('customizable', $miami['menu'][0]['pricingType']);
     }
 
     public function test_guest_cannot_place_an_order(): void
     {
-        $this->postJson('/api/v1/events/kingston-harbour-fishfry/orders', $this->orderPayload([
+        $this->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', $this->orderPayload([
             ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 1],
         ]))->assertUnauthorized();
     }
 
     public function test_attendee_order_is_priced_by_the_server(): void
     {
-        $response = $this->actingAs($this->attendee())->postJson('/api/v1/events/kingston-harbour-fishfry/orders', $this->orderPayload([
+        $response = $this->actingAs($this->attendee())->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', $this->orderPayload([
             ['menu_item_id' => 'kgn-escovitch', 'quantity' => 2, 'selected_choices' => ['fish-size' => 1, 'sides' => 0]],
             ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 1],
         ], ['packaging_fee' => 0]));
@@ -106,10 +116,11 @@ class SpaApiTest extends TestCase
             ->assertJsonPath('data.status', 'payment_submitted')
             ->assertJsonPath('data.amountPaid', 0);
 
-        // (1500 + 350) x 2 + 1200 = 4900, plus the organizer's J$100 fee despite the client asking for 0
-        $this->assertEquals(4900, $response->json('data.subtotal'));
-        $this->assertEquals(100, $response->json('data.packagingFee'));
-        $this->assertEquals(5000, $response->json('data.totalAmount'));
+        // ($18 + $2 large portion) x 2 + $15 chicken, plus the $1.50 event packaging fee.
+        $this->assertEquals(55, $response->json('data.subtotal'));
+        $this->assertEquals(1.5, $response->json('data.packagingFee'));
+        $this->assertEquals(56.5, $response->json('data.totalAmount'));
+        $this->assertSame('USD', $response->json('data.currency'));
         $this->assertStringStartsWith('tok_', $response->json('data.secureTicketToken'));
 
         $this->actingAs($this->attendee())->getJson('/api/v1/orders')
@@ -126,7 +137,7 @@ class SpaApiTest extends TestCase
         $escovitch = MenuItem::withoutGlobalScopes()->findOrFail('kgn-escovitch');
         $escovitch->update(['available_stock' => 1]);
 
-        $this->actingAs($this->attendee())->postJson('/api/v1/events/kingston-harbour-fishfry/orders', $this->orderPayload([
+        $this->actingAs($this->attendee())->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', $this->orderPayload([
             ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 3],
             ['menu_item_id' => 'kgn-escovitch', 'quantity' => 5],
         ]))->assertStatus(422);
@@ -139,7 +150,7 @@ class SpaApiTest extends TestCase
     {
         $otherEventItem = MenuItem::withoutGlobalScopes()->where('event_id', '!=', 'evt-kingston-harbour-fry')->firstOrFail();
 
-        $this->actingAs($this->attendee())->postJson('/api/v1/events/kingston-harbour-fishfry/orders', $this->orderPayload([
+        $this->actingAs($this->attendee())->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', $this->orderPayload([
             ['menu_item_id' => $otherEventItem->id, 'quantity' => 1],
         ]))->assertStatus(422);
     }

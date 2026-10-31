@@ -18,7 +18,7 @@
                         <h3 class="eb-text-card-title" style="margin: 0;">{{ $tier['name'] }}</h3>
                         @if($tier['description'])<p class="eb-text-supporting eb-clamp-2" style="margin: 2px 0 0;">{{ $tier['description'] }}</p>@endif
                         <p style="margin: 4px 0 0;">
-                            <span class="eb-text-price">{{ \App\Support\Money::format($tier['price'], $event->currency ?: 'JMD') }}</span>
+                            <span class="eb-text-price">{{ \App\Support\Money::format($tier['price'], $event->currency ?: 'USD') }}</span>
                             @if($tier['sold_out'])
                                 <span class="eb-badge eb-badge-error">Sold out</span>
                             @elseif($tier['available'] !== null && $tier['available'] <= 10)

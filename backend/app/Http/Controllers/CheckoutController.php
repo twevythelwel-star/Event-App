@@ -85,7 +85,7 @@ class CheckoutController extends Controller
             'event' => $event,
             'menu' => $this->menu($event),
             'cart' => $this->cart($request)->get($event),
-            'currency' => $event->currency ?: 'JMD',
+            'currency' => $event->currency ?: 'USD',
             'steps' => $this->steps($event),
         ]);
     }

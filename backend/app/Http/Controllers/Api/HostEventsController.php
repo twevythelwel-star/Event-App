@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\EventResource;
 use App\Models\Event;
 use App\Services\EventManagementService;
+use App\Services\LocationAddressNormalizer;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -41,9 +42,18 @@ class HostEventsController extends Controller
             'time_str' => ['required', 'string', 'max:100'],
             'start_time' => ['sometimes', 'nullable', 'string', 'max:32'],
             'end_time' => ['sometimes', 'nullable', 'string', 'max:32'],
-            'timezone' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'timezone' => ['sometimes', 'nullable', Rule::in(LocationAddressNormalizer::supportedTimezones())],
             'venue_name' => ['required', 'string', 'min:2', 'max:200'],
-            'venue_address' => ['required', 'string', 'max:500'],
+            'venue_address' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'street_address' => ['required', 'string', 'max:255'],
+            'venue_building_name' => ['sometimes', 'nullable', 'string', 'max:180'],
+            'city' => ['required', 'string', 'max:120'],
+            'state_code' => ['required', 'string', 'size:2', Rule::exists('us_states', 'code')->where('is_enabled', true)],
+            'target_market_id' => ['sometimes', 'nullable', 'uuid', Rule::exists('target_markets', 'id')->where('is_enabled', true)],
+            'zip_code' => ['required', 'regex:/^\d{5}(?:-\d{4})?$/'],
+            'country_code' => ['sometimes', Rule::in(['US'])],
+            'latitude' => ['sometimes', 'nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['sometimes', 'nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'coordinates' => ['sometimes', 'nullable', 'string', 'max:100'],
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'currency' => ['sometimes', 'nullable', Rule::in(['JMD', 'USD'])],
@@ -73,9 +83,18 @@ class HostEventsController extends Controller
             'time_str' => ['sometimes', 'string', 'max:100'],
             'start_time' => ['sometimes', 'nullable', 'string', 'max:32'],
             'end_time' => ['sometimes', 'nullable', 'string', 'max:32'],
-            'timezone' => ['sometimes', 'nullable', 'string', 'max:64'],
+            'timezone' => ['sometimes', 'nullable', Rule::in(LocationAddressNormalizer::supportedTimezones())],
             'venue_name' => ['sometimes', 'string', 'min:2', 'max:200'],
             'venue_address' => ['sometimes', 'string', 'max:500'],
+            'street_address' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'venue_building_name' => ['sometimes', 'nullable', 'string', 'max:180'],
+            'city' => ['sometimes', 'nullable', 'string', 'max:120'],
+            'state_code' => ['sometimes', 'nullable', 'string', 'size:2', Rule::exists('us_states', 'code')->where('is_enabled', true)],
+            'target_market_id' => ['sometimes', 'nullable', 'uuid', Rule::exists('target_markets', 'id')->where('is_enabled', true)],
+            'zip_code' => ['sometimes', 'nullable', 'regex:/^\d{5}(?:-\d{4})?$/'],
+            'country_code' => ['sometimes', Rule::in(['US'])],
+            'latitude' => ['sometimes', 'nullable', 'required_with:longitude', 'numeric', 'between:-90,90'],
+            'longitude' => ['sometimes', 'nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'coordinates' => ['sometimes', 'nullable', 'string', 'max:100'],
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'currency' => ['sometimes', 'nullable', Rule::in(['JMD', 'USD'])],

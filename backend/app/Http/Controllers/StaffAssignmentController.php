@@ -179,7 +179,7 @@ class StaffAssignmentController extends Controller
                 role: (string) $request->input('worker_role'),
                 startsAt: (string) $request->input('starts_at'),
                 expiresAt: (string) $request->input('expires_at'),
-                timezone: (string) $request->input('timezone', 'America/Jamaica'),
+                timezone: (string) $request->input('timezone', 'America/New_York'),
                 stationAssignment: (string) ($request->input('station_assignment') ?? 'all'),
                 customPermissions: (array) ($request->input('custom_permissions') ?? [])
             );

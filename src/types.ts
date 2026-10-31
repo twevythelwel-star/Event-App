@@ -249,6 +249,16 @@ export type EventDetails = {
   timeStr: string;
   timezone?: string; // e.g. "America/Jamaica" or "America/New_York"
   venueName: string;
+  venueBuildingName?: string;
+  streetAddress?: string;
+  city?: string;
+  stateCode?: string;
+  stateName?: string;
+  zipCode?: string;
+  countryCode?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  targetMarketId?: string | null;
   venueAddress: string;
   coordinates: string;
   description: string;
@@ -636,7 +646,7 @@ export type HostEventDefaults = {
   defaultOrderDeadlineHours: number;
   defaultPickupInstructions: string;
   defaultFlyerAspectRatio: "4:5" | "1:1" | "16:9";
-  defaultBrandTheme: "caribbean_emerald" | "sunset_gold" | "reggae_fusion" | "coastal_blue";
+  defaultBrandTheme: "eventbite_navy" | "caribbean_emerald" | "sunset_gold" | "reggae_fusion" | "coastal_blue";
 };
 
 export type HostPaymentPolicySettings = {
@@ -731,7 +741,5 @@ export type USPrivacyPreferences = {
   recordedAt: string;
   jurisdiction: "US_CCPA_CPRA";
 };
-
-
 
 

@@ -1,0 +1,3 @@
+EventBite
+
+{{ $log->message }}

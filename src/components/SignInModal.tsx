@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { ApiError, registerAccount, SessionUser, signIn } from "../lib/api";
+import { BrandLogo } from "./BrandLogo";
 
 type Props = {
   onClose: () => void;
@@ -240,8 +241,8 @@ export const SignInModal: React.FC<Props> = ({ onClose, onSignedIn }) => {
                 marginBottom: "8px",
               }}
             >
-              <span>🌴</span>
-              <span>ISLAND EVENTS PLATFORM</span>
+              <BrandLogo variant="icon" className="auth-modal-brand-icon" />
+              <span>EVENTBITE PLATFORM</span>
             </div>
             <h2
               id="auth-modal-title"
@@ -259,7 +260,7 @@ export const SignInModal: React.FC<Props> = ({ onClose, onSignedIn }) => {
             </h2>
             <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "12px", lineHeight: 1.5 }}>
               {mode === "signin" && "Sign in to access tickets, food pre-orders, and management tools."}
-              {mode === "signup" && "Join Island Events to order culinary dishes and get instant digital QR passes."}
+              {mode === "signup" && "Join EventBite to order culinary dishes and get instant digital QR passes."}
               {mode === "forgot" && "Enter your email to receive an expiring recovery link."}
             </p>
           </div>
@@ -866,7 +867,7 @@ export const SignInModal: React.FC<Props> = ({ onClose, onSignedIn }) => {
                     style={{ width: "100%", padding: "9px 12px 9px 34px", fontSize: "13px", background: "#f8fafc", border: "1px solid #cbd5e1", borderRadius: "10px", outline: "none" }}
                   >
                     <option value="USD">USD — United States Dollar (US$)</option>
-                    <option value="JMD">JMD — Jamaican Dollar (J$)</option>
+                    <option value="JMD">JMD — Jamaican Dollar (historical transactions)</option>
                   </select>
                 </div>
               </div>

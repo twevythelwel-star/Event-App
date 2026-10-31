@@ -12,7 +12,6 @@ import {
   Shield,
   ShieldCheck,
   Sparkles,
-  Ticket,
   Wallet,
   X,
 } from "lucide-react";
@@ -56,6 +55,7 @@ import { OrganizerDashboard } from "./components/OrganizerDashboard";
 import { SystemAdminDashboard } from "./components/SystemAdminDashboard";
 import { DelegatedAdminDashboard } from "./components/DelegatedAdminDashboard";
 import { SignInModal } from "./components/SignInModal";
+import { BrandLogo } from "./components/BrandLogo";
 import { HostApplicationCard } from "./components/HostApplicationCard";
 import { HostApplicationsReview } from "./components/HostApplicationsReview";
 import type { FishFryEventItem } from "./data/fishFryEvents";
@@ -72,6 +72,7 @@ import {
   fetchAdminDisputes,
   fetchCashLedger,
   fetchEvents,
+  fetchLocationCatalog,
   fetchHostEvents,
   fetchMyDisputes,
   fetchMessageLog,
@@ -115,9 +116,9 @@ export const METHOD_INFO: Record<
     name: "Bank transfer",
     shortName: "Bank",
     icon: Landmark,
-    placeholder: "Bank name, account number, branch code, and routing instructions",
+    placeholder: "U.S. bank and ACH transfer details provided by the event host",
     badge: "Direct clearing",
-    eligibilityNotice: "Domestic and international wire / bank clearing.",
+    eligibilityNotice: "U.S. bank transfer or ACH, subject to the event host's verified payment instructions.",
   },
   zelle: {
     name: "Zelle",
@@ -126,16 +127,16 @@ export const METHOD_INFO: Record<
     placeholder: "US-registered Zelle email address or 10-digit mobile number",
     badge: "US bank required",
     eligibilityNotice:
-      "Strict requirement: Only US bank accounts with registered US mobile or email are eligible. Jamaican bank accounts without a US partner cannot receive Zelle.",
+      "Requires an eligible U.S. bank account and a registered U.S. mobile number or email address.",
   },
   cashapp: {
     name: "Cash App",
     shortName: "Cash App",
     icon: Wallet,
-    placeholder: "$Cashtag (e.g. $IslandEvents)",
+    placeholder: "$Cashtag (e.g. $EventBiteHost)",
     badge: "US / UK only",
     eligibilityNotice:
-      "Strict requirement: Only organizers with an eligible US or UK Cash App account can offer this. Cash App is not natively supported for Jamaican domestic accounts.",
+      "Available when the event host has configured an eligible U.S. Cash App account.",
   },
   cash: {
     name: "Cash in person",
@@ -151,49 +152,11 @@ export const METHOD_INFO: Record<
     icon: CreditCard,
     placeholder: "Merchant processor API or hosted checkout URL",
     badge: "Instant processor",
-    eligibilityNotice: "Requires an integrated card payment processor (e.g. WiPay, Fygaro, or Stripe). Instant verification.",
+    eligibilityNotice: "Requires an integrated card payment processor such as Stripe, Square, or PayPal/Braintree.",
   },
 };
 
 export const GATEWAY_RECOMMENDATIONS = {
-  JM: [
-    {
-      name: "WiPay Caribbean",
-      coverage: "Jamaica, Trinidad & Tobago, Caribbean",
-      currencies: "JMD, USD",
-      methods: "Local Credit/Debit Cards, Bank Transfer, Top-up Vouchers",
-      badge: "Top Caribbean Gateway",
-      description: "Purpose-built for Caribbean businesses with direct settlement to Jamaican commercial banks.",
-      bestFor: "Events registered in Jamaica catering to both local and diaspora attendees.",
-    },
-    {
-      name: "Fygaro",
-      coverage: "Jamaica, Latin America & Caribbean",
-      currencies: "JMD, USD",
-      methods: "Visa, Mastercard, Payment Links",
-      badge: "Easy Setup",
-      description: "Plug-and-play e-commerce with built-in invoicing and card processing across the Caribbean.",
-      bestFor: "Quick card checkout links without building custom payment flows.",
-    },
-    {
-      name: "NCB / FirstCaribbean e-Commerce (Merchant Account)",
-      coverage: "Jamaica & Regional",
-      currencies: "JMD, USD",
-      methods: "Visa, Mastercard, Keycard",
-      badge: "Direct Bank",
-      description: "Direct merchant accounts issued through Jamaican banks (e.g. NCB, CIBC FirstCaribbean).",
-      bestFor: "High-volume corporate events and established Jamaican event companies.",
-    },
-    {
-      name: "Stripe (via US LLC / Stripe Atlas)",
-      coverage: "Global (Requires US Entity)",
-      currencies: "USD, JMD (converted), 135+ currencies",
-      methods: "Apple Pay, Google Pay, Cards, US Bank transfers",
-      badge: "US Entity Route",
-      description: "Jamaican founders who form a US LLC (via Stripe Atlas) can access Stripe US directly.",
-      bestFor: "Diaspora events marketed heavily to US / UK / Canadian attendees.",
-    },
-  ],
   US: [
     {
       name: "Stripe",
@@ -234,17 +197,65 @@ const formatMoney = (amount: number, currency: Currency = "USD") => {
   }).format(amount);
 };
 
-function readSavedState(): SavedState {
-  const rawState = window.localStorage.getItem(STORAGE_KEY);
+export function readSavedState(rawState: string | null = window.localStorage.getItem(STORAGE_KEY)): SavedState {
   if (!rawState) return INITIAL_SAVED_STATE;
 
   try {
     const parsed = JSON.parse(rawState) as Partial<SavedState>;
     if (!parsed || typeof parsed !== "object") return INITIAL_SAVED_STATE;
+    const isLegacyDemo =
+      parsed.eventDetails?.id === "evt-kingston-fishfry-2026" ||
+      parsed.eventDetails?.slug === "kingston-fishfry-2026" ||
+      parsed.eventDetails?.id === "evt-us-miami-festival-2026" ||
+      parsed.eventDetails?.organizerId === "org-us-caribbean-heritage" ||
+      [
+        "evt-hellshire-sunset-fry",
+        "evt-port-royal-heritage-fry",
+        "evt-ochorios-fishermans-fry",
+        "evt-negril-7mile-catch",
+        "evt-mobay-pier1-fiesta",
+        "evt-treasure-beach-calabash",
+        "evt-boston-bay-jerk-fish",
+        "evt-whitehouse-cooperative",
+        "evt-runaway-bay-carnival",
+      ].includes(parsed.eventDetails?.id || "") ||
+      (parsed.eventDetails?.id === "evt-kingston-harbour-fry" &&
+        (parsed.eventDetails.timezone === "America/Jamaica" ||
+          parsed.eventDetails.venueAddress.includes("Jamaica")));
+    const legacyOrganizerIds = new Set([
+      ...(INITIAL_SAVED_STATE.organizers || []).map((organizer) => organizer.id),
+      "org-us-caribbean-heritage",
+      "org-portmore-guild",
+      "org-mobay-culture",
+    ]);
+    const legacyTenantUserIds = new Set([
+      ...(INITIAL_SAVED_STATE.tenantUsers || []).map((user) => user.id),
+      "user-pastor-brown",
+      "user-treasurer-davis",
+      "user-chef-marcus",
+      "user-evelyn-reid",
+      "user-nadine-miller",
+      "user-andre-watson",
+    ]);
+    const savedOrganizers = Array.isArray(parsed.organizers) ? parsed.organizers : [];
+    const savedTenantUsers = Array.isArray(parsed.tenantUsers) ? parsed.tenantUsers : [];
+    const savedAttendeeProfile = parsed.attendeeProfile;
+    const savedAttendeeEvents = Array.isArray(savedAttendeeProfile?.savedEvents)
+      ? savedAttendeeProfile.savedEvents.filter(
+          (event) => event.eventId !== "evt-kingston-fishfry-2026" &&
+            event.eventId !== DEFAULT_ATTENDEE_PROFILE.savedEvents[0]?.eventId,
+        )
+      : [];
+    const hasLegacyMarketSettings =
+      parsed.settings?.businessLocation === "JM" || parsed.settings?.currency === "JMD";
 
-    // Ensure prompt seeded orders like FF-1024, SFF-2026-9999, and SFF-2026-0044 exist
+    // Drop only the known bundled demo orders; user-created and historical orders remain untouched.
     let mergedOrders: TicketOrder[] = Array.isArray(parsed.orders)
-      ? [...parsed.orders]
+      ? parsed.orders.filter(
+          (order) =>
+            !order.id.startsWith("ord-fishfry-") &&
+            !order.ticketCode.startsWith("SFF-2026-"),
+        )
       : [...INITIAL_SAVED_STATE.orders];
 
     INITIAL_SAVED_STATE.orders.forEach((seedOrd) => {
@@ -267,36 +278,71 @@ function readSavedState(): SavedState {
       })),
     }));
 
+    const savedNotificationLogs = Array.isArray(parsed.notificationLogs)
+      ? parsed.notificationLogs.filter((log) => !log.orderId?.startsWith("ord-fishfry-"))
+      : [];
+    const savedHandoverLogs = Array.isArray(parsed.handoverAuditLogs)
+      ? parsed.handoverAuditLogs.filter((log) => !log.orderId.startsWith("ord-fishfry-"))
+      : [];
+
     return {
-      eventDetails: parsed.eventDetails || DEFAULT_EVENT_DETAILS,
-      menu: Array.isArray(parsed.menu) && parsed.menu.length ? parsed.menu : DEFAULT_MENU,
+      eventDetails: isLegacyDemo ? DEFAULT_EVENT_DETAILS : parsed.eventDetails || DEFAULT_EVENT_DETAILS,
+      menu: isLegacyDemo
+        ? DEFAULT_MENU
+        : Array.isArray(parsed.menu) && parsed.menu.length
+          ? parsed.menu
+          : DEFAULT_MENU,
       settings: {
         ...DEFAULT_SETTINGS,
-        ...(parsed.settings || {}),
+        ...parsed.settings,
+        ...(isLegacyDemo ? { businessLocation: "US", currency: "USD" } : {}),
         methods: {
           ...DEFAULT_SETTINGS.methods,
-          ...(parsed.settings?.methods || {}),
+          ...(!isLegacyDemo || !hasLegacyMarketSettings ? parsed.settings?.methods : {}),
         },
       },
       orders: mergedOrders,
-      cashLedger: Array.isArray(parsed.cashLedger) ? parsed.cashLedger : INITIAL_SAVED_STATE.cashLedger,
-      notificationLogs:
-        Array.isArray(parsed.notificationLogs) && parsed.notificationLogs.length
-          ? parsed.notificationLogs
-          : INITIAL_SAVED_STATE.notificationLogs,
-      handoverAuditLogs:
-        Array.isArray(parsed.handoverAuditLogs) && parsed.handoverAuditLogs.length
-          ? parsed.handoverAuditLogs
-          : (INITIAL_SAVED_STATE.handoverAuditLogs || []),
-      organizers:
-        Array.isArray(parsed.organizers) && parsed.organizers.length
-          ? parsed.organizers
+      cashLedger: Array.isArray(parsed.cashLedger)
+        ? [
+            ...parsed.cashLedger.filter((entry) => !["cash-rec-1", "cash-rec-2"].includes(entry.id)),
+            ...INITIAL_SAVED_STATE.cashLedger.filter(
+              (entry) => !parsed.cashLedger?.some((saved) => saved.id === entry.id),
+            ),
+          ]
+        : INITIAL_SAVED_STATE.cashLedger,
+      notificationLogs: [
+        ...savedNotificationLogs,
+        ...INITIAL_SAVED_STATE.notificationLogs.filter(
+          (log) => !savedNotificationLogs.some((saved) => saved.id === log.id),
+        ),
+      ],
+      handoverAuditLogs: [
+        ...savedHandoverLogs,
+        ...(INITIAL_SAVED_STATE.handoverAuditLogs || []).filter(
+          (log) => !savedHandoverLogs.some((saved) => saved.id === log.id),
+        ),
+      ],
+      organizers: isLegacyDemo
+        ? [
+            ...savedOrganizers.filter((organizer) => !legacyOrganizerIds.has(organizer.id)),
+            ...(INITIAL_SAVED_STATE.organizers || []),
+          ]
+        : savedOrganizers.length
+          ? savedOrganizers
           : INITIAL_SAVED_STATE.organizers,
-      activeOrganizerId: parsed.activeOrganizerId || INITIAL_SAVED_STATE.activeOrganizerId,
+      activeOrganizerId: isLegacyDemo
+        ? parsed.activeOrganizerId && !legacyOrganizerIds.has(parsed.activeOrganizerId)
+          ? parsed.activeOrganizerId
+          : INITIAL_SAVED_STATE.activeOrganizerId
+        : parsed.activeOrganizerId || INITIAL_SAVED_STATE.activeOrganizerId,
       activeRolePerspective: parsed.activeRolePerspective || INITIAL_SAVED_STATE.activeRolePerspective,
-      tenantUsers:
-        Array.isArray(parsed.tenantUsers) && parsed.tenantUsers.length
-          ? parsed.tenantUsers
+      tenantUsers: isLegacyDemo
+        ? [
+            ...(INITIAL_SAVED_STATE.tenantUsers || []),
+            ...savedTenantUsers.filter((user) => !legacyTenantUserIds.has(user.id)),
+          ]
+        : savedTenantUsers.length
+          ? savedTenantUsers
           : INITIAL_SAVED_STATE.tenantUsers,
       activeAccountType: parsed.activeAccountType || INITIAL_SAVED_STATE.activeAccountType || "event_host",
       platformOverviewStats: parsed.platformOverviewStats || DEFAULT_PLATFORM_STATS,
@@ -306,7 +352,19 @@ function readSavedState(): SavedState {
       securityAuditLogs: parsed.securityAuditLogs || DEFAULT_SECURITY_AUDIT_LOGS,
       adminScopes: parsed.adminScopes || DEFAULT_ADMIN_SCOPES,
       ticketDisputes: parsed.ticketDisputes || DEFAULT_TICKET_DISPUTES,
-      attendeeProfile: parsed.attendeeProfile || DEFAULT_ATTENDEE_PROFILE,
+      attendeeProfile: isLegacyDemo
+        ? {
+            ...(savedAttendeeProfile?.id === "att-akeem-campbell" || !savedAttendeeProfile
+              ? DEFAULT_ATTENDEE_PROFILE
+              : savedAttendeeProfile),
+            savedEvents: [
+              ...DEFAULT_ATTENDEE_PROFILE.savedEvents,
+              ...savedAttendeeEvents.filter(
+                (event) => !DEFAULT_ATTENDEE_PROFILE.savedEvents.some((sample) => sample.eventId === event.eventId),
+              ),
+            ],
+          }
+        : savedAttendeeProfile || DEFAULT_ATTENDEE_PROFILE,
     };
   } catch (error) {
     console.warn("Falling back to default initial state.", error);
@@ -347,6 +405,7 @@ export function App() {
   const [apiStatus, setApiStatus] = useState<"connecting" | "online" | "offline">("connecting");
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [apiEvents, setApiEvents] = useState<FishFryEventItem[] | null>(null);
+  const [locationCatalog, setLocationCatalog] = useState<Awaited<ReturnType<typeof fetchLocationCatalog>> | null>(null);
   const [showSignInModal, setShowSignInModal] = useState(false);
 
   const {
@@ -373,15 +432,16 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([fetchSession(), fetchEvents()])
-      .then(([user, events]) => {
+    Promise.all([fetchSession(), fetchEvents(), fetchLocationCatalog()])
+      .then(([user, events, locations]) => {
         if (cancelled) return;
         setSessionUser(user);
         setApiEvents(events);
+        setLocationCatalog(locations);
         setApiStatus("online");
       })
       .catch((error) => {
-        console.warn("Island Events API unreachable; using bundled demo data.", error);
+        console.warn("EventBite API unreachable; using bundled demo data.", error);
         if (!cancelled) setApiStatus("offline");
       });
     return () => {
@@ -579,7 +639,7 @@ export function App() {
 
     const messageText =
       customMessage ||
-      `Island Events: Receipt & digital ticket for ${eventDetails.title}. Order: ${ord.orderNumber}. View pass: ${window.location.origin}/t/${ord.secureTicketToken}`;
+      `EventBite: Receipt & digital ticket for ${eventDetails.title}. Order: ${ord.orderNumber}. View pass: ${window.location.origin}/t/${ord.secureTicketToken}`;
 
     logNotification({
       orderId: ord.id,
@@ -629,7 +689,7 @@ export function App() {
         channel: "sms",
         trigger: "event_approaching",
         title: "Event Approaching — Pickup Reminder",
-        message: `Island Events Reminder: ${eventDetails.title} is approaching on ${eventDetails.dateStr} at ${eventDetails.timeStr}! Location: ${eventDetails.venueName}. Show digital ticket ${ord.ticketCode} for express pickup.`,
+        message: `EventBite Reminder: ${eventDetails.title} is approaching on ${eventDetails.dateStr} at ${eventDetails.timeStr}! Location: ${eventDetails.venueName}. Show digital ticket ${ord.ticketCode} for express pickup.`,
         status: "delivered",
         provider: "Twilio SMS",
         deliveredAt: new Date().toISOString(),
@@ -659,7 +719,7 @@ export function App() {
       : `Payment confirmed via card.`;
 
     const ticketLink = `${window.location.origin}/t/${newOrder.secureTicketToken}`;
-    const orderCreatedMsg = `Island Events: Order ${newOrder.orderNumber} created for ${eventDetails.title}! ${paymentInstructions} Digital ticket: ${ticketLink}`;
+    const orderCreatedMsg = `EventBite: Order ${newOrder.orderNumber} created for ${eventDetails.title}! ${paymentInstructions} Digital ticket: ${ticketLink}`;
 
     // Stage 1: Order created notification
     logNotification({
@@ -686,7 +746,7 @@ export function App() {
         channel: "sms",
         trigger: "transfer_submitted",
         title: "Transfer Submitted — Verification Pending",
-        message: `Island Events: Payment details received for Order ${newOrder.orderNumber} (Ref: ${newOrder.paymentReference}). We are verifying the transaction on our account statement. Note: This confirms details were received, NOT that payment has succeeded yet.`,
+        message: `EventBite: Payment details received for Order ${newOrder.orderNumber} (Ref: ${newOrder.paymentReference}). We are verifying the transaction on our account statement. Note: This confirms details were received, NOT that payment has succeeded yet.`,
         status: "delivered",
         provider: "Twilio SMS",
         deliveredAt: new Date().toISOString(),
@@ -802,6 +862,14 @@ export function App() {
       ["timeStr", "time_str"],
       ["venueName", "venue_name"],
       ["venueAddress", "venue_address"],
+      ["streetAddress", "street_address"],
+      ["venueBuildingName", "venue_building_name"],
+      ["city", "city"],
+      ["stateCode", "state_code"],
+      ["zipCode", "zip_code"],
+      ["countryCode", "country_code"],
+      ["targetMarketId", "target_market_id"],
+      ["timezone", "timezone"],
       ["coordinates", "coordinates"],
       ["description", "description"],
       ["pickupInstructions", "pickup_instructions"],
@@ -815,6 +883,17 @@ export function App() {
     const patch: Record<string, unknown> = {};
     for (const [from, to] of fields) {
       if (next[from] !== undefined && next[from] !== current[from]) patch[to] = next[from];
+    }
+    const coordinatesChanged =
+      next.latitude !== current.latitude || next.longitude !== current.longitude;
+    if (coordinatesChanged) {
+      if (next.latitude == null && next.longitude == null) {
+        patch.latitude = null;
+        patch.longitude = null;
+      } else if (next.latitude != null && next.longitude != null) {
+        patch.latitude = next.latitude;
+        patch.longitude = next.longitude;
+      }
     }
     if (next.advanceOrderDeadline !== current.advanceOrderDeadline) {
       const deadline = parseDeadlineText(next.advanceOrderDeadline);
@@ -1081,7 +1160,7 @@ export function App() {
           channel: "sms",
           trigger: "items_collected",
           title: "Items Collected — Handover Completed",
-          message: `Island Events: Handover completed! All meal portions for ticket ${(newlyClosedOrder as TicketOrder).ticketCode} have been collected. Big up and enjoy your authentic food!`,
+          message: `EventBite: Handover completed! All meal portions for ticket ${(newlyClosedOrder as TicketOrder).ticketCode} have been collected. Big up and enjoy your authentic food!`,
           status: "delivered",
           provider: "Twilio SMS",
           deliveredAt: new Date().toISOString(),
@@ -1121,7 +1200,7 @@ export function App() {
           channel: "sms",
           trigger: "items_collected",
           title: "Items Collected — Final Confirmation",
-          message: `Island Events: Handover completed! All meal portions for ticket ${targetOrd.ticketCode} have been collected. Big up and enjoy your authentic food!`,
+          message: `EventBite: Handover completed! All meal portions for ticket ${targetOrd.ticketCode} have been collected. Big up and enjoy your authentic food!`,
           status: "delivered",
           provider: "Twilio SMS",
           deliveredAt: new Date().toISOString(),
@@ -1216,7 +1295,7 @@ export function App() {
             channel: "sms",
             trigger: "payment_verified",
             title: "Payment Verified — Ticket Active",
-            message: `Island Events: Payment of ${formatMoney(targetOrd.totalAmount, targetOrd.currency)} verified for ${eventDetails.title}! Your digital ticket ${targetOrd.ticketCode} is now PAID & ACTIVE. View pass: ${window.location.origin}/t/${targetOrd.secureTicketToken}`,
+            message: `EventBite: Payment of ${formatMoney(targetOrd.totalAmount, targetOrd.currency)} verified for ${eventDetails.title}! Your digital ticket ${targetOrd.ticketCode} is now PAID & ACTIVE. View pass: ${window.location.origin}/t/${targetOrd.secureTicketToken}`,
             status: "delivered",
             provider: "Twilio SMS",
             deliveredAt: new Date().toISOString(),
@@ -1233,7 +1312,7 @@ export function App() {
             channel: "sms",
             trigger: "order_updated",
             title: "Order Updated — Partial Balance Verified",
-            message: `Island Events: Order ${targetOrd.orderNumber} updated. Partial deposit of ${formatMoney(paidAmt, targetOrd.currency)} confirmed. Remaining balance due: ${formatMoney(remaining, targetOrd.currency)}.`,
+            message: `EventBite: Order ${targetOrd.orderNumber} updated. Partial deposit of ${formatMoney(paidAmt, targetOrd.currency)} confirmed. Remaining balance due: ${formatMoney(remaining, targetOrd.currency)}.`,
             status: "delivered",
             provider: "Twilio SMS",
             deliveredAt: new Date().toISOString(),
@@ -1294,7 +1373,7 @@ export function App() {
             channel: "sms",
             trigger: "order_ready",
             title: "Order Ready — Kitchen Pickup Notice",
-            message: `Island Events: Your meal order ${targetOrd.orderNumber} is FRESH & READY for collection at ${eventDetails.venueName}! Show ticket ${targetOrd.ticketCode} to counter staff.`,
+            message: `EventBite: Your meal order ${targetOrd.orderNumber} is FRESH & READY for collection at ${eventDetails.venueName}! Show ticket ${targetOrd.ticketCode} to counter staff.`,
             status: "delivered",
             provider: "Twilio SMS",
             deliveredAt: new Date().toISOString(),
@@ -1645,22 +1724,15 @@ export function App() {
     <main className="app-shell">
       {/* Top Application Header */}
       <header className="topbar">
-        <a className="brand" href="#" aria-label="Island Events Home">
-          <span className="brand-mark">
-            <Ticket size={19} strokeWidth={2.3} />
-          </span>
-          <span>
-            island<span className="brand-light">events</span>
-          </span>
+        <a className="brand" href="#" aria-label="EventBite Home">
+          <BrandLogo />
         </a>
 
         <div className="topbar-right">
           <div className="location-pill">
             <Globe size={13} />
             <span>
-              {settings.businessLocation === "JM"
-                ? "Jamaica Base (JM · NCB / Scotia)"
-                : "United States Base (US · ACH)"}
+              United States Base (US · USD)
             </span>
           </div>
 
@@ -1838,6 +1910,8 @@ export function App() {
           }
           onSubmitDispute={handleSubmitDispute}
           allEvents={catalogEvents}
+          markets={locationCatalog?.markets || []}
+          states={locationCatalog?.states || []}
           selectedEventIndex={selectedEventIndex}
           onSelectEvent={(idx) => {
             setSelectedEventIndex(idx);
@@ -1989,7 +2063,7 @@ export function App() {
             <div className="modal-header">
               <div>
                 <span className="section-kicker">AUTOMATION ROADMAP</span>
-                <h2 id="gateway-title">Payment Providers for Jamaica–US Setups</h2>
+                <h2 id="gateway-title">U.S. Event Payment Providers</h2>
                 <p>
                   Transitioning from manual transfer verification to automated checkout with instant
                   ticket issuance.
@@ -2011,23 +2085,18 @@ export function App() {
                 <div>
                   <strong>Why manual transfers first?</strong>
                   <p>
-                    International card processing across Jamaica and the US often has high merchant
-                    onboarding barriers, reserve holds, or multi-currency setup requirements. Manual
-                    transfers let organizers validate demand immediately with zero platform fees.
-                    Once volume grows, integrating a vetted gateway below automates settlement.
+                    U.S. payment providers have different onboarding, verification, and settlement
+                    requirements. Manual transfers still require host verification; a transfer
+                    reference never confirms payment automatically. A vetted processor can automate
+                    settlement once the host completes its onboarding.
                   </p>
                 </div>
               </div>
 
-              <h3>
-                Recommended Gateways for{" "}
-                {settings.businessLocation === "JM"
-                  ? "Jamaican Registered Businesses"
-                  : "US Registered Businesses"}
-              </h3>
+              <h3>Recommended Gateways for U.S. Registered Businesses</h3>
 
               <div className="gateway-cards-grid">
-                {GATEWAY_RECOMMENDATIONS[settings.businessLocation].map((gw) => (
+                {GATEWAY_RECOMMENDATIONS.US.map((gw) => (
                   <div className="gateway-card" key={gw.name}>
                     <div className="gateway-card-top">
                       <strong>{gw.name}</strong>
@@ -2240,7 +2309,7 @@ export function App() {
                   </div>
                   <div style={{ fontSize: "12px", color: "#475569", lineHeight: "1.5" }}>
                     <strong>Destination:</strong> <code>/dashboard/attendee</code><br />
-                    <strong>Permissions:</strong> Discover public Jamaican events, pre-order meal combos, view personal tickets & QR pass, review order history, and submit dispute claims.
+                    <strong>Permissions:</strong> Discover public U.S. events across cuisines and communities, pre-order food, view tickets and QR passes, review order history, and submit dispute claims.
                   </div>
                 </div>
 

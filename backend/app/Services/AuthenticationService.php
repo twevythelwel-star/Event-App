@@ -71,9 +71,9 @@ class AuthenticationService
                 'phone' => !empty($data['phone']) ? trim((string) $data['phone']) : null,
                 'password' => $hashedPassword,
                 'status' => 'active',
-                'preferred_display_currency' => in_array($data['preferred_display_currency'] ?? 'JMD', ['JMD', 'USD'], true)
-                    ? ($data['preferred_display_currency'] ?? 'JMD')
-                    : 'JMD',
+                'preferred_display_currency' => in_array($data['preferred_display_currency'] ?? 'USD', ['JMD', 'USD'], true)
+                    ? ($data['preferred_display_currency'] ?? 'USD')
+                    : 'USD',
                 'preferred_language' => 'en',
                 'current_context_role' => AccountType::ATTENDEE->value,
                 'is_system_admin' => false,
@@ -110,7 +110,7 @@ class AuthenticationService
         return [
             'success' => true,
             'user' => $user,
-            'message' => 'Registration successful! Welcome to Island Events.',
+            'message' => 'Registration successful! Welcome to EventBite.',
             'redirect_route' => 'attendee.dashboard',
         ];
     }

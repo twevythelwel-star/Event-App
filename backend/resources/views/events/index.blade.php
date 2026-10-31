@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Island Event Discovery — Live Music, Food & Culture')
-@section('page-title', 'Island Event Discovery')
+@section('title', 'EventBite — Live Music, Food & Culture')
+@section('page-title', 'Event Discovery')
 
 @section('content')
 <style>
@@ -384,27 +384,27 @@
     }
 </style>
 
-<div class="discovery-root" id="island-discovery-page">
+<div class="discovery-root" id="event-discovery-page">
     <!-- 1. Discovery Header -->
     <header class="discovery-header">
         <div class="discovery-header-inner">
             <div>
                 <div class="discovery-greeting-badge">
-                    <span>🌴</span>
-                    <span>Island Event Discovery</span>
+                    <span>🎟️</span>
+                    <span>EventBite Discovery</span>
                 </div>
                 <h1 class="discovery-title" id="discovery-header-greeting">
                     @auth
                         Hello, {{ Auth::user()->name }} 👋
                     @else
-                        Discover Island Events 🌴
+                        Discover Events Across the U.S.
                     @endauth
                 </h1>
                 <p class="discovery-subtitle">
                     @auth
-                        Curated reggae concerts, authentic Caribbean culinary gatherings & sports regattas.
+                        Discover food, music, culture, and community events near you.
                     @else
-                        Find live concerts, Caribbean culinary feasts & cultural festivals near you.
+                        Explore diverse food, music, cultural, and community events across the United States.
                     @endauth
                 </p>
             </div>
@@ -454,15 +454,24 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.85rem;">📍</span>
-                        <select id="filter-location" class="discovery-select" onchange="filterEvents()">
-                            <option value="all">All Locations & Parishes</option>
-                            <option value="Kingston">Kingston & St. Andrew</option>
-                            <option value="Portmore">Portmore & St. Catherine</option>
-                            <option value="Ocho Rios">North Coast (St. Ann)</option>
-                            <option value="Negril">Negril & Westmoreland</option>
-                            <option value="Montego Bay">Montego Bay (St. James)</option>
-                            <option value="Portland">Portland (East Coast)</option>
+                        <select id="filter-state" class="discovery-select" onchange="filterEvents()">
+                            <option value="all">All states & territories</option>
+                            @foreach($states as $state)
+                                <option value="{{ $state->code }}">{{ $state->name }}</option>
+                            @endforeach
                         </select>
+                        <select id="filter-city" class="discovery-select" onchange="filterEvents()">
+                            <option value="all">All cities and towns</option>
+                            @foreach($markets as $market)
+                                <option value="{{ $market->state_code }}:{{ strtolower($market->city) }}" data-state="{{ $market->state_code }}">{{ $market->city }}, {{ $market->state_code }}</option>
+                            @endforeach
+                            @foreach($events->whereNotNull('city')->unique(fn ($event) => strtolower($event->city) . ':' . $event->state_code) as $event)
+                                @if(!$markets->contains(fn ($market) => strtolower($market->city) === strtolower($event->city) && $market->state_code === $event->state_code))
+                                    <option value="{{ $event->state_code }}:{{ strtolower($event->city) }}" data-state="{{ $event->state_code }}">{{ $event->city }}, {{ $event->state_code }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                        <input id="filter-zip" class="discovery-select" inputmode="numeric" maxlength="10" placeholder="ZIP code" oninput="filterEvents()" aria-label="Filter by ZIP code">
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 6px;">
@@ -470,10 +479,13 @@
                         <select id="filter-date" class="discovery-select" onchange="filterEvents()">
                             <option value="all">All Dates</option>
                             <option value="weekend">This Weekend</option>
-                            <option value="November">November 2026</option>
-                            <option value="December">December 2026</option>
                         </select>
+                        <input id="filter-date-from" class="discovery-select" type="date" aria-label="Events from date" onchange="filterEvents()">
+                        <input id="filter-date-to" class="discovery-select" type="date" aria-label="Events through date" onchange="filterEvents()">
                     </div>
+                    <input id="filter-price-min" class="discovery-select" type="number" min="0" step="0.01" placeholder="Min price $" aria-label="Minimum event price" oninput="filterEvents()">
+                    <input id="filter-price-max" class="discovery-select" type="number" min="0" step="0.01" placeholder="Max price $" aria-label="Maximum event price" oninput="filterEvents()">
+                    <label style="font-size:0.8rem;color:#CBD5E1"><input id="filter-available" type="checkbox" onchange="filterEvents()"> Taking orders</label>
                 </div>
 
                 <div style="font-size: 0.8rem; color: #94A3B8; font-weight: 600;">
@@ -563,7 +575,7 @@
                     <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #CBD5E1; margin-bottom: 18px;">
                         <span style="color: #EC4899;">📍</span>
                         <span style="font-weight: 600;">{{ $featuredEvent->venue_name ?? 'Victoria Pier' }}</span>
-                        <span style="color: #64748B;">({{ $featuredEvent->venue_address ?? 'Kingston' }})</span>
+                        <span style="color: #64748B;">({{ $featuredEvent->venue_address ?? 'United States' }})</span>
                     </div>
                 </div>
 
@@ -642,9 +654,14 @@
             @foreach($events as $idx => $event)
                 @php
                     $gridImg = !empty($event->flyer_path) ? $event->flyer_path : (($idx % 4 === 0) ? '/images/island_music_reggae_concert.jpg' : (($idx % 4 === 1) ? '/images/escovitch_fish.jpg' : (($idx % 4 === 2) ? '/images/island_sports_championship.jpg' : '/images/island_culture_carnival.jpg')));
-                    $catType = ($idx % 4 === 0) ? 'music' : (($idx % 4 === 1) ? 'food' : (($idx % 4 === 2) ? 'sports' : 'culture'));
+                    $eventCategory = strtolower((string) ($event->category ?? 'community'));
+                    $catType = str_contains($eventCategory, 'food') ? 'food' : (str_contains($eventCategory, 'music') ? 'music' : (str_contains($eventCategory, 'sport') ? 'sports' : (str_contains($eventCategory, 'culture') || str_contains($eventCategory, 'heritage') ? 'culture' : 'community')));
+                    $priceValues = collect($event->ticket_tiers ?? [])->pluck('priceUSD')
+                        ->merge($event->menuItems->where('is_active', true)->pluck('price_usd'))
+                        ->filter(fn ($price) => is_numeric($price));
+                    $lowestPrice = $priceValues->isEmpty() ? 0 : $priceValues->min();
                 @endphp
-                <div class="event-item-card" data-title="{{ strtolower($event->title) }}" data-desc="{{ strtolower($event->description ?? '') }}" data-venue="{{ strtolower($event->venue_name ?? $event->venue ?? '') }}" data-address="{{ strtolower($event->venue_address ?? '') }}" data-category="{{ $catType }}" data-date="{{ $event->date_str ?? '' }}">
+                <div class="event-item-card" data-title="{{ strtolower($event->title) }}" data-desc="{{ strtolower($event->description ?? '') }}" data-venue="{{ strtolower($event->venue_name ?? $event->venue ?? '') }}" data-address="{{ strtolower($event->venue_address ?? '') }}" data-category="{{ $catType }}" data-date="{{ $event->date_str ?? '' }}" data-event-date="{{ substr((string) ($event->event_date_iso ?? ''), 0, 10) }}" data-state="{{ $event->state_code ?? '' }}" data-city="{{ strtolower($event->city ?? '') }}" data-zip="{{ $event->zip_code ?? '' }}" data-price="{{ $lowestPrice }}" data-available="{{ $event->isOrderingAllowed() ? '1' : '0' }}">
                     <div style="height: 170px; position: relative;">
                         <img src="{{ $gridImg }}" alt="{{ $event->title }}" style="width: 100%; height: 100%; object-fit: cover;">
                         <div style="position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.85) 100%);"></div>
@@ -757,7 +774,6 @@
 
     function filterEvents() {
         const q = (document.getElementById('events-search-input').value || '').toLowerCase().trim();
-        const loc = document.getElementById('filter-location').value.toLowerCase();
         const dateFilter = document.getElementById('filter-date').value;
 
         const cards = document.querySelectorAll('.event-item-card');
@@ -770,6 +786,18 @@
             const addr = card.getAttribute('data-address') || '';
             const cat = card.getAttribute('data-category') || '';
             const dateStr = card.getAttribute('data-date') || '';
+            const eventDateText = card.getAttribute('data-event-date') || '';
+            const eventDate = eventDateText
+                ? new Date(`${eventDateText}T00:00:00`)
+                : new Date(dateStr);
+            const state = card.getAttribute('data-state') || '';
+            const city = card.getAttribute('data-city') || '';
+            const zip = card.getAttribute('data-zip') || '';
+            const price = parseFloat(card.getAttribute('data-price') || '0');
+            const available = card.getAttribute('data-available') === '1';
+            const stateFilter = document.getElementById('filter-state').value;
+            const cityFilter = document.getElementById('filter-city').value;
+            const zipFilter = (document.getElementById('filter-zip').value || '').trim();
 
             let matchQuery = true;
             if (q) {
@@ -777,22 +805,37 @@
             }
 
             let matchLocation = true;
-            if (loc !== 'all') {
-                matchLocation = addr.includes(loc) || venue.includes(loc) || title.includes(loc);
+            if (stateFilter !== 'all') matchLocation = state.toUpperCase() === stateFilter;
+            if (cityFilter !== 'all') {
+                const [cityState, cityName] = cityFilter.split(':', 2);
+                matchLocation = matchLocation && state.toUpperCase() === cityState && city.toLowerCase() === cityName;
             }
+            if (zipFilter) matchLocation = matchLocation && zip.startsWith(zipFilter);
+
+            const minPrice = document.getElementById('filter-price-min').value;
+            const maxPrice = document.getElementById('filter-price-max').value;
+            const availableOnly = document.getElementById('filter-available').checked;
+            const matchPrice = (!minPrice || price >= parseFloat(minPrice)) && (!maxPrice || price <= parseFloat(maxPrice));
+            const matchAvailability = !availableOnly || available;
 
             let matchDate = true;
-            if (dateFilter !== 'all') {
-                if (dateFilter === 'weekend') matchDate = dateStr.includes('Saturday') || dateStr.includes('Sunday');
-                else matchDate = dateStr.includes(dateFilter);
+            const dateFrom = document.getElementById('filter-date-from').value;
+            const dateTo = document.getElementById('filter-date-to').value;
+            if (dateFilter === 'weekend') {
+                const today = new Date();
+                const saturday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + ((6 - today.getDay() + 7) % 7));
+                const sunday = new Date(saturday.getFullYear(), saturday.getMonth(), saturday.getDate() + 1);
+                matchDate = !Number.isNaN(eventDate.getTime()) && eventDate >= saturday && eventDate <= sunday;
             }
+            if (dateFrom) matchDate = matchDate && !Number.isNaN(eventDate.getTime()) && eventDate >= new Date(`${dateFrom}T00:00:00`);
+            if (dateTo) matchDate = matchDate && !Number.isNaN(eventDate.getTime()) && eventDate <= new Date(`${dateTo}T23:59:59`);
 
             let matchCategory = true;
             if (activeCategory !== 'all') {
                 matchCategory = (cat === activeCategory);
             }
 
-            if (matchQuery && matchLocation && matchDate && matchCategory) {
+            if (matchQuery && matchLocation && matchDate && matchCategory && matchPrice && matchAvailability) {
                 card.style.display = 'flex';
                 visibleCount++;
             } else {
@@ -809,8 +852,15 @@
 
     function clearAllFilters() {
         document.getElementById('events-search-input').value = '';
-        document.getElementById('filter-location').value = 'all';
+        document.getElementById('filter-state').value = 'all';
+        document.getElementById('filter-city').value = 'all';
+        document.getElementById('filter-zip').value = '';
+        document.getElementById('filter-price-min').value = '';
+        document.getElementById('filter-price-max').value = '';
+        document.getElementById('filter-available').checked = false;
         document.getElementById('filter-date').value = 'all';
+        document.getElementById('filter-date-from').value = '';
+        document.getElementById('filter-date-to').value = '';
         selectCategory('all');
     }
 

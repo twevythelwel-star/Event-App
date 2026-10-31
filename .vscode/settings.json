@@ -3,6 +3,10 @@
         "/^node --version; npm --version$/": {
             "approve": true,
             "matchCommandLine": true
+        },
+        "/^python -c \"from PIL import Image; im=Image\\.open\\('EventBite fork\\.jpg'\\); print\\('size=',im\\.size,'mode=',im\\.mode,'format=',im\\.format,'info=',im\\.info\\)\"$/": {
+            "approve": true,
+            "matchCommandLine": true
         }
     }
 }

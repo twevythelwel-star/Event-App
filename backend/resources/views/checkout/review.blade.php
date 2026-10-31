@@ -44,7 +44,7 @@
 
             <h2 class="eb-text-section-title" style="margin: 0 0 var(--space-3);">Your details</h2>
             <x-form-field name="customer_phone" type="tel" label="Phone or WhatsApp"
-                :value="old('customer_phone', auth()->user()->phone)" :required="true" placeholder="+1 876 555 0142"
+                :value="old('customer_phone', auth()->user()->phone)" :required="true" placeholder="+1 305 555 0142"
                 help="We text your ticket here." :error="$errors->first('customer_phone')" />
 
             <fieldset style="border: 0; padding: 0; margin: var(--space-5) 0 0;" aria-describedby="method-help">

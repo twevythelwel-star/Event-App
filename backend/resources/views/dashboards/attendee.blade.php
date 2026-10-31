@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'My Digital Tickets & Orders — Island Events')
+@section('title', 'My Digital Tickets & Orders — EventBite')
 @section('page-title', 'My Ticket Wallet')
 
 @section('navigation')
@@ -53,7 +53,7 @@
 
         <div style="display: flex; align-items: center; gap: 0.75rem; background: var(--color-white); border: 1px solid var(--color-border); padding: 0.5rem 1rem; border-radius: var(--radius-md);">
             <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Preferred Currency:</span>
-            <span style="font-weight: 700; color: var(--color-indigo); font-size: 0.88rem;">{{ $preferred_display_currency ?? Auth::user()->preferred_display_currency ?? 'JMD' }}</span>
+            <span style="font-weight: 700; color: var(--color-indigo); font-size: 0.88rem;">{{ $preferred_display_currency ?? Auth::user()->preferred_display_currency ?? 'USD' }}</span>
             <a href="{{ route('settings.show') }}#currency" style="font-size: 0.75rem; color: var(--color-text-muted); text-decoration: underline;">Change</a>
         </div>
     </div>
@@ -98,7 +98,7 @@
         <div class="card" style="margin-bottom: 1.5rem; background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: 1.25rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                 <div>
-                    <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--color-navy);">Want to organize events on Island Events?</h3>
+                    <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--color-navy);">Want to organize events on EventBite?</h3>
                     <p style="font-size: 0.85rem; color: var(--color-text-secondary); margin-top: 0.2rem;">Apply for Event Host privileges to publish flyers, sell digital tickets, and accept advance food orders.</p>
                 </div>
                 <a href="{{ route('host.apply') }}" class="btn btn-secondary" style="font-weight: 700;">
@@ -308,7 +308,7 @@
                             <th>Payment Status</th>
                             <th>Fulfillment</th>
                             <th>Amount (Charged)</th>
-                            <th>Estimate ({{ $preferred_display_currency ?? 'JMD' }})</th>
+                            <th>Estimate ({{ $preferred_display_currency ?? 'USD' }})</th>
                             <th style="text-align: right;">Receipt</th>
                         </tr>
                     </thead>
@@ -335,7 +335,7 @@
                                 </td>
                                 <td>
                                     <span style="color: var(--color-text-secondary); font-size: 0.84rem;">
-                                        {{ $order->currency === ($preferred_display_currency ?? 'JMD') ? '—' : '~' . ($ordersWithEstimates->firstWhere('id', $order->id)['display_estimate'] ?? '') }}
+                                        {{ $order->currency === ($preferred_display_currency ?? 'USD') ? '—' : '~' . ($ordersWithEstimates->firstWhere('id', $order->id)['display_estimate'] ?? '') }}
                                     </span>
                                 </td>
                                 <td style="text-align: right;">

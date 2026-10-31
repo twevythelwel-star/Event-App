@@ -188,11 +188,16 @@ class HostEventsApiTest extends TestCase
             'time_str' => '4:00 PM – 11:00 PM',
             'start_time' => '16:00',
             'end_time' => '23:00',
-            'timezone' => 'America/Jamaica',
-            'venue_name' => 'Port Royal Historic Dockyard',
-            'venue_address' => '1 Dockyard Lane, Port Royal, Kingston',
-            'organizer_name' => 'Kingston Youth Foundation',
-            'organizer_phone' => '+1 (876) 926-3849',
+            'timezone' => 'America/New_York',
+            'venue_name' => 'Atlanta Community Park',
+            'street_address' => '100 Park Place',
+            'city' => 'Atlanta',
+            'state_code' => 'GA',
+            'zip_code' => '30303',
+            'country_code' => 'US',
+            'venue_address' => '100 Park Place, Atlanta, GA, 30303, United States',
+            'organizer_name' => 'Atlanta Community Foundation',
+            'organizer_phone' => '+1 (404) 555-0188',
             'advance_order_deadline' => '2026-12-18 18:00',
             'packaging_fee_usd' => 1.25,
             'packaging_fee_jmd' => 200,
@@ -213,11 +218,12 @@ class HostEventsApiTest extends TestCase
             ],
         ];
 
+        $payload['title'] = 'Atlanta Community Food & Music Night';
         $response = $this->actingAs($host)->postJson('/api/v1/host/events', $payload)
             ->assertCreated()
-            ->assertJsonPath('data.title', 'Port Royal Sunset Seafood & Reggae Night')
+            ->assertJsonPath('data.title', 'Atlanta Community Food & Music Night')
             ->assertJsonPath('data.status', 'draft')
-            ->assertJsonPath('data.timezone', 'America/Jamaica')
+            ->assertJsonPath('data.timezone', 'America/New_York')
             ->assertJsonPath('data.category', 'Seafood & Fish Fry');
 
         $createdId = $response->json('data.id');

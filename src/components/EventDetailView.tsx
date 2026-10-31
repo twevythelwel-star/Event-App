@@ -1537,7 +1537,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
                   lineHeight: "1.4",
                 }}
               >
-                🔒 Direct verification & instant mobile QR passes. Secure checkout powered by Island Events Payments.
+                🔒 Direct verification & instant mobile QR passes. Secure checkout powered by EventBite.
               </div>
             </div>
           </div>

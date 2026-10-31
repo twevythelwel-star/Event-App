@@ -517,8 +517,8 @@ class AdminConsoleSecurityTest extends TestCase
         $this->actingAs($root)->get('/admin/console/settings')->assertOk();
 
         $valid = [
-            'platform_name' => 'EventBite', 'default_timezone' => 'America/Jamaica', 'default_locale' => 'en-JM',
-            'supported_currencies' => ['JMD', 'USD'], 'supported_payment_methods' => ['bank', 'cash'],
+            'platform_name' => 'EventBite', 'default_timezone' => 'America/New_York', 'default_locale' => 'en-US',
+            'supported_currencies' => ['USD'], 'supported_payment_methods' => ['bank', 'cash'],
             'mandatory_2fa_for_admins' => 1, 'admin_session_timeout_minutes' => 30, 'attendee_session_timeout_days' => 30,
             'audit_retention_days' => 365, 'pii_scrub_days' => 90,
         ];

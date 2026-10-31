@@ -20,13 +20,13 @@ use Illuminate\View\View;
  */
 class PlatformSettingsController extends Controller
 {
-    private const CURRENCIES = ['JMD', 'USD'];
+    private const CURRENCIES = ['USD'];
 
     private const PAYMENT_METHODS = ['bank' => 'Bank transfer', 'cash' => 'Cash', 'card' => 'Card', 'zelle' => 'Zelle', 'cashapp' => 'Cash App'];
 
-    private const TIMEZONES = ['America/Jamaica', 'America/New_York', 'America/Chicago', 'America/Los_Angeles', 'UTC'];
+    private const TIMEZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu'];
 
-    private const LOCALES = ['en-JM' => 'English (Jamaica)', 'en-US' => 'English (United States)'];
+    private const LOCALES = ['en-US' => 'English (United States)'];
 
     /** Fields shown in the form; anything else on the model is operational data, not configuration. */
     private const EDITABLE = [

@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from "react";
+import { BrandLogo } from "./BrandLogo";
+import type { LocationCatalog } from "../lib/api";
 import {
   Search,
   Music,
@@ -27,6 +29,8 @@ export type BottomNavItem = "home" | "explore" | "tickets" | "food" | "profile";
 
 export interface EventDiscoveryHomepageProps {
   events: any[];
+  markets?: LocationCatalog["markets"];
+  states?: LocationCatalog["states"];
   selectedEventIndex: number;
   onSelectEvent: (index: number) => void;
   isLoggedIn: boolean;
@@ -43,8 +47,7 @@ export interface EventDiscoveryHomepageProps {
   onChangeBottomNav?: (nav: BottomNavItem) => void;
 }
 
-// Category mapping helper based on authentic event characteristics
-export function getEventCategory(event: any, index: number): DiscoveryCategory {
+export function getEventCategory(event: any, _index: number): DiscoveryCategory {
   const explicitCat = String(event.category || "").toLowerCase();
   if (explicitCat.includes("community")) return "Community";
   if (explicitCat.includes("part")) return "Parties";
@@ -53,53 +56,37 @@ export function getEventCategory(event: any, index: number): DiscoveryCategory {
   if (explicitCat.includes("cultur")) return "Culture";
   if (explicitCat.includes("food") || explicitCat.includes("fish")) return "Food";
 
-  const text = `${event.title} ${event.tagline || ""} ${event.description || ""}`.toLowerCase();
-  if (text.includes("reggae") || text.includes("music") || text.includes("sound") || text.includes("dj") || index === 0 || index === 3 || index === 9) {
+  const text = `${event.title} ${event.tagline || ""} ${event.description || ""} ${event.cuisine || ""}`.toLowerCase();
+  if (text.includes("music") || text.includes("concert") || text.includes("band") || text.includes("blues") || text.includes("dj")) {
     return "Music";
   }
-  if (text.includes("regatta") || text.includes("cricket") || text.includes("tournament") || text.includes("match") || index === 6 || index === 8) {
+  if (text.includes("sport") || text.includes("regatta") || text.includes("cricket") || text.includes("tournament") || text.includes("match")) {
     return "Sports";
   }
-  if (text.includes("heritage") || text.includes("maroon") || text.includes("culture") || text.includes("historic") || index === 2 || index === 7) {
+  if (text.includes("heritage") || text.includes("culture") || text.includes("historic") || text.includes("arts") || text.includes("festival")) {
     return "Culture";
   }
-  return "Food";
+  if (text.includes("food") || text.includes("market") || text.includes("cuisine") || text.includes("cookout")) return "Food";
+  return "Community";
 }
 
-// Associated artist / performer / highlight per event
-export function getEventPerformer(_event: any, index: number): string {
-  const map: Record<number, string> = {
-    0: "Roots Reggae All-Stars & Chronixx Tribute",
-    1: "Hellshire Acoustic Steel Band",
-    2: "Royal Port Maritime Heritage Drummers",
-    3: "North Coast Dub Syndicate & Live Horns",
-    4: "7-Mile Sunset Acoustic Troupe",
-    5: "MoBay Harbour Brass & Steel Orchestra",
-    6: "South Coast Regatta Coastal Players",
-    7: "Portland Maroon Drum & Cultural Ensemble",
-    8: "Marina Regatta Yacht Club DJs",
-    9: "Sandbar Sound System & Island Selectors",
-  };
-  return map[index] || "Resident Island Performers";
+export function getEventPerformer(event: any, _index: number): string {
+  return event.featuredPerformer || "Local artists and community performers";
 }
 
-// Category imagery mapping
-export function getEventImage(event: any, index: number): string {
-  const cat = getEventCategory(event, index);
-  if (cat === "Music") return "/images/island_music_reggae_concert.jpg";
-  if (cat === "Sports") return "/images/island_sports_championship.jpg";
-  if (cat === "Culture") return "/images/island_culture_carnival.jpg";
-  if (index === 0) return "/images/island_festival_sunset.jpg";
+export function getEventImage(event: any, _index: number): string {
   if (event.flyerUrl && event.flyerUrl.trim().length > 0) return event.flyerUrl;
-  return "/images/escovitch_fish.jpg";
+  return "/images/island_festival_sunset.jpg";
 }
 
 export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
   events,
+  markets = [],
+  states = [],
   selectedEventIndex,
   onSelectEvent,
   isLoggedIn,
-  userName = "Island Explorer",
+  userName = "EventBite Explorer",
   userEmail,
   onOpenAuthModal,
   onLogout,
@@ -114,24 +101,88 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<DiscoveryCategory>("All");
-  const [selectedLocation, setSelectedLocation] = useState<string>("All");
+  const [selectedState, setSelectedState] = useState<string>("All");
+  const [selectedCity, setSelectedCity] = useState<string>("All");
+  const [zipQuery, setZipQuery] = useState("");
   const [selectedDateRange, setSelectedDateRange] = useState<string>("All");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [availableOnly, setAvailableOnly] = useState(false);
+  const [nearbyPoint, setNearbyPoint] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationMessage, setLocationMessage] = useState("");
   const [visibleCount, setVisibleCount] = useState<number>(6);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [refreshKey, setRefreshKey] = useState<number>(0);
 
-  // Distinct locations from actual event data
-  const availableLocations = useMemo(() => {
-    const locs = new Set<string>();
+  const eventLocation = (evt: any) => {
+    const addressMatch = String(evt.venueAddress || "").match(/,\s*([^,]+),\s*([A-Z]{2})\s+(\d{5}(?:-\d{4})?)/);
+    return {
+      city: String(evt.city || addressMatch?.[1] || ""),
+      stateCode: String(evt.stateCode || addressMatch?.[2] || ""),
+      zipCode: String(evt.zipCode || addressMatch?.[3] || ""),
+    };
+  };
+
+  const availableStates = useMemo(() => {
+    const stateNames = new Map<string, string>();
+    states.forEach((state) => stateNames.set(state.code, state.name));
+    markets.forEach((market) => stateNames.set(market.stateCode, market.stateName));
     events.forEach((evt) => {
-      if (evt.locationCategory) locs.add(evt.locationCategory);
-      else if (evt.venueAddress) {
-        const parts = evt.venueAddress.split(",");
-        if (parts.length > 1) locs.add(parts[parts.length - 2].trim());
+      const location = eventLocation(evt);
+      if (location.stateCode) stateNames.set(location.stateCode, evt.stateName || location.stateCode);
+    });
+    return [...stateNames.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [events, markets, states]);
+
+  const availableCities = useMemo(() => {
+    const cities = new Map<string, { city: string; stateCode: string }>();
+    markets.forEach((market) => {
+      if (selectedState === "All" || market.stateCode === selectedState) {
+        cities.set(`${market.stateCode}:${market.city.toLowerCase()}`, { city: market.city, stateCode: market.stateCode });
       }
     });
-    return Array.from(locs);
-  }, [events]);
+    events.forEach((evt) => {
+      const location = eventLocation(evt);
+      if (location.city && location.stateCode && (selectedState === "All" || location.stateCode === selectedState)) {
+        cities.set(`${location.stateCode}:${location.city.toLowerCase()}`, location);
+      }
+    });
+    return [...cities.values()].sort((a, b) => a.city.localeCompare(b.city));
+  }, [events, markets, selectedState]);
+
+  const requestNearbyLocation = () => {
+    if (!navigator.geolocation) {
+      setLocationMessage("Location permission is unavailable. Choose a state or city instead.");
+      return;
+    }
+    setLocationMessage("Requesting your location…");
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setNearbyPoint({ latitude: coords.latitude, longitude: coords.longitude });
+        setLocationMessage("Showing events within 25 miles when venue coordinates are available.");
+      },
+      () => {
+        setNearbyPoint(null);
+        setLocationMessage("Location was not shared. Choose a state or city to browse manually.");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 },
+    );
+  };
+
+  const nearbyDistance = (evt: any): number | null => {
+    if (!nearbyPoint || evt.latitude == null || evt.longitude == null) return null;
+    const latitude = Number(evt.latitude);
+    const longitude = Number(evt.longitude);
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+    const radians = (value: number) => value * (Math.PI / 180);
+    const dLat = radians(latitude - nearbyPoint.latitude);
+    const dLon = radians(longitude - nearbyPoint.longitude);
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(radians(nearbyPoint.latitude)) * Math.cos(radians(latitude)) * Math.sin(dLon / 2) ** 2;
+    return 3959 * 2 * Math.asin(Math.min(1, Math.sqrt(a)));
+  };
 
   // Handle simulated refresh behavior
   const handleRefresh = () => {
@@ -147,6 +198,7 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
     return events.filter((evt, idx) => {
       const cat = getEventCategory(evt, idx);
       const performer = getEventPerformer(evt, idx);
+      const location = eventLocation(evt);
 
       // Category filter
       if (selectedCategory !== "All" && cat !== selectedCategory) {
@@ -154,19 +206,36 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
       }
 
       // Location filter
-      if (selectedLocation !== "All") {
-        const locMatch =
-          evt.locationCategory === selectedLocation ||
-          evt.venueAddress.toLowerCase().includes(selectedLocation.toLowerCase()) ||
-          evt.venueName.toLowerCase().includes(selectedLocation.toLowerCase());
-        if (!locMatch) return false;
+      if (selectedState !== "All" && location.stateCode !== selectedState) return false;
+      if (selectedCity !== "All") {
+        const [cityState, cityName] = selectedCity.split(":", 2);
+        if (location.stateCode !== cityState || location.city.toLowerCase() !== cityName) return false;
       }
+      if (zipQuery && !location.zipCode.startsWith(zipQuery.trim())) return false;
 
       // Date range filter
-      if (selectedDateRange !== "All") {
-        if (selectedDateRange === "November" && !evt.dateStr.includes("November")) return false;
-        if (selectedDateRange === "December" && !evt.dateStr.includes("December")) return false;
-        if (selectedDateRange === "Weekend" && !(evt.dateStr.includes("Saturday") || evt.dateStr.includes("Sunday"))) return false;
+      const eventDate = evt.eventDateIso
+        ? new Date(`${String(evt.eventDateIso).slice(0, 10)}T00:00:00`)
+        : null;
+      if (selectedDateRange === "Weekend") {
+        const today = new Date();
+        const saturday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + ((6 - today.getDay() + 7) % 7));
+        const sunday = new Date(saturday.getFullYear(), saturday.getMonth(), saturday.getDate() + 1);
+        if (!eventDate || Number.isNaN(eventDate.getTime()) || eventDate < saturday || eventDate > sunday) return false;
+      }
+      if (dateFrom && (!evt.eventDateIso || evt.eventDateIso < dateFrom)) return false;
+      if (dateTo && (!evt.eventDateIso || evt.eventDateIso > dateTo)) return false;
+      const eventPrices = [
+        ...(evt.menu || []).map((item: any) => Number(item.priceUSD ?? item.price_usd ?? 0)),
+        ...(evt.ticketTiers || []).map((tier: any) => Number(tier.priceUSD ?? tier.price_usd ?? 0)),
+      ].filter((price: number) => Number.isFinite(price) && price >= 0);
+      const startingPrice = eventPrices.length ? Math.min(...eventPrices) : 0;
+      if (minPrice && startingPrice < Number(minPrice)) return false;
+      if (maxPrice && startingPrice > Number(maxPrice)) return false;
+      if (availableOnly && (!evt.isOrderingOpen || (evt.advanceOrderDeadlineIso && Date.parse(evt.advanceOrderDeadlineIso) < Date.now()))) return false;
+      if (nearbyPoint) {
+        const distance = nearbyDistance(evt);
+        if (distance === null || distance > 25) return false;
       }
 
       // Search query (names, artists/performers, organizers, venues, categories)
@@ -186,7 +255,7 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
 
       return true;
     });
-  }, [events, selectedCategory, selectedLocation, selectedDateRange, searchQuery, refreshKey]);
+  }, [events, selectedCategory, selectedState, selectedCity, zipQuery, selectedDateRange, dateFrom, dateTo, minPrice, maxPrice, availableOnly, nearbyPoint, searchQuery, refreshKey]);
 
   // Featured primary event (first matched or selected event)
   const primaryFeaturedIndex = useMemo(() => {
@@ -214,8 +283,17 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
   const handleClearFilters = () => {
     setSearchQuery("");
     setSelectedCategory("All");
-    setSelectedLocation("All");
+    setSelectedState("All");
+    setSelectedCity("All");
+    setZipQuery("");
     setSelectedDateRange("All");
+    setDateFrom("");
+    setDateTo("");
+    setMinPrice("");
+    setMaxPrice("");
+    setAvailableOnly(false);
+    setNearbyPoint(null);
+    setLocationMessage("");
     setVisibleCount(6);
   };
 
@@ -238,6 +316,8 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
         backgroundColor: "var(--att-bg)",
         color: "var(--att-text-1)",
         minHeight: "100vh",
+        width: "100%",
+        minWidth: 0,
         paddingBottom: "100px",
         fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
       }}
@@ -264,26 +344,9 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
           {/* EventBite Brand Logo, Greeting & Discovery Subtitle */}
           <div style={{ minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }} id="eventbite-brand-logo">
-              <div
-                style={{
-                  width: "26px",
-                  height: "26px",
-                  borderRadius: "8px",
-                  background: "var(--color-accent, #C7FF45)",
-                  color: "var(--color-accent-text, #14210A)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: 900,
-                }}
-              >
-                <Flame size={15} />
-              </div>
-              <span style={{ fontSize: "13px", fontWeight: 800, letterSpacing: "0.04em", color: "var(--color-text-primary, #F8FAFC)" }}>
-                EventBite
-              </span>
+              <BrandLogo variant="compact" />
               <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--att-text-2)" }}>
-                &bull; {isLoggedIn ? `Hello, ${userName}` : "Island Events"}
+                &bull; {isLoggedIn ? `Hello, ${userName}` : "Discover events"}
               </span>
             </div>
             <h1
@@ -307,7 +370,7 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
                 lineHeight: "1.4",
               }}
             >
-              Concerts, food festivals and culture across Jamaica.
+              Discover food, music, and cultural events across the United States.
             </p>
           </div>
 
@@ -638,13 +701,12 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
               }}
             >
               <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", flex: 1 }}>
-                {/* Location Selector */}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                   <MapPin size={14} style={{ color: "var(--att-accent)" }} />
                   <select
-                    value={selectedLocation}
-                    onChange={(e) => setSelectedLocation(e.target.value)}
-                    id="select-discovery-location"
+                    value={selectedState}
+                    onChange={(e) => { setSelectedState(e.target.value); setSelectedCity("All"); }}
+                    id="select-discovery-state"
                     style={{
                       backgroundColor: "var(--att-surface-2)",
                       color: "var(--att-text-1)",
@@ -657,13 +719,39 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
                       outline: "none",
                     }}
                   >
-                    <option value="All">All Locations & Parishes</option>
-                    {availableLocations.map((loc) => (
-                      <option key={loc} value={loc}>
-                        📍 {loc}
+                    <option value="All">All U.S. states & territories</option>
+                    {availableStates.map(([code, name]) => (
+                      <option key={code} value={code}>
+                        {name}
                       </option>
                     ))}
                   </select>
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => setSelectedCity(e.target.value)}
+                    id="select-discovery-city"
+                    style={{
+                      backgroundColor: "var(--att-surface-2)", color: "var(--att-text-1)",
+                      border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: "10px",
+                      padding: "8px 12px", fontSize: "12px", fontWeight: 600, cursor: "pointer", outline: "none",
+                    }}
+                  >
+                    <option value="All">All cities and towns</option>
+                    {availableCities.map((location) => (
+                      <option key={`${location.stateCode}:${location.city}`} value={`${location.stateCode}:${location.city.toLowerCase()}`}>
+                        {location.city}, {location.stateCode}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="text" inputMode="numeric" maxLength={10} value={zipQuery}
+                    onChange={(e) => setZipQuery(e.target.value.replace(/[^\d-]/g, ""))}
+                    placeholder="ZIP code" aria-label="Filter by ZIP code"
+                    style={{ backgroundColor: "var(--att-surface-2)", color: "var(--att-text-1)", border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: "10px", padding: "8px 12px", fontSize: "12px", width: "90px" }}
+                  />
+                  <button type="button" onClick={requestNearbyLocation} style={{ backgroundColor: "var(--att-surface-2)", color: "var(--att-text-1)", border: "1px solid rgba(255, 255, 255, 0.12)", borderRadius: "10px", padding: "8px 12px", fontSize: "12px", cursor: "pointer" }}>
+                    Nearby (25 mi)
+                  </button>
                 </div>
 
                 {/* Date Selector */}
@@ -687,18 +775,24 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
                   >
                     <option value="All">All Dates</option>
                     <option value="Weekend">This Weekend</option>
-                    <option value="November">November 2026</option>
-                    <option value="December">December 2026</option>
                   </select>
+                  <input type="date" aria-label="Events from date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+                  <input type="date" aria-label="Events through date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+                  <input type="number" aria-label="Minimum event price" min="0" step="0.01" placeholder="Min $" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ width: "72px" }} />
+                  <input type="number" aria-label="Maximum event price" min="0" step="0.01" placeholder="Max $" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ width: "72px" }} />
+                  <label style={{ fontSize: "12px", color: "var(--att-text-1)" }}>
+                    <input type="checkbox" checked={availableOnly} onChange={(e) => setAvailableOnly(e.target.checked)} /> Taking orders
+                  </label>
                 </div>
               </div>
+              {locationMessage && <span role="status" style={{ width: "100%", fontSize: "11px", color: "var(--att-text-2)" }}>{locationMessage}</span>}
 
               {/* Real-time Result Count & Reset */}
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <span style={{ fontSize: "12px", color: "var(--att-text-2)", fontWeight: 600 }}>
                   Showing <strong style={{ color: "#FFFFFF" }}>{filteredEvents.length}</strong> of {events.length} events
                 </span>
-                {(searchQuery || selectedCategory !== "All" || selectedLocation !== "All" || selectedDateRange !== "All") && (
+                {(searchQuery || selectedCategory !== "All" || selectedState !== "All" || selectedCity !== "All" || zipQuery || selectedDateRange !== "All" || dateFrom || dateTo || minPrice || maxPrice || availableOnly || nearbyPoint) && (
                   <button
                     type="button"
                     onClick={handleClearFilters}
@@ -1381,7 +1475,7 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
                 No Events Found Matching Your Search
               </h3>
               <p style={{ fontSize: "13px", color: "var(--att-text-2)", maxWidth: "460px", margin: "0 auto 18px", lineHeight: "1.5" }}>
-                We couldn't find any events matching "{searchQuery}" in {selectedLocation} for {selectedDateRange}. Try broadening your search terms or clearing active filters.
+                We couldn't find events matching "{searchQuery}" in {selectedCity !== "All" ? availableCities.find((city) => `${city.stateCode}:${city.city.toLowerCase()}` === selectedCity)?.city : selectedState} for {selectedDateRange}. Try broadening your search terms or clearing active filters.
               </p>
               <button
                 type="button"
@@ -1621,7 +1715,7 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
                   transition: "all 0.2s ease",
                 }}
               >
-                <span>Load More Island Events</span>
+                <span>Load More Events</span>
                 <ChevronRight size={14} />
               </button>
             </div>

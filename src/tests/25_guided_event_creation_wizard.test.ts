@@ -99,9 +99,11 @@ describe("25: Guided Event-Creation Wizard & Readiness Gate Suite", () => {
         1, 2, 3, 4, 5,
       ]);
       expect(SUPPORTED_EVENT_CATEGORIES.length).toBeGreaterThanOrEqual(5);
-      expect(SUPPORTED_EVENT_TIMEZONES.some((t) => t.id === "America/Jamaica")).toBe(
-        true
-      );
+      expect(SUPPORTED_EVENT_CATEGORIES[0]).toBe("Food & Drink");
+      expect(SUPPORTED_EVENT_TIMEZONES[0].id).toBe("America/New_York");
+      expect(SUPPORTED_EVENT_TIMEZONES.some((t) => t.id === "America/Jamaica")).toBe(false);
+      expect(SUPPORTED_EVENT_TIMEZONES.some((t) => t.id === "America/Phoenix")).toBe(true);
+      expect(SUPPORTED_EVENT_TIMEZONES.some((t) => t.id === "America/Anchorage")).toBe(true);
     });
   });
 

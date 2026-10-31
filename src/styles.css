@@ -56,13 +56,17 @@ body { min-width: 320px; margin: 0; background: var(--color-background); color: 
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 
-.app-shell { width: min(1140px, calc(100% - 48px)); margin: 0 auto; padding-bottom: 40px; }
+.app-shell { display: block; width: min(1140px, calc(100% - 48px)); margin: 0 auto; padding-bottom: 40px; }
+.guest-journey-container { min-width: 0; max-width: 100%; }
 
 /* Top Header */
 .topbar { height: 76px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E2E8F0; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font: 800 18px "Plus Jakarta Sans", "Inter", sans-serif; letter-spacing: -0.6px; text-decoration: none; }
-.brand-mark { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; color: white; background: linear-gradient(135deg, #0B0F17 0%, #1e1b4b 50%, #4F46E5 100%); box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35); border: 1px solid rgba(212, 175, 55, 0.35); }
-.brand-light { color: #64748B; font-weight: 500; }
+.brand-logo { display: block; max-width: 100%; object-fit: contain; border-radius: 4px; background: #11172F; }
+.brand-logo--wordmark { width: 180px; height: 63px; }
+.brand-logo--compact { width: 144px; height: 51px; }
+.brand-logo--icon { width: 40px; height: 40px; border-radius: 8px; }
+.auth-modal-brand-icon { width: 20px; height: 20px; border-radius: 4px; }
 .topbar-right { display: flex; align-items: center; gap: 12px; }
 
 .location-pill { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 20px; background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-size: 10px; font-weight: 700; }
@@ -2016,6 +2020,7 @@ button { cursor: pointer; }
 @media (max-width: 640px) {
   .app-shell { width: calc(100% - 24px); }
   .topbar { height: auto; padding: 12px 0; flex-wrap: wrap; gap: 8px; }
+  .brand-logo--wordmark { width: min(180px, 42vw); height: auto; }
   .topbar-right { flex-wrap: wrap; gap: 6px; }
   .tabs { gap: 12px; overflow-x: auto; height: auto; padding-bottom: 6px; }
   .tabs-note { display: none; }

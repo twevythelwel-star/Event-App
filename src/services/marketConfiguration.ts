@@ -1,7 +1,7 @@
 /**
  * Market Configuration & Regional Settings
  *
- * Implements the United States-Only Configuration for Island Event's initial launch:
+ * Implements the United States-Only Configuration for EventBite's initial launch:
  * - Default operating market: United States (US)
  * - Default currency: USD ($)
  * - Address schema: US Standard (Street, City, 2-letter State, 5-digit ZIP)

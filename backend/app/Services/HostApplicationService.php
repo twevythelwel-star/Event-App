@@ -35,7 +35,7 @@ class HostApplicationService
 
         // An existing host does not need to reapply
         if ($user->hasRole(AccountType::EVENT_HOST)) {
-            throw new \InvalidArgumentException('You already hold active Event Host privileges on Island Events.');
+            throw new \InvalidArgumentException('You already hold active Event Host privileges on EventBite.');
         }
 
         // Check for existing pending application
@@ -49,7 +49,7 @@ class HostApplicationService
 
         $orgName = trim((string) ($data['organization_name'] ?? ''));
         $description = trim((string) ($data['description'] ?? ''));
-        $country = strtoupper(trim((string) ($data['country'] ?? 'JM')));
+        $country = strtoupper(trim((string) ($data['country'] ?? 'US')));
         $contactPhone = trim((string) ($data['contact_phone'] ?? $user->phone ?? ''));
         $website = trim((string) ($data['website_or_social'] ?? ''));
 
@@ -62,7 +62,7 @@ class HostApplicationService
         }
 
         if (!in_array($country, ['JM', 'US'], true)) {
-            $country = 'JM';
+            $country = 'US';
         }
 
         if (empty($contactPhone)) {

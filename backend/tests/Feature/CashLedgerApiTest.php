@@ -103,17 +103,17 @@ class CashLedgerApiTest extends TestCase
 
         $this->recordCash($host, [
             'event_id' => 'evt-kingston-harbour-fry',
-            'amount' => 1500,
+            'amount' => 10,
             'customer_name' => 'Walk Up Guest',
-            'customer_phone' => '+1 876 555 0400',
+            'customer_phone' => '+1 305 555 0140',
         ])->assertCreated()->assertJsonPath('order', null);
 
         $otherEvent = Event::withoutGlobalScopes()->where('organizer_id', 'org-hellshire-fishers')->firstOrFail();
         $this->recordCash($host, [
             'event_id' => $otherEvent->id,
-            'amount' => 1500,
+            'amount' => 10,
             'customer_name' => 'Walk Up Guest',
-            'customer_phone' => '+1 876 555 0400',
+            'customer_phone' => '+1 305 555 0140',
         ])->assertForbidden();
     }
 
@@ -134,7 +134,7 @@ class CashLedgerApiTest extends TestCase
         $verifier = $this->verifier();
 
         // A payment verifier may take cash ...
-        $receiptId = $this->recordCash($verifier, ['order_id' => $order->id, 'amount' => 1000])
+        $receiptId = $this->recordCash($verifier, ['order_id' => $order->id, 'amount' => 5])
             ->assertCreated()
             ->json('receipt.id');
 
@@ -143,23 +143,23 @@ class CashLedgerApiTest extends TestCase
             ->assertForbidden();
 
         $host = $this->user('host');
-        $this->actingAs($host)->postJson("/api/v1/operations/cash/{$receiptId}/reverse", ['amount' => 1500, 'reason' => 'Too much'])
+        $this->actingAs($host)->postJson("/api/v1/operations/cash/{$receiptId}/reverse", ['amount' => 6, 'reason' => 'Too much'])
             ->assertStatus(422);
 
-        $reversal = $this->actingAs($host)->postJson("/api/v1/operations/cash/{$receiptId}/reverse", ['amount' => 400, 'reason' => 'Counted wrong'])
+        $reversal = $this->actingAs($host)->postJson("/api/v1/operations/cash/{$receiptId}/reverse", ['amount' => 4, 'reason' => 'Counted wrong'])
             ->assertCreated()
             ->assertJsonPath('reversal.transactionType', 'reversal')
-            ->assertJsonPath('reversal.amount', -400)
+            ->assertJsonPath('reversal.amount', -4)
             ->assertJsonPath('reversal.originalRecordId', $receiptId)
             ->assertJsonPath('reversal.reversalAuthorizedBy', 'Demo Event Host')
-            ->assertJsonPath('order.amountPaid', 600);
+            ->assertJsonPath('order.amountPaid', 1);
 
         // Only the remaining 600 can still be reversed, and a reversal cannot be reversed
-        $this->actingAs($host)->postJson("/api/v1/operations/cash/{$receiptId}/reverse", ['amount' => 700, 'reason' => 'Again'])->assertStatus(422);
+        $this->actingAs($host)->postJson("/api/v1/operations/cash/{$receiptId}/reverse", ['amount' => 2, 'reason' => 'Again'])->assertStatus(422);
         $this->actingAs($host)->postJson('/api/v1/operations/cash/' . $reversal->json('reversal.id') . '/reverse', ['amount' => 100, 'reason' => 'Undo'])
             ->assertStatus(422);
 
-        $this->actingAs($host)->postJson("/api/v1/operations/cash/{$receiptId}/reverse", ['amount' => 600, 'reason' => 'Customer took cash back'])
+        $this->actingAs($host)->postJson("/api/v1/operations/cash/{$receiptId}/reverse", ['amount' => 1, 'reason' => 'Customer took cash back'])
             ->assertCreated()
             ->assertJsonPath('order.amountPaid', 0)
             ->assertJsonPath('order.status', 'awaiting_payment');
@@ -167,7 +167,7 @@ class CashLedgerApiTest extends TestCase
 
     public function test_host_sees_own_ledger_only(): void
     {
-        $this->recordCash($this->user('host'), ['order_id' => $this->cashOrder()->id, 'amount' => 100])->assertCreated();
+        $this->recordCash($this->user('host'), ['order_id' => $this->cashOrder()->id, 'amount' => 10])->assertCreated();
 
         $this->actingAs($this->user('host'))->getJson('/api/v1/operations/cash')->assertOk()->assertJsonCount(1, 'data');
 
@@ -182,18 +182,18 @@ class CashLedgerApiTest extends TestCase
         $total = (float) $order->total_amount;
         $host = $this->user('host');
 
-        $this->actingAs($this->verifier())->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => 100, 'reason' => 'x'])
+        $this->actingAs($this->verifier())->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => 5, 'reason' => 'x'])
             ->assertForbidden();
         $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => $total + 1, 'reason' => 'Too much'])
             ->assertStatus(422);
 
-        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => 500, 'reason' => 'One item unavailable'])
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => 5, 'reason' => 'One item unavailable'])
             ->assertOk()
             ->assertJsonPath('data.status', 'paid')
-            ->assertJsonPath('data.refundDetails.amount', 500)
+            ->assertJsonPath('data.refundDetails.amount', 5)
             ->assertJsonPath('data.refundDetails.refundedBy', 'Demo Event Host');
 
-        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => $total - 500, 'reason' => 'Event cancelled'])
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => $total - 5, 'reason' => 'Event cancelled'])
             ->assertOk()
             ->assertJsonPath('data.status', 'refunded')
             ->assertJsonCount(2, 'data.refunds');

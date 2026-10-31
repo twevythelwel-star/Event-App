@@ -467,7 +467,7 @@ class EventWorkerService
         EventWorkerRole|string $role,
         string|\DateTimeInterface $startsAt,
         string|\DateTimeInterface $expiresAt,
-        string $timezone = 'America/Jamaica',
+        string $timezone = 'America/New_York',
         string $stationAssignment = 'all',
         array $customPermissions = []
     ): EventWorkerAssignment {
@@ -506,7 +506,7 @@ class EventWorkerService
         try {
             $tz = new \DateTimeZone($timezone);
         } catch (\Exception $e) {
-            $tz = new \DateTimeZone('America/Jamaica');
+            $tz = new \DateTimeZone('America/New_York');
         }
 
         $startDt = $startsAt instanceof \DateTimeInterface

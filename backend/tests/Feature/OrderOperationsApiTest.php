@@ -54,7 +54,7 @@ class OrderOperationsApiTest extends TestCase
 
         $this->assertCount(4, $orders);
         $this->assertTrue($orders->every(fn ($o) => $o['organizerId'] === 'org-kingston-youth'));
-        $this->assertSame('Kingston Harbour Waterfront Sunday Fish Fry', $orders->first()['eventTitle']);
+        $this->assertSame('Miami Waterfront Cultural Food Festival', $orders->first()['eventTitle']);
         $this->assertTrue($orders->first()['capabilities']['verify']);
     }
 
@@ -107,10 +107,10 @@ class OrderOperationsApiTest extends TestCase
         $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/payment", ['status' => 'refunded'])
             ->assertStatus(422);
 
-        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/payment", ['status' => 'partially_paid', 'amount_paid' => 500])
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/payment", ['status' => 'partially_paid', 'amount_paid' => 5])
             ->assertOk()
             ->assertJsonPath('data.status', 'partially_paid')
-            ->assertJsonPath('data.amountPaid', 500);
+            ->assertJsonPath('data.amountPaid', 5);
     }
 
     public function test_staff_member_can_scan_and_hand_over_but_not_verify_or_see_payment_details(): void
@@ -134,7 +134,7 @@ class OrderOperationsApiTest extends TestCase
     {
         $staff = $this->user('staff');
         $order = $this->kingstonOrder('paid');
-        $chicken = $order->items->firstWhere('name', 'Kingston Seasoned Fried Chicken');
+        $chicken = $order->items->firstWhere('name', 'Jerk Chicken Meal');
         $escovitch = $order->items->firstWhere('menu_item_id', 'kgn-escovitch');
 
         $this->actingAs($staff)->postJson("/api/v1/operations/orders/{$order->id}/items/{$chicken->id}/handover", ['quantity_delta' => 1, 'station' => 'mains', 'staff_name' => 'Someone Else'])

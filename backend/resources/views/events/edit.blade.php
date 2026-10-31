@@ -124,11 +124,10 @@
                 <div>
                     <label for="timezone" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">Timezone</label>
                     <select id="timezone" name="timezone" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
-                        <option value="America/New_York" {{ old('timezone', $event->timezone) === 'America/New_York' ? 'selected' : '' }}>America/New_York (EDT / UTC-4)</option>
-                        <option value="America/Chicago" {{ old('timezone', $event->timezone) === 'America/Chicago' ? 'selected' : '' }}>America/Chicago (CDT / UTC-5)</option>
-                        <option value="America/Denver" {{ old('timezone', $event->timezone) === 'America/Denver' ? 'selected' : '' }}>America/Denver (MDT / UTC-6)</option>
-                        <option value="America/Los_Angeles" {{ old('timezone', $event->timezone) === 'America/Los_Angeles' ? 'selected' : '' }}>America/Los_Angeles (PDT / UTC-7)</option>
-                        <option value="America/Jamaica" {{ old('timezone', $event->timezone) === 'America/Jamaica' ? 'selected' : '' }}>America/Jamaica (EST / UTC-5)</option>
+                        <option value="" @selected(old('timezone', $event->timezone) === '')>Automatic from city and state</option>
+                        @foreach($timezones as $timezoneOption)
+                            <option value="{{ $timezoneOption }}" @selected(old('timezone', $event->timezone) === $timezoneOption)>{{ $timezoneOption }}</option>
+                        @endforeach
                     </select>
                 </div>
 
@@ -137,14 +136,37 @@
                     <input type="text" id="venue_name" name="venue_name" value="{{ old('venue_name', $event->venue_name) }}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
                 </div>
 
-                <div>
-                    <label for="coordinates" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">GPS Coordinates</label>
-                    <input type="text" id="coordinates" name="coordinates" value="{{ old('coordinates', $event->coordinates) }}" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                <input type="hidden" name="country_code" value="US">
+                <div class="sm:col-span-2">
+                    <label for="street_address" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">Street Address <span class="text-rose-500">*</span></label>
+                    <input type="text" id="street_address" name="street_address" value="{{ old('street_address', $event->street_address) }}" required maxlength="255" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900">
                 </div>
-
-                <div class="sm:col-span-3">
-                    <label for="venue_address" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">Complete Physical Venue Address <span class="text-rose-500">*</span></label>
-                    <input type="text" id="venue_address" name="venue_address" value="{{ old('venue_address', $event->venue_address) }}" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                <div>
+                    <label for="venue_building_name" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">Building / venue name</label>
+                    <input type="text" id="venue_building_name" name="venue_building_name" value="{{ old('venue_building_name', $event->venue_building_name) }}" maxlength="180" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900">
+                </div>
+                <div>
+                    <label for="city" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">City or town <span class="text-rose-500">*</span></label>
+                    <input type="text" id="city" name="city" value="{{ old('city', $event->city) }}" required list="event-city-options" maxlength="120" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900">
+                    <datalist id="event-city-options">@foreach($markets as $market)<option value="{{ $market->city }}"></option>@endforeach</datalist>
+                </div>
+                <div>
+                    <label for="state_code" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">State / territory <span class="text-rose-500">*</span></label>
+                    <select id="state_code" name="state_code" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900">
+                        @foreach($states as $state)<option value="{{ $state->code }}" @selected(old('state_code', $event->state_code) === $state->code)>{{ $state->name }} ({{ $state->code }})</option>@endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="zip_code" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">ZIP code <span class="text-rose-500">*</span></label>
+                    <input type="text" id="zip_code" name="zip_code" value="{{ old('zip_code', $event->zip_code) }}" required inputmode="numeric" pattern="[0-9]{5}(-[0-9]{4})?" maxlength="10" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900">
+                </div>
+                <div>
+                    <label for="latitude" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">Latitude (optional)</label>
+                    <input type="number" step="0.0000001" min="-90" max="90" id="latitude" name="latitude" value="{{ old('latitude', $event->latitude) }}" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900">
+                </div>
+                <div>
+                    <label for="longitude" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">Longitude (optional)</label>
+                    <input type="number" step="0.0000001" min="-180" max="180" id="longitude" name="longitude" value="{{ old('longitude', $event->longitude) }}" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900">
                 </div>
             </div>
         </div>
@@ -196,7 +218,6 @@
                 <div>
                     <label for="currency" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">Settlement Currency <span class="text-rose-500">*</span></label>
                     <select id="currency" name="currency" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
-                        <option value="JMD" {{ old('currency', $event->currency) === 'JMD' ? 'selected' : '' }}>JMD (Jamaican Dollar - J$)</option>
                         <option value="USD" {{ old('currency', $event->currency) === 'USD' ? 'selected' : '' }}>USD (United States Dollar - US$)</option>
                     </select>
                 </div>
