@@ -9,6 +9,7 @@ use App\Models\Event;
 use App\Models\Order;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
+use App\Services\Checkout\StockReturnService;
 use App\Services\Notifications\NotificationService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -23,7 +24,8 @@ use Illuminate\Support\Str;
 class CashLedgerService
 {
     public function __construct(
-        protected OrderOperationsService $operations
+        protected OrderOperationsService $operations,
+        protected StockReturnService $stock
     ) {}
 
     /**
@@ -79,7 +81,7 @@ class CashLedgerService
             throw new \InvalidArgumentException('Cash amount must be greater than zero.');
         }
 
-        $currency = $order?->currency ?? ($data['currency'] ?? $event->currency ?? 'JMD');
+        $currency = $order?->currency ?? ($data['currency'] ?? $event->currency ?? 'USD');
         if ($order && !empty($data['currency']) && $data['currency'] !== $order->currency) {
             throw new \InvalidArgumentException("This order is priced in {$order->currency}; record the cash in {$order->currency}.");
         }
@@ -235,16 +237,20 @@ class CashLedgerService
             throw new \InvalidArgumentException('A reason is required for a refund.');
         }
 
-        $refunds = self::refundEntries($order);
-        $alreadyRefunded = array_sum(array_column($refunds, 'amount'));
-        $refundable = round((float) $order->amount_paid - $alreadyRefunded, 2);
         $amount = round($amount, 2);
-        if ($amount <= 0 || $amount > $refundable) {
-            throw new \InvalidArgumentException("Refund must be more than zero and at most {$order->currency} " . number_format(max(0, $refundable), 2) . ' (the amount received and not yet refunded).');
-        }
 
-        return DB::transaction(function () use ($user, $order, $refunds, $amount, $reason, $alreadyRefunded) {
+        // The refundable amount is read from the order row locked for update, so two refunds sent at the same
+        // moment cannot both pass the check against the same, stale history.
+        return DB::transaction(function () use ($user, $order, $amount, $reason) {
             $order = Order::withoutGlobalScopes()->lockForUpdate()->find($order->id);
+
+            $refunds = self::refundEntries($order);
+            $alreadyRefunded = array_sum(array_column($refunds, 'amount'));
+            $refundable = round((float) $order->amount_paid - $alreadyRefunded, 2);
+            if ($amount <= 0 || $amount > $refundable) {
+                throw new \InvalidArgumentException("Refund must be more than zero and at most {$order->currency} " . number_format(max(0, $refundable), 2) . ' (the amount received and not yet refunded).');
+            }
+
             $refunds[] = [
                 'amount' => $amount,
                 'reason' => $reason,
@@ -252,12 +258,17 @@ class CashLedgerService
                 'refundedBy' => $user->name,
             ];
             $order->refund_details = $refunds;
-            if ($alreadyRefunded + $amount >= (float) $order->amount_paid) {
+
+            $stockNote = '';
+            if ($alreadyRefunded + $amount >= (float) $order->amount_paid && $order->status !== 'refunded') {
                 $order->status = 'refunded';
+                // Fully refunded: unused tickets and portions go back on sale (partial refunds return nothing).
+                $returned = $this->stock->returnForRefund($order);
+                $stockNote = " Returned to stock: {$returned['tickets']} ticket(s), {$returned['portions']} portion(s).";
             }
             $order->save();
 
-            $this->audit($user, 'order_refunded', $order->id, "Refund of {$order->currency} {$amount} on order {$order->order_number}. Reason: {$reason}", 'orders');
+            $this->audit($user, 'order_refunded', $order->id, "Refund of {$order->currency} {$amount} on order {$order->order_number}. Reason: {$reason}.{$stockNote}", 'orders');
 
             return $order->fresh(['items', 'event']);
         });

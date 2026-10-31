@@ -30,6 +30,28 @@ class OrderOperationsService
     /** Payment statuses a host may set by hand. Refunds go through the dedicated refund flow. */
     public const MANUAL_PAYMENT_STATUSES = ['under_verification', 'partially_paid', 'paid', 'rejected'];
 
+    /**
+     * Which manual payment decision may follow which payment state. Anything not listed is refused.
+     * - A rejected payment can only go back to review, never straight to paid.
+     * - Paid and partly paid orders are corrected with refunds or cash reversals (which keep the money trail),
+     *   not by changing the status here. Marking an already paid order paid again changes nothing.
+     * - Refunded, cancelled and expired orders are closed.
+     */
+    public const PAYMENT_TRANSITIONS = [
+        'awaiting_payment' => ['under_verification', 'partially_paid', 'paid', 'rejected'],
+        'payment_submitted' => ['under_verification', 'partially_paid', 'paid', 'rejected'],
+        'under_verification' => ['partially_paid', 'paid', 'rejected'],
+        'partially_paid' => ['partially_paid', 'paid'],
+        'rejected' => ['under_verification'],
+        'paid' => ['paid'],
+    ];
+
+    private const STATUS_WORDS = [
+        'awaiting_payment' => 'awaiting payment', 'payment_submitted' => 'confirmation submitted',
+        'under_verification' => 'under verification', 'partially_paid' => 'partly paid', 'paid' => 'paid',
+        'rejected' => 'rejected', 'refunded' => 'refunded', 'cancelled' => 'cancelled', 'expired' => 'expired',
+    ];
+
     public const FULFILLMENT_STATUSES = ['unprepared', 'preparing', 'ready_for_pickup', 'collected'];
 
     /**
@@ -134,8 +156,27 @@ class OrderOperationsService
         if (!in_array($status, self::MANUAL_PAYMENT_STATUSES, true)) {
             throw new \InvalidArgumentException("Unsupported payment status '{$status}'.");
         }
-        if ($order->status === 'refunded') {
-            throw new \InvalidArgumentException('Refunded orders cannot change payment status.');
+
+        return DB::transaction(fn () => $this->applyPaymentStatus($user, Order::withoutGlobalScopes()->lockForUpdate()->find($order->id) ?? $order, $status, $data));
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private function applyPaymentStatus(User $user, Order $order, string $status, array $data): Order
+    {
+        $from = (string) $order->status;
+        if (!in_array($status, self::PAYMENT_TRANSITIONS[$from] ?? [], true)) {
+            $fromWord = self::STATUS_WORDS[$from] ?? $from;
+            $toWord = self::STATUS_WORDS[$status] ?? $status;
+            throw new \InvalidArgumentException(match (true) {
+                in_array($from, ['refunded', 'cancelled', 'expired'], true) => "This order is {$fromWord}; its payment status can no longer change.",
+                $from === 'rejected' => 'A rejected payment must be put back under verification before it can be accepted.',
+                default => "A {$fromWord} order cannot be marked {$toWord}. Use a refund or cash reversal to correct a payment.",
+            });
+        }
+        if ($from === 'paid' && $status === 'paid') {
+            return $order->fresh(['items', 'event']); // already paid: nothing to change, nobody to notify
         }
 
         $total = (float) $order->total_amount;
