@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SyncsMinorUnits;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CashPayment extends Model
 {
-    use HasFactory, HasUuids, BelongsToTenant;
+    use HasFactory, HasUuids, BelongsToTenant, SyncsMinorUnits;
 
     protected $fillable = [
         'organizer_id',
@@ -24,6 +25,7 @@ class CashPayment extends Model
         'order_number',
         'ticket_code',
         'amount',
+        'amount_minor',
         'currency',
         'received_at',
         'received_by',
@@ -36,6 +38,7 @@ class CashPayment extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
+        'amount_minor' => 'integer',
         'received_at' => 'datetime',
     ];
 
@@ -55,5 +58,17 @@ class CashPayment extends Model
     public function isReversal(): bool
     {
         return $this->transaction_type === 'reversal';
+    }
+
+
+    /** @return array<string, string> */
+    protected function minorUnitPairs(): array
+    {
+        return ['amount' => 'amount_minor'];
+    }
+
+    protected function minorUnitCurrency(): string
+    {
+        return (string) ($this->currency ?: \App\Support\Currency::defaultCode());
     }
 }

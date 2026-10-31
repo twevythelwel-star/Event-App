@@ -74,19 +74,19 @@ class ManualPaymentGateway implements PaymentGatewayInterface
             throw new InvalidArgumentException("Verified amount must be greater than zero.");
         }
 
-        $totalOrderMinor = PriceCalculationService::toMinorUnits((float) $order->total_amount, $order->currency ?: 'USD');
-        $currentPaidMinor = PriceCalculationService::toMinorUnits((float) ($order->amount_paid ?? 0), $order->currency ?: 'USD');
+        $totalOrderMinor = PriceCalculationService::toMinorUnits((string) $order->total_amount, $order->currency ?: 'USD');
+        $currentPaidMinor = PriceCalculationService::toMinorUnits((string) ($order->amount_paid ?? 0), $order->currency ?: 'USD');
         $newTotalPaidMinor = $currentPaidMinor + $amountVerifiedMinor;
 
         $financials = PriceCalculationService::calculateOrderFinancials(
-            PriceCalculationService::toMinorUnits((float) $order->subtotal, $order->currency ?: 'USD'),
-            PriceCalculationService::toMinorUnits((float) $order->packaging_fee, $order->currency ?: 'USD'),
+            PriceCalculationService::toMinorUnits((string) $order->subtotal, $order->currency ?: 'USD'),
+            PriceCalculationService::toMinorUnits((string) $order->packaging_fee, $order->currency ?: 'USD'),
             $newTotalPaidMinor,
             0,
             $order->currency ?: 'USD'
         );
 
-        $order->amount_paid = PriceCalculationService::fromMinorUnits($newTotalPaidMinor, $order->currency ?: 'USD');
+        $order->amount_paid = \App\Support\Money::ofMinor($newTotalPaidMinor, $order->currency ?: 'USD')->toDecimalString();
         $order->status = $financials['is_fully_paid'] ? 'paid' : 'partially_paid';
         $order->verified_at = now();
         $order->verified_by = $verifierId ?: null;
@@ -110,7 +110,7 @@ class ManualPaymentGateway implements PaymentGatewayInterface
      */
     public function processRefund(Order $order, int $refundAmountMinor, string $reason, array $refundData = []): array
     {
-        $currentPaidMinor = PriceCalculationService::toMinorUnits((float) ($order->amount_paid ?? 0), $order->currency ?: 'USD');
+        $currentPaidMinor = PriceCalculationService::toMinorUnits((string) ($order->amount_paid ?? 0), $order->currency ?: 'USD');
         if ($refundAmountMinor > $currentPaidMinor) {
             throw new InvalidArgumentException("Refund amount ({$refundAmountMinor} cents) cannot exceed verified amount received ({$currentPaidMinor} cents).");
         }

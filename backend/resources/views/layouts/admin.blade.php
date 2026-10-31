@@ -8,6 +8,7 @@
         ['route' => 'admin.console.users.index', 'match' => 'admin.console.users.*', 'label' => 'Users', 'icon' => 'users', 'can' => Admin::USERS_VIEW],
         ['route' => 'admin.console.roles.index', 'match' => 'admin.console.roles.*', 'label' => 'Roles & Permissions', 'icon' => 'roles', 'can' => Admin::ROLES_VIEW],
         ['route' => 'admin.console.events.index', 'match' => 'admin.console.events.*', 'label' => 'Events', 'icon' => 'events', 'can' => Admin::EVENTS_VIEW],
+        ['route' => 'admin.console.charges.index', 'match' => 'admin.console.charges.*', 'label' => 'Fees & Taxes', 'icon' => 'settings', 'can' => Admin::SETTINGS_MANAGE],
         ['route' => 'admin.console.locations.index', 'match' => 'admin.console.locations.*', 'label' => 'Locations', 'icon' => 'events', 'can' => Admin::SETTINGS_MANAGE],
         ['route' => 'admin.console.orders.index', 'match' => 'admin.console.orders.*', 'label' => 'Orders & Payments', 'icon' => 'payment', 'can' => Admin::PAYMENTS_VIEW],
         ['route' => 'admin.console.reports.index', 'match' => 'admin.console.reports.*', 'label' => 'Reports', 'icon' => 'reports', 'can' => Admin::REPORTS_VIEW],

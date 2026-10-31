@@ -108,7 +108,7 @@ class AccountSettingsController extends Controller
     public function updateDisplayCurrency(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'currency' => ['required', 'string', 'in:JMD,USD'],
+            'currency' => ['required', 'string', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
         ]);
 
         $result = AccountSettingsService::updateAttendeeDisplayCurrency($request->user(), $validated['currency']);

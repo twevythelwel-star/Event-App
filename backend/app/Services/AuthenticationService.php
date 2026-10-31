@@ -71,7 +71,7 @@ class AuthenticationService
                 'phone' => !empty($data['phone']) ? trim((string) $data['phone']) : null,
                 'password' => $hashedPassword,
                 'status' => 'active',
-                'preferred_display_currency' => in_array($data['preferred_display_currency'] ?? 'USD', ['JMD', 'USD'], true)
+                'preferred_display_currency' => in_array($data['preferred_display_currency'] ?? 'USD', \App\Support\Currency::supportedCodes(), true)
                     ? ($data['preferred_display_currency'] ?? 'USD')
                     : 'USD',
                 'preferred_language' => 'en',

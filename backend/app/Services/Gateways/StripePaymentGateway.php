@@ -29,7 +29,7 @@ class StripePaymentGateway implements PaymentGatewayInterface
 
     public function initiatePayment(Order $order, array $paymentData): array
     {
-        $amountCents = PriceCalculationService::toMinorUnits((float) $order->total_amount, 'USD');
+        $amountCents = PriceCalculationService::toMinorUnits((string) $order->total_amount, 'USD');
 
         // Generates PaymentIntent placeholder/token
         $paymentIntentId = 'pi_' . substr(hash('sha256', $order->id . microtime()), 0, 24);
@@ -53,9 +53,9 @@ class StripePaymentGateway implements PaymentGatewayInterface
     public function verifyPayment(Order $order, array $verificationData): array
     {
         $intentId = $verificationData['payment_intent_id'] ?? $order->payment_reference;
-        $amountReceivedMinor = (int) ($verificationData['amount_received_minor'] ?? PriceCalculationService::toMinorUnits((float) $order->total_amount, 'USD'));
+        $amountReceivedMinor = (int) ($verificationData['amount_received_minor'] ?? PriceCalculationService::toMinorUnits((string) $order->total_amount, 'USD'));
 
-        $order->amount_paid = PriceCalculationService::fromMinorUnits($amountReceivedMinor, 'USD');
+        $order->amount_paid = \App\Support\Money::ofMinor($amountReceivedMinor, 'USD')->toDecimalString();
         $order->status = 'paid';
         $order->verified_at = now();
         $order->verification_notes = "Automated Stripe PaymentIntent confirmation: {$intentId}";

@@ -107,22 +107,23 @@ class HostDashboardController extends Controller
             ? $opsRule->calculatePrepForecast($totalSoldPortions) 
             : (int) ceil(($totalSoldPortions * (100 + $bufferPercent)) / 100);
 
-        // Financial aggregates (strictly distinguishing confirmed, pending, forecast, refunds, and settled funds)
-        $grossVolumeJMD = $orders->where('currency', 'JMD')->sum('total_amount');
-        $verifiedPaymentsJMD = $paidOrders->where('currency', 'JMD')->sum('total_amount');
-        $partiallyPaidConfirmedJMD = $orders->where('currency', 'JMD')->where('status', 'partially_paid')->sum('amount_paid');
-        $confirmedPaymentsJMD = $verifiedPaymentsJMD + $partiallyPaidConfirmedJMD;
+        // Money per currency from the integer *_minor columns; currencies are never added together.
+        $financials = \App\Services\Pricing\RevenueSummary::byCurrency($orders, $cashRecords);
 
-        $pendingSubmittedJMD = $orders->where('currency', 'JMD')->whereIn('status', ['payment_submitted', 'under_verification', 'pending_verification', 'awaiting_payment'])->sum('total_amount');
-        $partiallyPaidRemainingJMD = $orders->where('currency', 'JMD')->where('status', 'partially_paid')->sum(function ($o) {
-            return max(0, (float) $o->total_amount - (float) ($o->amount_paid ?? 0));
-        });
-        $pendingPaymentsJMD = $pendingSubmittedJMD + $partiallyPaidRemainingJMD;
-
+        // Legacy JSON keys (read by the React client): JMD figures in major units, computed exactly as before.
+        $jmd = $orders->where('currency', 'JMD');
+        $jmdPaid = $paidOrders->where('currency', 'JMD');
+        $major = fn (int $minor) => \App\Support\Money::ofMinor($minor, 'JMD')->toMajorNumber();
+        $grossVolumeJMD = $major((int) $jmd->sum('total_minor'));
+        $verifiedPaymentsJMD = $major((int) $jmdPaid->sum('total_minor'));
+        $confirmedPaymentsJMD = $major((int) $jmdPaid->sum('total_minor') + (int) $jmd->where('status', 'partially_paid')->sum('amount_paid_minor'));
+        $pendingPaymentsJMD = $major(
+            (int) $jmd->whereIn('status', ['payment_submitted', 'under_verification', 'pending_verification', 'awaiting_payment'])->sum('total_minor')
+            + (int) $jmd->where('status', 'partially_paid')->sum(fn ($o) => max(0, (int) $o->total_minor - (int) $o->amount_paid_minor))
+        );
         $forecastRevenueJMD = $confirmedPaymentsJMD + $pendingPaymentsJMD;
-        $refundsTotalJMD = $orders->where('currency', 'JMD')->where('status', 'refunded')->sum('total_amount');
-
-        $cashReceivedJMD = $cashRecords->where('currency', 'JMD')->sum('amount');
+        $refundsTotalJMD = $major((int) $jmd->where('status', 'refunded')->sum('total_minor'));
+        $cashReceivedJMD = $major((int) $cashRecords->where('currency', 'JMD')->sum('amount_minor'));
         $settledFundsJMD = max(0, $confirmedPaymentsJMD - $refundsTotalJMD);
         $pendingTransfersCount = $orders->whereIn('status', ['payment_submitted', 'under_verification'])->count();
 
@@ -135,6 +136,7 @@ class HostDashboardController extends Controller
             'total_orders' => $orders->count(),
             'paid_orders_count' => $paidOrders->count(),
             'pending_verification_count' => $pendingTransfersCount,
+            'financials' => $financials,
             'cash_receipts_total' => $cashReceivedJMD,
             'gross_volume_jmd' => $grossVolumeJMD,
             'verified_payments_jmd' => $verifiedPaymentsJMD,
@@ -170,7 +172,7 @@ class HostDashboardController extends Controller
         $validated = $request->validate([
             'order_id' => ['required', 'exists:orders,id'],
             'amount' => ['required', 'numeric', 'min:0.01'],
-            'currency' => ['required', 'in:JMD,USD'],
+            'currency' => ['required', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
             'notes' => ['nullable', 'string', 'max:500'],
         ]);
 

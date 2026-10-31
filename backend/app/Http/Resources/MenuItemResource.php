@@ -21,6 +21,8 @@ class MenuItemResource extends JsonResource
             'pricingType' => $this->pricing_type,
             'priceUSD' => (float) $this->price_usd,
             'priceJMD' => (int) $this->price_jmd,
+            'priceMinor' => $this->price_minor !== null ? (int) $this->price_minor : null,
+            'currency' => $this->currency,
             'imageUrl' => $this->image_url ?? '',
             'customOptionGroups' => $this->custom_option_groups,
             'customAmountConfig' => $this->custom_amount_config,

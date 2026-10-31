@@ -8,8 +8,9 @@
     $currency = $quote['currency'];
     $lines = collect($quote['lines'])->map(fn ($line) => [
         'label' => $line['quantity'] . ' × ' . $line['label'] . ($line['detail'] ? ' (' . $line['detail'] . ')' : ''),
-        'amount' => $line['amount'],
+        'amount_minor' => $line['line_total_minor'],
     ])->all();
+    $totals = $quote['totals'];
     $selectedMethod = old('method', count($methods) === 1 ? $methods[0]['value'] : null);
 @endphp
 <div class="eb-checkout">
@@ -31,8 +32,9 @@
             <x-empty-state icon="tickets" title="Nothing in your order" description="Choose tickets or food to continue."
                 :action-href="route($backRoute, $event)" action-label="Choose items" />
         @else
-            <x-price-summary :lines="$lines" :fee="$quote['fee']" :total="$quote['total']" :currency="$currency"
-                note="Prices come from the organiser and are checked again when you place the order." />
+            <x-price-summary :lines="$lines" :charges="$totals->charges" :subtotal-minor="$totals->subtotalMinor"
+                :total-minor="$totals->totalMinor()" :currency="$currency"
+                note="This is the full price you will pay. Prices come from the organiser and are checked again when you place the order." />
             <a href="{{ route($backRoute, $event) }}" class="eb-text-label" style="display: inline-block; margin-top: var(--space-3);">Change order</a>
         @endif
     </section>
@@ -40,7 +42,7 @@
     @unless($quote['empty'])
         <form method="POST" action="{{ route('checkout.place', $event) }}" class="eb-card eb-checkout-body" novalidate>
             @csrf
-            <input type="hidden" name="quoted_total" value="{{ number_format($quote['total'], 2, '.', '') }}">
+            <input type="hidden" name="quoted_total_minor" value="{{ $totals->totalMinor() }}">
 
             <h2 class="eb-text-section-title" style="margin: 0 0 var(--space-3);">Your details</h2>
             <x-form-field name="customer_phone" type="tel" label="Phone or WhatsApp"
@@ -76,7 +78,7 @@
             @endif
 
             <div class="eb-checkout-bar">
-                <span><span class="eb-text-label" style="display: block;">Total</span><span class="eb-text-price">{{ \App\Support\Money::format($quote['total'], $currency) }}</span></span>
+                <span><span class="eb-text-label" style="display: block;">Total</span><span class="eb-text-price">{{ \App\Support\Money::formatMinor($totals->totalMinor(), $currency) }}</span></span>
                 <button type="submit" class="eb-btn eb-btn-primary" data-prevent-double-submit="true"
                         @disabled($methods === [] || $quote['problems'] !== [])>Place order</button>
             </div>

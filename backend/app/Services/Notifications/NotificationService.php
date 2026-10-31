@@ -138,7 +138,7 @@ class NotificationService
     private function compose(Order $order, string $trigger, array $context): array
     {
         $event = $order->event?->title ?? 'your event';
-        $total = self::money((float) $order->total_amount, $order->currency);
+        $total = \App\Support\Money::formatMinor((int) $order->total_minor, $order->currency);
         $code = $order->ticket_code;
 
         return match ($trigger) {
@@ -151,7 +151,7 @@ class NotificationService
             ],
             'payment_verified' => [
                 'Payment verified',
-                "EventBite: payment of " . self::money((float) $order->amount_paid, $order->currency)
+                "EventBite: payment of " . \App\Support\Money::formatMinor((int) $order->amount_paid_minor, $order->currency)
                     . " for order {$order->order_number} is confirmed. Show ticket {$code} at pickup for {$event}.",
             ],
             'payment_rejected' => [
@@ -162,9 +162,9 @@ class NotificationService
             ],
             'cash_receipt_recorded' => [
                 'Cash payment received',
-                'EventBite: cash payment of ' . self::money((float) ($context['amount'] ?? 0), $order->currency)
+                'EventBite: cash payment of ' . \App\Support\Money::format($context['amount'] ?? 0, $order->currency)
                     . " recorded for order {$order->order_number}" . (isset($context['receipt']) ? " (receipt {$context['receipt']})" : '')
-                    . '. Balance due: ' . self::money(max(0, (float) $order->total_amount - (float) $order->amount_paid), $order->currency) . '.',
+                    . '. Balance due: ' . \App\Support\Money::formatMinor($order->balanceMinor(), $order->currency) . '.',
             ],
             'pickup_instructions' => [
                 'Order ready for pickup',
@@ -183,8 +183,4 @@ class NotificationService
         };
     }
 
-    private static function money(float $amount, ?string $currency): string
-    {
-        return ($currency === 'USD' ? 'US$' : 'J$') . number_format($amount, $currency === 'USD' ? 2 : 0);
-    }
 }

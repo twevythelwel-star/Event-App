@@ -111,10 +111,10 @@ No production system was touched. No secrets appear in this report.
 |---|---|
 | Server-side pricing, currency, option and donation validation | Verified (tests) |
 | Ticket stock (event-row lock) and food stock (item lock) | Verified with sequential lock tests; no real parallel test |
-| Fees and totals; re-quote at placement | Verified |
+| Fees and totals; re-quote at placement | Verified: integer minor units, configured charge rules, exact total re-checked at placement (`ChargesAndTotalsTest`) |
 | Duplicate orders | Verified |
 | Payment-state transitions | **Missing rules (H3)** |
-| Refunds | Capped at the amount received; **race and no restock (H4)** |
+| Refunds | Capped at the amount received, locked, restocked on full refund (H4 fixed); each refund is an `order_adjustments` row |
 | Cash recording | **Verified on both host and staff paths** (C2 fixed) |
 | Redemption eligibility | Paid, once, matching event (server); **H1, H2, C3** |
 | Fulfilment quantities | Capped at the ordered quantity (server); **worker path unlocked, screen simulated** |
@@ -221,6 +221,41 @@ None. All 169 Laravel tests, 525 standalone runner tests and 202 frontend tests 
 - The PNG omits the text label, because GD has no reliable font here; the SVG and poster include it.
 - Not yet scanned with a physical phone camera.
 - The public event page doesn't show the event QR; only the host screen does.
+
+## Added 2026-10-30: currency and pricing system
+
+**Money model.**
+- USD is the default (`MONEY_DEFAULT_CURRENCY`, `config/money.php`). Each currency's minor unit, symbol, symbol position and separators come from that file, never from code. Adding a currency is a config entry.
+- `App\Support\Money` is integer minor units plus a currency. Parsing is exact text parsing, never through a float, and percentages are in basis points with half-up rounding. Mixing currencies throws.
+- New `*_minor` bigint columns (migration `2026_10_30_000020`) are authoritative on orders, order items, menu items, events, cash payments and disputes.
+- The old decimal columns are kept in step by `SyncsMinorUnits` for older readers (expand/contract). The migration backfills existing rows exactly and turns existing `refund_details` into `order_adjustments` rows.
+
+**Totals.**
+- `ChargeCalculator` + `OrderTotals` produce the item subtotal, discounts, fees (platform and host, kept apart) and tax separately. Total = subtotal − discount + fees + tax.
+- Each charge line is frozen on the order as an `order_charges` row, so later rule changes never alter a placed order.
+- Checkout shows every line before the customer confirms, and placement refuses an order whose server total differs from the shown total (`quoted_total_minor`).
+
+**Fees and taxes are configuration only.**
+- System administrators manage them at **Admin → Fees & Taxes** (`charge_rules`).
+  - kinds: platform fee, host fee, tax, discount
+  - methods: percent, fixed per order, fixed per item
+  - scopes: platform-wide, organizer, event, US state
+  - targets: tickets, food or both
+- Rules are switched off, never deleted. Every change is audit-logged.
+- No tax rate is built in. The old 5% fallback was removed. `STATE_SALES_TAX_RATES` is documented as unverified reference data that is never charged. Checkout states that tax is calculated from configured rates and is not tax advice.
+
+**Reports.** Host dashboard, admin overview, admin reports and the CSV export aggregate per currency from the minor columns. The CSV now has a refunded column. Amounts in different currencies are never added together (`RevenueSummary`).
+
+**Tests:**
+- `MoneyTest` (5): parsing, rounding, formatting and currency guards.
+- `ChargesAndTotalsTest` (7): exact totals with and without rules, rule scoping, the checkout breakdown and changed-total rejection, auditable refunds, per-currency reports, the backfill, and admin rule management.
+
+**Not done:**
+- The React SPA (`src/`, demo only) still does its own float maths.
+- Discount codes entered by customers are not built. Discounts are rules only.
+- Payment-provider tax services (e.g. Stripe Tax) are not integrated.
+- `EventManagementService` still asks for custom-amount ranges in both USD and JMD.
+- Rates must be confirmed by the business before any rule is switched on.
 
 ## New findings (2026-10-30)
 

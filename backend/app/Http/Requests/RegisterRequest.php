@@ -22,7 +22,7 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'string', 'email:rfc,dns', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'phone' => ['nullable', 'string', 'max:32'],
-            'preferred_display_currency' => ['nullable', 'string', 'in:JMD,USD'],
+            'preferred_display_currency' => ['nullable', 'string', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
             'agree_terms' => ['accepted'],
         ];
     }

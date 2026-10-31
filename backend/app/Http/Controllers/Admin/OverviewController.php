@@ -65,7 +65,7 @@ class OverviewController extends Controller
             $revenue = (clone $orders)
                 ->whereIn('status', ['paid', 'partially_paid'])
                 ->where('created_at', '>=', $since)
-                ->selectRaw('currency, SUM(amount_paid) as collected')
+                ->selectRaw('currency, SUM(amount_paid_minor) as collected')
                 ->groupBy('currency')
                 ->pluck('collected', 'currency');
         }

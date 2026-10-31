@@ -83,7 +83,7 @@ class AccountSettingsService
     public static function updateAttendeeDisplayCurrency(User $user, string $newCurrency): array
     {
         $currency = strtoupper(trim($newCurrency));
-        if (!in_array($currency, ['JMD', 'USD'])) {
+        if (!in_array($currency, \App\Support\Currency::supportedCodes(), true)) {
             throw new \InvalidArgumentException('Unsupported display currency. Choose JMD or USD.');
         }
 
@@ -142,7 +142,7 @@ class AccountSettingsService
     {
         $settings = HostEventSetting::firstOrNew(['organizer_id' => $organizerId]);
 
-        if (isset($data['default_currency']) && in_array(strtoupper($data['default_currency']), ['JMD', 'USD'])) {
+        if (isset($data['default_currency']) && in_array(strtoupper($data['default_currency']), \App\Support\Currency::supportedCodes(), true)) {
             $settings->default_currency = strtoupper($data['default_currency']);
         }
         if (!empty($data['default_timezone'])) {

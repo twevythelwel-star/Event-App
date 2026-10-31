@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SyncsMinorUnits;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Support\Str;
 
 class Event extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes, BelongsToTenant;
+    use HasFactory, HasUuids, SoftDeletes, BelongsToTenant, SyncsMinorUnits;
 
     /**
      * New events get UUID keys, but the seeded demo catalogue uses readable keys such as
@@ -62,6 +63,7 @@ class Event extends Model
         'pickup_instructions',
         'packaging_fee_usd',
         'packaging_fee_jmd',
+        'packaging_fee_minor',
         'supports_food_ordering',
         'ticket_tiers',
         'flyer_path',
@@ -79,6 +81,7 @@ class Event extends Model
         'is_flyer_public' => 'boolean',
         'packaging_fee_usd' => 'decimal:2',
         'packaging_fee_jmd' => 'integer',
+        'packaging_fee_minor' => 'integer',
         'supports_food_ordering' => 'boolean',
         'ticket_tiers' => 'array',
         'flyer_size_bytes' => 'integer',
@@ -167,5 +170,17 @@ class Event extends Model
             'og_image' => $this->flyer_path ? "https://islandevents.app/storage/{$this->flyer_path}" : "https://islandevents.app/images/default_caribbean_feast.jpg",
             'og_url' => $this->shareable_url,
         ];
+    }
+
+
+    /** @return array<string, string> */
+    protected function minorUnitPairs(): array
+    {
+        return [strtoupper($this->minorUnitCurrency()) === 'JMD' ? 'packaging_fee_jmd' : 'packaging_fee_usd' => 'packaging_fee_minor'];
+    }
+
+    protected function minorUnitCurrency(): string
+    {
+        return (string) ($this->currency ?: \App\Support\Currency::defaultCode());
     }
 }

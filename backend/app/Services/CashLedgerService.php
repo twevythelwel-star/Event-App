@@ -11,6 +11,7 @@ use App\Models\SecurityAuditLog;
 use App\Models\User;
 use App\Services\Checkout\StockReturnService;
 use App\Services\Notifications\NotificationService;
+use App\Support\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
@@ -76,12 +77,16 @@ class CashLedgerService
             throw new SecurityException('Unauthorized: you are not permitted to record cash for this event.');
         }
 
-        $amount = round((float) $data['amount'], 2);
-        if ($amount <= 0) {
+        $currency = $order?->currency ?? ($data['currency'] ?? $event->currency ?? \App\Support\Currency::defaultCode());
+        try {
+            $amount = Money::parse($data['amount'], $currency);
+        } catch (\InvalidArgumentException) {
+            throw new \InvalidArgumentException('Enter the cash amount as a number, e.g. 25.00.');
+        }
+        if (!$amount->isPositive()) {
             throw new \InvalidArgumentException('Cash amount must be greater than zero.');
         }
 
-        $currency = $order?->currency ?? ($data['currency'] ?? $event->currency ?? 'USD');
         if ($order && !empty($data['currency']) && $data['currency'] !== $order->currency) {
             throw new \InvalidArgumentException("This order is priced in {$order->currency}; record the cash in {$order->currency}.");
         }
@@ -90,9 +95,9 @@ class CashLedgerService
             if (in_array($order->status, ['refunded', 'rejected'], true)) {
                 throw new \InvalidArgumentException("Cash cannot be recorded against a {$order->status} order.");
             }
-            $balance = round((float) $order->total_amount - (float) $order->amount_paid, 2);
-            if ($amount > $balance) {
-                throw new \InvalidArgumentException("Amount exceeds the outstanding balance of {$currency} " . number_format($balance, 2) . '.');
+            $balance = Money::ofMinor($order->balanceMinor(), $currency);
+            if ($amount->compareTo($balance) > 0) {
+                throw new \InvalidArgumentException('Amount exceeds the outstanding balance of ' . $balance->display() . '.');
             }
         }
 
@@ -121,7 +126,7 @@ class CashLedgerService
                 'event_name' => $event?->title,
                 'order_number' => $order?->order_number,
                 'ticket_code' => $order?->ticket_code,
-                'amount' => $amount,
+                'amount_minor' => $amount->minor(),
                 'currency' => $currency,
                 'received_at' => !empty($data['received_at']) ? $data['received_at'] : now(),
                 'received_by' => $user->name,
@@ -130,18 +135,18 @@ class CashLedgerService
 
             if ($order) {
                 $order = Order::withoutGlobalScopes()->lockForUpdate()->find($order->id);
-                $paid = round((float) $order->amount_paid + $amount, 2);
-                $order->amount_paid = $paid;
-                $order->status = $paid >= (float) $order->total_amount ? 'paid' : 'partially_paid';
+                $paid = (int) $order->amount_paid_minor + $amount->minor();
+                $order->amount_paid_minor = $paid;
+                $order->status = $paid >= (int) $order->total_minor ? 'paid' : 'partially_paid';
                 $order->verified_at = now();
                 $order->verified_by = $user->name;
                 $order->verification_notes = "Cash receipt {$receipt->receipt_number} recorded by {$user->name}.";
                 $order->save();
 
-                NotificationService::notifyOrder($order, 'cash_receipt_recorded', ['amount' => $amount, 'receipt' => $receipt->receipt_number], $receipt->id);
+                NotificationService::notifyOrder($order, 'cash_receipt_recorded', ['amount' => $amount->toDecimalString(), 'receipt' => $receipt->receipt_number], $receipt->id);
             }
 
-            $this->audit($user, 'cash_receipt_recorded', $receipt->id, "Cash receipt {$receipt->receipt_number}: {$currency} {$amount}" . ($order ? " for order {$order->order_number}" : ' (walk-up)') . '.');
+            $this->audit($user, 'cash_receipt_recorded', $receipt->id, "Cash receipt {$receipt->receipt_number}: {$amount->display()} ({$currency})" . ($order ? " for order {$order->order_number}" : ' (walk-up)') . '.');
 
             return ['receipt' => $receipt, 'order' => $order?->fresh(['items', 'event'])];
         });
@@ -150,7 +155,7 @@ class CashLedgerService
     /**
      * @return array{reversal: CashPayment, order: ?Order}
      */
-    public function reverseReceipt(User $user, string $receiptId, float $amount, string $reason): array
+    public function reverseReceipt(User $user, string $receiptId, float|int|string $amount, string $reason): array
     {
         $receipt = $this->ledgerQuery($user)->whereKey($receiptId)->first();
         if (!$receipt) {
@@ -168,11 +173,11 @@ class CashLedgerService
             throw new \InvalidArgumentException('A reason is required for a cash reversal.');
         }
 
-        $amount = round($amount, 2);
-        $alreadyReversed = abs((float) CashPayment::withoutGlobalScopes()->where('original_record_id', $receipt->id)->sum('amount'));
-        $reversible = round((float) $receipt->amount - $alreadyReversed, 2);
-        if ($amount <= 0 || $amount > $reversible) {
-            throw new \InvalidArgumentException("Reversal must be more than zero and at most {$receipt->currency} " . number_format($reversible, 2) . '.');
+        $amount = Money::parse($amount, $receipt->currency);
+        $alreadyReversed = abs((int) CashPayment::withoutGlobalScopes()->where('original_record_id', $receipt->id)->sum('amount_minor'));
+        $reversible = (int) $receipt->amount_minor - $alreadyReversed;
+        if (!$amount->isPositive() || $amount->minor() > $reversible) {
+            throw new \InvalidArgumentException("Reversal must be more than zero and at most " . Money::formatMinor(max(0, $reversible), $receipt->currency) . " ({$receipt->currency}).");
         }
 
         return DB::transaction(function () use ($user, $receipt, $amount, $reason) {
@@ -187,7 +192,7 @@ class CashLedgerService
                 'event_name' => $receipt->event_name,
                 'order_number' => $receipt->order_number,
                 'ticket_code' => $receipt->ticket_code,
-                'amount' => -$amount,
+                'amount_minor' => -$amount->minor(),
                 'currency' => $receipt->currency,
                 'received_at' => now(),
                 'received_by' => $receipt->received_by,
@@ -202,17 +207,17 @@ class CashLedgerService
             if ($receipt->order_id) {
                 $order = Order::withoutGlobalScopes()->lockForUpdate()->find($receipt->order_id);
                 if ($order) {
-                    $paid = max(0, round((float) $order->amount_paid - $amount, 2));
-                    $order->amount_paid = $paid;
+                    $paid = max(0, (int) $order->amount_paid_minor - $amount->minor());
+                    $order->amount_paid_minor = $paid;
                     if ($order->status !== 'refunded') {
-                        $order->status = $paid <= 0 ? 'awaiting_payment' : ($paid >= (float) $order->total_amount ? 'paid' : 'partially_paid');
+                        $order->status = $paid <= 0 ? 'awaiting_payment' : ($paid >= (int) $order->total_minor ? 'paid' : 'partially_paid');
                     }
                     $order->verification_notes = "Reversal {$reversal->receipt_number} applied by {$user->name}: {$reason}";
                     $order->save();
                 }
             }
 
-            $this->audit($user, 'cash_receipt_reversed', $reversal->id, "Reversal {$reversal->receipt_number} of {$receipt->receipt_number}: {$receipt->currency} {$amount}. Reason: {$reason}");
+            $this->audit($user, 'cash_receipt_reversed', $reversal->id, "Reversal {$reversal->receipt_number} of {$receipt->receipt_number}: {$amount->display()} ({$receipt->currency}). Reason: {$reason}");
 
             return ['reversal' => $reversal, 'order' => $order?->fresh(['items', 'event'])];
         });
@@ -222,7 +227,7 @@ class CashLedgerService
      * Record a refund paid back to the customer. Partial refunds keep the order's status; refunding everything
      * received marks the order refunded (which also blocks further handover).
      */
-    public function refundOrder(User $user, string $orderId, float $amount, string $reason): Order
+    public function refundOrder(User $user, string $orderId, float|int|string $amount, string $reason): Order
     {
         $order = $this->operations->operableOrdersQuery($user)->whereKey($orderId)->first();
         if (!$order) {
@@ -237,22 +242,39 @@ class CashLedgerService
             throw new \InvalidArgumentException('A reason is required for a refund.');
         }
 
-        $amount = round($amount, 2);
+        try {
+            $amount = Money::parse($amount, $order->currency);
+        } catch (\InvalidArgumentException) {
+            throw new \InvalidArgumentException('Enter the refund amount as a number, e.g. 25.00.');
+        }
 
         // The refundable amount is read from the order row locked for update, so two refunds sent at the same
         // moment cannot both pass the check against the same, stale history.
         return DB::transaction(function () use ($user, $order, $amount, $reason) {
             $order = Order::withoutGlobalScopes()->lockForUpdate()->find($order->id);
 
-            $refunds = self::refundEntries($order);
-            $alreadyRefunded = array_sum(array_column($refunds, 'amount'));
-            $refundable = round((float) $order->amount_paid - $alreadyRefunded, 2);
-            if ($amount <= 0 || $amount > $refundable) {
-                throw new \InvalidArgumentException("Refund must be more than zero and at most {$order->currency} " . number_format(max(0, $refundable), 2) . ' (the amount received and not yet refunded).');
+            $refundable = Money::ofMinor((int) $order->amount_paid_minor - (int) $order->refunded_minor, $order->currency);
+            if (!$amount->isPositive() || $amount->compareTo($refundable) > 0) {
+                throw new \InvalidArgumentException("Refund must be more than zero and at most " . $refundable->max(Money::zero($order->currency))->display() . " ({$order->currency}), the amount received and not yet refunded.");
             }
 
+            // The refund is its own auditable row; refund_details is kept in step for older readers.
+            \App\Models\OrderAdjustment::create([
+                'order_id' => $order->id,
+                'organizer_id' => $order->organizer_id,
+                'type' => \App\Models\OrderAdjustment::TYPE_REFUND,
+                'amount_minor' => $amount->minor(),
+                'currency' => $order->currency,
+                'reason' => $reason,
+                'actor_user_id' => $user->id,
+                'actor_name' => $user->name,
+                'occurred_at' => now(),
+            ]);
+            $order->refunded_minor = (int) $order->refunded_minor + $amount->minor();
+
+            $refunds = self::refundEntries($order);
             $refunds[] = [
-                'amount' => $amount,
+                'amount' => $amount->toDecimalString(),
                 'reason' => $reason,
                 'refundedAt' => now()->toIso8601String(),
                 'refundedBy' => $user->name,
@@ -260,7 +282,7 @@ class CashLedgerService
             $order->refund_details = $refunds;
 
             $stockNote = '';
-            if ($alreadyRefunded + $amount >= (float) $order->amount_paid && $order->status !== 'refunded') {
+            if ((int) $order->refunded_minor >= (int) $order->amount_paid_minor && $order->status !== 'refunded') {
                 $order->status = 'refunded';
                 // Fully refunded: unused tickets and portions go back on sale (partial refunds return nothing).
                 $returned = $this->stock->returnForRefund($order);
@@ -268,7 +290,7 @@ class CashLedgerService
             }
             $order->save();
 
-            $this->audit($user, 'order_refunded', $order->id, "Refund of {$order->currency} {$amount} on order {$order->order_number}. Reason: {$reason}.{$stockNote}", 'orders');
+            $this->audit($user, 'order_refunded', $order->id, "Refund of {$amount->display()} ({$order->currency}) on order {$order->order_number}. Reason: {$reason}.{$stockNote}", 'orders');
 
             return $order->fresh(['items', 'event']);
         });
@@ -277,12 +299,25 @@ class CashLedgerService
     /**
      * Refund history as a list of {amount, reason, refundedAt, refundedBy}, tolerating the legacy gateway format.
      *
-     * @return array<int, array{amount: float, reason: string, refundedAt: string, refundedBy: string}>
+     * Amounts are read exactly (never through a float); order_adjustments is the authoritative record.
+     *
+     * @return array<int, array{amount: float, amount_minor: int, reason: string, refundedAt: string, refundedBy: string}>
      */
     public static function refundEntries(Order $order): array
     {
+        $money = static function (array $entry) use ($order): Money {
+            try {
+                return isset($entry['amount_minor'])
+                    ? Money::ofMinor((int) $entry['amount_minor'], $order->currency)
+                    : Money::parse($entry['amount'] ?? 0, $order->currency);
+            } catch (\InvalidArgumentException) {
+                return Money::zero($order->currency);
+            }
+        };
+
         return array_map(fn (array $entry) => [
-            'amount' => (float) ($entry['amount'] ?? (($entry['amount_minor'] ?? 0) / 100)),
+            'amount' => $money($entry)->toMajorNumber(),
+            'amount_minor' => $money($entry)->minor(),
             'reason' => (string) ($entry['reason'] ?? ''),
             'refundedAt' => (string) ($entry['refundedAt'] ?? $entry['timestamp'] ?? ''),
             'refundedBy' => (string) ($entry['refundedBy'] ?? $entry['authorized_by'] ?? ''),

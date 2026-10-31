@@ -43,7 +43,7 @@ class BladeComponentsTest extends TestCase
     public function test_money_format(): void
     {
         $this->assertSame('J$2,250.00', Money::format(2250, 'JMD'));
-        $this->assertSame('US$13.50', Money::format('13.5', 'usd'));
+        $this->assertSame('$13.50', Money::format('13.5', 'usd')); // USD symbol comes from config/money.php
     }
 
     public function test_status_badge_uses_one_payment_wording(): void
@@ -87,7 +87,7 @@ class BladeComponentsTest extends TestCase
 
         $item->available_stock = 0;
         $this->blade('<x-food-card :item="$item" currency="USD" />', ['item' => $item])
-            ->assertSee('US$12.00')->assertSee('Sold out')->assertSee('aria-disabled="true"', false);
+            ->assertSee('$12.00')->assertSee('Sold out')->assertSee('aria-disabled="true"', false);
     }
 
     public function test_ticket_card_shows_code_total_and_status_without_qr(): void

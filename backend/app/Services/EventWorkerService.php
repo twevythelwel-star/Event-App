@@ -241,7 +241,7 @@ class EventWorkerService
             'customer_phone' => $order->customer_phone,
             'status' => $order->status,
             'payment_method' => $order->method,
-            'total_cents' => (int) round((float) $order->total_amount * 100),
+            'total_cents' => (int) $order->total_minor,
             'checked_in_at' => $order->checked_in_at?->format('Y-m-d H:i:s'),
         ];
 

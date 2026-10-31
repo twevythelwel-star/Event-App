@@ -41,7 +41,7 @@ class ReportController extends Controller
                 'label' => $group['label'],
                 'count' => (clone $rows)->count(),
                 'amounts' => $financial
-                    ? (clone $rows)->selectRaw('currency, SUM(total_amount) as total, SUM(amount_paid) as paid')->groupBy('currency')->get()
+                    ? (clone $rows)->selectRaw('currency, SUM(total_minor) as total, SUM(amount_paid_minor) as paid')->groupBy('currency')->get()
                     : collect(),
             ];
         });
@@ -59,7 +59,7 @@ class ReportController extends Controller
             'byGroup' => $byGroup,
             'financial' => $financial,
             'refunds' => $financial
-                ? (clone $orders)->where('status', 'refunded')->selectRaw('currency, COUNT(*) as orders, SUM(total_amount) as total')->groupBy('currency')->get()
+                ? (clone $orders)->where('refunded_minor', '>', 0)->selectRaw('currency, COUNT(*) as orders, SUM(refunded_minor) as total')->groupBy('currency')->get()
                 : collect(),
             'redemptions' => $this->redemptions($admin, $from, $to, $filters['event'] ?? null),
             'staffActivity' => $this->staffActivity($admin, $from, $to, $filters['event'] ?? null),
@@ -84,7 +84,8 @@ class ReportController extends Controller
                 SUM(CASE WHEN status = 'awaiting_payment' THEN 1 ELSE 0 END) as pending,
                 SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected,
                 SUM(CASE WHEN status = 'refunded' THEN 1 ELSE 0 END) as refunded,
-                SUM(CASE WHEN status IN ('paid','partially_paid') THEN amount_paid ELSE 0 END) as collected")
+                SUM(CASE WHEN status IN ('paid','partially_paid') THEN amount_paid_minor ELSE 0 END) as collected,
+                SUM(refunded_minor) as refunded_money")
             ->groupBy('event_id', 'currency')
             ->get();
 
@@ -102,7 +103,7 @@ class ReportController extends Controller
 
         return response()->streamDownload(function () use ($rows, $titles) {
             $out = fopen('php://output', 'w');
-            fputcsv($out, ['Event', 'Currency', 'Orders placed', 'Verified', 'Confirmation submitted', 'Pending', 'Rejected', 'Refunded', 'Collected (verified orders)']);
+            fputcsv($out, ['Event', 'Currency', 'Orders placed', 'Verified', 'Confirmation submitted', 'Pending', 'Rejected', 'Refunded', 'Collected (verified orders)', 'Refunded amount']);
             foreach ($rows as $row) {
                 fputcsv($out, [
                     $this->csvSafe($titles[$row->event_id] ?? 'No event'),
@@ -113,7 +114,9 @@ class ReportController extends Controller
                     $row->pending,
                     $row->rejected,
                     $row->refunded,
-                    number_format((float) $row->collected, 2, '.', ''),
+                    // Exact decimal text from integer minor units, one currency per row; never summed across currencies.
+                    \App\Support\Money::ofMinor((int) $row->collected, $row->currency)->toDecimalString(),
+                    \App\Support\Money::ofMinor((int) $row->refunded_money, $row->currency)->toDecimalString(),
                 ]);
             }
             fclose($out);

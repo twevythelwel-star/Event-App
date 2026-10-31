@@ -37,7 +37,7 @@
                     <div class="ac-card-head"><h2 id="collected-heading">Payments verified · last {{ $periodDays }} days</h2></div>
                     <div class="ac-card-body">
                         @forelse($revenue as $currency => $amount)
-                            <div class="ac-metric-value" style="font-size:22px">{{ $currency }} {{ number_format((float) $amount, 2) }}</div>
+                            <div class="ac-metric-value" style="font-size:22px">{{ \App\Support\Money::formatMinor((int) $amount, $currency) }} <span style="font-size:13px;font-weight:600">{{ $currency }}</span></div>
                         @empty
                             <p style="margin:0;color:var(--ac-text-2)">No verified payments in this period.</p>
                         @endforelse

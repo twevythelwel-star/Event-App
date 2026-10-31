@@ -129,7 +129,8 @@ class OrderPlacementService
 
                     // Authoritative Price Calculation in exact minor units
                     $selectedChoices = $entry['selected_choices'] ?? [];
-                    $customDonationAmount = isset($entry['custom_donation_amount']) ? (float) $entry['custom_donation_amount'] : null;
+                    // Passed through as given (text or number) and parsed exactly; never cast to float.
+                    $customDonationAmount = $entry['custom_donation_amount'] ?? null;
 
                     $priceResult = PriceCalculationService::calculateItemPrice(
                         $menuItem,
@@ -145,11 +146,13 @@ class OrderPlacementService
                         'name' => $menuItem->name, // Frozen snapshot of name
                         'category' => $menuItem->category, // Frozen snapshot of category
                         'pricing_type' => $menuItem->pricing_type,
-                        'base_price' => $priceResult['base_price'], // Frozen snapshot of base price
+                        'base_price' => \App\Support\Money::ofMinor($priceResult['base_price_minor'], $currency)->toDecimalString(), // Frozen snapshot of base price
                         'selected_options_summary' => $priceResult['selected_options_summary'], // Frozen options
-                        'options_total_extra' => $priceResult['options_total_extra'],
-                        'custom_donation_amount' => $customDonationAmount,
-                        'final_item_price' => $priceResult['final_item_price'], // Frozen snapshot
+                        'options_minor' => $priceResult['options_extra_minor'],
+                        'custom_donation_amount' => $menuItem->pricing_type === 'custom_amount'
+                            ? \App\Support\Money::ofMinor($priceResult['final_price_minor'], $currency)->toDecimalString()
+                            : null,
+                        'unit_price_minor' => $priceResult['final_price_minor'], // Frozen snapshot, exact
                         'currency' => $currency,
                         'quantity' => $quantity,
                         'collected_quantity' => 0,
@@ -167,18 +170,18 @@ class OrderPlacementService
                     $event->save();
                 }
 
-                // Calculate Order Totals in exact integer cents; packaging fee applies when food items are present
-                $hasFoodItems = false;
-                foreach ($orderItemsToCreate as $it) {
-                    if (($it['category'] ?? '') !== 'Tickets') {
-                        $hasFoodItems = true;
-                        break;
-                    }
-                }
-                $packagingFee = $hasFoodItems
-                    ? (float) ($currency === 'JMD' ? ($event->packaging_fee_jmd ?? 0) : ($event->packaging_fee_usd ?? 0))
-                    : 0.0;
-                $totals = PriceCalculationService::calculateOrderTotals($orderItemsToCreate, $packagingFee, $currency);
+                // Totals in exact integer minor units: item subtotal, then the configured discounts, fees and
+                // taxes (ChargeCalculator, the same rules the checkout preview showed), then the total.
+                $pricedLines = array_map(fn (array $it) => [
+                    'kind' => !empty($it['ticket_tier_id']) ? 'ticket' : 'food',
+                    'quantity' => (int) $it['quantity'],
+                    'line_total_minor' => (int) $it['unit_price_minor'] * (int) $it['quantity'],
+                ], $orderItemsToCreate);
+                $totals = \App\Services\Pricing\OrderTotals::from(
+                    $currency,
+                    $pricedLines,
+                    (new \App\Services\Pricing\ChargeCalculator())->charges($event, $pricedLines, $currency),
+                );
 
                 // Determine safe initial payment status
                 // RULE: Do not mark an order paid merely because it was submitted!
@@ -217,11 +220,8 @@ class OrderPlacementService
                     'customer_phone' => $payload['customer_phone'] ?? ($authUser?->phone ?? ''),
                     'email' => $authUser?->email ?? ($payload['email'] ?? null),
                     'method' => $method,
-                    'subtotal' => $totals['subtotal'],
-                    'packaging_fee' => $totals['packaging_fee'],
-                    'total_amount' => $totals['total_amount'],
-                    'amount_paid' => 0.00, // Never auto-credited without verification
-                    'currency' => $currency,
+                    ...$totals->orderAttributes(),
+                    'amount_paid_minor' => 0, // Never auto-credited without verification
                     'status' => $initialStatus,
                     'fulfillment_status' => 'unprepared',
                     'payment_reference' => $paymentRef ?: null,
@@ -236,6 +236,11 @@ class OrderPlacementService
                 foreach ($orderItemsToCreate as $itemData) {
                     $itemData['order_id'] = $order->id;
                     OrderItem::create($itemData);
+                }
+
+                // Each fee, tax and discount line is frozen with the order; later rule changes never alter it.
+                foreach ($totals->charges as $charge) {
+                    \App\Models\OrderCharge::create($charge + ['order_id' => $order->id]);
                 }
 
                 NotificationService::notifyOrder($order, 'order_received');
@@ -302,8 +307,8 @@ class OrderPlacementService
                 }
 
                 // Only the host's own price in the order currency; never a guessed or converted one.
-                $unitPrice = TicketTierCatalog::priceFor($tier, $currency);
-                if ($unitPrice === null) {
+                $unitPriceMinor = TicketTierCatalog::priceMinorFor($tier, $currency);
+                if ($unitPriceMinor === null) {
                     throw new OrderPlacementException("'{$name}' has no {$currency} price set by the organizer, so it can't be sold yet.");
                 }
 
@@ -314,11 +319,11 @@ class OrderPlacementService
                     'name' => $name,
                     'category' => 'Tickets',
                     'pricing_type' => 'fixed',
-                    'base_price' => $unitPrice,
+                    'base_price' => \App\Support\Money::ofMinor($unitPriceMinor, $currency)->toDecimalString(),
                     'selected_options_summary' => ['Digital Admission Pass'],
-                    'options_total_extra' => 0.0,
+                    'options_minor' => 0,
                     'custom_donation_amount' => null,
-                    'final_item_price' => $unitPrice,
+                    'unit_price_minor' => $unitPriceMinor,
                     'currency' => $currency,
                     'quantity' => $quantity,
                     'collected_quantity' => 0,

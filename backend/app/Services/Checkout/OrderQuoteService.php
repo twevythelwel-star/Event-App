@@ -8,21 +8,30 @@ use App\Models\Event;
 use App\Models\MenuItem;
 use App\Services\OrderPlacementException;
 use App\Services\PriceCalculationService;
+use App\Services\Pricing\ChargeCalculator;
+use App\Services\Pricing\OrderTotals;
+use App\Support\Money;
 
 /**
- * Read-only price preview for a cart, so the customer sees what they will pay and what is no longer
- * available before submitting. It reserves nothing: OrderPlacementService re-prices and re-checks
- * stock inside a locked transaction when the order is actually placed.
+ * Read-only price preview for a cart, so the customer sees the complete price (items, discounts, fees,
+ * taxes and total) and anything no longer available before confirming. It reserves nothing:
+ * OrderPlacementService re-prices, re-applies the same charges and re-checks stock inside a locked
+ * transaction when the order is placed. All amounts are integer minor units.
  */
 final class OrderQuoteService
 {
+    public function __construct(
+        private readonly ChargeCalculator $charges = new ChargeCalculator(),
+    ) {
+    }
+
     /**
-     * @param array{tiers?: array<string, int>, items?: array<string, array{quantity: int, choices?: array, amount?: float|null}>} $cart
-     * @return array{currency: string, lines: list<array>, subtotal: float, fee: float, total: float, problems: list<string>, has_food: bool, empty: bool}
+     * @param array{tiers?: array<string, int>, items?: array<string, array{quantity: int, choices?: array, amount?: string|float|null}>} $cart
+     * @return array{currency: string, lines: list<array>, totals: OrderTotals, subtotal: float, fee: float, tax: float, discount: float, total: float, total_minor: int, problems: list<string>, has_food: bool, empty: bool}
      */
     public function quote(Event $event, array $cart): array
     {
-        $currency = PriceCalculationService::lockAuthoritativeCurrency((string) ($event->currency ?: 'USD'));
+        $currency = PriceCalculationService::lockAuthoritativeCurrency((string) $event->currency);
         $lines = [];
         $problems = [];
 
@@ -41,21 +50,10 @@ final class OrderQuoteService
                 $problems[] = $tier['available'] === 0
                     ? "{$tier['name']} is sold out."
                     : "Only {$tier['available']} {$tier['name']} left. Lower the quantity to continue.";
-            }
-            elseif ($quantity > $tier['max']) {
+            } elseif ($quantity > $tier['max']) {
                 $problems[] = "{$tier['name']}: at most {$tier['max']} per order.";
             }
-            $lines[] = [
-                'kind' => 'ticket',
-                'id' => $tier['id'],
-                'label' => $tier['name'],
-                'detail' => null,
-                'quantity' => $quantity,
-                'unit' => $tier['price'],
-                'amount' => round($tier['price'] * $quantity, 2),
-                'category' => 'Tickets',
-                'final_item_price' => $tier['price'],
-            ];
+            $lines[] = $this->line('ticket', $tier['id'], $tier['name'], null, $quantity, (int) $tier['price_minor'], 'Tickets', $currency);
         }
 
         $itemIds = array_keys($cart['items'] ?? []);
@@ -79,42 +77,52 @@ final class OrderQuoteService
                     : "Only {$item->available_stock} {$item->name} left. Lower the quantity to continue.";
             }
             try {
-                $price = PriceCalculationService::calculateItemPrice(
-                    $item,
-                    $currency,
-                    (array) ($entry['choices'] ?? []),
-                    isset($entry['amount']) ? (float) $entry['amount'] : null,
-                );
+                $price = PriceCalculationService::calculateItemPrice($item, $currency, (array) ($entry['choices'] ?? []), $entry['amount'] ?? null);
             } catch (OrderPlacementException $e) {
                 $problems[] = $e->getMessage();
                 continue;
             }
-            $lines[] = [
-                'kind' => 'food',
-                'id' => $item->id,
-                'label' => $item->name,
-                'detail' => $price['selected_options_summary'] ? implode(' · ', $price['selected_options_summary']) : null,
-                'quantity' => $quantity,
-                'unit' => $price['final_item_price'],
-                'amount' => round($price['final_item_price'] * $quantity, 2),
-                'category' => $item->category,
-                'final_item_price' => $price['final_item_price'],
-            ];
+            $detail = $price['selected_options_summary'] ? implode(' · ', $price['selected_options_summary']) : null;
+            $lines[] = $this->line('food', $item->id, $item->name, $detail, $quantity, (int) $price['final_price_minor'], $item->category, $currency);
         }
 
-        $hasFood = collect($lines)->contains(fn ($line) => $line['kind'] === 'food');
-        $fee = $hasFood ? (float) ($currency === 'JMD' ? ($event->packaging_fee_jmd ?? 0) : ($event->packaging_fee_usd ?? 0)) : 0.0;
-        $totals = PriceCalculationService::calculateOrderTotals($lines, $fee, $currency);
+        $totals = OrderTotals::from($currency, $lines, $this->charges->charges($event, $lines, $currency));
+        $major = fn (int $minor) => Money::ofMinor($minor, $currency)->toMajorNumber();
 
         return [
             'currency' => $currency,
             'lines' => $lines,
-            'subtotal' => (float) $totals['subtotal'],
-            'fee' => (float) $totals['packaging_fee'],
-            'total' => (float) $totals['total_amount'],
+            'totals' => $totals,
+            // Major-unit figures for views and JSON clients that expect numbers; the minor values are authoritative.
+            'subtotal' => $major($totals->subtotalMinor),
+            'discount' => $major($totals->discountMinor),
+            'fee' => $major($totals->feesMinor()),
+            'tax' => $major($totals->taxMinor),
+            'total' => $major($totals->totalMinor()),
+            'total_minor' => $totals->totalMinor(),
             'problems' => array_values(array_unique($problems)),
-            'has_food' => $hasFood,
+            'has_food' => collect($lines)->contains(fn ($line) => $line['kind'] === 'food'),
             'empty' => $lines === [],
+        ];
+    }
+
+    private function line(string $kind, string $id, string $label, ?string $detail, int $quantity, int $unitMinor, ?string $category, string $currency): array
+    {
+        $lineTotal = $unitMinor * $quantity;
+
+        return [
+            'kind' => $kind,
+            'id' => $id,
+            'label' => $label,
+            'detail' => $detail,
+            'quantity' => $quantity,
+            'unit_minor' => $unitMinor,
+            'line_total_minor' => $lineTotal,
+            'unit' => Money::ofMinor($unitMinor, $currency)->toMajorNumber(),
+            'amount' => Money::ofMinor($lineTotal, $currency)->toMajorNumber(),
+            'category' => $category,
+            'final_item_price' => Money::ofMinor($unitMinor, $currency)->toMajorNumber(),
+            'final_price_minor' => $unitMinor,
         ];
     }
 

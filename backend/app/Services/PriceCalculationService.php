@@ -3,64 +3,74 @@
 namespace App\Services;
 
 use App\Models\MenuItem;
+use App\Support\Money;
 
+/**
+ * Item prices and order financials in exact integer minor units (see App\Support\Money).
+ * Amounts in major units are accepted and returned only at the edges, for older callers.
+ */
 class PriceCalculationService
 {
     /**
-     * Convert major currency units (e.g. $18.50 or J$2800) into integer minor units (cents).
+     * Major units (e.g. 18.50) to integer minor units (1850), parsed exactly.
      */
-    public static function toMinorUnits(float $amount, string $currency = 'USD'): int
+    public static function toMinorUnits(float|int|string $amount, string $currency = 'USD'): int
     {
-        return (int) round($amount * 100);
+        return Money::parse($amount, $currency)->minor();
     }
 
     /**
-     * Convert integer minor units back to major units without floating point distortion.
+     * Minor units back to major units, for older callers that expect a number.
      */
     public static function fromMinorUnits(int $minorUnits, string $currency = 'USD'): float
     {
-        return $minorUnits / 100.0;
+        return Money::ofMinor($minorUnits, $currency)->toMajorNumber();
     }
 
     /**
-     * Calculate item price in exact integer minor units.
+     * Price of one unit of a dish in the order currency: base price, chosen option extras, or the
+     * customer's own amount for "pay what you like" items, validated against the host's minimum.
      *
-     * @param MenuItem $item
-     * @param string $currency 'USD' or 'JMD'
      * @param array $selectedChoiceIndices [groupId => choiceIndex]
-     * @param float|null $customDonationAmount
-     * @return array
+     * @return array{base_price: float, options_total_extra: float, final_item_price: float, base_price_minor: int, options_extra_minor: int, final_price_minor: int, selected_options_summary: list<string>}
      */
     public static function calculateItemPrice(
         MenuItem $item,
         string $currency,
         array $selectedChoiceIndices = [],
-        ?float $customDonationAmount = null
+        float|int|string|null $customDonationAmount = null
     ): array {
         if ($item->pricing_type === 'custom_amount') {
-            $amt = $customDonationAmount ?? 0.0;
             $config = is_array($item->custom_amount_config) ? $item->custom_amount_config : [];
-            $minimum = (float) ($currency === 'JMD' ? ($config['minJMD'] ?? $config['min_jmd'] ?? 0) : ($config['minUSD'] ?? $config['min_usd'] ?? 0));
-            if ($amt <= 0 || $amt < $minimum) {
+            $minimumRaw = $currency === 'JMD'
+                ? ($config['minJMD'] ?? $config['min_jmd'] ?? 0)
+                : ($config['minUSD'] ?? $config['min_usd'] ?? 0);
+            $minimum = Money::parse($minimumRaw ?? 0, $currency);
+
+            try {
+                $amount = Money::parse($customDonationAmount ?? 0, $currency);
+            } catch (\InvalidArgumentException) {
+                throw new OrderPlacementException("Enter a valid amount for '{$item->name}'.");
+            }
+            if (!$amount->isPositive() || $amount->compareTo($minimum) < 0) {
                 throw new OrderPlacementException(
-                    "Enter an amount for '{$item->name}'" . ($minimum > 0 ? ' of at least ' . $currency . ' ' . number_format($minimum, 2) : '') . '.'
+                    "Enter an amount for '{$item->name}'" . ($minimum->isPositive() ? ' of at least ' . $minimum->display() : '') . '.'
                 );
             }
-            $amtMinor = self::toMinorUnits($amt, $currency);
+
             return [
-                'base_price' => $amt,
+                'base_price' => $amount->toMajorNumber(),
                 'options_total_extra' => 0.0,
-                'final_item_price' => $amt,
-                'base_price_minor' => $amtMinor,
+                'final_item_price' => $amount->toMajorNumber(),
+                'base_price_minor' => $amount->minor(),
                 'options_extra_minor' => 0,
-                'final_price_minor' => $amtMinor,
-                'selected_options_summary' => ["Custom Contribution: {$currency} " . number_format($amt, 2)],
+                'final_price_minor' => $amount->minor(),
+                'selected_options_summary' => ['Custom Contribution: ' . $amount->display()],
             ];
         }
 
-        $basePrice = $currency === 'JMD' ? (float) $item->price_jmd : (float) $item->price_usd;
-        $basePriceMinor = self::toMinorUnits($basePrice, $currency);
-        $optionsExtraMinor = 0;
+        $base = self::basePrice($item, $currency);
+        $options = Money::zero($currency);
         $summaryList = [];
 
         if ($item->pricing_type === 'customizable' && !empty($item->custom_option_groups)) {
@@ -74,71 +84,54 @@ class PriceCalculationService
                 }
 
                 if ($choice) {
-                    $extra = $currency === 'JMD'
-                        ? (float) ($choice['extraPriceJMD'] ?? 0)
-                        : (float) ($choice['extraPriceUSD'] ?? 0);
-                    $extraMinor = self::toMinorUnits($extra, $currency);
-                    $optionsExtraMinor += $extraMinor;
+                    $extra = $currency === 'JMD' ? ($choice['extraPriceJMD'] ?? 0) : ($choice['extraPriceUSD'] ?? 0);
+                    $options = $options->plus(Money::parse($extra ?? 0, $currency));
                     $summaryList[] = "{$group['title']}: {$choice['label']}";
                 }
             }
         }
 
-        $finalPriceMinor = $basePriceMinor + $optionsExtraMinor;
+        $final = $base->plus($options);
 
         return [
-            'base_price' => $basePrice,
-            'options_total_extra' => self::fromMinorUnits($optionsExtraMinor, $currency),
-            'final_item_price' => self::fromMinorUnits($finalPriceMinor, $currency),
-            'base_price_minor' => $basePriceMinor,
-            'options_extra_minor' => $optionsExtraMinor,
-            'final_price_minor' => $finalPriceMinor,
+            'base_price' => $base->toMajorNumber(),
+            'options_total_extra' => $options->toMajorNumber(),
+            'final_item_price' => $final->toMajorNumber(),
+            'base_price_minor' => $base->minor(),
+            'options_extra_minor' => $options->minor(),
+            'final_price_minor' => $final->minor(),
             'selected_options_summary' => $summaryList,
         ];
     }
 
     /**
-     * Compute entire order totals in integer minor units.
-     *
-     * @param array $items Array of items with 'final_item_price' and 'quantity'
-     * @param float $packagingFee
-     * @param string $currency
-     * @return array
+     * Order totals from priced lines (each with final_price_minor or final_item_price, and quantity) plus a
+     * flat fee. Kept for older callers; checkout uses App\Services\Pricing\OrderTotals with configured charges.
      */
-    public static function calculateOrderTotals(array $items, float $packagingFee, string $currency = 'USD'): array
+    public static function calculateOrderTotals(array $items, float|int|string $packagingFee, string $currency = 'USD'): array
     {
-        $subtotalMinor = 0;
-
+        $subtotal = Money::zero($currency);
         foreach ($items as $item) {
-            $priceMinor = self::toMinorUnits((float) $item['final_item_price'], $currency);
-            $qty = (int) $item['quantity'];
-            $subtotalMinor += ($priceMinor * $qty);
+            $unit = isset($item['final_price_minor'])
+                ? Money::ofMinor((int) $item['final_price_minor'], $currency)
+                : Money::parse($item['final_item_price'] ?? 0, $currency);
+            $subtotal = $subtotal->plus($unit->times((int) ($item['quantity'] ?? 0)));
         }
-
-        $packagingFeeMinor = self::toMinorUnits($packagingFee, $currency);
-        $totalAmountMinor = $subtotalMinor + $packagingFeeMinor;
+        $fee = Money::parse($packagingFee, $currency);
+        $total = $subtotal->plus($fee);
 
         return [
-            'subtotal' => self::fromMinorUnits($subtotalMinor, $currency),
-            'packaging_fee' => self::fromMinorUnits($packagingFeeMinor, $currency),
-            'total_amount' => self::fromMinorUnits($totalAmountMinor, $currency),
-            'subtotal_minor' => $subtotalMinor,
-            'packaging_fee_minor' => $packagingFeeMinor,
-            'total_amount_minor' => $totalAmountMinor,
+            'subtotal' => $subtotal->toMajorNumber(),
+            'packaging_fee' => $fee->toMajorNumber(),
+            'total_amount' => $total->toMajorNumber(),
+            'subtotal_minor' => $subtotal->minor(),
+            'packaging_fee_minor' => $fee->minor(),
+            'total_amount_minor' => $total->minor(),
         ];
     }
 
     /**
-     * Accurately calculate order financials using exact integer minor units (cents).
-     * Clearly distinguishes order totals, amounts received, outstanding balances,
-     * refunds, and net receipts with zero floating-point error.
-     *
-     * @param int $subtotalMinor Subtotal in integer minor units (cents)
-     * @param int $packagingFeeMinor Packaging fee in integer minor units (cents)
-     * @param int $amountReceivedMinor Amount verified/received in minor units
-     * @param int $refundedMinor Amount refunded in minor units
-     * @param string $currency Authoritative currency (default: 'USD')
-     * @return array
+     * Order financials in exact minor units: totals, amount received, balance, refunds and net receipts.
      */
     public static function calculateOrderFinancials(
         int $subtotalMinor,
@@ -177,29 +170,28 @@ class PriceCalculationService
 
     /**
      * Lock the authoritative currency of an order to the event's configured currency.
-     * Prevents attendees or browser requests from changing the authoritative currency.
-     *
-     * @param string $eventCurrency The event's official currency (e.g. 'USD')
-     * @param string|null $requestedCurrency The currency sent in browser request/profile
-     * @return string Locked authoritative currency
+     * A currency sent by the browser is ignored.
      */
     public static function lockAuthoritativeCurrency(string $eventCurrency, ?string $requestedCurrency = null): string
     {
-        $authoritative = strtoupper(trim($eventCurrency ?: 'USD'));
-
-        // If client requested a different currency, log or ignore, but strictly return authoritative
-        return $authoritative;
+        return strtoupper(trim($eventCurrency ?: \App\Support\Currency::defaultCode()));
     }
 
     /**
-     * Format minor units into display string with appropriate currency symbol.
+     * Minor units as display text, using the currency's configured symbol and separators.
      */
     public static function formatMinorUnits(int $minorUnits, string $currency = 'USD'): string
     {
-        $major = $minorUnits / 100.0;
-        if (strtoupper($currency) === 'JMD') {
-            return 'J$' . number_format(round($major));
+        return Money::formatMinor($minorUnits, $currency);
+    }
+
+    /** A dish's base price in the order currency: its stored minor-unit price, or the legacy column. */
+    private static function basePrice(MenuItem $item, string $currency): Money
+    {
+        if ($item->price_minor !== null && strtoupper((string) ($item->currency ?: $currency)) === $currency) {
+            return Money::ofMinor((int) $item->price_minor, $currency);
         }
-        return '$' . number_format($major, 2);
+
+        return Money::parse(($currency === 'JMD' ? $item->price_jmd : $item->price_usd) ?? 0, $currency);
     }
 }

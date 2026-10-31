@@ -129,29 +129,41 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--color-bg-page); border-radius: var(--radius-md);">
-                    <div>
-                        <span style="font-size: 0.8rem; color: var(--color-text-secondary); text-transform: uppercase;">Gross Order Volume ($ USD)</span>
-                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--color-navy);">$ {{ number_format($gross_volume_jmd ?? 0, 2) }}</div>
+                @foreach(($financials ?? []) as $code => $money)
+                    @if(count($financials) > 1)
+                        <h3 style="font-size: 0.85rem; font-weight: 700; margin: 0.25rem 0 0;">{{ $code }} orders</h3>
+                    @endif
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--color-bg-page); border-radius: var(--radius-md);">
+                        <div>
+                            <span style="font-size: 0.8rem; color: var(--color-text-secondary); text-transform: uppercase;">Gross order volume ({{ $code }})</span>
+                            <div style="font-size: 1.25rem; font-weight: 700; color: var(--color-navy);">{{ $money['gross']['formatted'] }}</div>
+                        </div>
+                        <span style="font-size: 0.85rem; color: var(--color-text-secondary);">All orders, including unpaid</span>
                     </div>
-                    <span style="font-size: 0.85rem; color: var(--color-text-secondary);">All submitted orders</span>
-                </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--color-success-bg); border-radius: var(--radius-md);">
-                    <div>
-                        <span style="font-size: 0.8rem; color: var(--color-success); font-weight: 600; text-transform: uppercase;">Verified Receipts (Cleared Funds - USD)</span>
-                        <div style="font-size: 1.25rem; font-weight: 800; color: var(--color-success);">$ {{ number_format($verified_payments_jmd ?? 0, 2) }}</div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--color-success-bg); border-radius: var(--radius-md);">
+                        <div>
+                            <span style="font-size: 0.8rem; color: var(--color-success); font-weight: 600; text-transform: uppercase;">Received ({{ $code }})</span>
+                            <div style="font-size: 1.25rem; font-weight: 800; color: var(--color-success);">{{ $money['received']['formatted'] }}</div>
+                        </div>
+                        <span style="font-size: 0.8rem; color: var(--color-text-secondary);">Net of refunds: {{ $money['net']['formatted'] }}</span>
                     </div>
-                    <span class="badge badge-paid">100% Cleared</span>
-                </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--color-bg-page); border-radius: var(--radius-md);">
-                    <div>
-                        <span style="font-size: 0.8rem; color: var(--color-text-secondary); text-transform: uppercase;">Physical Cash Received On-Site (USD)</span>
-                        <div style="font-size: 1.15rem; font-weight: 700; color: var(--color-navy);">$ {{ number_format($cash_receipts_total ?? 0, 2) }}</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem;">
+                        <div style="flex: 1 1 10rem; padding: 0.75rem 1rem; background: var(--color-bg-page); border-radius: var(--radius-md);">
+                            <span style="font-size: 0.75rem; color: var(--color-text-secondary); text-transform: uppercase;">Still owed</span>
+                            <div style="font-weight: 700;">{{ $money['pending']['formatted'] }}</div>
+                        </div>
+                        <div style="flex: 1 1 10rem; padding: 0.75rem 1rem; background: var(--color-bg-page); border-radius: var(--radius-md);">
+                            <span style="font-size: 0.75rem; color: var(--color-text-secondary); text-transform: uppercase;">Refunded</span>
+                            <div style="font-weight: 700;">{{ $money['refunded']['formatted'] }}</div>
+                        </div>
+                        <div style="flex: 1 1 10rem; padding: 0.75rem 1rem; background: var(--color-bg-page); border-radius: var(--radius-md);">
+                            <span style="font-size: 0.75rem; color: var(--color-text-secondary); text-transform: uppercase;">Cash recorded on site</span>
+                            <div style="font-weight: 700;">{{ $money['cash']['formatted'] }}</div>
+                        </div>
                     </div>
-                    <span style="font-size: 0.8rem; color: var(--color-text-muted);">Clerk auditable</span>
-                </div>
+                @endforeach
 
                 <p style="font-size: 0.78rem; color: var(--color-text-muted); font-style: italic; margin-top: 0.25rem;">
                     * Notice: In accordance with financial invariants, pending manual bank-transfers are not counted as verified money until formally reconciled.

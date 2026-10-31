@@ -179,17 +179,21 @@ class OrderOperationsService
             return $order->fresh(['items', 'event']); // already paid: nothing to change, nobody to notify
         }
 
-        $total = (float) $order->total_amount;
+        $total = (int) $order->total_minor;
         $notes = trim((string) ($data['notes'] ?? ''));
 
         if ($status === 'paid') {
-            $order->amount_paid = $total;
+            $order->amount_paid_minor = $total;
         } elseif ($status === 'partially_paid') {
-            $amount = (float) ($data['amount_paid'] ?? 0);
+            try {
+                $amount = \App\Support\Money::parse($data['amount_paid'] ?? 0, $order->currency)->minor();
+            } catch (\InvalidArgumentException) {
+                $amount = 0;
+            }
             if ($amount <= 0 || $amount >= $total) {
                 throw new \InvalidArgumentException('A partial payment must be more than zero and less than the order total.');
             }
-            $order->amount_paid = $amount;
+            $order->amount_paid_minor = $amount;
         } elseif ($status === 'rejected') {
             $reason = trim((string) ($data['rejection_reason'] ?? ''));
             if ($reason === '') {

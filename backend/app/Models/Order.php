@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\SyncsMinorUnits;
 use App\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes, BelongsToTenant;
+    use HasFactory, HasUuids, SoftDeletes, BelongsToTenant, SyncsMinorUnits;
 
     protected $fillable = [
         'organizer_id',
@@ -28,6 +29,13 @@ class Order extends Model
         'packaging_fee',
         'total_amount',
         'amount_paid',
+        'subtotal_minor',
+        'discount_minor',
+        'fees_minor',
+        'tax_minor',
+        'total_minor',
+        'amount_paid_minor',
+        'refunded_minor',
         'currency',
         'status',
         'fulfillment_status',
@@ -51,6 +59,13 @@ class Order extends Model
         'packaging_fee' => 'decimal:2',
         'total_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
+        'subtotal_minor' => 'integer',
+        'discount_minor' => 'integer',
+        'fees_minor' => 'integer',
+        'tax_minor' => 'integer',
+        'total_minor' => 'integer',
+        'amount_paid_minor' => 'integer',
+        'refunded_minor' => 'integer',
         'refund_details' => 'array',
         'authorized_unpaid' => 'boolean',
         'all_handed_over' => 'boolean',
@@ -94,5 +109,34 @@ class Order extends Model
         }
 
         return $this->status === 'paid' || $this->authorized_unpaid === true;
+    }
+
+
+    /** @return array<string, string> */
+    protected function minorUnitPairs(): array
+    {
+        // packaging_fee is the legacy name for all fees on the order (host and platform), kept for older readers.
+        return ['subtotal' => 'subtotal_minor', 'packaging_fee' => 'fees_minor', 'total_amount' => 'total_minor', 'amount_paid' => 'amount_paid_minor'];
+    }
+
+    protected function minorUnitCurrency(): string
+    {
+        return (string) ($this->currency ?: \App\Support\Currency::defaultCode());
+    }
+
+    public function charges(): HasMany
+    {
+        return $this->hasMany(OrderCharge::class);
+    }
+
+    public function adjustments(): HasMany
+    {
+        return $this->hasMany(OrderAdjustment::class);
+    }
+
+    /** What is still owed: total less what has been received. Never negative. */
+    public function balanceMinor(): int
+    {
+        return max(0, (int) $this->total_minor - (int) $this->amount_paid_minor);
     }
 }

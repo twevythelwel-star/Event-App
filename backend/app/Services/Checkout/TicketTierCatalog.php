@@ -23,6 +23,26 @@ final class TicketTierCatalog
         return is_numeric($price) && (float) $price >= 0 ? (float) $price : null;
     }
 
+    /**
+     * The host's price for this tier in exact minor units, or null when none is set. A tier may carry
+     * price_minor (with its currency) directly; otherwise the decimal price for the currency is parsed as text.
+     */
+    public static function priceMinorFor(array $tier, string $currency): ?int
+    {
+        if (isset($tier['price_minor']) && is_numeric($tier['price_minor'])
+            && strtoupper((string) ($tier['currency'] ?? $currency)) === strtoupper($currency)) {
+            return max(0, (int) $tier['price_minor']);
+        }
+        $price = $currency === 'JMD'
+            ? ($tier['price_jmd'] ?? $tier['priceJMD'] ?? null)
+            : ($tier['price_usd'] ?? $tier['priceUSD'] ?? null);
+        if (!is_numeric($price) || (float) $price < 0) {
+            return null;
+        }
+
+        return \App\Support\Money::parse(is_string($price) ? $price : (string) $price, $currency)->minor();
+    }
+
     /** The JSON key holding remaining stock, or null when the tier has no stock limit. */
     public static function availabilityKey(array $tier): ?string
     {
@@ -55,22 +75,25 @@ final class TicketTierCatalog
      */
     public static function sellable(Event $event): array
     {
-        $currency = (string) ($event->currency ?: 'USD');
+        $currency = (string) ($event->currency ?: \App\Support\Currency::defaultCode());
         $tiers = [];
         foreach (is_array($event->ticket_tiers) ? $event->ticket_tiers : [] as $tier) {
             if (!is_array($tier) || !isset($tier['id'])) {
                 continue;
             }
-            $price = self::priceFor($tier, $currency);
-            if ($price === null) {
+            $priceMinor = self::priceMinorFor($tier, $currency);
+            if ($priceMinor === null) {
                 continue;
             }
+            $price = \App\Support\Money::ofMinor($priceMinor, $currency)->toMajorNumber();
             $available = self::available($tier);
             $tiers[] = [
                 'id' => (string) $tier['id'],
                 'name' => (string) ($tier['name'] ?? 'Admission ticket'),
                 'description' => isset($tier['description']) ? (string) $tier['description'] : null,
                 'price' => $price,
+                'price_minor' => $priceMinor,
+                'currency' => $currency,
                 'available' => $available,
                 'max' => $available === null ? self::maxPerOrder($tier) : min(self::maxPerOrder($tier), $available),
                 'sold_out' => $available !== null && $available <= 0,

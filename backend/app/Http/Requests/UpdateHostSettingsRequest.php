@@ -14,7 +14,7 @@ class UpdateHostSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'default_currency' => ['nullable', 'string', 'in:JMD,USD'],
+            'default_currency' => ['nullable', 'string', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
             'default_timezone' => ['nullable', 'string', 'timezone'],
             'default_location' => ['nullable', 'string', 'max:255'],
             'default_order_deadline_hours' => ['nullable', 'integer', 'min:1', 'max:168'],

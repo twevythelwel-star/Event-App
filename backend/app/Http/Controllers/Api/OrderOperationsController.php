@@ -177,7 +177,7 @@ class OrderOperationsController extends Controller
             'customer_name' => ['nullable', 'string', 'max:120'],
             'customer_phone' => ['nullable', 'string', 'max:32'],
             'amount' => ['required', 'numeric', 'min:0.01', 'max:10000000'],
-            'currency' => ['nullable', Rule::in(['JMD', 'USD'])],
+            'currency' => ['nullable', Rule::in(\App\Support\Currency::supportedCodes())],
             'received_at' => ['nullable', 'date', 'before_or_equal:now'],
             'received_from' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:500'],
@@ -201,7 +201,7 @@ class OrderOperationsController extends Controller
         ]);
 
         return $this->runMoney($request, function (User $user) use ($data, $receiptId, $request) {
-            $result = $this->cash->reverseReceipt($user, $receiptId, (float) $data['amount'], $data['reason']);
+            $result = $this->cash->reverseReceipt($user, $receiptId, (string) $data['amount'], $data['reason']);
 
             return [
                 'reversal' => $this->presentCash($result['reversal']),
@@ -218,7 +218,7 @@ class OrderOperationsController extends Controller
         ]);
 
         return $this->runMoney($request, fn (User $user) => [
-            'data' => $this->present($user, $this->cash->refundOrder($user, $orderId, (float) $data['amount'], $data['reason']), $request),
+            'data' => $this->present($user, $this->cash->refundOrder($user, $orderId, (string) $data['amount'], $data['reason']), $request),
         ]);
     }
 
@@ -255,7 +255,8 @@ class OrderOperationsController extends Controller
             'orderId' => $row->order_id,
             'orderNumber' => $row->order_number,
             'ticketCode' => $row->ticket_code,
-            'amount' => (float) $row->amount,
+            'amount' => $row->money('amount_minor')->toMajorNumber(),
+            'amountMinor' => (int) $row->amount_minor,
             'currency' => $row->currency,
             'receivedAt' => $row->received_at?->toIso8601String(),
             'receivedBy' => $row->received_by,

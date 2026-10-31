@@ -54,6 +54,7 @@ class EventResource extends JsonResource
             'pickupInstructions' => $this->pickup_instructions ?? '',
             'packagingFeeUSD' => (float) $this->packaging_fee_usd,
             'packagingFeeJMD' => (int) $this->packaging_fee_jmd,
+            'packagingFeeMinor' => (int) $this->packaging_fee_minor,
             'supportsFoodOrdering' => (bool) ($this->supports_food_ordering ?? true),
             'ticketTiers' => $this->ticket_tiers ?? [],
             // Uploaded flyers go through the media route, which enforces who may see unpublished events

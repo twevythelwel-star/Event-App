@@ -162,8 +162,10 @@ class WorkerTerminalController extends Controller
             'receipt_number' => $result['receipt']->receipt_number,
             'order_number' => $paidOrder->order_number,
             'currency' => $paidOrder->currency,
-            'amount_paid' => (float) $paidOrder->amount_paid,
-            'balance' => round((float) $paidOrder->total_amount - (float) $paidOrder->amount_paid, 2),
+            'amount_paid' => $paidOrder->money('amount_paid_minor')->toMajorNumber(),
+            'balance' => $paidOrder->money('total_minor')->minus($paidOrder->money('amount_paid_minor'))->max(\App\Support\Money::zero($paidOrder->currency))->toMajorNumber(),
+            'amount_paid_minor' => (int) $paidOrder->amount_paid_minor,
+            'balance_minor' => $paidOrder->balanceMinor(),
             'status' => $paidOrder->status,
         ]);
     }

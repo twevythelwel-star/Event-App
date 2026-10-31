@@ -19,7 +19,7 @@ class UpdatePlatformSettingsRequest extends FormRequest
             'logo_url' => ['nullable', 'string', 'max:255'],
             'brand_theme' => ['nullable', 'string', 'max:64'],
             'supported_currencies' => ['required', 'array', 'min:1'],
-            'supported_currencies.*' => ['string', 'in:JMD,USD'],
+            'supported_currencies.*' => ['string', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
             'supported_payment_methods' => ['required', 'array', 'min:1'],
             'supported_payment_methods.*' => ['string', 'in:cash,bank,zelle,cashapp,card'],
             'mandatory_2fa_for_admins' => ['nullable', 'boolean'],

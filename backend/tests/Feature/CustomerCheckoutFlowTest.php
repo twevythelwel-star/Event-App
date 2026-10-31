@@ -106,7 +106,7 @@ class CustomerCheckoutFlowTest extends TestCase
             ->assertDontSee('Zelle');
 
         $response = $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
         ]);
 
         $order = Order::allTenants()->with('items')->sole();
@@ -127,7 +127,7 @@ class CustomerCheckoutFlowTest extends TestCase
 
         // The cart is cleared: posting again cannot create a second order.
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
         ])->assertRedirect(route('checkout.tickets', $this->event))->assertSessionHas('error');
         $this->assertSame(1, Order::allTenants()->count());
     }
@@ -138,7 +138,7 @@ class CustomerCheckoutFlowTest extends TestCase
         $this->dish->forceFill(['price_jmd' => 1700])->save();
 
         $this->actingAs($this->buyer)->from(route('checkout.review', $this->event))->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total_minor' => 710000,
         ])->assertRedirect(route('checkout.review', $this->event))->assertSessionHas('error');
 
         $this->assertSame(0, Order::allTenants()->count());
@@ -153,7 +153,7 @@ class CustomerCheckoutFlowTest extends TestCase
         $this->actingAs($this->buyer)->get(route('checkout.review', $this->event))->assertOk()
             ->assertSee('Escovitch Fish is sold out.');
         $this->actingAs($this->buyer)->from(route('checkout.review', $this->event))->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total_minor' => 710000,
         ])->assertSessionHas('error');
         $this->assertSame(0, Order::allTenants()->count());
     }
@@ -162,7 +162,7 @@ class CustomerCheckoutFlowTest extends TestCase
     {
         $this->fillCart();
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'zelle', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'zelle', 'quoted_total_minor' => 710000,
         ])->assertSessionHasErrors('method');
 
         HostPaymentPolicy::where('organizer_id', $this->organizer->id)->update(['bank_transfer_instructions' => null, 'enable_cash' => true]);
@@ -191,7 +191,7 @@ class CustomerCheckoutFlowTest extends TestCase
     {
         $this->fillCart();
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
         ]);
         $order = Order::allTenants()->sole();
         $stranger = User::create(['name' => 'Other', 'email' => 'other@example.test', 'password' => bcrypt('password'), 'status' => 'active']);
@@ -207,7 +207,7 @@ class CustomerCheckoutFlowTest extends TestCase
     {
         $this->fillCart();
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
         ]);
         $order = Order::allTenants()->sole();
 
@@ -228,7 +228,7 @@ class CustomerCheckoutFlowTest extends TestCase
     {
         $this->fillCart();
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total_minor' => 710000,
         ]);
         $order = Order::allTenants()->sole();
 
@@ -241,7 +241,7 @@ class CustomerCheckoutFlowTest extends TestCase
     {
         $this->fillCart();
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
         ]);
         $order = Order::allTenants()->sole();
         $order->forceFill(['status' => 'refunded'])->save();
@@ -262,7 +262,7 @@ class CustomerCheckoutFlowTest extends TestCase
 
         $this->fillCart();
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total' => '7100.00',
+            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
         ]);
         $order = Order::allTenants()->sole();
 

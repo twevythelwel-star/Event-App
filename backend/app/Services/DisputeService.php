@@ -42,8 +42,12 @@ class DisputeService
             throw new \InvalidArgumentException("Unsupported dispute type '{$type}'.");
         }
 
-        $amount = round((float) ($data['amount'] ?? 0), 2);
-        if ($amount < 0 || $amount > (float) $order->total_amount) {
+        try {
+            $amount = \App\Support\Money::parse($data['amount'] ?? 0, $order->currency);
+        } catch (\InvalidArgumentException) {
+            throw new \InvalidArgumentException('Enter the disputed amount as a number, e.g. 25.00.');
+        }
+        if ($amount->isNegative() || $amount->minor() > (int) $order->total_minor) {
             throw new \InvalidArgumentException('The disputed amount cannot exceed the order total.');
         }
 
@@ -60,7 +64,7 @@ class DisputeService
             'user_id' => $user->id,
             'dispute_type' => $type,
             'status' => 'open',
-            'amount' => $amount,
+            'amount_minor' => $amount->minor(),
             'currency' => $order->currency,
             'reason' => $reason,
         ]);
@@ -159,7 +163,8 @@ class DisputeService
             'eventName' => $dispute->event?->title,
             'disputeType' => $dispute->dispute_type,
             'status' => $dispute->status,
-            'amount' => (float) $dispute->amount,
+            'amount' => $dispute->money('amount_minor')->toMajorNumber(),
+            'amountMinor' => (int) $dispute->amount_minor,
             'currency' => $dispute->currency,
             'reason' => $dispute->reason,
             'createdAt' => $dispute->created_at?->toIso8601String(),

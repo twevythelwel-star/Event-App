@@ -61,8 +61,12 @@
 
             <div class="eb-ticket-card-tear" style="margin: 0;"></div>
             <x-price-summary
-                :lines="$order->items->map(fn ($item) => ['label' => $item->quantity . ' × ' . $item->name, 'amount' => $item->final_item_price * $item->quantity])->all()"
-                :fee="$order->packaging_fee" :total="$order->total_amount" :currency="$currency" />
+                :lines="$order->items->map(fn ($item) => ['label' => $item->quantity . ' × ' . $item->name, 'amount_minor' => (int) $item->line_total_minor])->all()"
+                :charges="$order->charges->map(fn ($c) => ['kind' => $c->kind, 'label' => $c->label, 'amount_minor' => (int) $c->amount_minor])->all()"
+                :subtotal-minor="(int) $order->subtotal_minor" :total-minor="(int) $order->total_minor" :currency="$currency" />
+            @if((int) $order->refunded_minor > 0)
+                <p class="eb-help-text" style="margin: 0;">Refunded: {{ \App\Support\Money::formatMinor((int) $order->refunded_minor, $currency) }}</p>
+            @endif
             <p class="eb-help-text" style="margin: 0;">Order {{ $order->order_number }} · placed {{ $order->created_at?->format('M j, Y g:i A') }}</p>
         </div>
     </article>

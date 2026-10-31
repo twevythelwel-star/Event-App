@@ -35,7 +35,7 @@ class StoreEventRequest extends FormRequest
             'longitude' => ['nullable', 'required_with:latitude', 'numeric', 'between:-180,180'],
             'coordinates' => 'nullable|string|max:64',
             'description' => 'nullable|string',
-            'currency' => 'nullable|in:JMD,USD',
+            'currency' => ['nullable', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
             'organizer_name' => 'required|string|max:255',
             'organizer_phone' => 'required|string|min:7|max:32',
             'organizer_whatsapp' => 'nullable|string|max:32',

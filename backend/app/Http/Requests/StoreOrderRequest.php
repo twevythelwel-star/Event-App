@@ -19,7 +19,7 @@ class StoreOrderRequest extends FormRequest
             'customer_phone' => ['required', 'string', 'min:7', 'max:30'],
             'email' => ['nullable', 'email', 'max:150'],
             'method' => ['required', 'in:bank,zelle,cashapp,cash,card'],
-            'currency' => ['nullable', 'in:USD,JMD'],
+            'currency' => ['nullable', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
             'payment_reference' => ['nullable', 'string', 'max:100'],
             'sender_name' => ['nullable', 'string', 'max:120'],
             'items' => ['required', 'array', 'min:1'],

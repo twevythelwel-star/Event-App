@@ -112,15 +112,17 @@
                 <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-indigo); margin-top: 0.25rem;">{{ $metrics['active_hosts'] ?? 0 }}</div>
             </div>
 
-            <div style="background: var(--color-bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
-                <span style="font-size: 0.75rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">Gross Volume (USD)</span>
-                <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-success); margin-top: 0.25rem;">$ {{ number_format($metrics['total_gross_volume_usd'] ?? 0, 2) }}</div>
-            </div>
-
-            <div style="background: var(--color-bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
-                <span style="font-size: 0.75rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">Archived Volume (JMD)</span>
-                <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-text-secondary); margin-top: 0.25rem;">$ {{ number_format($metrics['total_gross_volume_jmd'] ?? 0, 2) }}</div>
-            </div>
+            @forelse(($metrics['paid_volume_minor_by_currency'] ?? []) as $code => $minor)
+                <div style="background: var(--color-bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                    <span style="font-size: 0.75rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">Paid volume ({{ $code }})</span>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-success); margin-top: 0.25rem;">{{ \App\Support\Money::formatMinor($minor, $code) }}</div>
+                </div>
+            @empty
+                <div style="background: var(--color-bg-page); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--color-border);">
+                    <span style="font-size: 0.75rem; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 600;">Paid volume</span>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--color-text-secondary); margin-top: 0.25rem;">{{ \App\Support\Money::formatMinor(0, null) }}</div>
+                </div>
+            @endforelse
         </div>
     </div>
 

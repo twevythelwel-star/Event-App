@@ -110,7 +110,8 @@ class CheckoutController extends Controller
                 $chosen[(string) $itemId] = array_filter([
                     'quantity' => (int) $entry['quantity'],
                     'choices' => $entry['choices'] ?? null,
-                    'amount' => isset($entry['amount']) && $entry['amount'] !== '' ? (float) $entry['amount'] : null,
+                    // Kept as the text the customer typed; parsed exactly (never as a float) when priced.
+                    'amount' => isset($entry['amount']) && $entry['amount'] !== '' ? trim((string) $entry['amount']) : null,
                 ], fn ($v) => $v !== null);
             }
         }
@@ -150,7 +151,7 @@ class CheckoutController extends Controller
             'method' => ['required', Rule::in($methods)],
             'payment_reference' => ['nullable', 'string', 'max:100'],
             'sender_name' => ['nullable', 'string', 'max:120'],
-            'quoted_total' => ['required', 'numeric'],
+            'quoted_total_minor' => ['required', 'integer'],
         ], [
             'method.in' => 'Choose one of the payment methods shown.',
             'method.required' => 'Choose how you will pay.',
@@ -168,7 +169,7 @@ class CheckoutController extends Controller
             return back()->withInput()->with('error', implode(' ', $quote['problems']));
         }
         // The customer must agree to the amount they saw; if anything changed, show the new total first.
-        if (abs($quote['total'] - (float) $data['quoted_total']) > 0.004) {
+        if ($quote['total_minor'] !== (int) $data['quoted_total_minor']) {
             return back()->withInput()->with('error', 'Prices changed since you opened this page. Check the new total and place the order again.');
         }
 
@@ -198,7 +199,7 @@ class CheckoutController extends Controller
         // Someone else's order is "not found", not "forbidden": don't confirm it exists.
         abort_unless($this->orders->isUserAuthorizedForOrder($order, $request->user()), 404);
 
-        $order->load(['items', 'event' => fn ($q) => $q->withoutGlobalScopes()]);
+        $order->load(['items', 'charges', 'event' => fn ($q) => $q->withoutGlobalScopes()]);
 
         return view('checkout.ticket', [
             'order' => $order,

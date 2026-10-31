@@ -50,8 +50,11 @@ class SystemAdminDashboardController extends Controller
             'active_hosts' => UserRole::where('role', AccountType::EVENT_HOST->value)->where('is_active', true)->count(),
             'total_events' => Event::count(),
             'total_orders' => Order::count(),
-            'total_gross_volume_jmd' => Order::where('currency', 'JMD')->where('status', 'paid')->sum('total_amount'),
-            'total_gross_volume_usd' => Order::where('currency', 'USD')->where('status', 'paid')->sum('total_amount'),
+            // Paid order volume per currency in minor units; currencies are never added together.
+            'paid_volume_minor_by_currency' => array_filter(array_combine(
+                \App\Support\Currency::supportedCodes(),
+                array_map(fn (string $c) => (int) Order::where('currency', $c)->where('status', 'paid')->sum('total_minor'), \App\Support\Currency::supportedCodes()),
+            )),
         ];
 
         $health = [

@@ -17,29 +17,34 @@ use InvalidArgumentException;
 class USComplianceAndPrivacyService
 {
     /**
-     * Standard US State Sales Tax Rates (Baseline State Rates).
-     * Subject to local municipal surtaxes where applicable.
+     * Statewide base sales-tax rates, in parts per 100,000 (6% = 6000), as reference figures ONLY.
+     *
+     * Not used to charge anyone: checkout taxes come solely from rules an administrator configures
+     * (App\Models\ChargeRule, applied by App\Services\Pricing\ChargeCalculator). These figures are not
+     * verified, omit county and city rates, and ignore what is or isn't taxable for events and food, so they
+     * must not be presented to customers as the tax that legally applies.
      */
     public const STATE_SALES_TAX_RATES = [
-        'FL' => 0.060, // Florida 6%
-        'NY' => 0.040, // New York 4%
-        'CA' => 0.0725, // California 7.25%
-        'TX' => 0.0625, // Texas 6.25%
-        'GA' => 0.040, // Georgia 4%
-        'IL' => 0.0625, // Illinois 6.25%
-        'NC' => 0.0475, // North Carolina 4.75%
-        'NJ' => 0.06625, // New Jersey 6.625%
-        'PA' => 0.060, // Pennsylvania 6%
-        'OH' => 0.0575, // Ohio 5.75%
-        'DE' => 0.000, // Delaware 0% (No state sales tax)
-        'NH' => 0.000, // New Hampshire 0%
-        'OR' => 0.000, // Oregon 0%
-        'MT' => 0.000, // Montana 0%
-        'AK' => 0.000, // Alaska 0%
+        'FL' => 6000, // Florida 6%
+        'NY' => 4000, // New York 4%
+        'CA' => 7250, // California 7.25%
+        'TX' => 6250, // Texas 6.25%
+        'GA' => 4000, // Georgia 4%
+        'IL' => 6250, // Illinois 6.25%
+        'NC' => 4750, // North Carolina 4.75%
+        'NJ' => 6625, // New Jersey 6.625%
+        'PA' => 6000, // Pennsylvania 6%
+        'OH' => 5750, // Ohio 5.75%
+        'DE' => 0, // Delaware 0% (No state sales tax)
+        'NH' => 0, // New Hampshire 0%
+        'OR' => 0, // Oregon 0%
+        'MT' => 0, // Montana 0%
+        'AK' => 0, // Alaska 0%
     ];
 
     /**
-     * Calculate sales tax in integer minor units (cents).
+     * Reference sales-tax ESTIMATE in integer minor units (cents), from the unverified statewide figures above.
+     * Not used by checkout and not legal or tax advice; see App\Services\Pricing\ChargeCalculator for real charges.
      * Accounts for 501(c)(3) non-profit tax exemption status.
      *
      * @param int $subtotalMinor Subtotal in cents
@@ -70,13 +75,16 @@ class USComplianceAndPrivacyService
             ];
         }
 
-        $rate = self::STATE_SALES_TAX_RATES[$state] ?? 0.05; // Default 5% average for unspecified states
-        $taxCents = (int) round($subtotalMinor * $rate);
+        // No invented fallback: a state without a reference figure has no estimate.
+        $perHundredThousand = self::STATE_SALES_TAX_RATES[$state] ?? null;
+        $taxCents = $perHundredThousand === null ? 0 : intdiv($subtotalMinor * $perHundredThousand + 50000, 100000);
 
         return [
             'state' => $state,
-            'rate' => $rate,
+            'rate' => $perHundredThousand === null ? null : $perHundredThousand / 100000,
             'tax_cents' => $taxCents,
+            'is_estimate' => true,
+            'rate_known' => $perHundredThousand !== null,
             'is_exempt' => false,
             'exemption_type' => null,
             'ein' => null,

@@ -114,13 +114,17 @@ class CatalogController extends Controller
             $events = $events->filter(fn (Event $event) => $event->isOrderingAllowed());
         }
         if ($priceMin !== null || $priceMax !== null) {
+            // Compared in integer minor units in each event's own currency; the filter values are parsed exactly.
             $events = $events->filter(function (Event $event) use ($priceMin, $priceMax) {
-                $prices = collect($event->ticket_tiers ?? [])->pluck('priceUSD')
-                    ->merge($event->menuItems->where('is_active', true)->pluck('price_usd'))
-                    ->map(fn ($price) => (float) $price)->filter(fn ($price) => $price >= 0);
+                $currency = (string) ($event->currency ?: \App\Support\Currency::defaultCode());
+                $prices = collect(\App\Services\Checkout\TicketTierCatalog::sellable($event))->pluck('price_minor')
+                    ->merge($event->menuItems->where('is_active', true)->map(fn ($item) => $item->price_minor))
+                    ->filter(fn ($minor) => $minor !== null && (int) $minor >= 0)
+                    ->map(fn ($minor) => (int) $minor);
                 $lowest = $prices->isEmpty() ? 0 : $prices->min();
-                return ($priceMin === null || $lowest >= (float) $priceMin)
-                    && ($priceMax === null || $lowest <= (float) $priceMax);
+
+                return ($priceMin === null || $lowest >= \App\Support\Money::parse((string) $priceMin, $currency)->minor())
+                    && ($priceMax === null || $lowest <= \App\Support\Money::parse((string) $priceMax, $currency)->minor());
             })->values();
         }
 

@@ -196,7 +196,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <strong>{{ $order->currency }} ${{ number_format($order->total_amount, 2) }}</strong>
+                                    <strong>{{ \App\Support\Money::formatMinor((int) $order->total_minor, $order->currency) }} <span style="font-weight:500">{{ $order->currency }}</span></strong>
                                 </td>
                                 <td>
                                     @include('components.status-indicator', ['status' => $order->status])

@@ -72,8 +72,8 @@
                         <td>{{ $row['label'] }}</td>
                         <td class="num">{{ number_format($row['count']) }}</td>
                         @if($financial)
-                            <td class="num">@forelse($row['amounts'] as $a){{ $a->currency }} {{ number_format((float) $a->total, 2) }}<br>@empty — @endforelse</td>
-                            <td class="num">@forelse($row['amounts'] as $a){{ $a->currency }} {{ number_format((float) $a->paid, 2) }}<br>@empty — @endforelse</td>
+                            <td class="num">@forelse($row['amounts'] as $a){{ \App\Support\Money::formatMinor((int) $a->total, $a->currency) }} <span class="ac-cell-sub">{{ $a->currency }}</span><br>@empty — @endforelse</td>
+                            <td class="num">@forelse($row['amounts'] as $a){{ \App\Support\Money::formatMinor((int) $a->paid, $a->currency) }} <span class="ac-cell-sub">{{ $a->currency }}</span><br>@empty — @endforelse</td>
                         @endif
                     </tr>
                 @endforeach
@@ -91,12 +91,12 @@
                     @forelse($refunds as $refund)
                         <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--ac-line)">
                             <span>{{ number_format($refund->orders) }} {{ \Illuminate\Support\Str::plural('order', $refund->orders) }}</span>
-                            <strong>{{ $refund->currency }} {{ number_format((float) $refund->total, 2) }}</strong>
+                            <strong>{{ \App\Support\Money::formatMinor((int) $refund->total, $refund->currency) }} {{ $refund->currency }}</strong>
                         </div>
                     @empty
-                        <p style="margin:0;color:var(--ac-text-2)">No refunded orders from this period.</p>
+                        <p style="margin:0;color:var(--ac-text-2)">No refunds on orders from this period.</p>
                     @endforelse
-                    <p class="ac-definition">Source: orders. Rule: orders placed in the period whose status is now refunded, valued at the order total.</p>
+                    <p class="ac-definition">Source: orders. Rule: orders placed in the period with any money returned (fully or in part), valued at the amount refunded, per currency.</p>
                 </div>
             </section>
         @endif
