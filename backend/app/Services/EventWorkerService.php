@@ -6,11 +6,13 @@ namespace App\Services;
 
 use App\Enums\AccountType;
 use App\Enums\EventWorkerRole;
+use App\Enums\TenantRole;
 use App\Exceptions\SecurityException;
 use App\Models\CashPayment;
 use App\Models\Event;
 use App\Models\EventWorkerAssignment;
 use App\Models\Order;
+use App\Models\OrganizerUser;
 use App\Models\OrderItem;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
@@ -126,8 +128,9 @@ class EventWorkerService
             ->where('is_active', true)
             ->first();
 
-        $canScan = $worker->hasRole(AccountType::EVENT_HOST) ||
-            $worker->hasRole(AccountType::SYSTEM_ADMIN) ||
+        // Any host account used to pass here, whichever organizer it belonged to; now only this event's organizer.
+        $canScan = $worker->hasRole(AccountType::SYSTEM_ADMIN) ||
+            self::managesOrganizer($worker, (string) $order->organizer_id) ||
             ($assignment && $assignment->canPerform('scan_qr_tickets'));
 
         if (!$canScan) {
@@ -234,11 +237,11 @@ class EventWorkerService
             'order_number' => $order->order_number,
             'ticket_code' => $order->ticket_code,
             'customer_name' => $order->customer_name,
-            'customer_email' => $order->customer_email,
+            'customer_email' => $order->email,
             'customer_phone' => $order->customer_phone,
             'status' => $order->status,
-            'payment_method' => $order->payment_method,
-            'total_cents' => $order->total_cents,
+            'payment_method' => $order->method,
+            'total_cents' => (int) round((float) $order->total_amount * 100),
             'checked_in_at' => $order->checked_in_at?->format('Y-m-d H:i:s'),
         ];
 
@@ -641,13 +644,37 @@ class EventWorkerService
     }
 
     /**
+     * True when the user has an active membership of the organizer in a role that runs its events
+     * (platform admin, event owner or supervisor).
+     */
+    public static function managesOrganizer(User $user, string $organizerId): bool
+    {
+        if ($organizerId === '') {
+            return false;
+        }
+
+        $membership = OrganizerUser::where('organizer_id', $organizerId)
+            ->where('user_id', $user->id)
+            ->where('is_active', true)
+            ->first();
+        if (!$membership) {
+            return false;
+        }
+        $role = $membership->role instanceof TenantRole ? $membership->role : TenantRole::tryFrom((string) $membership->role);
+
+        return $role?->canManageEventWorkers() ?? false;
+    }
+
+    /**
      * Independent real-time server-side validation of active assignment and permissions.
      * Enforces start and expiration boundaries on every protected operational call.
      */
     public static function assertActiveAssignmentValid(User $worker, Event $event, string $action): EventWorkerAssignment
     {
-        // System Admin and Event Host bypass event-worker boundaries for event ownership
-        if ($worker->hasRole(AccountType::SYSTEM_ADMIN) || ($worker->hasRole(AccountType::EVENT_HOST) && $event->organizer_id === $worker->organizer_id)) {
+        // System Administrators, and people who run this event's organizer (owner, platform admin or supervisor
+        // membership), act at the event without a staff assignment. Membership is read from organizer_users:
+        // users have no organizer_id column, so the old comparison never matched and locked hosts out.
+        if ($worker->hasRole(AccountType::SYSTEM_ADMIN) || self::managesOrganizer($worker, (string) $event->organizer_id)) {
             $fake = new EventWorkerAssignment([
                 'event_id' => $event->id,
                 'user_id' => $worker->id,
