@@ -217,7 +217,7 @@ class OrderOperationsService
         $this->audit($user, 'order_payment_status_changed', $order, "Order {$order->order_number}: payment status {$previousStatus} -> {$status}.");
 
         if ($status === 'paid' && $previousStatus !== 'paid') {
-            NotificationService::notifyOrder($order, 'payment_verified');
+            NotificationService::paymentSettled($order);
         } elseif ($status === 'rejected' && $previousStatus !== 'rejected') {
             NotificationService::notifyOrder($order, 'payment_rejected');
         }

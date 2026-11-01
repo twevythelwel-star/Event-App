@@ -23,12 +23,12 @@
     // What the customer should do next, in one line.
     [$nextTitle, $nextDetail, $nextTone] = match (true) {
         $status === 'refunded' => ['Refunded', 'This ticket was refunded and can’t be used for entry.', 'error'],
-        $status === 'rejected' => ['Payment not accepted', $order->rejection_reason ?: 'The organiser couldn’t match your payment. Contact them to sort it out.', 'error'],
+        $status === 'rejected' => ['Payment not accepted', $order->rejection_reason ?: 'The organizer couldn’t match your payment. Contact them to sort it out.', 'error'],
         in_array($status, ['cancelled', 'expired'], true) => ['Cancelled', 'This order was cancelled and can’t be used.', 'error'],
         $checkedIn => ['Checked in', 'This ticket was scanned at the gate. Enjoy the event.', 'success'],
         $settled => ['You’re all set', 'Payment confirmed. Show this QR code at the gate' . ($food->isNotEmpty() ? ' and when you collect your food.' : '.'), 'success'],
-        $partlyPaid => ['Part of your payment received', 'The organiser has confirmed part of your payment. Your ticket is issued once the rest is paid.', 'warning'],
-        $status === 'payment_submitted' || $status === 'under_verification' => ['Payment being checked', 'The organiser is checking your payment. Your ticket QR code appears here when they confirm it.', 'warning'],
+        $partlyPaid => ['Part of your payment received', 'The organizer has confirmed part of your payment. Your ticket is issued once the rest is paid.', 'warning'],
+        $status === 'payment_submitted' || $status === 'under_verification' => ['Payment being checked', 'The organizer is checking your payment. Your ticket QR code appears here when they confirm it.', 'warning'],
         $order->method === 'cash' => ['Pay at pickup', 'Pay staff in cash when you arrive, quoting your order number. They’ll mark this ticket paid.', 'warning'],
         default => ['Waiting for your payment', 'Send the transfer using the details below, then add your reference.', 'warning'],
     };
@@ -48,7 +48,10 @@
             <div>
                 <h1 id="ticket-title" class="eb-text-page-title" style="margin: 0;">{{ $event?->title ?? 'Your order' }}</h1>
                 @if($event)
-                    <p class="eb-text-supporting" style="margin: 4px 0 0;">{{ $event->date_str }} · {{ $event->time_str }}<br>{{ $event->venue_name }}</p>
+                    <p class="eb-text-supporting" style="margin: 4px 0 0;">
+                        {{ collect([\App\Services\ReceiptService::eventDate($event), \App\Services\ReceiptService::eventTime($event)])->filter()->implode(' · ') }}<br>
+                        {{ \App\Services\ReceiptService::venue($event) }}
+                    </p>
                 @endif
             </div>
 
@@ -82,6 +85,10 @@
                     @if($balanceMinor > 0 && !$void)<span class="eb-help-text">Still to pay: {{ \App\Support\Money::formatMinor($balanceMinor, $currency) }}</span>@endif
                 </div>
             @endif
+            <p class="eb-help-text" style="margin: 0;">
+                Payment: {{ \App\Support\PaymentStatusPresenter::label($status) }} · {{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }} · {{ $currency }}
+                @if($order->payment_reference && in_array($order->method, ['bank', 'zelle', 'cashapp'], true)) · your reference {{ $order->payment_reference }}@endif
+            </p>
             <p class="eb-help-text" style="margin: 0;">Order {{ $order->order_number }} · placed {{ $local($order->created_at) }}</p>
         </div>
     </article>
@@ -92,10 +99,10 @@
             @if($instructions)
                 <div class="eb-checkout-instructions">{{ $instructions }}</div>
             @else
-                <p class="eb-text-supporting" style="margin: 0;">The organiser will send you payment details.</p>
+                <p class="eb-text-supporting" style="margin: 0;">The organizer will send you payment details.</p>
             @endif
             <p class="eb-text-supporting" style="margin: var(--space-3) 0;">Amount due: <strong>{{ \App\Support\Money::formatMinor($balanceMinor, $currency) }}</strong>. Use <strong>{{ $order->ticket_code }}</strong> as the payment description so it can be matched.</p>
-            <p class="eb-help-text" style="margin: 0 0 var(--space-3);">A screenshot or reference is not proof that money arrived: your order stays pending until the organiser confirms the payment.</p>
+            <p class="eb-help-text" style="margin: 0 0 var(--space-3);">A screenshot or reference is not proof that money arrived: your order stays pending until the organizer confirms the payment.</p>
 
             <form method="POST" action="{{ route('tickets.payment-reference', $order) }}" class="eb-stack" style="gap: var(--space-3);">
                 @csrf

@@ -281,6 +281,7 @@ class EventController extends Controller
     public function update(StoreEventRequest $request, string $id): mixed
     {
         $event = $this->managedEvent($request, $id);
+        $before = $event->only(\App\Services\Notifications\NotificationService::EVENT_NOTICE_FIELDS);
         $location = [
             'street_address' => $event->street_address,
             'venue_building_name' => $event->venue_building_name,
@@ -305,6 +306,8 @@ class EventController extends Controller
             $event->refresh();
         }
         $event->update($changes);
+        // Ticket holders hear when the date, time or place changes.
+        \App\Services\Notifications\NotificationService::afterEventSaved($event, $before);
 
         if ($request->hasFile('flyer')) {
             $file = $request->file('flyer');

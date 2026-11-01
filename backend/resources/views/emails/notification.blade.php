@@ -7,6 +7,10 @@
             style="display:block;width:220px;max-width:100%;height:auto;margin:0 0 24px;border-radius:4px;background:#11172f;"
         />
         <div style="font-size:15px;line-height:1.6;white-space:pre-line;">{{ $log->message }}</div>
+
+        @if(!empty($receipt))
+            @include('emails.partials.receipt', ['r' => $receipt])
+        @endif
     </div>
 </body>
 </html>

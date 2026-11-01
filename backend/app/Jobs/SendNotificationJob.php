@@ -83,7 +83,15 @@ class SendNotificationJob implements ShouldQueue
 
     private function sendEmail(NotificationLog $log): ?string
     {
-        $sent = Mail::send(['html' => 'emails.notification', 'text' => 'emails.notification-text'], ['log' => $log], function (Message $message) use ($log) {
+        // Receipt emails carry the order's itemized receipt as it stands when the email goes out.
+        $receipt = null;
+        if (in_array($log->trigger, \App\Services\Notifications\NotificationService::RECEIPT_TRIGGERS, true) && $log->order_id) {
+            $order = \App\Models\Order::withoutGlobalScopes()->find($log->order_id);
+            $receipt = $order ? app(\App\Services\ReceiptService::class)->forOrder($order) : null;
+        }
+
+        $data = ['log' => $log, 'receipt' => $receipt, 'receiptText' => $receipt ? app(\App\Services\ReceiptService::class)->toText($receipt) : null];
+        $sent = Mail::send(['html' => 'emails.notification', 'text' => 'emails.notification-text'], $data, function (Message $message) use ($log) {
             $message->to($log->recipient, $log->customer_name)
                 ->subject($log->email_subject ?: "EventBite: {$log->title}");
             $message->getHeaders()->addTextHeader('X-Idempotency-Key', $log->idempotency_key);

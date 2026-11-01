@@ -51,6 +51,9 @@ final class CustomerPaymentService
             eventId: $order->event_id ? (string) $order->event_id : null,
         );
 
+        // One message per reference given, so correcting a typo is acknowledged too.
+        \App\Services\Notifications\NotificationService::notifyOrder($order, 'payment_awaiting_verification', [], substr(sha1($reference), 0, 12));
+
         return $order;
     }
 }

@@ -178,7 +178,7 @@ class NotificationsApiTest extends TestCase
 
         $sms = $this->logsFor($order['id'])->where('channel', 'sms');
         $this->assertSame(
-            ['order_collection_completed', 'order_received', 'payment_verified', 'pickup_instructions'],
+            ['order_collection_completed', 'order_received', 'payment_verified', 'pickup_instructions', 'ticket_issued'],
             $sms->pluck('trigger')->sort()->values()->all()
         );
         $this->assertStringContainsString('ready', $sms->firstWhere('trigger', 'pickup_instructions')->message);

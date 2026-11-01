@@ -136,6 +136,7 @@ class CashLedgerService
             if ($order) {
                 $order = Order::withoutGlobalScopes()->lockForUpdate()->find($order->id);
                 $paid = (int) $order->amount_paid_minor + $amount->minor();
+                $wasPaid = $order->status === 'paid';
                 $order->amount_paid_minor = $paid;
                 $order->status = $paid >= (int) $order->total_minor ? 'paid' : 'partially_paid';
                 $order->verified_at = now();
@@ -144,6 +145,9 @@ class CashLedgerService
                 $order->save();
 
                 NotificationService::notifyOrder($order, 'cash_receipt_recorded', ['amount' => $amount->toDecimalString(), 'receipt' => $receipt->receipt_number], $receipt->id);
+                if (!$wasPaid && $order->status === 'paid') {
+                    NotificationService::paymentSettled($order);
+                }
             }
 
             $this->audit($user, 'cash_receipt_recorded', $receipt->id, "Cash receipt {$receipt->receipt_number}: {$amount->display()} ({$currency})" . ($order ? " for order {$order->order_number}" : ' (walk-up)') . '.');
@@ -259,7 +263,7 @@ class CashLedgerService
             }
 
             // The refund is its own auditable row; refund_details is kept in step for older readers.
-            \App\Models\OrderAdjustment::create([
+            $adjustment = \App\Models\OrderAdjustment::create([
                 'order_id' => $order->id,
                 'organizer_id' => $order->organizer_id,
                 'type' => \App\Models\OrderAdjustment::TYPE_REFUND,
@@ -291,6 +295,7 @@ class CashLedgerService
             $order->save();
 
             $this->audit($user, 'order_refunded', $order->id, "Refund of {$amount->display()} ({$order->currency}) on order {$order->order_number}. Reason: {$reason}.{$stockNote}", 'orders');
+            NotificationService::notifyOrder($order, 'refund_completed', ['amount' => $amount->toDecimalString()], (string) $adjustment->id);
 
             return $order->fresh(['items', 'event']);
         });

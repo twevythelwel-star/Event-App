@@ -70,6 +70,9 @@ class DisputeService
         ]);
 
         $this->audit($user, 'dispute_submitted', $dispute, "Dispute {$dispute->dispute_number} filed on order {$order->order_number}.");
+        if ($type === 'ticket_refund') {
+            \App\Services\Notifications\NotificationService::notifyOrder($order, 'refund_requested', ['reference' => $dispute->dispute_number], (string) $dispute->id);
+        }
 
         return $dispute->fresh(['order', 'organizer', 'event']);
     }

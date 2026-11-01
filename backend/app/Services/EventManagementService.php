@@ -203,7 +203,9 @@ class EventManagementService
             throw new \InvalidArgumentException('Publish the event before opening it for orders.');
         }
 
+        $before = $event->only(\App\Services\Notifications\NotificationService::EVENT_NOTICE_FIELDS);
         $event->fill($data)->save();
+        \App\Services\Notifications\NotificationService::afterEventSaved($event, $before);
         $this->audit($user, 'event_updated', 'events', $event->id, "Event '{$event->title}' updated: " . implode(', ', array_keys($data)) . '.');
 
         return $this->findEvent($user, $eventId);
