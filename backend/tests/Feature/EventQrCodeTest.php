@@ -129,7 +129,7 @@ class EventQrCodeTest extends TestCase
         $this->assertSame($svg1, $svg2);
 
         $this->actingAs($host)->patchJson('/api/v1/host/events/' . $event->id, [
-            'title' => 'Port Royal Sunset Seafood Night (Extended)',
+            'title' => 'Lauderhill Sunset Seafood Night (Extended)',
             'description' => 'Now with a later finish.',
         ])->assertOk();
 

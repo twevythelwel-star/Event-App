@@ -254,7 +254,7 @@
                                     <div style="display: flex; align-items: center; gap: 0.85rem;">
                                         <div style="width: 48px; height: 48px; border-radius: var(--radius-md); overflow: hidden; background: var(--color-bg-page); border: 1px solid var(--color-border); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                                             @if(!empty($event->flyer_path))
-                                                <img src="/storage/{{ $event->flyer_path }}" alt="{{ $event->title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                                <img src="{{ $event->display_image_url }}" alt="{{ $event->title }}" style="width: 100%; height: 100%; object-fit: cover;">
                                             @else
                                                 <span style="font-size: 1.5rem;">🌴</span>
                                             @endif

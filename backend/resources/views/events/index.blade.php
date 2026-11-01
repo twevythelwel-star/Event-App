@@ -514,14 +514,14 @@
             <button type="button" class="category-btn cat-food" onclick="selectCategory('food')" id="cat-btn-food">
                 <div class="category-icon-circle">🍲</div>
                 <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Food</div>
-                <div style="font-size: 0.68rem; color: #94A3B8;">Fish Fries & Feasts</div>
+                <div style="font-size: 0.68rem; color: #94A3B8;">Festivals & Cookouts</div>
             </button>
 
             <!-- Sports -->
             <button type="button" class="category-btn cat-sports" onclick="selectCategory('sports')" id="cat-btn-sports">
                 <div class="category-icon-circle">⚽</div>
                 <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Sports</div>
-                <div style="font-size: 0.68rem; color: #94A3B8;">Regattas & Cricket</div>
+                <div style="font-size: 0.68rem; color: #94A3B8;">Games & Fitness</div>
             </button>
 
             <!-- Culture -->
@@ -544,15 +544,19 @@
 
         <div class="featured-event-card" id="primary-featured-card">
             <div class="featured-event-img-wrap">
-                <img src="{{ !empty($featuredEvent->flyer_path) ? $featuredEvent->flyer_path : '/images/island_music_reggae_concert.jpg' }}" alt="{{ $featuredEvent->title }}">
+                <img src="{{ $featuredEvent->display_image_url }}" alt="{{ $featuredEvent->title }}">
                 <div class="featured-event-overlay"></div>
                 <div class="featured-badge-pill">
                     <span class="featured-badge-tag">★ FEATURED</span>
-                    <span class="featured-badge-tag" style="background: rgba(99, 102, 241, 0.85);">🎵 Music & Culinary</span>
+                    @if($featuredEvent->category)
+                        <span class="featured-badge-tag" style="background: rgba(99, 102, 241, 0.85);">{{ $featuredEvent->category }}</span>
+                    @endif
                 </div>
                 <div style="position: absolute; bottom: 16px; left: 18px; right: 18px;">
-                    <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #CBD5E1;">Performer Highlight</div>
-                    <div style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF;">🎤 Roots Reggae All-Stars & Chronixx Tribute</div>
+                    @if($featuredEvent->tagline)
+                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #CBD5E1;">Highlight</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF;">{{ $featuredEvent->tagline }}</div>
+                    @endif
                 </div>
             </div>
 
@@ -582,7 +586,7 @@
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(255, 255, 255, 0.08);">
                         <div style="font-size: 0.75rem; color: #10B981; font-weight: 700;">
-                            ✓ Genuine Verified Kitchen & Menu
+                            {{ $featuredEvent->supports_food_ordering ? 'Order food in advance' : 'Tickets on EventBite' }}
                         </div>
                         <div style="font-size: 0.85rem; font-weight: 800; color: #FFFFFF;">
                             Digital QR Pass Included
@@ -601,22 +605,22 @@
         <!-- 5. Trending Near You (Horizontal Collection) -->
         <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.1rem;">📈</span>
-                <h2 style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">Trending Near You</h2>
+                <span style="font-size: 1.1rem;">📅</span>
+                <h2 style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">Coming Up</h2>
             </div>
-            <span style="font-size: 0.78rem; color: #94A3B8;">Genuine active events</span>
+            <span style="font-size: 0.78rem; color: #94A3B8;">Next on the calendar</span>
         </div>
 
         <div class="trending-scroll-container" id="trending-container">
             @foreach($events->take(6) as $idx => $trend)
                 @php
-                    $trendImg = !empty($trend->flyer_path) ? $trend->flyer_path : (($idx % 3 === 0) ? '/images/island_festival_sunset.jpg' : (($idx % 3 === 1) ? '/images/island_sports_championship.jpg' : '/images/island_culture_carnival.jpg'));
+                    $trendImg = $trend->display_image_url;
                 @endphp
                 <div class="trending-card">
                     <div style="height: 130px; position: relative;">
                         <img src="{{ $trendImg }}" alt="{{ $trend->title }}" style="width: 100%; height: 100%; object-fit: cover;">
                         <span style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(6px); color: #fff; padding: 2px 8px; border-radius: 9999px; font-size: 0.65rem; font-weight: 700;">
-                            TRENDING
+                            UPCOMING
                         </span>
                     </div>
                     <div style="padding: 14px; display: flex; flex-direction: column; flex: 1; justify-content: space-between;">
@@ -653,7 +657,7 @@
         <div class="discovery-grid" id="events-grid">
             @foreach($events as $idx => $event)
                 @php
-                    $gridImg = !empty($event->flyer_path) ? $event->flyer_path : (($idx % 4 === 0) ? '/images/island_music_reggae_concert.jpg' : (($idx % 4 === 1) ? '/images/escovitch_fish.jpg' : (($idx % 4 === 2) ? '/images/island_sports_championship.jpg' : '/images/island_culture_carnival.jpg')));
+                    $gridImg = $event->display_image_url;
                     $eventCategory = strtolower((string) ($event->category ?? 'community'));
                     $catType = str_contains($eventCategory, 'food') ? 'food' : (str_contains($eventCategory, 'music') ? 'music' : (str_contains($eventCategory, 'sport') ? 'sports' : (str_contains($eventCategory, 'culture') || str_contains($eventCategory, 'heritage') ? 'culture' : 'community')));
                     $priceValues = collect($event->ticket_tiers ?? [])->pluck('priceUSD')

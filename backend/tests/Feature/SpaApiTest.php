@@ -81,7 +81,7 @@ class SpaApiTest extends TestCase
         $response = $this->getJson('/api/v1/events')->assertOk();
 
         $events = collect($response->json('data'));
-        $this->assertCount(10, $events);
+        $this->assertCount(20, $events); // one sample event per target market
         $this->assertTrue($events->every(
             fn (array $event) => $event['currency'] === 'USD'
                 && str_ends_with($event['venueAddress'], 'United States')
@@ -89,7 +89,7 @@ class SpaApiTest extends TestCase
         ));
 
         $miami = $events->firstWhere('id', 'evt-kingston-harbour-fry');
-        $this->assertSame('miami-waterfront-cultural-food-festival', $miami['slug']);
+        $this->assertSame('south-florida-jamaican-fish-fry', $miami['slug']);
         $this->assertSame('USD', $miami['currency']);
         $this->assertSame('America/New_York', $miami['timezone']);
         $this->assertStringContainsString('United States', $miami['venueAddress']);
@@ -100,14 +100,14 @@ class SpaApiTest extends TestCase
 
     public function test_guest_cannot_place_an_order(): void
     {
-        $this->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', $this->orderPayload([
+        $this->postJson('/api/v1/events/south-florida-jamaican-fish-fry/orders', $this->orderPayload([
             ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 1],
         ]))->assertUnauthorized();
     }
 
     public function test_attendee_order_is_priced_by_the_server(): void
     {
-        $response = $this->actingAs($this->attendee())->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', $this->orderPayload([
+        $response = $this->actingAs($this->attendee())->postJson('/api/v1/events/south-florida-jamaican-fish-fry/orders', $this->orderPayload([
             ['menu_item_id' => 'kgn-escovitch', 'quantity' => 2, 'selected_choices' => ['fish-size' => 1, 'sides' => 0]],
             ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 1],
         ], ['packaging_fee' => 0]));
@@ -137,7 +137,7 @@ class SpaApiTest extends TestCase
         $escovitch = MenuItem::withoutGlobalScopes()->findOrFail('kgn-escovitch');
         $escovitch->update(['available_stock' => 1]);
 
-        $this->actingAs($this->attendee())->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', $this->orderPayload([
+        $this->actingAs($this->attendee())->postJson('/api/v1/events/south-florida-jamaican-fish-fry/orders', $this->orderPayload([
             ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 3],
             ['menu_item_id' => 'kgn-escovitch', 'quantity' => 5],
         ]))->assertStatus(422);
@@ -150,7 +150,7 @@ class SpaApiTest extends TestCase
     {
         $otherEventItem = MenuItem::withoutGlobalScopes()->where('event_id', '!=', 'evt-kingston-harbour-fry')->firstOrFail();
 
-        $this->actingAs($this->attendee())->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', $this->orderPayload([
+        $this->actingAs($this->attendee())->postJson('/api/v1/events/south-florida-jamaican-fish-fry/orders', $this->orderPayload([
             ['menu_item_id' => $otherEventItem->id, 'quantity' => 1],
         ]))->assertStatus(422);
     }

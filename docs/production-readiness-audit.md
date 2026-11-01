@@ -257,6 +257,40 @@ None. All 169 Laravel tests, 525 standalone runner tests and 202 frontend tests 
 - `EventManagementService` still asks for custom-amount ranges in both USD and JMD.
 - Rates must be confirmed by the business before any rule is switched on.
 
+## Added 2026-10-31: sample event catalog
+
+**Catalog.**
+- `database/seeders/data/us_cultural_events.json` holds 20 fictional sample events, one per target market. It covers the ten required concepts (Lauderhill, Miramar, Brooklyn, Atlanta, Hartford, Philadelphia, Boston, Baltimore, Orlando, East Orange) and ten more (Miami Gardens, Sunrise, Tamarac, Tampa, Jacksonville, Queens, Mount Vernon, Hempstead, Newark, Bridgeport).
+- Each event is in USD, linked to its market, and has an obviously fictional street address. Each description starts with "SAMPLE EVENT", saying it is not a real booking, partnership, endorsement or payment.
+- Menus are specific to each event's cuisines, with dietary notes where supplied.
+- The Jamaican Independence Celebration is held the Saturday after August 6.
+- Orlando is listed as one day, because events support a single session.
+- East Orange demonstrates cash plus bank and Zelle transfers, using placeholder instructions only.
+
+**Updating an existing database** (`FishFryEventsSeeder`, never in production):
+- The ten older events are rewritten in place under their existing ids, so orders, tickets and payments stay linked.
+- Orders are never changed: older JMD orders keep their currency, prices and item names.
+- On events with orders, a tier sold again keeps its remaining stock and takes everything else from the new definition. Tiers no longer offered go off sale.
+- Menu items outside the catalog are deactivated, never deleted.
+- Each event with orders gets an `event_review_required` entry in Admin → Audit Logs, naming its orders' currencies and any items taken off sale.
+- `DemoOrdersSeeder` places each demo order only once.
+
+**Discovery and event pages.** Hard-coded claims were removed:
+- a named real artist as a "performer highlight";
+- "Verified host" and "Verified event producer";
+- "Genuine verified kitchen";
+- "Trending";
+- a fixed "5 verified event photos" gallery.
+
+Pages now show the event's own category, tagline, flyer and dish images, labeled as illustrative. Discovery lists events soonest first. Flyers use `Event::display_image_url` everywhere, which fixes broken images for sample flyers (`/storage//images/...`).
+
+**Tests:** `SampleCatalogSeederTest` (4). Updated expectations: 20 sample events, Atlanta ZIP 30303, and "publishing requires something to sell" now also clears tiers. Old Jamaican test input strings were renamed.
+
+**Not done:**
+- The React demo app (`src/data`) still uses its older US catalog (Miami, Los Angeles, Houston and others), not these 20 markets.
+- Event ids and menu ids keep their old names (for example `evt-kingston-harbour-fry`), because renaming primary keys would break order history; they show in URLs.
+- Sample flyers reuse the three existing stock images.
+
 ## New findings (2026-10-30)
 
 | # | Severity | Finding | Evidence | Fix |

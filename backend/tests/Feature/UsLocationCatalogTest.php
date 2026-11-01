@@ -47,14 +47,14 @@ class UsLocationCatalogTest extends TestCase
     {
         $this->seed(FishFryEventsSeeder::class);
 
-        $response = $this->getJson('/api/v1/events?state=GA&city=Atlanta&zip=30308')->assertOk();
+        $response = $this->getJson('/api/v1/events?state=GA&city=Atlanta&zip=30303')->assertOk();
         $events = $response->json('data');
 
         $this->assertNotEmpty($events);
         foreach ($events as $event) {
             $this->assertSame('GA', $event['stateCode']);
             $this->assertSame('Atlanta', $event['city']);
-            $this->assertSame('30308', $event['zipCode']);
+            $this->assertSame('30303', $event['zipCode']);
         }
     }
 

@@ -44,7 +44,7 @@ class NotificationsApiTest extends TestCase
 
     private function placeOrder(array $overrides = []): array
     {
-        return $this->actingAs($this->user('attendee'))->postJson('/api/v1/events/miami-waterfront-cultural-food-festival/orders', array_merge([
+        return $this->actingAs($this->user('attendee'))->postJson('/api/v1/events/south-florida-jamaican-fish-fry/orders', array_merge([
             'customer_name' => 'Notify Guest',
             'customer_phone' => '305 555 0123',
             'method' => 'bank',

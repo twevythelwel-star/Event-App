@@ -1241,7 +1241,7 @@ class TestRunner
             'default_currency' => 'USD',
             'default_packaging_fee_jmd' => 500,
             'default_packaging_fee_usd' => 3,
-            'default_location' => 'Ocho Rios Cruise Pier',
+            'default_location' => 'Lauderhill Sample Pavilion',
             'default_order_deadline_hours' => 12,
         ];
 
@@ -2446,7 +2446,7 @@ class TestRunner
         $eventB = new \App\Models\Event([
             'id' => 'evt-uuid-montego-bay-bash',
             'organizer_id' => 'org-uuid-kingston-sunsplash',
-            'title' => 'Montego Bay Bash 2026',
+            'title' => 'Atlanta Reggae Night 2026',
         ]);
         $eventB->save();
 
@@ -2528,7 +2528,7 @@ class TestRunner
             'id' => 'item-jerk-pork',
             'organizer_id' => 'org-uuid-port-antonio',
             'event_id' => 'evt-uuid-port-antonio-fest',
-            'name' => 'Boston Bay Jerk Pork',
+            'name' => 'Jerk Pork Plate',
             'category' => 'mains',
             'pricing_type' => 'fixed',
             'price_cents' => 250000,
@@ -2972,7 +2972,7 @@ class TestRunner
 
         $eventA = new \App\Models\Event(['id' => 501, 'title' => 'Event A — Portland Jerk', 'organizer_id' => 10]);
         $eventA->save();
-        $eventB = new \App\Models\Event(['id' => 502, 'title' => 'Event B — Negril Seafood', 'organizer_id' => 20]);
+        $eventB = new \App\Models\Event(['id' => 502, 'title' => 'Event B — East Orange Seafood', 'organizer_id' => 20]);
         $eventB->save();
 
         $assignmentA = \App\Models\EventWorkerAssignment::create([
@@ -3259,7 +3259,7 @@ class TestRunner
         $testEvent = new \App\Models\Event([
             'id' => 'evt-qr-festival-2026',
             'organizer_id' => 'org-island-events',
-            'title' => 'Ocho Rios Reggae & Sound Festival 2026',
+            'title' => 'Atlanta Reggae & Sound Festival 2026',
             'status' => 'published',
         ]);
         $testEvent->save();

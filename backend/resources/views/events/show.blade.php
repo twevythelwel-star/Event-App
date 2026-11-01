@@ -233,9 +233,7 @@
     <!-- 1. Cinematic Hero Section -->
     <div class="detail-hero">
         @php
-            $heroImg = !empty($event->flyer_path) ? asset('storage/' . $event->flyer_path) : (
-                !empty($event->flyer_url) ? $event->flyer_url : asset('images/island_festival_sunset.jpg')
-            );
+            $heroImg = $event->display_image_url;
         @endphp
         <img src="{{ $heroImg }}" alt="{{ $event->title }}" class="detail-hero-img">
         <div class="detail-hero-overlay"></div>
@@ -266,16 +264,13 @@
             <div class="card-navy" style="position: relative;">
                 <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
                     <span style="background: rgba(99, 102, 241, 0.85); color: #FFFFFF; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase;">
-                        🌴 {{ $event->locationCategory ?? 'Island Event' }}
+                        {{ $event->category ?: 'Event' }}
                     </span>
                     @if($event->is_ordering_open)
                         <span style="background: rgba(16, 185, 129, 0.85); color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">
-                            ✓ Kitchen Accepting Pre-Orders
+                            ✓ Taking orders
                         </span>
                     @endif
-                    <span style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #CBD5E1; font-size: 11px; font-weight: 600; padding: 4px 12px; border-radius: 9999px;">
-                        Verified Host
-                    </span>
                 </div>
 
                 <h1 style="font-size: 28px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0 0 10px; letter-spacing: -0.01em;">
@@ -422,36 +417,31 @@
                 </div>
             </div>
 
-            <!-- 4. Authentic Media Section (Horizontal Gallery) -->
+            <!-- 4. Photos: this event's own flyer and dish images, never a fixed set -->
+            @php
+                $photos = collect([['src' => $event->flyer_path ? $event->display_image_url : null, 'caption' => $event->title]])
+                    ->merge($event->menuItems->where('is_active', true)->filter(fn ($item) => !empty($item->image_url))
+                        ->map(fn ($item) => ['src' => $item->image_url, 'caption' => $item->name]))
+                    ->filter(fn ($photo) => !empty($photo['src']))
+                    ->unique('src')->take(6)->values();
+            @endphp
+            @if($photos->isNotEmpty())
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">Event & Atmosphere Gallery</h3>
-                    <span style="font-size: 11px; color: #94A3B8;">5 verified event photos</span>
+                    <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">Photos</h3>
+                    <span style="font-size: 11px; color: #94A3B8;">Illustrative images from this listing</span>
                 </div>
 
                 <div class="gallery-scroll">
-                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/escovitch_fish.jpg') }}', 'Authentic Escovitch Snapper')">
-                        <img src="{{ asset('images/escovitch_fish.jpg') }}" alt="Escovitch Fish">
-                        <div class="gallery-caption">Signature Dish</div>
-                    </div>
-                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/island_music_reggae_concert.jpg') }}', 'Live Music Stage')">
-                        <img src="{{ asset('images/island_music_reggae_concert.jpg') }}" alt="Reggae Stage">
-                        <div class="gallery-caption">Live Reggae Stage</div>
-                    </div>
-                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/island_festival_sunset.jpg') }}', 'Sunset Waterfront')">
-                        <img src="{{ asset('images/island_festival_sunset.jpg') }}" alt="Festival Sunset">
-                        <div class="gallery-caption">Waterfront Atmosphere</div>
-                    </div>
-                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/jerk_chicken.jpg') }}', 'Smoked Jerk Chicken')">
-                        <img src="{{ asset('images/jerk_chicken.jpg') }}" alt="Jerk Chicken">
-                        <div class="gallery-caption">Pimento Smoked Jerk</div>
-                    </div>
-                    <div class="gallery-item" onclick="openLightbox('{{ asset('images/rum_punch.jpg') }}', 'Island Rum Punch')">
-                        <img src="{{ asset('images/rum_punch.jpg') }}" alt="Rum Punch">
-                        <div class="gallery-caption">Island Refreshments</div>
-                    </div>
+                    @foreach($photos as $photo)
+                        <div class="gallery-item" onclick="openLightbox(@js($photo['src']), @js($photo['caption']))">
+                            <img src="{{ $photo['src'] }}" alt="{{ $photo['caption'] }}">
+                            <div class="gallery-caption">{{ $photo['caption'] }}</div>
+                        </div>
+                    @endforeach
                 </div>
             </div>
+            @endif
 
             <!-- 5. Host / Organizer Information -->
             <div class="card-navy">
@@ -462,9 +452,8 @@
                     <div>
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $event->organizer_name ?? 'EventBite Host' }}</h3>
-                            <span style="color: #10B981;">✓</span>
                         </div>
-                        <div style="font-size: 11px; color: #10B981; font-weight: 600;">Verified Event Producer</div>
+                        <div style="font-size: 11px; color: #94A3B8; font-weight: 600;">Event organizer</div>
                     </div>
                 </div>
 
@@ -526,7 +515,7 @@
                 @if(!empty($event->menuItems) && count($event->menuItems) > 0)
                     <button type="button" onclick="switchSection('food')" class="btn-glass" style="width: 100%; justify-content: center; margin-top: 10px; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
                         <span>🍲</span>
-                        <span>View Caribbean Menu Offerings</span>
+                        <span>View the menu</span>
                     </button>
                 @endif
 

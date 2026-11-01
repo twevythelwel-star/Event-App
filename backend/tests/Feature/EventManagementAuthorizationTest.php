@@ -120,8 +120,8 @@ class EventManagementAuthorizationTest extends TestCase
         $this->actingAs($host)->post('/events/' . self::KINGSTON . '/publish')->assertRedirect();
         $this->assertSame('published', $this->kingston()->status);
 
-        $this->actingAs($host)->put('/events/' . self::KINGSTON, $this->form(['title' => 'Kingston Harbour Fish Fry (Updated)']))->assertRedirect();
-        $this->assertSame('Kingston Harbour Fish Fry (Updated)', $this->kingston()->title);
+        $this->actingAs($host)->put('/events/' . self::KINGSTON, $this->form(['title' => 'South Florida Jamaican Fish Fry (Updated)']))->assertRedirect();
+        $this->assertSame('South Florida Jamaican Fish Fry (Updated)', $this->kingston()->title);
 
         $open = $this->kingston()->is_ordering_open;
         $this->actingAs($host)->post('/events/' . self::KINGSTON . '/toggle-ordering')->assertRedirect();

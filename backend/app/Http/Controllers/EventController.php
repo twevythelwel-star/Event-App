@@ -29,7 +29,8 @@ class EventController extends Controller
             return redirect()->guest(route('login'))->with('error', 'Please sign in to browse events.');
         }
 
-        $events = Event::latest()->get();
+        // Soonest first; events without a machine-readable date go last.
+        $events = Event::query()->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')->get();
 
         if ($request->wantsJson()) {
             return response()->json([

@@ -301,7 +301,7 @@
                 <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center min-h-[220px]">
                     @if ($event->flyer_path)
                         <div id="current-container" class="w-full space-y-3">
-                            <img id="current-image" src="{{ $event->flyer_url ?? '/storage/' . $event->flyer_path }}" alt="{{ $event->title }}" class="w-full h-48 object-cover rounded-xl shadow-sm border border-slate-200">
+                            <img id="current-image" src="{{ $event->display_image_url }}" alt="{{ $event->title }}" class="w-full h-48 object-cover rounded-xl shadow-sm border border-slate-200">
                             <div class="flex items-center justify-between text-xs text-slate-600">
                                 <span class="font-medium truncate max-w-[150px]">{{ basename($event->flyer_path) }}</span>
                                 <span class="text-slate-400">{{ round(($event->flyer_size_bytes ?? 0) / 1024) }} KB</span>

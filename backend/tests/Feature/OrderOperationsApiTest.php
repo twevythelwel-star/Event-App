@@ -54,7 +54,7 @@ class OrderOperationsApiTest extends TestCase
 
         $this->assertCount(4, $orders);
         $this->assertTrue($orders->every(fn ($o) => $o['organizerId'] === 'org-kingston-youth'));
-        $this->assertSame('Miami Waterfront Cultural Food Festival', $orders->first()['eventTitle']);
+        $this->assertSame('South Florida Jamaican Fish Fry', $orders->first()['eventTitle']);
         $this->assertTrue($orders->first()['capabilities']['verify']);
     }
 

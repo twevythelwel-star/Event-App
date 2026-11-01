@@ -57,13 +57,13 @@ class HostEventsApiTest extends TestCase
     public function test_host_edits_event_details(): void
     {
         $this->actingAs($this->user('host'))->patchJson('/api/v1/host/events/' . self::KINGSTON, [
-            'title' => 'Kingston Harbour Sunday Fish Fry (Extended)',
+            'title' => 'South Florida Jamaican Fish Fry (Extended)',
             'pickup_instructions' => 'Station B, next to the pier steps.',
             'packaging_fee_jmd' => 150,
             'advance_order_deadline' => '2026-11-21 18:00',
         ])
             ->assertOk()
-            ->assertJsonPath('data.title', 'Kingston Harbour Sunday Fish Fry (Extended)')
+            ->assertJsonPath('data.title', 'South Florida Jamaican Fish Fry (Extended)')
             ->assertJsonPath('data.packagingFeeJMD', 150)
             ->assertJsonPath('data.advanceOrderDeadline', 'Saturday, Nov 21, 2026 at 6:00 PM');
 
@@ -115,7 +115,8 @@ class HostEventsApiTest extends TestCase
     {
         $host = $this->user('host');
         MenuItem::withoutGlobalScopes()->where('event_id', self::KINGSTON)->delete();
-        Event::withoutGlobalScopes()->whereKey(self::KINGSTON)->update(['status' => 'draft']);
+        // Nothing to sell at all: no menu and no ticket tiers.
+        Event::withoutGlobalScopes()->whereKey(self::KINGSTON)->update(['status' => 'draft', 'ticket_tiers' => null]);
 
         $this->actingAs($host)->postJson('/api/v1/host/events/' . self::KINGSTON . '/status', ['status' => 'published'])
             ->assertStatus(422);
@@ -180,7 +181,7 @@ class HostEventsApiTest extends TestCase
         $host = $this->user('host');
 
         $payload = [
-            'title' => 'Port Royal Sunset Seafood & Reggae Night',
+            'title' => 'Lauderhill Sunset Seafood & Reggae Night',
             'tagline' => 'Fresh Lobster, Snapper & Acoustic Roots',
             'category' => 'Seafood & Fish Fry',
             'date_str' => 'Saturday, December 19, 2026',

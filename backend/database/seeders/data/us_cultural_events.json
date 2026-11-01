@@ -1,737 +1,2544 @@
 [
-  {
-    "event": {
-      "id": "evt-kingston-harbour-fry",
-      "organizer_id": "org-kingston-youth",
-      "slug": "miami-waterfront-cultural-food-festival",
-      "title": "Miami Waterfront Cultural Food Festival",
-      "tagline": "Caribbean and Latin flavors, local makers, and live music on Biscayne Bay",
-      "category": "Food",
-      "date_str": "Saturday, November 28, 2026",
-      "time_str": "1:00 PM – 9:00 PM EST",
-      "timezone": "America/New_York",
-      "venue_name": "Biscayne Bay Waterfront Park Amphitheater",
-      "street_address": "301 Biscayne Blvd",
-      "city": "Miami",
-      "state_code": "FL",
-      "zip_code": "33132",
-      "country_code": "US",
-      "venue_address": "301 Biscayne Blvd, Miami, FL 33132, United States",
-      "coordinates": "25.7743° N, 80.1878° W",
-      "description": "A family-friendly gathering celebrating South Florida's Caribbean and Latin communities, neighborhood food vendors, live music, and local youth programs.",
-      "currency": "USD",
-      "organizer_name": "South Florida Cultural Foundation",
-      "organizer_phone": "+1 (305) 555-0199",
-      "organizer_whatsapp": "+1 (305) 555-0199",
-      "organizer_email": "events@southfloridaculture.example",
-      "deadline_days": 20,
-      "pickup_instructions": "Collect advance orders at the North Promenade food pavilion. Show your EventBite ticket QR code.",
-      "packaging_fee_usd": 1.5,
-      "flyer_path": "/images/island_festival_sunset.jpg"
-    },
-    "menu": [
-      {
-        "id": "kgn-escovitch",
-        "name": "Escovitch Snapper Plate",
-        "category": "Mains",
-        "pricingType": "customizable",
-        "description": "Crispy snapper with pickled vegetables, rice and peas, and plantains.",
-        "priceUSD": 18,
-        "priceJMD": 0,
-        "imageUrl": "/images/escovitch_fish.jpg",
-        "availableStock": 200,
-        "customOptionGroups": [
-          {
-            "id": "fish-size",
-            "title": "Fish portion",
-            "required": true,
-            "choices": [
-              { "label": "Regular", "extraPriceUSD": 0, "extraPriceJMD": 0 },
-              { "label": "Large", "extraPriceUSD": 2, "extraPriceJMD": 0 }
-            ]
-          },
-          {
-            "id": "sides",
-            "title": "Side",
-            "required": true,
-            "choices": [
-              { "label": "Rice and peas", "extraPriceUSD": 0, "extraPriceJMD": 0 },
-              { "label": "Plantains", "extraPriceUSD": 0, "extraPriceJMD": 0 }
-            ]
-          }
+    {
+        "event": {
+            "id": "evt-kingston-harbour-fry",
+            "organizer_id": "org-kingston-youth",
+            "slug": "south-florida-jamaican-fish-fry",
+            "title": "South Florida Jamaican Fish Fry",
+            "tagline": "Escovitch fish, jerk chicken, festival and bammy with live selectors",
+            "category": "Jamaican Food",
+            "date_str": "Saturday, November 21, 2026",
+            "event_date_iso": "2026-11-21",
+            "time_str": "12:00 PM – 8:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "20:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community park pavilion (demo)",
+            "street_address": "101 Sample Avenue (demo address)",
+            "city": "Lauderhill",
+            "state_code": "FL",
+            "zip_code": "33311",
+            "country_code": "US",
+            "venue_address": "101 Sample Avenue (demo address), Lauderhill, FL 33311, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A casual Saturday fish fry with Jamaican plates, family seating, and a small stage. Order food in advance and collect it at the pavilion with your EventBite ticket.",
+            "currency": "USD",
+            "organizer_name": "South Florida Fish Fry Collective (Demo)",
+            "organizer_phone": "+1 (555) 010-0100",
+            "organizer_whatsapp": "+1 (555) 010-0100",
+            "organizer_email": "demo-host-1@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to the grounds and live music. Food sold separately.",
+                    "priceUSD": 10,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2026-11-21T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-bundle-jerk",
+                    "name": "Jerk Chicken Food Bundle",
+                    "description": "Admission plus a jerk chicken plate, festival and a drink.",
+                    "priceUSD": 28,
+                    "priceJMD": 0,
+                    "availableStock": 120,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2026-11-21T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-bundle-fish",
+                    "name": "Escovitch Fish Food Bundle",
+                    "description": "Admission plus an escovitch fish plate, bammy and a drink.",
+                    "priceUSD": 32,
+                    "priceJMD": 0,
+                    "availableStock": 100,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2026-11-21T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "kgn-escovitch",
+                "name": "Escovitch Fish Plate",
+                "category": "Mains",
+                "pricingType": "customizable",
+                "description": "Fried fish topped with pickled onion and pepper, with rice and peas or plantains.",
+                "priceUSD": 18,
+                "priceJMD": 0,
+                "imageUrl": "/images/escovitch_fish.jpg",
+                "availableStock": 200,
+                "customOptionGroups": [
+                    {
+                        "id": "fish-size",
+                        "title": "Fish portion",
+                        "required": true,
+                        "choices": [
+                            {
+                                "label": "Regular",
+                                "extraPriceUSD": 0,
+                                "extraPriceJMD": 0
+                            },
+                            {
+                                "label": "Large",
+                                "extraPriceUSD": 2,
+                                "extraPriceJMD": 0
+                            }
+                        ]
+                    },
+                    {
+                        "id": "sides",
+                        "title": "Side",
+                        "required": true,
+                        "choices": [
+                            {
+                                "label": "Rice and peas",
+                                "extraPriceUSD": 0,
+                                "extraPriceJMD": 0
+                            },
+                            {
+                                "label": "Plantains",
+                                "extraPriceUSD": 0,
+                                "extraPriceJMD": 0
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "kgn-fried-chicken",
+                "name": "Jerk Chicken Meal",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Jerk-seasoned chicken with rice and peas and slaw.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "imageUrl": "/images/jerk_chicken.jpg",
+                "availableStock": 150
+            },
+            {
+                "id": "kgn-festivals",
+                "name": "Festival",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Sweet fried cornmeal dumplings.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": "/images/fried_plantains_sides.jpg",
+                "availableStock": 250
+            },
+            {
+                "id": "kgn-bammy",
+                "name": "Bammy",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Pan-fried cassava flatbread.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": "/images/bammy.jpg",
+                "availableStock": 200
+            },
+            {
+                "id": "kgn-rice-peas",
+                "name": "Rice and Peas",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Coconut rice with kidney beans. Vegetarian.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 220
+            },
+            {
+                "id": "kgn-steamed-veg",
+                "name": "Steamed Vegetables",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Cabbage, carrot and callaloo. Vegan.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 160
+            },
+            {
+                "id": "kgn-plantains",
+                "name": "Fried Sweet Plantains",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Ripe plantain, fried golden. Vegan.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": "/images/fried_plantains_sides.jpg",
+                "availableStock": 200
+            },
+            {
+                "id": "kgn-patty",
+                "name": "Beef Patty",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Flaky pastry with seasoned beef. Contains gluten.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 180
+            },
+            {
+                "id": "kgn-sorrel-drink",
+                "name": "Sorrel Ginger Cooler",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Chilled hibiscus and ginger drink.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 180
+            }
         ]
-      },
-      {
-        "id": "kgn-fried-chicken",
-        "name": "Jerk Chicken Meal",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Jerk-seasoned chicken with rice, slaw, and a mild or spicy sauce choice.",
-        "priceUSD": 15,
-        "priceJMD": 0,
-        "imageUrl": "/images/jerk_chicken.jpg",
-        "availableStock": 150
-      },
-      {
-        "id": "kgn-festivals",
-        "name": "Sweet Festival Dumplings",
-        "category": "Sides",
-        "pricingType": "fixed",
-        "description": "Golden cornmeal dumplings served fresh from the griddle.",
-        "priceUSD": 5,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 250
-      },
-      {
-        "id": "kgn-sorrel-drink",
-        "name": "Sorrel Ginger Cooler",
-        "category": "Drinks",
-        "pricingType": "fixed",
-        "description": "Chilled hibiscus and ginger drink.",
-        "priceUSD": 4,
-        "priceJMD": 0,
-        "imageUrl": "/images/tropical_island_smoothie.jpg",
-        "availableStock": 180
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-hellshire-sunset-fry",
-      "organizer_id": "org-hellshire-fishers",
-      "slug": "new-york-lunar-new-year-market",
-      "title": "New York Lunar New Year Food & Arts Market",
-      "tagline": "Asian American food vendors, craft makers, and neighborhood performances",
-      "category": "Culture",
-      "date_str": "Saturday, December 5, 2026",
-      "time_str": "11:00 AM – 7:00 PM EST",
-      "timezone": "America/New_York",
-      "venue_name": "Pier 36",
-      "street_address": "299 South Street",
-      "city": "New York",
-      "state_code": "NY",
-      "zip_code": "10002",
-      "country_code": "US",
-      "venue_address": "299 South Street, New York, NY 10002, United States",
-      "coordinates": "40.7117° N, 73.9846° W",
-      "description": "Explore regional food traditions from Chinese, Korean, Japanese, Filipino, Vietnamese, and South Asian New York vendors, alongside family activities and local arts.",
-      "currency": "USD",
-      "organizer_name": "New York Neighborhood Arts Collective",
-      "organizer_phone": "+1 (212) 555-0148",
-      "organizer_whatsapp": "+1 (212) 555-0148",
-      "organizer_email": "market@nyartscollective.example",
-      "deadline_days": 27,
-      "pickup_instructions": "Preorders are available at the Market Hall pickup counter. Present your ticket QR code.",
-      "packaging_fee_usd": 1,
-      "flyer_path": "/images/island_festival_sunset.jpg"
     },
-    "menu": [
-      {
-        "id": "hellshire-parrot-fish",
-        "name": "Vegetable Dumpling Basket",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Hand-folded dumplings with seasonal vegetables and dipping sauce.",
-        "priceUSD": 13,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "hellshire-lobster",
-        "name": "Filipino Chicken Adobo Bowl",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Chicken braised with garlic, vinegar, and soy, served over rice.",
-        "priceUSD": 16,
-        "priceJMD": 0,
-        "imageUrl": "/images/jerk_chicken.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "hellshire-peppershrimp",
-        "name": "Scallion Pancake",
-        "category": "Sides",
-        "pricingType": "fixed",
-        "description": "Crisp layered pancake with scallion and house dipping sauce.",
-        "priceUSD": 8,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "hellshire-coconut-water",
-        "name": "Ginger Citrus Tea",
-        "category": "Drinks",
-        "pricingType": "fixed",
-        "description": "Warming ginger tea with citrus.",
-        "priceUSD": 5,
-        "priceJMD": 0,
-        "imageUrl": "/images/tropical_island_smoothie.jpg",
-        "availableStock": 120
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-port-royal-heritage-fry",
-      "organizer_id": "org-portroyal-heritage",
-      "slug": "chicago-african-diaspora-festival",
-      "title": "Chicago African Diaspora Music & Food Festival",
-      "tagline": "West African, East African, and Black American foodways with live dance and music",
-      "category": "Culture",
-      "date_str": "Sunday, December 6, 2026",
-      "time_str": "12:00 PM – 8:00 PM CST",
-      "timezone": "America/Chicago",
-      "venue_name": "Navy Pier Festival Hall",
-      "street_address": "600 E Grand Ave",
-      "city": "Chicago",
-      "state_code": "IL",
-      "zip_code": "60611",
-      "country_code": "US",
-      "venue_address": "600 E Grand Ave, Chicago, IL 60611, United States",
-      "coordinates": "41.8917° N, 87.6078° W",
-      "description": "A community celebration of African and African diaspora cultures with food vendors, dance, storytelling, live music, and a family activity area.",
-      "currency": "USD",
-      "organizer_name": "Chicago Diaspora Arts & Culture Council",
-      "organizer_phone": "+1 (312) 555-0182",
-      "organizer_whatsapp": "+1 (312) 555-0182",
-      "organizer_email": "hello@chicagodiaspora.example",
-      "deadline_days": 28,
-      "pickup_instructions": "Order pickup is at the South Hall vendor desk. Keep your order QR code ready.",
-      "packaging_fee_usd": 1.25,
-      "flyer_path": "/images/island_culture_carnival.jpg"
+    {
+        "event": {
+            "id": "evt-hellshire-sunset-fry",
+            "organizer_id": "org-hellshire-fishers",
+            "slug": "multicultural-family-community-day-miramar",
+            "title": "Multicultural Family and Community Day",
+            "tagline": "Food vendors from many cuisines, kids activities and family meal packages",
+            "category": "Family and Community",
+            "date_str": "Saturday, November 28, 2026",
+            "event_date_iso": "2026-11-28",
+            "time_str": "11:00 AM – 5:00 PM EST",
+            "start_time": "11:00",
+            "end_time": "17:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample regional park lawn (demo)",
+            "street_address": "102 Sample Avenue (demo address)",
+            "city": "Miramar",
+            "state_code": "FL",
+            "zip_code": "33023",
+            "country_code": "US",
+            "venue_address": "102 Sample Avenue (demo address), Miramar, FL 33023, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A daytime community gathering with sample vendors representing Caribbean, Latin American, West African and American cuisines, plus games, face painting and a cultural showcase.",
+            "currency": "USD",
+            "organizer_name": "Broward Family Events Network (Demo)",
+            "organizer_phone": "+1 (555) 010-0101",
+            "organizer_whatsapp": "+1 (555) 010-0101",
+            "organizer_email": "demo-host-2@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry for one guest age 13 and up.",
+                    "priceUSD": 5,
+                    "priceJMD": 0,
+                    "availableStock": 500,
+                    "maxPerCustomer": 10,
+                    "saleEndIso": "2026-11-28T11:00:00-05:00"
+                },
+                {
+                    "id": "tier-child",
+                    "name": "Child Admission (3-12)",
+                    "description": "Entry for one child. Under 3 free.",
+                    "priceUSD": 2,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 10,
+                    "saleEndIso": "2026-11-28T11:00:00-05:00"
+                },
+                {
+                    "id": "tier-family",
+                    "name": "Family Bundle (2 adults + 2 children)",
+                    "description": "Four admissions at a family rate.",
+                    "priceUSD": 15,
+                    "priceJMD": 0,
+                    "availableStock": 150,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2026-11-28T11:00:00-05:00"
+                },
+                {
+                    "id": "tier-family-meal",
+                    "name": "Family Meal Package",
+                    "description": "Family admission plus four vendor meal vouchers.",
+                    "priceUSD": 55,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 2,
+                    "saleEndIso": "2026-11-28T11:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_culture_carnival.jpg"
+        },
+        "menu": [
+            {
+                "id": "mfd-jerk-plate",
+                "name": "Jerk Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Caribbean vendor: jerk chicken, rice and peas.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "imageUrl": "/images/jerk_chicken.jpg",
+                "availableStock": 120
+            },
+            {
+                "id": "mfd-pupusa",
+                "name": "Pupusas (2)",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Salvadoran vendor: cheese or bean pupusas with curtido. Vegetarian option.",
+                "priceUSD": 11,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "mfd-jollof",
+                "name": "Jollof Rice with Chicken",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "West African vendor: smoky jollof rice, grilled chicken. Contains no nuts.",
+                "priceUSD": 13,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "mfd-veg-bowl",
+                "name": "Vegetable Rice Bowl",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Vegan rice bowl with roasted vegetables.",
+                "priceUSD": 10,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 90
+            },
+            {
+                "id": "mfd-empanada",
+                "name": "Beef or Cheese Empanada",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Latin American vendor. Contains gluten.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 160
+            },
+            {
+                "id": "mfd-kids-meal",
+                "name": "Kids Meal",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Chicken tenders, fruit cup and juice box.",
+                "priceUSD": 8,
+                "priceJMD": 0,
+                "imageUrl": "/images/fried_chicken.jpg",
+                "availableStock": 140
+            },
+            {
+                "id": "mfd-lemonade",
+                "name": "Fresh Lemonade",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Fresh-squeezed lemonade.",
+                "priceUSD": 3,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 250
+            }
+        ]
     },
-    "menu": [
-      {
-        "id": "pr-steamed-snapper",
-        "name": "Jollof Rice & Grilled Chicken",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Smoky tomato rice with grilled chicken and seasonal vegetables.",
-        "priceUSD": 17,
-        "priceJMD": 0,
-        "imageUrl": "/images/jerk_chicken.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "pr-conch-soup",
-        "name": "Ethiopian Lentil Stew",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Spiced lentils served with injera and fresh greens.",
-        "priceUSD": 14,
-        "priceJMD": 0,
-        "imageUrl": "/images/oxtail.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "pr-crackers-bammy",
-        "name": "Plantain & Peanut Snack",
-        "category": "Sides",
-        "pricingType": "fixed",
-        "description": "Sweet fried plantain with roasted peanuts.",
-        "priceUSD": 7,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-ochorios-fishermans-fry",
-      "organizer_id": "org-ochorios-coop",
-      "slug": "los-angeles-filipino-night-market",
-      "title": "Los Angeles Filipino Community Night Market",
-      "tagline": "Filipino street food, small businesses, and live local performers",
-      "category": "Food",
-      "date_str": "Friday, December 11, 2026",
-      "time_str": "4:00 PM – 10:00 PM PST",
-      "timezone": "America/Los_Angeles",
-      "venue_name": "Historic Filipinotown Community Plaza",
-      "street_address": "1550 W Temple St",
-      "city": "Los Angeles",
-      "state_code": "CA",
-      "zip_code": "90026",
-      "country_code": "US",
-      "venue_address": "1550 W Temple St, Los Angeles, CA 90026, United States",
-      "coordinates": "34.0684° N, 118.2645° W",
-      "description": "Discover Filipino regional dishes and independent makers at an evening market supporting local artists, family businesses, and community organizations.",
-      "currency": "USD",
-      "organizer_name": "Historic Filipinotown Community Association",
-      "organizer_phone": "+1 (213) 555-0166",
-      "organizer_whatsapp": "+1 (213) 555-0166",
-      "organizer_email": "market@historicfilipinotown.example",
-      "deadline_days": 34,
-      "pickup_instructions": "Pick up food orders at the numbered vendor stalls shown on your confirmation.",
-      "packaging_fee_usd": 1,
-      "flyer_path": "/images/island_festival_sunset.jpg"
+    {
+        "event": {
+            "id": "evt-port-royal-heritage-fry",
+            "organizer_id": "org-portroyal-heritage",
+            "slug": "jamaican-independence-celebration-brooklyn",
+            "title": "Jamaican Independence Celebration",
+            "tagline": "Live music, folk traditions and Jamaican food vendors",
+            "category": "Cultural Festival",
+            "date_str": "Saturday, August 7, 2027",
+            "event_date_iso": "2027-08-07",
+            "time_str": "1:00 PM – 9:00 PM EDT",
+            "start_time": "13:00",
+            "end_time": "21:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample indoor cultural hall (demo)",
+            "street_address": "103 Sample Avenue (demo address)",
+            "city": "Brooklyn",
+            "state_code": "NY",
+            "zip_code": "11201",
+            "country_code": "US",
+            "venue_address": "103 Sample Avenue (demo address), Brooklyn, NY 11201, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample celebration of Jamaican culture with live reggae and folk performances, storytelling, dance, and food vendors. Scheduled for the Saturday after Jamaica's Independence Day (August 6); the date is illustrative.",
+            "currency": "USD",
+            "organizer_name": "Brooklyn Caribbean Culture Alliance (Demo)",
+            "organizer_phone": "+1 (555) 010-0102",
+            "organizer_whatsapp": "+1 (555) 010-0102",
+            "organizer_email": "demo-host-3@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to performances and vendor hall.",
+                    "priceUSD": 20,
+                    "priceJMD": 0,
+                    "availableStock": 400,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-08-07T13:00:00-04:00"
+                },
+                {
+                    "id": "tier-reserved",
+                    "name": "Reserved Seating",
+                    "description": "Reserved seat near the stage.",
+                    "priceUSD": 40,
+                    "priceJMD": 0,
+                    "availableStock": 120,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-08-07T13:00:00-04:00"
+                },
+                {
+                    "id": "tier-vip",
+                    "name": "VIP Experience",
+                    "description": "Reserved seating, welcome drink and plated meal.",
+                    "priceUSD": 85,
+                    "priceJMD": 0,
+                    "availableStock": 40,
+                    "maxPerCustomer": 4,
+                    "saleEndIso": "2027-08-07T13:00:00-04:00"
+                }
+            ],
+            "flyer_path": "/images/island_culture_carnival.jpg"
+        },
+        "menu": [
+            {
+                "id": "bkn-jerk-pork",
+                "name": "Jerk Pork Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Jerk pork with rice and peas and cabbage.",
+                "priceUSD": 17,
+                "priceJMD": 0,
+                "imageUrl": "/images/jerk_chicken.jpg",
+                "availableStock": 120
+            },
+            {
+                "id": "bkn-oxtail",
+                "name": "Oxtail Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Slow-braised oxtail with butter beans and rice.",
+                "priceUSD": 22,
+                "priceJMD": 0,
+                "imageUrl": "/images/oxtail.jpg",
+                "availableStock": 80
+            },
+            {
+                "id": "bkn-curry-goat",
+                "name": "Curry Goat Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Curried goat with rice and peas.",
+                "priceUSD": 19,
+                "priceJMD": 0,
+                "imageUrl": "/images/caribbean_curry_goat.jpg",
+                "availableStock": 80
+            },
+            {
+                "id": "bkn-veg-curry",
+                "name": "Vegetable Curry Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Chickpea and pumpkin curry. Vegan.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 80
+            },
+            {
+                "id": "bkn-festival",
+                "name": "Festival and Bammy",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "One festival and one bammy.",
+                "priceUSD": 7,
+                "priceJMD": 0,
+                "imageUrl": "/images/bammy.jpg",
+                "availableStock": 200
+            },
+            {
+                "id": "bkn-patty",
+                "name": "Beef Patty",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Contains gluten.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 180
+            },
+            {
+                "id": "bkn-ginger-beer",
+                "name": "Ginger Beer",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Spicy house ginger beer.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 200
+            }
+        ]
     },
-    "menu": [
-      {
-        "id": "ocho-adobo",
-        "name": "Chicken Adobo Rice Bowl",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Slow-braised chicken with garlic, vinegar, and steamed rice.",
-        "priceUSD": 15,
-        "priceJMD": 0,
-        "imageUrl": "/images/jerk_chicken.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "ocho-lumpia",
-        "name": "Vegetable Lumpia",
-        "category": "Sides",
-        "pricingType": "fixed",
-        "description": "Crisp vegetable spring rolls with sweet chili dip.",
-        "priceUSD": 9,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "ocho-pancit",
-        "name": "Pancit Noodle Plate",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Rice noodles with vegetables and citrus.",
-        "priceUSD": 14,
-        "priceJMD": 0,
-        "imageUrl": "/images/oxtail.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "ocho-calamansi",
-        "name": "Calamansi Iced Tea",
-        "category": "Drinks",
-        "pricingType": "fixed",
-        "description": "Bright calamansi citrus tea over ice.",
-        "priceUSD": 5,
-        "priceJMD": 0,
-        "imageUrl": "/images/tropical_island_smoothie.jpg",
-        "availableStock": 120
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-negril-7mile-catch",
-      "organizer_id": "org-negril-sunset",
-      "slug": "houston-smoke-blues-food-festival",
-      "title": "Houston Smoke, Blues & Regional Food Festival",
-      "tagline": "Texas barbecue, Gulf seafood, blues artists, and neighborhood food trucks",
-      "category": "Music",
-      "date_str": "Sunday, December 13, 2026",
-      "time_str": "12:00 PM – 8:00 PM CST",
-      "timezone": "America/Chicago",
-      "venue_name": "Discovery Green",
-      "street_address": "1500 McKinney St",
-      "city": "Houston",
-      "state_code": "TX",
-      "zip_code": "77010",
-      "country_code": "US",
-      "venue_address": "1500 McKinney St, Houston, TX 77010, United States",
-      "coordinates": "29.7532° N, 95.3594° W",
-      "description": "A Houston gathering of barbecue cooks, Gulf Coast seafood vendors, food trucks, and local blues musicians with accessible family activities.",
-      "currency": "USD",
-      "organizer_name": "Houston Neighborhood Food & Music Alliance",
-      "organizer_phone": "+1 (713) 555-0127",
-      "organizer_whatsapp": "+1 (713) 555-0127",
-      "organizer_email": "hello@houstonfoodmusic.example",
-      "deadline_days": 36,
-      "pickup_instructions": "Advance orders are staged at the food truck lane pickup tent. Show your order QR code.",
-      "packaging_fee_usd": 1.5,
-      "flyer_path": "/images/island_music_reggae_concert.jpg"
+    {
+        "event": {
+            "id": "evt-ochorios-fishermans-fry",
+            "organizer_id": "org-ochorios-coop",
+            "slug": "reggae-dancehall-night-atlanta",
+            "title": "Reggae and Dancehall Night",
+            "tagline": "Selectors, live band sets and late-night bites",
+            "category": "Music and Nightlife",
+            "date_str": "Saturday, December 12, 2026",
+            "event_date_iso": "2026-12-12",
+            "time_str": "8:00 PM – 12:00 AM EST",
+            "start_time": "20:00",
+            "end_time": "23:59",
+            "timezone": "America/New_York",
+            "venue_name": "Sample concert hall (demo)",
+            "street_address": "104 Sample Avenue (demo address)",
+            "city": "Atlanta",
+            "state_code": "GA",
+            "zip_code": "30303",
+            "country_code": "US",
+            "venue_address": "104 Sample Avenue (demo address), Atlanta, GA 30303, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. An evening of reggae and dancehall with a live band and guest selectors. Ages 18 and over with valid ID. Food bites available for pre-order.",
+            "currency": "USD",
+            "organizer_name": "Atlanta Roots Music Presents (Demo)",
+            "organizer_phone": "+1 (555) 010-0103",
+            "organizer_whatsapp": "+1 (555) 010-0103",
+            "organizer_email": "demo-host-4@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Standing room entry.",
+                    "priceUSD": 25,
+                    "priceJMD": 0,
+                    "availableStock": 350,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2026-12-12T20:00:00-05:00"
+                },
+                {
+                    "id": "tier-vip",
+                    "name": "VIP Balcony",
+                    "description": "Balcony access, reserved table and two drink tickets.",
+                    "priceUSD": 75,
+                    "priceJMD": 0,
+                    "availableStock": 60,
+                    "maxPerCustomer": 4,
+                    "saleEndIso": "2026-12-12T20:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_music_reggae_concert.jpg"
+        },
+        "menu": [
+            {
+                "id": "atl-wings",
+                "name": "Jerk Wings (8)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Crispy jerk wings with dipping sauce.",
+                "priceUSD": 13,
+                "priceJMD": 0,
+                "imageUrl": "/images/crispy_island_wings.jpg",
+                "availableStock": 150
+            },
+            {
+                "id": "atl-patty",
+                "name": "Beef Patty",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Contains gluten.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 150
+            },
+            {
+                "id": "atl-fries",
+                "name": "Plantain Chips and Dip",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Vegan plantain chips with mango salsa.",
+                "priceUSD": 7,
+                "priceJMD": 0,
+                "imageUrl": "/images/fried_plantains_sides.jpg",
+                "availableStock": 120
+            },
+            {
+                "id": "atl-mocktail",
+                "name": "Tropical Fruit Punch",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic fruit punch.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 200
+            }
+        ]
     },
-    "menu": [
-      {
-        "id": "negril-brisket",
-        "name": "Texas Smoked Brisket Plate",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Slow-smoked brisket served with slaw and cornbread.",
-        "priceUSD": 21,
-        "priceJMD": 0,
-        "imageUrl": "/images/jerk_chicken.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "negril-gulf-shrimp",
-        "name": "Gulf Shrimp Po' Boy",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Crisp Gulf shrimp, lettuce, tomato, and remoulade on a roll.",
-        "priceUSD": 17,
-        "priceJMD": 0,
-        "imageUrl": "/images/escovitch_fish.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "negril-cornbread",
-        "name": "Skillet Cornbread",
-        "category": "Sides",
-        "pricingType": "fixed",
-        "description": "Warm cornmeal bread with whipped honey butter.",
-        "priceUSD": 6,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "negril-lemonade",
-        "name": "Fresh Lemonade",
-        "category": "Drinks",
-        "pricingType": "fixed",
-        "description": "Fresh-squeezed lemonade over ice.",
-        "priceUSD": 4,
-        "priceJMD": 0,
-        "imageUrl": "/images/tropical_island_smoothie.jpg",
-        "availableStock": 120
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-mobay-pier1-fiesta",
-      "organizer_id": "org-mobay-marine",
-      "slug": "boston-latino-harvest-celebration",
-      "title": "Boston Latino Harvest & Community Celebration",
-      "tagline": "Central and South American food, dance, and local community organizations",
-      "category": "Community",
-      "date_str": "Saturday, December 19, 2026",
-      "time_str": "11:00 AM – 7:00 PM EST",
-      "timezone": "America/New_York",
-      "venue_name": "Boston City Hall Plaza",
-      "street_address": "1 City Hall Square",
-      "city": "Boston",
-      "state_code": "MA",
-      "zip_code": "02201",
-      "country_code": "US",
-      "venue_address": "1 City Hall Square, Boston, MA 02201, United States",
-      "coordinates": "42.3601° N, 71.0589° W",
-      "description": "Celebrate the many Latino communities of Greater Boston with regional dishes, music, dance, local vendors, and family activities.",
-      "currency": "USD",
-      "organizer_name": "Greater Boston Latino Community Network",
-      "organizer_phone": "+1 (617) 555-0173",
-      "organizer_whatsapp": "+1 (617) 555-0173",
-      "organizer_email": "events@bostonlatinonetwork.example",
-      "deadline_days": 42,
-      "pickup_instructions": "Find the preorder counter at the east side of the plaza and present your ticket QR code.",
-      "packaging_fee_usd": 1,
-      "flyer_path": "/images/island_culture_carnival.jpg"
+    {
+        "event": {
+            "id": "evt-negril-7mile-catch",
+            "organizer_id": "org-negril-sunset",
+            "slug": "hartford-jamaican-community-cookout",
+            "title": "Hartford Jamaican Community Cookout",
+            "tagline": "Backyard-style cookout with advance meal ordering",
+            "category": "Community and Food",
+            "date_str": "Saturday, December 5, 2026",
+            "event_date_iso": "2026-12-05",
+            "time_str": "12:00 PM – 5:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "17:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community center grounds (demo)",
+            "street_address": "105 Sample Avenue (demo address)",
+            "city": "Hartford",
+            "state_code": "CT",
+            "zip_code": "06103",
+            "country_code": "US",
+            "venue_address": "105 Sample Avenue (demo address), Hartford, CT 06103, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A neighborhood cookout with grilled Jamaican favorites. Pre-order meals or bundles and show your ticket QR code at the pickup tent. Tickets are verified on event day.",
+            "currency": "USD",
+            "organizer_name": "Hartford Community Table (Demo)",
+            "organizer_phone": "+1 (555) 010-0104",
+            "organizer_whatsapp": "+1 (555) 010-0104",
+            "organizer_email": "demo-host-5@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to the cookout grounds.",
+                    "priceUSD": 5,
+                    "priceJMD": 0,
+                    "availableStock": 250,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2026-12-05T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-bundle-chicken",
+                    "name": "Chicken Meal Bundle",
+                    "description": "Admission plus a jerk chicken meal and a drink.",
+                    "priceUSD": 22,
+                    "priceJMD": 0,
+                    "availableStock": 120,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2026-12-05T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-bundle-family",
+                    "name": "Family Cookout Bundle",
+                    "description": "Admission and meals for two adults and two children.",
+                    "priceUSD": 60,
+                    "priceJMD": 0,
+                    "availableStock": 50,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2026-12-05T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "hfd-jerk",
+                "name": "Jerk Chicken Meal",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Quarter jerk chicken, rice and peas, cabbage.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "imageUrl": "/images/jerk_chicken.jpg",
+                "availableStock": 150
+            },
+            {
+                "id": "hfd-fish",
+                "name": "Fried Fish Meal",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Fried fish with festival.",
+                "priceUSD": 16,
+                "priceJMD": 0,
+                "imageUrl": "/images/escovitch_fish.jpg",
+                "availableStock": 100
+            },
+            {
+                "id": "hfd-veg",
+                "name": "Steamed Vegetable Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Vegan plate with rice and peas.",
+                "priceUSD": 11,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 80
+            },
+            {
+                "id": "hfd-bammy",
+                "name": "Bammy",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Pan-fried cassava flatbread.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": "/images/bammy.jpg",
+                "availableStock": 150
+            },
+            {
+                "id": "hfd-drink",
+                "name": "Sorrel Cooler",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Hibiscus and ginger.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 200
+            }
+        ]
     },
-    "menu": [
-      {
-        "id": "mobay-arepas",
-        "name": "Arepa with Black Beans",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Griddled corn cake filled with black beans, avocado, and cheese.",
-        "priceUSD": 13,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "mobay-tamales",
-        "name": "Chicken Tamale",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Corn masa with seasoned chicken, steamed in a corn husk.",
-        "priceUSD": 12,
-        "priceJMD": 0,
-        "imageUrl": "/images/jerk_chicken.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "mobay-empanada",
-        "name": "Spinach & Cheese Empanada",
-        "category": "Sides",
-        "pricingType": "fixed",
-        "description": "Baked pastry filled with spinach and cheese.",
-        "priceUSD": 7,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "mobay-horchata",
-        "name": "Horchata",
-        "category": "Drinks",
-        "pricingType": "fixed",
-        "description": "Chilled cinnamon rice drink.",
-        "priceUSD": 5,
-        "priceJMD": 0,
-        "imageUrl": "/images/tropical_island_smoothie.jpg",
-        "availableStock": 120
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-treasure-beach-calabash",
-      "organizer_id": "org-southcoast-fishers",
-      "slug": "atlanta-mexican-central-american-festival",
-      "title": "Atlanta Mexican & Central American Food Fair",
-      "tagline": "Regional dishes, market vendors, and community-led cultural programming",
-      "category": "Food",
-      "date_str": "Sunday, December 20, 2026",
-      "time_str": "12:00 PM – 8:00 PM EST",
-      "timezone": "America/New_York",
-      "venue_name": "Ponce City Market Central Food Hall",
-      "street_address": "675 Ponce De Leon Ave NE",
-      "city": "Atlanta",
-      "state_code": "GA",
-      "zip_code": "30308",
-      "country_code": "US",
-      "venue_address": "675 Ponce De Leon Ave NE, Atlanta, GA 30308, United States",
-      "coordinates": "33.7725° N, 84.3655° W",
-      "description": "A community fair featuring Mexican, Guatemalan, Salvadoran, and Honduran food vendors, crafts, music, and family activities.",
-      "currency": "USD",
-      "organizer_name": "Atlanta Latin Community Arts Association",
-      "organizer_phone": "+1 (404) 555-0118",
-      "organizer_whatsapp": "+1 (404) 555-0118",
-      "organizer_email": "hello@atlantalatinarts.example",
-      "deadline_days": 43,
-      "pickup_instructions": "Advance food orders are collected at the market information booth.",
-      "packaging_fee_usd": 1,
-      "flyer_path": "/images/island_culture_carnival.jpg"
+    {
+        "event": {
+            "id": "evt-mobay-pier1-fiesta",
+            "organizer_id": "org-mobay-marine",
+            "slug": "philadelphia-global-food-festival",
+            "title": "Philadelphia Global Food Festival",
+            "tagline": "Sample vendors from around the world, with dietary labels",
+            "category": "Food Festival",
+            "date_str": "Saturday, January 30, 2027",
+            "event_date_iso": "2027-01-30",
+            "time_str": "11:00 AM – 6:00 PM EST",
+            "start_time": "11:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample convention hall (demo)",
+            "street_address": "106 Sample Avenue (demo address)",
+            "city": "Philadelphia",
+            "state_code": "PA",
+            "zip_code": "19103",
+            "country_code": "US",
+            "venue_address": "106 Sample Avenue (demo address), Philadelphia, PA 19103, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample indoor food festival with vendors representing Caribbean, Italian-American, Ethiopian, Vietnamese and Mexican cuisines. Dietary details are shown per item where supplied.",
+            "currency": "USD",
+            "organizer_name": "Philadelphia Food Culture Project (Demo)",
+            "organizer_phone": "+1 (555) 010-0105",
+            "organizer_whatsapp": "+1 (555) 010-0105",
+            "organizer_email": "demo-host-6@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to the festival floor.",
+                    "priceUSD": 8,
+                    "priceJMD": 0,
+                    "availableStock": 600,
+                    "maxPerCustomer": 10,
+                    "saleEndIso": "2027-01-30T11:00:00-05:00"
+                },
+                {
+                    "id": "tier-tasting",
+                    "name": "Tasting Pass",
+                    "description": "Entry plus five tasting tokens.",
+                    "priceUSD": 28,
+                    "priceJMD": 0,
+                    "availableStock": 250,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-01-30T11:00:00-05:00"
+                },
+                {
+                    "id": "tier-vip",
+                    "name": "VIP Tasting Lounge",
+                    "description": "Entry, eight tasting tokens and lounge seating.",
+                    "priceUSD": 60,
+                    "priceJMD": 0,
+                    "availableStock": 60,
+                    "maxPerCustomer": 4,
+                    "saleEndIso": "2027-01-30T11:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "phl-jerk",
+                "name": "Jerk Chicken Bowl",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Caribbean vendor. Gluten-free.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "imageUrl": "/images/jerk_chicken.jpg",
+                "availableStock": 100
+            },
+            {
+                "id": "phl-injera",
+                "name": "Vegetable Injera Platter",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Ethiopian vendor. Vegan; contains gluten.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 80
+            },
+            {
+                "id": "phl-banh-mi",
+                "name": "Banh Mi Sandwich",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Vietnamese vendor. Contains gluten; pork or tofu.",
+                "priceUSD": 12,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "phl-tacos",
+                "name": "Street Tacos (3)",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Mexican vendor. Corn tortillas; chicken, beef or mushroom.",
+                "priceUSD": 12,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 120
+            },
+            {
+                "id": "phl-arancini",
+                "name": "Arancini (4)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Italian-American vendor. Vegetarian; contains dairy and gluten.",
+                "priceUSD": 9,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "phl-extra-sauce",
+                "name": "Add-on: Sauce Flight",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Four house sauces for sampling.",
+                "priceUSD": 3,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 200
+            },
+            {
+                "id": "phl-lemonade",
+                "name": "Hibiscus Cooler",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 200
+            }
+        ]
     },
-    "menu": [
-      {
-        "id": "treasure-tacos",
-        "name": "Roasted Vegetable Tacos",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Three corn tortillas with roasted seasonal vegetables and salsa.",
-        "priceUSD": 14,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "treasure-pupusa",
-        "name": "Bean & Cheese Pupusas",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Hand-formed masa cakes served with curtido and tomato salsa.",
-        "priceUSD": 12,
-        "priceJMD": 0,
-        "imageUrl": "/images/oxtail.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "treasure-elote",
-        "name": "Street Corn Cup",
-        "category": "Sides",
-        "pricingType": "fixed",
-        "description": "Corn with lime, cheese, and a choice of seasoning.",
-        "priceUSD": 6,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-boston-bay-jerk-fish",
-      "organizer_id": "org-portland-cookout",
-      "slug": "san-francisco-mediterranean-heritage-market",
-      "title": "San Francisco Mediterranean Heritage Market",
-      "tagline": "Greek, Italian, North African, and Middle Eastern neighborhood food traditions",
-      "category": "Culture",
-      "date_str": "Saturday, December 26, 2026",
-      "time_str": "11:00 AM – 7:00 PM PST",
-      "timezone": "America/Los_Angeles",
-      "venue_name": "Ferry Building Marketplace",
-      "street_address": "1 Ferry Building",
-      "city": "San Francisco",
-      "state_code": "CA",
-      "zip_code": "94111",
-      "country_code": "US",
-      "venue_address": "1 Ferry Building, San Francisco, CA 94111, United States",
-      "coordinates": "37.7955° N, 122.3937° W",
-      "description": "A community market celebrating Mediterranean and Middle Eastern foodways, local makers, music, and family activities.",
-      "currency": "USD",
-      "organizer_name": "Bay Area Mediterranean Community Council",
-      "organizer_phone": "+1 (415) 555-0104",
-      "organizer_whatsapp": "+1 (415) 555-0104",
-      "organizer_email": "market@baymedcouncil.example",
-      "deadline_days": 49,
-      "pickup_instructions": "Preorders are held at the Ferry Plaza vendor information counter.",
-      "packaging_fee_usd": 1,
-      "flyer_path": "/images/island_festival_sunset.jpg"
+    {
+        "event": {
+            "id": "evt-treasure-beach-calabash",
+            "organizer_id": "org-southcoast-fishers",
+            "slug": "boston-world-cultures-food-gathering",
+            "title": "Boston World Cultures and Food Gathering",
+            "tagline": "Performances, family activities and food from cultural vendors",
+            "category": "Cultural and Community",
+            "date_str": "Saturday, February 6, 2027",
+            "event_date_iso": "2027-02-06",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community arts center (demo)",
+            "street_address": "107 Sample Avenue (demo address)",
+            "city": "Boston",
+            "state_code": "MA",
+            "zip_code": "02108",
+            "country_code": "US",
+            "venue_address": "107 Sample Avenue (demo address), Boston, MA 02108, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A winter indoor gathering with sample performances from several community groups, family workshops, and food from participating cultural vendors.",
+            "currency": "USD",
+            "organizer_name": "Boston Neighborhood Arts Network (Demo)",
+            "organizer_phone": "+1 (555) 010-0106",
+            "organizer_whatsapp": "+1 (555) 010-0106",
+            "organizer_email": "demo-host-7@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry for one guest.",
+                    "priceUSD": 6,
+                    "priceJMD": 0,
+                    "availableStock": 400,
+                    "maxPerCustomer": 10,
+                    "saleEndIso": "2027-02-06T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-family",
+                    "name": "Family Admission (up to 5)",
+                    "description": "Entry for a family of up to five.",
+                    "priceUSD": 20,
+                    "priceJMD": 0,
+                    "availableStock": 120,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2027-02-06T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_culture_carnival.jpg"
+        },
+        "menu": [
+            {
+                "id": "bos-jerk",
+                "name": "Jerk Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Caribbean vendor.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "imageUrl": "/images/jerk_chicken.jpg",
+                "availableStock": 80
+            },
+            {
+                "id": "bos-feijoada",
+                "name": "Brazilian Black Bean Stew",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Brazilian vendor, with rice. Vegetarian version available.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 80
+            },
+            {
+                "id": "bos-dumplings",
+                "name": "Pork or Veggie Dumplings (6)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "East Asian vendor. Contains gluten and soy.",
+                "priceUSD": 10,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 120
+            },
+            {
+                "id": "bos-chowder-cup",
+                "name": "New England Clam Chowder Cup",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Local vendor. Contains shellfish and dairy.",
+                "priceUSD": 7,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "bos-cider",
+                "name": "Warm Spiced Cider",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 200
+            }
+        ]
     },
-    "menu": [
-      {
-        "id": "boston-bay-shawarma",
-        "name": "Chicken Shawarma Plate",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Spiced chicken with rice, salad, and garlic sauce.",
-        "priceUSD": 17,
-        "priceJMD": 0,
-        "imageUrl": "/images/jerk_chicken.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "boston-bay-falafel",
-        "name": "Falafel Pita",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Chickpea falafel with greens and tahini in pita.",
-        "priceUSD": 14,
-        "priceJMD": 0,
-        "imageUrl": "/images/oxtail.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "boston-bay-baklava",
-        "name": "Baklava Trio",
-        "category": "Desserts",
-        "pricingType": "fixed",
-        "description": "Flaky pastry with nuts and honey.",
-        "priceUSD": 7,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-whitehouse-cooperative",
-      "organizer_id": "org-whitehouse-fishers",
-      "slug": "nashville-soul-food-blues-gathering",
-      "title": "Nashville Soul Food & Blues Gathering",
-      "tagline": "Black Southern food traditions, live blues, and community nonprofit partners",
-      "category": "Music",
-      "date_str": "Saturday, January 2, 2027",
-      "time_str": "12:00 PM – 8:00 PM CST",
-      "timezone": "America/Chicago",
-      "venue_name": "Bicentennial Capitol Mall State Park",
-      "street_address": "600 James Robertson Pkwy",
-      "city": "Nashville",
-      "state_code": "TN",
-      "zip_code": "37243",
-      "country_code": "US",
-      "venue_address": "600 James Robertson Pkwy, Nashville, TN 37243, United States",
-      "coordinates": "36.1725° N, 86.7842° W",
-      "description": "A community-organized celebration of soul food, blues, local history, and neighborhood organizations in Nashville.",
-      "currency": "USD",
-      "organizer_name": "Nashville Black Arts & Community Alliance",
-      "organizer_phone": "+1 (615) 555-0161",
-      "organizer_whatsapp": "+1 (615) 555-0161",
-      "organizer_email": "events@nashvilleblackarts.example",
-      "deadline_days": 56,
-      "pickup_instructions": "Collect advance meals at the community food pavilion near the main stage.",
-      "packaging_fee_usd": 1.25,
-      "flyer_path": "/images/island_music_reggae_concert.jpg"
+    {
+        "event": {
+            "id": "evt-boston-bay-jerk-fish",
+            "organizer_id": "org-portland-cookout",
+            "slug": "baltimore-caribbean-music-food-festival",
+            "title": "Baltimore Caribbean Music and Food Festival",
+            "tagline": "Steel pan, reggae and Caribbean food vendors",
+            "category": "Music and Food",
+            "date_str": "Saturday, February 20, 2027",
+            "event_date_iso": "2027-02-20",
+            "time_str": "1:00 PM – 9:00 PM EST",
+            "start_time": "13:00",
+            "end_time": "21:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample indoor festival hall (demo)",
+            "street_address": "108 Sample Avenue (demo address)",
+            "city": "Baltimore",
+            "state_code": "MD",
+            "zip_code": "21201",
+            "country_code": "US",
+            "venue_address": "108 Sample Avenue (demo address), Baltimore, MD 21201, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample festival with live steel pan and reggae sets and several Caribbean food vendors. Staff scan tickets at the gate and hand off food at vendor stations.",
+            "currency": "USD",
+            "organizer_name": "Baltimore Caribbean Arts Collective (Demo)",
+            "organizer_phone": "+1 (555) 010-0107",
+            "organizer_whatsapp": "+1 (555) 010-0107",
+            "organizer_email": "demo-host-8@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to music and vendors.",
+                    "priceUSD": 15,
+                    "priceJMD": 0,
+                    "availableStock": 450,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-02-20T13:00:00-05:00"
+                },
+                {
+                    "id": "tier-plus",
+                    "name": "Festival Plus",
+                    "description": "Entry plus a vendor meal voucher.",
+                    "priceUSD": 30,
+                    "priceJMD": 0,
+                    "availableStock": 200,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-02-20T13:00:00-05:00"
+                },
+                {
+                    "id": "tier-vip",
+                    "name": "VIP",
+                    "description": "Reserved seating and two vendor vouchers.",
+                    "priceUSD": 65,
+                    "priceJMD": 0,
+                    "availableStock": 60,
+                    "maxPerCustomer": 4,
+                    "saleEndIso": "2027-02-20T13:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_music_reggae_concert.jpg"
+        },
+        "menu": [
+            {
+                "id": "bal-jerk",
+                "name": "Jerk Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Vendor A.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "imageUrl": "/images/jerk_chicken.jpg",
+                "availableStock": 120
+            },
+            {
+                "id": "bal-curry-goat",
+                "name": "Curry Goat Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Vendor B.",
+                "priceUSD": 19,
+                "priceJMD": 0,
+                "imageUrl": "/images/caribbean_curry_goat.jpg",
+                "availableStock": 80
+            },
+            {
+                "id": "bal-doubles",
+                "name": "Doubles (2)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Trinidadian chickpea sandwiches. Vegan.",
+                "priceUSD": 8,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 120
+            },
+            {
+                "id": "bal-roti",
+                "name": "Chicken or Veg Roti",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Vendor C. Vegetarian option available.",
+                "priceUSD": 13,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "bal-plantains",
+                "name": "Fried Plantains",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Vegan.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": "/images/fried_plantains_sides.jpg",
+                "availableStock": 160
+            },
+            {
+                "id": "bal-drink",
+                "name": "Sorrel Cooler",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 200
+            }
+        ]
     },
-    "menu": [
-      {
-        "id": "whitehouse-catfish",
-        "name": "Cornmeal Catfish Plate",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Crisp cornmeal catfish with greens and seasoned rice.",
-        "priceUSD": 18,
-        "priceJMD": 0,
-        "imageUrl": "/images/escovitch_fish.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "whitehouse-mac",
-        "name": "Baked Macaroni & Cheese",
-        "category": "Sides",
-        "pricingType": "fixed",
-        "description": "Baked pasta with a creamy cheese topping.",
-        "priceUSD": 7,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "whitehouse-sweet-tea",
-        "name": "Southern Sweet Tea",
-        "category": "Drinks",
-        "pricingType": "fixed",
-        "description": "Fresh-brewed black tea served chilled.",
-        "priceUSD": 4,
-        "priceJMD": 0,
-        "imageUrl": "/images/tropical_island_smoothie.jpg",
-        "availableStock": 120
-      }
-    ]
-  },
-  {
-    "event": {
-      "id": "evt-runaway-bay-carnival",
-      "organizer_id": "org-runaway-events",
-      "slug": "phoenix-native-community-arts-market",
-      "title": "Phoenix Native Community Arts & Food Market",
-      "tagline": "Native-led community vendors, artists, and cultural programming",
-      "category": "Community",
-      "date_str": "Sunday, January 10, 2027",
-      "time_str": "10:00 AM – 6:00 PM MST",
-      "timezone": "America/Phoenix",
-      "venue_name": "Steele Indian School Park",
-      "street_address": "300 E Indian School Rd",
-      "city": "Phoenix",
-      "state_code": "AZ",
-      "zip_code": "85012",
-      "country_code": "US",
-      "venue_address": "300 E Indian School Rd, Phoenix, AZ 85012, United States",
-      "coordinates": "33.4956° N, 112.0676° W",
-      "description": "A Native-led community market featuring invited artists, local food businesses, and programming presented by participating Native communities.",
-      "currency": "USD",
-      "organizer_name": "Phoenix Native Community Arts Partnership",
-      "organizer_phone": "+1 (602) 555-0184",
-      "organizer_whatsapp": "+1 (602) 555-0184",
-      "organizer_email": "market@phoenixnativearts.example",
-      "deadline_days": 64,
-      "pickup_instructions": "Order pickup is at the participating vendor tent listed on your confirmation.",
-      "packaging_fee_usd": 1,
-      "flyer_path": "/images/island_culture_carnival.jpg"
+    {
+        "event": {
+            "id": "evt-whitehouse-cooperative",
+            "organizer_id": "org-whitehouse-fishers",
+            "slug": "orlando-international-food-culture-weekend",
+            "title": "Orlando International Food and Culture Weekend",
+            "tagline": "A balanced showcase of cuisines and traditions",
+            "category": "Food and Culture",
+            "date_str": "Saturday, March 6, 2027",
+            "event_date_iso": "2027-03-06",
+            "time_str": "11:00 AM – 7:00 PM EST",
+            "start_time": "11:00",
+            "end_time": "19:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample lakefront festival grounds (demo)",
+            "street_address": "109 Sample Avenue (demo address)",
+            "city": "Orlando",
+            "state_code": "FL",
+            "zip_code": "32801",
+            "country_code": "US",
+            "venue_address": "109 Sample Avenue (demo address), Orlando, FL 32801, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample one-day showcase of cuisines and cultural traditions, with cooking demos and dance performances. The current event model supports one session per event, so this is listed as a single day.",
+            "currency": "USD",
+            "organizer_name": "Central Florida Food and Culture Group (Demo)",
+            "organizer_phone": "+1 (555) 010-0108",
+            "organizer_whatsapp": "+1 (555) 010-0108",
+            "organizer_email": "demo-host-9@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry for one guest.",
+                    "priceUSD": 8,
+                    "priceJMD": 0,
+                    "availableStock": 700,
+                    "maxPerCustomer": 10,
+                    "saleEndIso": "2027-03-06T11:00:00-05:00"
+                },
+                {
+                    "id": "tier-passport",
+                    "name": "Culture Passport",
+                    "description": "Entry plus six tasting tokens.",
+                    "priceUSD": 30,
+                    "priceJMD": 0,
+                    "availableStock": 250,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-03-06T11:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "orl-jerk",
+                "name": "Jerk Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Caribbean vendor.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "imageUrl": "/images/jerk_chicken.jpg",
+                "availableStock": 100
+            },
+            {
+                "id": "orl-ropa-vieja",
+                "name": "Ropa Vieja Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Cuban vendor. Gluten-free.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "orl-pad-thai",
+                "name": "Pad Thai",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Thai vendor. Contains peanuts; vegetarian option.",
+                "priceUSD": 13,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "orl-falafel",
+                "name": "Falafel Wrap",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Middle Eastern vendor. Vegan; contains gluten.",
+                "priceUSD": 11,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "orl-bbq",
+                "name": "Smoked BBQ Sandwich",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Southern vendor. Contains gluten.",
+                "priceUSD": 12,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "orl-lemonade",
+                "name": "Fresh Lemonade",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic.",
+                "priceUSD": 3,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 250
+            }
+        ]
     },
-    "menu": [
-      {
-        "id": "runaway-blue-corn",
-        "name": "Blue Corn & Pinto Bean Bowl",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "Blue corn, pinto beans, squash, and seasonal vegetables.",
-        "priceUSD": 15,
-        "priceJMD": 0,
-        "imageUrl": "/images/fried_plantains_sides.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "runaway-bison",
-        "name": "Bison Green Chile Stew",
-        "category": "Mains",
-        "pricingType": "fixed",
-        "description": "A hearty stew prepared by a participating Native-owned food vendor.",
-        "priceUSD": 19,
-        "priceJMD": 0,
-        "imageUrl": "/images/oxtail.jpg",
-        "availableStock": 120
-      },
-      {
-        "id": "runaway-prickly-pear",
-        "name": "Prickly Pear Lemonade",
-        "category": "Drinks",
-        "pricingType": "fixed",
-        "description": "Lemonade with prickly pear from a local vendor.",
-        "priceUSD": 5,
-        "priceJMD": 0,
-        "imageUrl": "/images/tropical_island_smoothie.jpg",
-        "availableStock": 120
-      }
-    ]
-  }
+    {
+        "event": {
+            "id": "evt-runaway-bay-carnival",
+            "organizer_id": "org-runaway-events",
+            "slug": "east-orange-community-fish-fry",
+            "title": "East Orange Community Fish Fry",
+            "tagline": "Neighborhood fish fry. Pay by cash or manual transfer",
+            "category": "Food and Community",
+            "date_str": "Saturday, December 19, 2026",
+            "event_date_iso": "2026-12-19",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample church hall and parking lot (demo)",
+            "street_address": "110 Sample Avenue (demo address)",
+            "city": "East Orange",
+            "state_code": "NJ",
+            "zip_code": "07017",
+            "country_code": "US",
+            "venue_address": "110 Sample Avenue (demo address), East Orange, NJ 07017, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A neighborhood fish fry. This demo accepts cash at pickup or a bank or Zelle transfer that the organizer verifies before the order is marked paid; no card processing is configured for this sample.",
+            "currency": "USD",
+            "organizer_name": "East Orange Community Cooks (Demo)",
+            "organizer_phone": "+1 (555) 010-0109",
+            "organizer_whatsapp": "+1 (555) 010-0109",
+            "organizer_email": "demo-host-10@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry. Food sold separately.",
+                    "priceUSD": 5,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2026-12-19T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "eo-fish-dinner",
+                "name": "Fried Fish Dinner",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Fried whiting with fries and slaw.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "imageUrl": "/images/escovitch_fish.jpg",
+                "availableStock": 150
+            },
+            {
+                "id": "eo-shrimp",
+                "name": "Fried Shrimp Dinner",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Contains shellfish.",
+                "priceUSD": 16,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 100
+            },
+            {
+                "id": "eo-mac",
+                "name": "Baked Mac and Cheese",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Vegetarian; contains dairy and gluten.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 150
+            },
+            {
+                "id": "eo-greens",
+                "name": "Collard Greens",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Vegan.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "imageUrl": null,
+                "availableStock": 150
+            },
+            {
+                "id": "eo-punch",
+                "name": "Fruit Punch",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic.",
+                "priceUSD": 3,
+                "priceJMD": 0,
+                "imageUrl": "/images/tropical_island_smoothie.jpg",
+                "availableStock": 200
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-miami-gardens",
+            "organizer_id": "org-us-mgd",
+            "slug": "miami-gardens-caribbean-food-and-music-day",
+            "title": "Miami Gardens Caribbean Food and Music Day",
+            "tagline": "Soca, reggae and kompa sets with Caribbean food vendors",
+            "category": "Music and Food",
+            "date_str": "Sunday, December 13, 2026",
+            "event_date_iso": "2026-12-13",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "111 Sample Avenue (demo address)",
+            "city": "Miami Gardens",
+            "state_code": "FL",
+            "zip_code": "33054",
+            "country_code": "US",
+            "venue_address": "111 Sample Avenue (demo address), Miami Gardens, FL 33054, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample afternoon of live soca, reggae and Haitian kompa sets, with Jamaican, Trinidadian and Haitian food vendors around a shaded lawn. Family seating is set out near the stage.",
+            "currency": "USD",
+            "organizer_name": "Miami Gardens Culture Group (Demo)",
+            "organizer_phone": "+1 (555) 010-0110",
+            "organizer_whatsapp": "+1 (555) 010-0110",
+            "organizer_email": "demo-host-11@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to the lawn and all music sets.",
+                    "priceUSD": 12,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2026-12-13T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-lawn",
+                    "name": "Reserved Lawn Seating",
+                    "description": "Entry plus a reserved lawn chair near the stage.",
+                    "priceUSD": 25,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2026-12-13T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-meal",
+                    "name": "Admission and Meal",
+                    "description": "Entry plus one vendor plate of your choice at pickup.",
+                    "priceUSD": 26,
+                    "priceJMD": 0,
+                    "availableStock": 120,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2026-12-13T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_music_reggae_concert.jpg"
+        },
+        "menu": [
+            {
+                "id": "mgd-main1",
+                "name": "Jerk Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Jamaican vendor. With rice and peas and cabbage. Gluten-free.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/jerk_chicken.jpg"
+            },
+            {
+                "id": "mgd-main2",
+                "name": "Griot Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Haitian vendor. Fried pork with pikliz and rice. Gluten-free.",
+                "priceUSD": 16,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "mgd-doubles",
+                "name": "Doubles (2)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Trinidadian vendor. Curried chickpeas in fried bara. Vegan; contains gluten.",
+                "priceUSD": 7,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "mgd-side",
+                "name": "Fried Plantains",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Sweet ripe plantains. Vegan.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/fried_plantains_sides.jpg"
+            },
+            {
+                "id": "mgd-drink",
+                "name": "Sorrel",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Hibiscus and ginger. Non-alcoholic.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-sunrise",
+            "organizer_id": "org-us-sun",
+            "slug": "sunrise-latin-and-caribbean-family-fiesta",
+            "title": "Sunrise Latin and Caribbean Family Fiesta",
+            "tagline": "Kids' activity zone, piñata hour and Latin and Caribbean family plates",
+            "category": "Family and Community",
+            "date_str": "Saturday, January 9, 2027",
+            "event_date_iso": "2027-01-09",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "112 Sample Avenue (demo address)",
+            "city": "Sunrise",
+            "state_code": "FL",
+            "zip_code": "33313",
+            "country_code": "US",
+            "venue_address": "112 Sample Avenue (demo address), Sunrise, FL 33313, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample family afternoon with a supervised kids' activity zone, a piñata hour, a dance-along stage, and food from Colombian, Puerto Rican and Jamaican vendors.",
+            "currency": "USD",
+            "organizer_name": "Sunrise Family Events Group (Demo)",
+            "organizer_phone": "+1 (555) 010-0111",
+            "organizer_whatsapp": "+1 (555) 010-0111",
+            "organizer_email": "demo-host-12@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "Adult Admission",
+                    "description": "Entry for one adult (13+).",
+                    "priceUSD": 10,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-01-09T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-child",
+                    "name": "Child Admission (3–12)",
+                    "description": "Entry for one child. Under 3 free with an adult.",
+                    "priceUSD": 5,
+                    "priceJMD": 0,
+                    "availableStock": 200,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-01-09T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-family",
+                    "name": "Family Bundle (2 adults, 2 children)",
+                    "description": "Four admissions at a family rate.",
+                    "priceUSD": 26,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2027-01-09T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_culture_carnival.jpg"
+        },
+        "menu": [
+            {
+                "id": "sun-main1",
+                "name": "Brown Stew Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Jamaican vendor. With rice and peas.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "sun-main2",
+                "name": "Pernil Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Puerto Rican vendor. Slow-roast pork with arroz con gandules. Gluten-free.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "sun-arepa",
+                "name": "Arepas con Queso (2)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Colombian vendor. Corn cakes with melted cheese. Vegetarian; gluten-free; contains dairy.",
+                "priceUSD": 9,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "sun-kids",
+                "name": "Kids' Chicken Tenders",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "With fries. Contains gluten.",
+                "priceUSD": 8,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/fried_chicken.jpg"
+            },
+            {
+                "id": "sun-drink",
+                "name": "Mango Passion Smoothie",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic. Vegan.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/tropical_island_smoothie.jpg"
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-tamarac",
+            "organizer_id": "org-us-tam",
+            "slug": "tamarac-community-seafood-cookout",
+            "title": "Tamarac Community Seafood Cookout",
+            "tagline": "Fryer line, grill station and a supervised kids' corner",
+            "category": "Food and Community",
+            "date_str": "Saturday, January 23, 2027",
+            "event_date_iso": "2027-01-23",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "113 Sample Avenue (demo address)",
+            "city": "Tamarac",
+            "state_code": "FL",
+            "zip_code": "33309",
+            "country_code": "US",
+            "venue_address": "113 Sample Avenue (demo address), Tamarac, FL 33309, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample neighborhood seafood cookout with a fryer line, a grill station and a supervised kids' corner. Advance food orders are ready at the pickup tent.",
+            "currency": "USD",
+            "organizer_name": "Tamarac Neighbors Association (Demo)",
+            "organizer_phone": "+1 (555) 010-0112",
+            "organizer_whatsapp": "+1 (555) 010-0112",
+            "organizer_email": "demo-host-13@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry. Food sold separately.",
+                    "priceUSD": 6,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-01-23T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-family",
+                    "name": "Family Bundle (up to 4)",
+                    "description": "Four admissions at a family rate.",
+                    "priceUSD": 20,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2027-01-23T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-meal",
+                    "name": "Admission and Seafood Plate",
+                    "description": "Entry plus a fried snapper or garlic shrimp plate.",
+                    "priceUSD": 24,
+                    "priceJMD": 0,
+                    "availableStock": 120,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-01-23T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "tam-main1",
+                "name": "Fried Snapper Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Whole fried snapper with festival and slaw. Contains fish; festival contains gluten.",
+                "priceUSD": 18,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/escovitch_fish.jpg"
+            },
+            {
+                "id": "tam-main2",
+                "name": "Garlic Shrimp Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Sautéed shrimp with rice and salad. Contains shellfish.",
+                "priceUSD": 17,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "tam-fritters",
+                "name": "Conch Fritters (6)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "With dipping sauce. Contains shellfish and gluten.",
+                "priceUSD": 10,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "tam-side",
+                "name": "Festival (3)",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Sweet fried dumplings. Vegetarian; contains gluten.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "tam-drink",
+                "name": "Fresh Lemonade",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic.",
+                "priceUSD": 3,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-tampa",
+            "organizer_id": "org-us-tpa",
+            "slug": "tampa-bay-cuban-and-caribbean-food-festival",
+            "title": "Tampa Bay Cuban and Caribbean Food Festival",
+            "tagline": "Cuban sandwiches, ropa vieja and a Caribbean grill",
+            "category": "Food Festival",
+            "date_str": "Saturday, February 13, 2027",
+            "event_date_iso": "2027-02-13",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "114 Sample Avenue (demo address)",
+            "city": "Tampa",
+            "state_code": "FL",
+            "zip_code": "33602",
+            "country_code": "US",
+            "venue_address": "114 Sample Avenue (demo address), Tampa, FL 33602, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample food festival pairing Cuban sandwich and café traditions with Caribbean grill vendors, plus a domino tent and a salsa lesson on the hour.",
+            "currency": "USD",
+            "organizer_name": "Tampa Bay Food Culture Group (Demo)",
+            "organizer_phone": "+1 (555) 010-0113",
+            "organizer_whatsapp": "+1 (555) 010-0113",
+            "organizer_email": "demo-host-14@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to the festival grounds.",
+                    "priceUSD": 8,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-02-13T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-tasting",
+                    "name": "Tasting Pass",
+                    "description": "Entry plus five tasting tokens.",
+                    "priceUSD": 25,
+                    "priceJMD": 0,
+                    "availableStock": 150,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-02-13T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-vip",
+                    "name": "VIP Shade Tent",
+                    "description": "Entry, eight tasting tokens and shaded seating.",
+                    "priceUSD": 50,
+                    "priceJMD": 0,
+                    "availableStock": 40,
+                    "maxPerCustomer": 4,
+                    "saleEndIso": "2027-02-13T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "tpa-main1",
+                "name": "Cuban Sandwich",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Roast pork, ham, Swiss cheese, pickles and mustard on Cuban bread. Contains gluten and dairy.",
+                "priceUSD": 13,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "tpa-main2",
+                "name": "Ropa Vieja Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Shredded beef with black beans and rice. Gluten-free.",
+                "priceUSD": 16,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "tpa-jerk",
+                "name": "Jerk Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Caribbean vendor. With rice and peas. Gluten-free.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/jerk_chicken.jpg"
+            },
+            {
+                "id": "tpa-side",
+                "name": "Yuca Fries",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "With garlic mojo. Vegan.",
+                "priceUSD": 6,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "tpa-drink",
+                "name": "Café con Leche",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Contains dairy.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-jacksonville",
+            "organizer_id": "org-us-jax",
+            "slug": "jacksonville-southern-and-caribbean-cookout",
+            "title": "Jacksonville Southern and Caribbean Cookout",
+            "tagline": "Low-country boil, jerk grill and a gospel-and-reggae stage",
+            "category": "Food and Community",
+            "date_str": "Saturday, February 27, 2027",
+            "event_date_iso": "2027-02-27",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "115 Sample Avenue (demo address)",
+            "city": "Jacksonville",
+            "state_code": "FL",
+            "zip_code": "32202",
+            "country_code": "US",
+            "venue_address": "115 Sample Avenue (demo address), Jacksonville, FL 32202, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample riverside cookout bringing Southern and Caribbean grill traditions together, with a gospel choir in the afternoon and a reggae band at sunset.",
+            "currency": "USD",
+            "organizer_name": "Jacksonville Community Grill Club (Demo)",
+            "organizer_phone": "+1 (555) 010-0114",
+            "organizer_whatsapp": "+1 (555) 010-0114",
+            "organizer_email": "demo-host-15@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry and all stage sets.",
+                    "priceUSD": 8,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-02-27T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-family",
+                    "name": "Family Bundle (up to 4)",
+                    "description": "Four admissions at a family rate.",
+                    "priceUSD": 24,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2027-02-27T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-meal",
+                    "name": "Admission and Meal",
+                    "description": "Entry plus one plate of your choice at pickup.",
+                    "priceUSD": 22,
+                    "priceJMD": 0,
+                    "availableStock": 120,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-02-27T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "jax-main1",
+                "name": "Low-Country Boil",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Shrimp, smoked sausage, corn and potatoes. Contains shellfish.",
+                "priceUSD": 18,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "jax-main2",
+                "name": "Jerk Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "With rice and peas. Gluten-free.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/jerk_chicken.jpg"
+            },
+            {
+                "id": "jax-waffle",
+                "name": "Chicken and Waffle",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Contains gluten, dairy and egg.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/fried_chicken.jpg"
+            },
+            {
+                "id": "jax-side",
+                "name": "Collard Greens",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Slow-cooked with smoked turkey. Gluten-free.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "jax-drink",
+                "name": "Sweet Tea",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic.",
+                "priceUSD": 3,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-queens",
+            "organizer_id": "org-us-qns",
+            "slug": "queens-international-street-food-night",
+            "title": "Queens International Street Food Night",
+            "tagline": "Momos, arepas, jerk and chana under string lights",
+            "category": "Food Festival",
+            "date_str": "Friday, December 4, 2026",
+            "event_date_iso": "2026-12-04",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "116 Sample Avenue (demo address)",
+            "city": "Queens",
+            "state_code": "NY",
+            "zip_code": "11101",
+            "country_code": "US",
+            "venue_address": "116 Sample Avenue (demo address), Queens, NY 11101, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample evening street-food market with Nepali, Venezuelan, Jamaican and Indian vendors, a DJ set and community tables.",
+            "currency": "USD",
+            "organizer_name": "Queens Street Food Collective (Demo)",
+            "organizer_phone": "+1 (555) 010-0115",
+            "organizer_whatsapp": "+1 (555) 010-0115",
+            "organizer_email": "demo-host-16@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to the market.",
+                    "priceUSD": 6,
+                    "priceJMD": 0,
+                    "availableStock": 400,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2026-12-04T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-tasting",
+                    "name": "Tasting Pass",
+                    "description": "Entry plus six tasting tokens.",
+                    "priceUSD": 25,
+                    "priceJMD": 0,
+                    "availableStock": 150,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2026-12-04T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-group",
+                    "name": "Group of 4",
+                    "description": "Four admissions at a group rate.",
+                    "priceUSD": 20,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2026-12-04T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "qns-main1",
+                "name": "Momo Dumplings (6)",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Nepali vendor. Chicken or vegetable. Contains gluten.",
+                "priceUSD": 10,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "qns-main2",
+                "name": "Jerk Chicken Rice Bowl",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Jamaican vendor. Gluten-free.",
+                "priceUSD": 14,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/jerk_chicken.jpg"
+            },
+            {
+                "id": "qns-arepa",
+                "name": "Arepa Reina Pepiada",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Venezuelan vendor. Chicken and avocado. Gluten-free.",
+                "priceUSD": 10,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "qns-veg",
+                "name": "Chana Masala Bowl",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Indian vendor. Chickpea curry with rice. Vegan; gluten-free.",
+                "priceUSD": 11,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "qns-drink",
+                "name": "Mango Lassi",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Contains dairy.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-mount-vernon",
+            "organizer_id": "org-us-mtv",
+            "slug": "mount-vernon-community-heritage-day",
+            "title": "Mount Vernon Community Heritage Day",
+            "tagline": "Storytelling, steel pan and heritage plates",
+            "category": "Cultural and Community",
+            "date_str": "Saturday, January 30, 2027",
+            "event_date_iso": "2027-01-30",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "117 Sample Avenue (demo address)",
+            "city": "Mount Vernon",
+            "state_code": "NY",
+            "zip_code": "10550",
+            "country_code": "US",
+            "venue_address": "117 Sample Avenue (demo address), Mount Vernon, NY 10550, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample day of oral-history storytelling, a steel pan ensemble, a youth spoken-word set and heritage plates from Caribbean and Southern kitchens.",
+            "currency": "USD",
+            "organizer_name": "Mount Vernon Heritage Committee (Demo)",
+            "organizer_phone": "+1 (555) 010-0116",
+            "organizer_whatsapp": "+1 (555) 010-0116",
+            "organizer_email": "demo-host-17@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "Adult Admission",
+                    "description": "Entry for one adult.",
+                    "priceUSD": 10,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-01-30T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-senior",
+                    "name": "Senior Admission (65+)",
+                    "description": "Entry for one senior.",
+                    "priceUSD": 5,
+                    "priceJMD": 0,
+                    "availableStock": 150,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-01-30T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-family",
+                    "name": "Family Bundle (up to 4)",
+                    "description": "Four admissions at a family rate.",
+                    "priceUSD": 25,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2027-01-30T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_culture_carnival.jpg"
+        },
+        "menu": [
+            {
+                "id": "mtv-main1",
+                "name": "Oxtail Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Slow-braised oxtail with butter beans and rice.",
+                "priceUSD": 22,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/oxtail.jpg"
+            },
+            {
+                "id": "mtv-main2",
+                "name": "Curry Goat Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "With rice and peas. Gluten-free.",
+                "priceUSD": 18,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/caribbean_curry_goat.jpg"
+            },
+            {
+                "id": "mtv-smothered",
+                "name": "Smothered Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "With rice and gravy. Contains gluten.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "mtv-side",
+                "name": "Macaroni Pie",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Baked macaroni and cheese. Vegetarian; contains dairy, gluten and egg.",
+                "priceUSD": 6,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "mtv-drink",
+                "name": "Ginger Beer",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-hempstead",
+            "organizer_id": "org-us-hem",
+            "slug": "hempstead-caribbean-reggae-brunch",
+            "title": "Hempstead Caribbean Reggae Brunch",
+            "tagline": "Ackee and saltfish, escovitch and acoustic reggae",
+            "category": "Music and Food",
+            "date_str": "Saturday, March 13, 2027",
+            "event_date_iso": "2027-03-13",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "118 Sample Avenue (demo address)",
+            "city": "Hempstead",
+            "state_code": "NY",
+            "zip_code": "11550",
+            "country_code": "US",
+            "venue_address": "118 Sample Avenue (demo address), Hempstead, NY 11550, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample late-morning brunch with an acoustic reggae trio, Jamaican breakfast plates and reserved tables for groups.",
+            "currency": "USD",
+            "organizer_name": "Hempstead Music and Food Group (Demo)",
+            "organizer_phone": "+1 (555) 010-0117",
+            "organizer_whatsapp": "+1 (555) 010-0117",
+            "organizer_email": "demo-host-18@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "Brunch Admission",
+                    "description": "Entry and music. Food sold separately.",
+                    "priceUSD": 15,
+                    "priceJMD": 0,
+                    "availableStock": 200,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-03-13T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-plate",
+                    "name": "Brunch and Plate",
+                    "description": "Entry plus one brunch plate at pickup.",
+                    "priceUSD": 35,
+                    "priceJMD": 0,
+                    "availableStock": 120,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-03-13T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-table",
+                    "name": "Reserved Table for 4",
+                    "description": "Four admissions with a reserved table.",
+                    "priceUSD": 120,
+                    "priceJMD": 0,
+                    "availableStock": 20,
+                    "maxPerCustomer": 2,
+                    "saleEndIso": "2027-03-13T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_music_reggae_concert.jpg"
+        },
+        "menu": [
+            {
+                "id": "hem-main1",
+                "name": "Ackee and Saltfish",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "With fried dumplings. Contains fish; dumplings contain gluten.",
+                "priceUSD": 17,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "hem-main2",
+                "name": "Escovitch Fish Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Fried fish with pickled onion and pepper. Contains fish.",
+                "priceUSD": 18,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/escovitch_fish.jpg"
+            },
+            {
+                "id": "hem-veg",
+                "name": "Callaloo and Bammy",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Steamed callaloo with cassava bammy. Vegan; gluten-free.",
+                "priceUSD": 12,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/bammy.jpg"
+            },
+            {
+                "id": "hem-side",
+                "name": "Fried Dumplings (3)",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Vegetarian; contains gluten.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "hem-drink",
+                "name": "Carrot Juice",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Traditional recipe with condensed milk. Contains dairy.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-newark",
+            "organizer_id": "org-us-nwk",
+            "slug": "newark-global-flavors-festival",
+            "title": "Newark Global Flavors Festival",
+            "tagline": "Brazilian, Portuguese and Caribbean vendors",
+            "category": "Food Festival",
+            "date_str": "Saturday, February 27, 2027",
+            "event_date_iso": "2027-02-27",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "119 Sample Avenue (demo address)",
+            "city": "Newark",
+            "state_code": "NJ",
+            "zip_code": "07102",
+            "country_code": "US",
+            "venue_address": "119 Sample Avenue (demo address), Newark, NJ 07102, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample neighborhood food festival with Brazilian, Portuguese and Caribbean vendors, a samba percussion group and a fado set in the evening.",
+            "currency": "USD",
+            "organizer_name": "Newark Global Flavors Group (Demo)",
+            "organizer_phone": "+1 (555) 010-0118",
+            "organizer_whatsapp": "+1 (555) 010-0118",
+            "organizer_email": "demo-host-19@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "General Admission",
+                    "description": "Entry to the festival.",
+                    "priceUSD": 8,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-02-27T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-tasting",
+                    "name": "Tasting Pass",
+                    "description": "Entry plus five tasting tokens.",
+                    "priceUSD": 25,
+                    "priceJMD": 0,
+                    "availableStock": 150,
+                    "maxPerCustomer": 6,
+                    "saleEndIso": "2027-02-27T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-family",
+                    "name": "Family Bundle (up to 4)",
+                    "description": "Four admissions at a family rate.",
+                    "priceUSD": 24,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2027-02-27T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_festival_sunset.jpg"
+        },
+        "menu": [
+            {
+                "id": "nwk-main1",
+                "name": "Feijoada Cup",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Brazilian black bean and pork stew with rice. Gluten-free.",
+                "priceUSD": 12,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "nwk-main2",
+                "name": "Bifana",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Portuguese marinated pork sandwich. Contains gluten.",
+                "priceUSD": 11,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "nwk-jerk",
+                "name": "Jerk Chicken Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Caribbean vendor. With rice and peas. Gluten-free.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/jerk_chicken.jpg"
+            },
+            {
+                "id": "nwk-side",
+                "name": "Pão de Queijo (4)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "Brazilian cheese bread. Vegetarian; gluten-free; contains dairy and egg.",
+                "priceUSD": 6,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "nwk-drink",
+                "name": "Passion Fruit Juice",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Non-alcoholic. Vegan.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    },
+    {
+        "event": {
+            "id": "evt-us-bridgeport",
+            "organizer_id": "org-us-brp",
+            "slug": "bridgeport-harbor-cultural-food-gathering",
+            "title": "Bridgeport Harbor Cultural Food Gathering",
+            "tagline": "South Asian, West African and Caribbean kitchens by the harbor",
+            "category": "Cultural and Community",
+            "date_str": "Saturday, March 6, 2027",
+            "event_date_iso": "2027-03-06",
+            "time_str": "12:00 PM – 6:00 PM EST",
+            "start_time": "12:00",
+            "end_time": "18:00",
+            "timezone": "America/New_York",
+            "venue_name": "Sample community venue (demo)",
+            "street_address": "120 Sample Avenue (demo address)",
+            "city": "Bridgeport",
+            "state_code": "CT",
+            "zip_code": "06604",
+            "country_code": "US",
+            "venue_address": "120 Sample Avenue (demo address), Bridgeport, CT 06604, United States",
+            "description": "SAMPLE EVENT: demonstration content only. Not a real booking, partnership, endorsement, or actual payment. A sample harborside gathering with South Asian, West African and Caribbean kitchens, a drumming circle and a community craft table.",
+            "currency": "USD",
+            "organizer_name": "Bridgeport Cultural Table (Demo)",
+            "organizer_phone": "+1 (555) 010-0119",
+            "organizer_whatsapp": "+1 (555) 010-0119",
+            "organizer_email": "demo-host-20@example.invalid",
+            "deadline_days": 20,
+            "pickup_instructions": "Collect advance food orders at the pickup tent. Show your EventBite ticket QR code.",
+            "packaging_fee_usd": 1.5,
+            "supports_food_ordering": true,
+            "ticket_tiers": [
+                {
+                    "id": "tier-ga",
+                    "name": "Adult Admission",
+                    "description": "Entry for one adult.",
+                    "priceUSD": 8,
+                    "priceJMD": 0,
+                    "availableStock": 300,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-03-06T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-child",
+                    "name": "Child Admission (3–12)",
+                    "description": "Entry for one child. Under 3 free with an adult.",
+                    "priceUSD": 4,
+                    "priceJMD": 0,
+                    "availableStock": 200,
+                    "maxPerCustomer": 8,
+                    "saleEndIso": "2027-03-06T12:00:00-05:00"
+                },
+                {
+                    "id": "tier-family",
+                    "name": "Family Bundle (2 adults, 2 children)",
+                    "description": "Four admissions at a family rate.",
+                    "priceUSD": 22,
+                    "priceJMD": 0,
+                    "availableStock": 80,
+                    "maxPerCustomer": 3,
+                    "saleEndIso": "2027-03-06T12:00:00-05:00"
+                }
+            ],
+            "flyer_path": "/images/island_culture_carnival.jpg"
+        },
+        "menu": [
+            {
+                "id": "brp-main1",
+                "name": "Jollof Rice and Chicken",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "West African vendor. Gluten-free.",
+                "priceUSD": 15,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "brp-main2",
+                "name": "Curry Goat Plate",
+                "category": "Mains",
+                "pricingType": "fixed",
+                "description": "Caribbean vendor. With rice and peas.",
+                "priceUSD": 18,
+                "priceJMD": 0,
+                "availableStock": 120,
+                "imageUrl": "/images/caribbean_curry_goat.jpg"
+            },
+            {
+                "id": "brp-samosa",
+                "name": "Vegetable Samosas (3)",
+                "category": "Snacks",
+                "pricingType": "fixed",
+                "description": "South Asian vendor. Vegan; contains gluten.",
+                "priceUSD": 7,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "brp-side",
+                "name": "Puff-Puff (6)",
+                "category": "Sides",
+                "pricingType": "fixed",
+                "description": "Fried dough bites. Vegetarian; contains gluten.",
+                "priceUSD": 5,
+                "priceJMD": 0,
+                "availableStock": 120
+            },
+            {
+                "id": "brp-drink",
+                "name": "Bissap",
+                "category": "Drinks",
+                "pricingType": "fixed",
+                "description": "Hibiscus drink. Non-alcoholic.",
+                "priceUSD": 4,
+                "priceJMD": 0,
+                "availableStock": 120
+            }
+        ]
+    }
 ]

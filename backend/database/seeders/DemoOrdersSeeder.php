@@ -12,7 +12,7 @@ use App\Services\TenantContext;
 use Illuminate\Database\Seeder;
 
 /**
- * Local development orders for the Miami cultural food festival (owned by the demo host), in each payment state
+ * Local development orders for the South Florida Jamaican Fish Fry sample event (owned by the demo host), in each payment state
  * the host verification queue handles, plus a food-station staff account assigned to that event.
  * Never run in production.
  */
@@ -25,7 +25,7 @@ class DemoOrdersSeeder extends Seeder
         }
 
         $attendee = User::where('email', 'attendee@islandevents.example')->firstOrFail();
-        $event = TenantContext::withoutTenantScope(fn () => Event::where('slug', 'miami-waterfront-cultural-food-festival')->firstOrFail());
+        $event = TenantContext::withoutTenantScope(fn () => Event::where('slug', 'south-florida-jamaican-fish-fry')->firstOrFail());
 
         $demoOrders = [
             // Transfer submitted with a bank reference: waiting in the host's verification queue
@@ -39,7 +39,14 @@ class DemoOrdersSeeder extends Seeder
         ];
 
         foreach ($demoOrders as $demo) {
-            $result = TenantContext::withoutTenantScope(fn () => $orders->placeOrder($event, [
+            // Re-running the seeder must not pile up more demo orders: each one is placed only once.
+            $exists = Order::withoutGlobalScopes()->where('event_id', $event->id)
+                ->where('user_id', $attendee->id)->where('customer_name', $demo['name'])->exists();
+            if ($exists) {
+                continue;
+            }
+
+            $result =TenantContext::withoutTenantScope(fn () => $orders->placeOrder($event, [
                 'customer_name' => $demo['name'],
                 'customer_phone' => '+1 305 555 01' . random_int(10, 99),
                 'method' => $demo['method'],
