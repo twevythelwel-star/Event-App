@@ -237,7 +237,9 @@
         @php
             $heroImg = $event->display_image_url;
         @endphp
-        <img src="{{ $heroImg }}" alt="{{ $event->title }}" class="detail-hero-img">
+        {{-- A generated flyer is text, so it is shown whole rather than cropped; uploaded artwork fills the banner --}}
+        <img src="{{ $heroImg }}" alt="{{ $event->title }}" class="detail-hero-img"
+             @unless($event->hasFlyer()) style="object-fit: contain; background: #0C1B2D; filter: none;" @endunless>
         <div class="detail-hero-overlay"></div>
 
         <!-- Floating Top Navigation -->
@@ -265,6 +267,9 @@
                     <span style="background: rgba(99, 102, 241, 0.85); color: #FFFFFF; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase;">
                         {{ $event->category ?: 'Event' }}
                     </span>
+                    @foreach($event->traditionLabels() as $tradition)
+                        <a href="{{ route('events.index', ['q' => $tradition]) }}" style="border: 1px solid rgba(255, 255, 255, 0.28); color: #F8FAFC; font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 9999px; text-decoration: none;">{{ $tradition }}</a>
+                    @endforeach
                     @if($event->is_ordering_open)
                         <span style="background: rgba(16, 185, 129, 0.85); color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">
                             ✓ Taking orders
@@ -335,7 +340,7 @@
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
                             <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No tickets on sale</h3>
                             <p style="font-size: 13px; color: #94A3B8; margin: 0;">
-                                {{ $menu->isNotEmpty() ? 'This event sells food only. See the Food tab.' : 'The organiser hasn’t put tickets on sale yet.' }}
+                                {{ $menu->isNotEmpty() ? 'This event sells food only. See the Food tab.' : 'The organizer hasn’t put tickets on sale yet.' }}
                             </p>
                         </div>
                     @else
@@ -357,7 +362,7 @@
                     @endif
                 </div>
 
-                <!-- TAB 2: FOOD & DINING (active menu items only, as the organiser wrote them) -->
+                <!-- TAB 2: FOOD & DINING (active menu items only, as the organizer wrote them) -->
                 <div class="tab-pane" id="pane-food">
                     @if($menu->isEmpty())
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
@@ -419,14 +424,14 @@
                         <div id="payment-methods">
                             <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Accepted payment methods</h3>
                             @if($paymentMethods === [])
-                                <p style="font-size: 13px; color: #94A3B8; margin: 0;">The organiser has not set up a payment method yet, so orders can't be paid for at the moment.</p>
+                                <p style="font-size: 13px; color: #94A3B8; margin: 0;">The organizer has not set up a payment method yet, so orders can't be paid for at the moment.</p>
                             @else
                                 <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #CBD5E1; line-height: 1.6;">
                                     @foreach($paymentMethods as $method)
                                         <li><strong style="color: #FFFFFF;">{{ $method['label'] }}</strong>: {{ $method['description'] }}</li>
                                     @endforeach
                                 </ul>
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Transfers and cash are marked paid only after the organiser confirms them.</p>
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Transfers and cash are marked paid only after the organizer confirms them.</p>
                             @endif
                         </div>
 
@@ -452,12 +457,12 @@
                             @if($policy && trim((string) $policy->refund_policy_notes) !== '')
                                 <p style="font-size: 13px; color: #CBD5E1; margin: 0; white-space: pre-line;">{{ $policy->refund_policy_notes }}</p>
                             @else
-                                <p style="font-size: 13px; color: #CBD5E1; margin: 0;">The organiser has not published a refund policy. Contact them before you buy if you may need a refund.</p>
+                                <p style="font-size: 13px; color: #CBD5E1; margin: 0;">The organizer has not published a refund policy. Contact them before you buy if you may need a refund.</p>
                             @endif
                             @if($policy && (int) $policy->refund_policy_deadline_hours > 0 && trim((string) $policy->refund_policy_notes) !== '')
                                 <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refund requests close {{ (int) $policy->refund_policy_deadline_hours }} hours before the event starts.</p>
                             @endif
-                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refunds are issued by the organiser. If the event is cancelled, contact the organiser using the details on this page.</p>
+                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refunds are issued by the organizer. If the event is cancelled, contact the organizer using the details on this page.</p>
                         </div>
 
                         @if($eventQr)
@@ -504,7 +509,7 @@
             <div class="card-navy">
                 <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
                     <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #FFFFFF;">
-                        {{ substr($event->organizer_name ?? 'Island', 0, 1) }}
+                        {{ mb_substr($event->organizer_name ?: 'EventBite', 0, 1) }}
                     </div>
                     <div>
                         <div style="display: flex; align-items: center; gap: 6px;">
@@ -578,7 +583,35 @@
         </div>
     </div>
 
+    {{-- Phones: the price and the way to buy stay in reach above the bottom navigation, wherever the reader is --}}
+    @if($canOrder)
+        <div class="eb-buy-bar" role="region" aria-label="Buy tickets">
+            <div style="min-width: 0;">
+                @if($fromPriceText)<strong style="display: block; font-size: 1rem; color: #F8FAFC;">{{ $fromPriceText }}</strong>@endif
+                <span style="font-size: 0.75rem; color: #A8B6C8;">{{ $availability['label'] }}</span>
+            </div>
+            @auth
+                <a href="{{ route('checkout.tickets', $event) }}" class="eb-btn eb-btn-primary">{{ collect($tiers)->contains('on_sale', true) ? 'Get tickets' : 'Order food' }}</a>
+            @else
+                <a href="{{ route('login') }}" class="eb-btn eb-btn-primary">Sign in to buy</a>
+            @endauth
+        </div>
+    @endif
 </div>
+
+<style>
+    .eb-buy-bar { display: none; }
+    @media (max-width: 1023px) {
+        .eb-buy-bar {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            position: fixed; left: 0; right: 0; bottom: var(--layout-bottom-nav-height); z-index: 55;
+            padding: 10px 16px; background: rgba(11, 25, 43, 0.96); border-top: 1px solid var(--color-border);
+            backdrop-filter: blur(10px);
+        }
+        .eb-buy-bar .eb-btn { min-height: 44px; flex-shrink: 0; }
+        .event-detail-root { padding-bottom: calc(5rem + 72px); }
+    }
+</style>
 
 <script>
     // Tab switching logic: swaps the active section content

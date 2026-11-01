@@ -3,21 +3,13 @@
 @section('title', 'EventBite — Events, Food & Culture Across the U.S.')
 @section('page-title', 'Discover events')
 
-@section('navigation')
-    <div class="nav-section-title">Discovery</div>
-    <a href="{{ route('events.index') }}" class="{{ request()->routeIs('events.*') ? 'active' : '' }}">
-        <span class="nav-icon">🎟️</span>
-        <span>Explore Events</span>
-    </a>
-@endsection
-
 @section('content')
 @php
     $marketValue = fn ($m) => strtoupper($m->state_code) . ':' . strtolower($m->city);
     $sections = [
         ['id' => 'featured', 'title' => 'Featured events', 'note' => 'Coming up soonest in our featured cities.', 'events' => $featured, 'more' => route('events.index')],
         ['id' => 'food-festivals', 'title' => 'Upcoming food festivals', 'note' => 'A range of cuisines, one event per tradition first.', 'events' => $foodFestivals, 'more' => route('events.index', ['category' => 'food'])],
-        ['id' => 'reggae', 'title' => 'Reggae & dancehall', 'note' => null, 'events' => $reggae, 'more' => route('events.index', ['q' => 'reggae'])],
+        ['id' => 'music', 'title' => 'Live music & nightlife', 'note' => 'Concerts, DJs and dances across genres.', 'events' => $music, 'more' => route('events.index', ['category' => 'music'])],
         ['id' => 'culture', 'title' => 'Cultural & community celebrations', 'note' => null, 'events' => $culture, 'more' => route('events.index', ['category' => 'culture'])],
         ['id' => 'family', 'title' => 'Family-friendly', 'note' => 'Family categories or family and child tickets.', 'events' => $family, 'more' => route('events.index', ['q' => 'family'])],
         ['id' => 'food-traditions', 'title' => 'Food from many traditions', 'note' => 'Cookouts and food days from different culinary traditions.', 'events' => $foodTraditions, 'more' => route('events.index', ['category' => 'food'])],
@@ -36,6 +28,10 @@
     .eb-home-section-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3, .75rem); margin-bottom: var(--space-3, .75rem); }
     .eb-home-markets { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3, .75rem); margin: 0; padding: 0; list-style: none; }
     .eb-home-markets a { display: block; padding: var(--space-3, .75rem) var(--space-4, 1rem); border-radius: var(--radius-md, 12px); background: var(--color-surface, #10243A); border: 1px solid var(--color-border, #26384D); color: var(--color-text-primary, #F8FAFC); text-decoration: none; }
+    .eb-home-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: var(--space-3, .75rem); margin: 0; padding: 0; list-style: none; counter-reset: step; }
+    .eb-home-steps li { padding: var(--space-4, 1rem); border-radius: var(--radius-md, 12px); background: var(--color-background-secondary, #0B192B); border: 1px solid var(--color-border, #26384D); }
+    .eb-home-steps li::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 28px; height: 28px; margin-bottom: var(--space-2, .5rem); border-radius: 50%; background: var(--color-accent-subtle); color: var(--color-accent, #C7FF45); font-weight: 800; font-size: .85rem; }
+    .eb-home-steps strong { display: block; color: var(--color-text-primary, #F8FAFC); }
     @media (max-width: 720px) { .eb-home-search { grid-template-columns: 1fr; } }
 </style>
 
@@ -49,7 +45,7 @@
         <form method="GET" action="{{ route('events.index') }}" class="eb-home-search" role="search" aria-label="Search events">
             <div class="eb-form-group" style="margin: 0;">
                 <label for="home-q" class="eb-label">Search events, cities and towns</label>
-                <input id="home-q" name="q" type="search" class="eb-input" placeholder="e.g. jerk chicken, Tampa, family" autocomplete="off">
+                <input id="home-q" name="q" type="search" class="eb-input" placeholder="e.g. tamales, jollof, Atlanta, family day" autocomplete="off">
             </div>
             <div class="eb-form-group" style="margin: 0;">
                 <label for="home-city" class="eb-label">Location</label>
@@ -75,6 +71,19 @@
             </div>
             <noscript><button type="submit" class="eb-btn eb-btn-secondary">Show</button></noscript>
         </form>
+    </section>
+
+    {{-- What EventBite does, in the order people do it --}}
+    <section aria-labelledby="how-heading">
+        <h2 id="how-heading" class="sr-only">How EventBite works</h2>
+        <ol class="eb-home-steps">
+            <li><strong>Discover</strong><span class="eb-text-supporting">Events from many cultures and communities.</span></li>
+            <li><strong>Find events near you</strong><span class="eb-text-supporting">Search by city, town or tradition.</span></li>
+            <li><strong>Buy tickets</strong><span class="eb-text-supporting">Prices, fees and taxes shown before you pay.</span></li>
+            <li><strong>Order food</strong><span class="eb-text-supporting">Pre-order from the event's menu for pickup.</span></li>
+            <li><strong>Pay your way</strong><span class="eb-text-supporting">Bank transfer, Zelle, Cash App or cash, wherever the host accepts it.</span></li>
+            <li><strong>Get your ticket</strong><span class="eb-text-supporting">Your QR ticket appears once the payment is confirmed, and is checked at the door.</span></li>
+        </ol>
     </section>
 
     @if($traditions !== [])

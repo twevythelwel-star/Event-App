@@ -38,6 +38,31 @@
                   help="Programme, parking, entry rules and anything guests should know." />
 </section>
 
+@php
+    // The host's own choice; for an event that has not chosen yet, the suggestion from its text is pre-ticked.
+    $chosenTraditions = old('traditions', $e ? $e->traditionKeys() : []);
+@endphp
+<section class="eb-panel card" style="margin: 0;">
+    <fieldset style="border: 0; margin: 0; padding: 0;">
+        <legend class="eb-card-title card-title" style="padding: 0;">Traditions and cuisines</legend>
+        <p class="eb-card-subtitle card-subtitle" style="margin: 0 0 var(--space-4);">
+            Choose up to four that this event celebrates or serves. Guests use them to find events; leave them all unticked if none fit.
+            @if($e && $e->traditions === null && $chosenTraditions)<br>Suggested from your event's description and menu; check them before saving.@endif
+        </p>
+        <input type="hidden" name="traditions_submitted" value="1">
+        <div class="eb-grid-3" style="gap: var(--space-2);">
+            @foreach(config('traditions') as $key => $tradition)
+                <label class="eb-choice-label">
+                    <input type="checkbox" class="eb-checkbox" name="traditions[]" value="{{ $key }}" @checked(in_array($key, (array) $chosenTraditions, true))>
+                    <span>{{ $tradition['label'] }}</span>
+                </label>
+            @endforeach
+        </div>
+        @error('traditions')<div class="eb-field-error" role="alert"><span>{{ $message }}</span></div>@enderror
+        @error('traditions.*')<div class="eb-field-error" role="alert"><span>{{ $message }}</span></div>@enderror
+    </fieldset>
+</section>
+
 <section class="eb-panel card" style="margin: 0;">
     <div class="eb-card-header card-header"><div>
         <h2 class="eb-card-title card-title">When and where</h2>

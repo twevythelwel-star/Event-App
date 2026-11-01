@@ -48,7 +48,7 @@ class OrderController extends Controller
                 "Order {$order->order_number} placed. Your ticket code is {$order->ticket_code}. "
                 . ($order->method === 'cash'
                     ? 'Pay cash at pickup; staff will mark it paid.'
-                    : 'It shows Pending until the organiser confirms your payment.'));
+                    : 'It shows Pending until the organizer confirms your payment.'));
         }
 
         return response()->json([

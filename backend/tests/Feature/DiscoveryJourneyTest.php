@@ -54,7 +54,7 @@ class DiscoveryJourneyTest extends TestCase
             ->assertSee('United States (all)')
             ->assertSee('Featured events')
             ->assertSee('Upcoming food festivals')
-            ->assertSee('Reggae &amp; dancehall', false)
+            ->assertSee('Live music &amp; nightlife', false)
             ->assertSee('Cultural &amp; community celebrations', false)
             ->assertSee('Family-friendly')
             ->assertSee('Popular cities')
@@ -69,9 +69,9 @@ class DiscoveryJourneyTest extends TestCase
             $this->get('/events/' . $id)->assertOk();
         }
 
-        // Jamaican and Caribbean is one tradition among several.
+        // Caribbean is one tradition among several.
         $traditions = HomeSections::build()['traditions'];
-        $this->assertArrayHasKey('Jamaican & Caribbean', $traditions);
+        $this->assertArrayHasKey('Caribbean', $traditions);
         $this->assertGreaterThanOrEqual(5, count($traditions));
     }
 
@@ -168,7 +168,7 @@ class DiscoveryJourneyTest extends TestCase
             ->assertSee('Sales tax (configured)')
             ->assertSee('7.00% of food')
             ->assertDontSee('JMD flat fee') // a fixed amount in another currency is never charged, so never shown
-            ->assertSee('The organiser has not published a refund policy')
+            ->assertSee('The organizer has not published a refund policy')
             ->assertSee('Share this event')
             ->assertSee('not a ticket')
             ->assertSee('From $10.00');

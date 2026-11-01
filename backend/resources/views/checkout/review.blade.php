@@ -34,7 +34,7 @@
         @else
             <x-price-summary :lines="$lines" :charges="$totals->charges" :subtotal-minor="$totals->subtotalMinor"
                 :total-minor="$totals->totalMinor()" :currency="$currency"
-                note="This is the full price you will pay. Prices come from the organiser and are checked again when you place the order." />
+                note="This is the full price you will pay. Prices come from the organizer and are checked again when you place the order." />
             <a href="{{ route($backRoute, $event) }}" class="eb-text-label" style="display: inline-block; margin-top: var(--space-3);">Change order</a>
         @endif
     </section>
@@ -48,15 +48,15 @@
             <x-form-field name="customer_name" label="Name for the order"
                 :value="old('customer_name', auth()->user()->name)" :required="true" autocomplete="name"
                 help="Shown to staff when you collect food or check in." :error="$errors->first('customer_name')" />
-            <p class="eb-help-text" style="margin: 0 0 var(--space-3);">Your confirmation and receipt go to {{ auth()->user()->email }}, the email on your account.</p>
+            <p class="eb-help-text" style="margin: 0 0 var(--space-3);">Order updates and your receipt are emailed to {{ auth()->user()->email }}, the email on your account.</p>
             <x-form-field name="customer_phone" type="tel" label="Phone or WhatsApp"
                 :value="old('customer_phone', auth()->user()->phone)" :required="true" placeholder="+1 305 555 0142"
-                help="We text your ticket here." :error="$errors->first('customer_phone')" />
+                help="We text order and payment updates here." :error="$errors->first('customer_phone')" />
 
             <fieldset style="border: 0; padding: 0; margin: var(--space-5) 0 0;" aria-describedby="method-help">
                 <legend class="eb-text-section-title" style="margin-bottom: var(--space-3);">Payment method</legend>
                 @if($methods === [])
-                    <x-alert type="error">The organiser hasn't set up a way to pay yet, so orders can't be placed. Please check back later.</x-alert>
+                    <x-alert type="error">The organizer hasn't set up a way to pay yet, so orders can't be placed. Please check back later.</x-alert>
                 @else
                     <div class="eb-stack" style="gap: var(--space-2);">
                         @foreach($methods as $method)
@@ -64,7 +64,7 @@
                                 :icon="$method['icon']" :checked="$selectedMethod === $method['value']" required />
                         @endforeach
                     </div>
-                    <p id="method-help" class="eb-help-text" style="margin: var(--space-2) 0 0;">Your ticket shows Pending until the organiser confirms your payment.</p>
+                    <p id="method-help" class="eb-help-text" style="margin: var(--space-2) 0 0;">Your ticket shows Pending until the organizer confirms your payment.</p>
                     @error('method')<p class="eb-field-error" role="alert">{{ $message }}</p>@enderror
                 @endif
             </fieldset>

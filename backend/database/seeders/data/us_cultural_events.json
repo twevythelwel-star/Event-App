@@ -62,7 +62,10 @@
                     "saleEndIso": "2026-11-21T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -131,7 +134,6 @@
                 "description": "Sweet fried cornmeal dumplings.",
                 "priceUSD": 5,
                 "priceJMD": 0,
-                "imageUrl": "/images/fried_plantains_sides.jpg",
                 "availableStock": 250
             },
             {
@@ -197,7 +199,6 @@
                 "description": "Chilled hibiscus and ginger drink.",
                 "priceUSD": 4,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 180
             }
         ]
@@ -275,7 +276,12 @@
                     "saleEndIso": "2026-11-28T11:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_culture_carnival.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "african",
+                "caribbean",
+                "latin_american"
+            ]
         },
         "menu": [
             {
@@ -341,7 +347,6 @@
                 "description": "Chicken tenders, fruit cup and juice box.",
                 "priceUSD": 8,
                 "priceJMD": 0,
-                "imageUrl": "/images/fried_chicken.jpg",
                 "availableStock": 140
             },
             {
@@ -352,7 +357,6 @@
                 "description": "Fresh-squeezed lemonade.",
                 "priceUSD": 3,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 250
             }
         ]
@@ -420,7 +424,10 @@
                     "saleEndIso": "2027-08-07T13:00:00-04:00"
                 }
             ],
-            "flyer_path": "/images/island_culture_carnival.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -431,7 +438,6 @@
                 "description": "Jerk pork with rice and peas and cabbage.",
                 "priceUSD": 17,
                 "priceJMD": 0,
-                "imageUrl": "/images/jerk_chicken.jpg",
                 "availableStock": 120
             },
             {
@@ -475,7 +481,6 @@
                 "description": "One festival and one bammy.",
                 "priceUSD": 7,
                 "priceJMD": 0,
-                "imageUrl": "/images/bammy.jpg",
                 "availableStock": 200
             },
             {
@@ -497,7 +502,6 @@
                 "description": "Spicy house ginger beer.",
                 "priceUSD": 4,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 200
             }
         ]
@@ -555,7 +559,10 @@
                     "saleEndIso": "2026-12-12T20:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_music_reggae_concert.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -588,7 +595,6 @@
                 "description": "Vegan plantain chips with mango salsa.",
                 "priceUSD": 7,
                 "priceJMD": 0,
-                "imageUrl": "/images/fried_plantains_sides.jpg",
                 "availableStock": 120
             },
             {
@@ -599,7 +605,6 @@
                 "description": "Non-alcoholic fruit punch.",
                 "priceUSD": 5,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 200
             }
         ]
@@ -667,7 +672,10 @@
                     "saleEndIso": "2026-12-05T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -689,7 +697,6 @@
                 "description": "Fried fish with festival.",
                 "priceUSD": 16,
                 "priceJMD": 0,
-                "imageUrl": "/images/escovitch_fish.jpg",
                 "availableStock": 100
             },
             {
@@ -722,7 +729,6 @@
                 "description": "Hibiscus and ginger.",
                 "priceUSD": 4,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 200
             }
         ]
@@ -790,7 +796,13 @@
                     "saleEndIso": "2027-01-30T11:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "african",
+                "caribbean",
+                "east_southeast_asian",
+                "latin_american"
+            ]
         },
         "menu": [
             {
@@ -867,7 +879,6 @@
                 "description": "Non-alcoholic.",
                 "priceUSD": 4,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 200
             }
         ]
@@ -925,7 +936,12 @@
                     "saleEndIso": "2027-02-06T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_culture_carnival.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "brazilian_portuguese",
+                "caribbean",
+                "east_southeast_asian"
+            ]
         },
         "menu": [
             {
@@ -980,7 +996,6 @@
                 "description": "Non-alcoholic.",
                 "priceUSD": 4,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 200
             }
         ]
@@ -1048,7 +1063,10 @@
                     "saleEndIso": "2027-02-20T13:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_music_reggae_concert.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -1114,7 +1132,6 @@
                 "description": "Non-alcoholic.",
                 "priceUSD": 4,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 200
             }
         ]
@@ -1172,7 +1189,13 @@
                     "saleEndIso": "2027-03-06T11:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean",
+                "east_southeast_asian",
+                "latin_american",
+                "middle_eastern"
+            ]
         },
         "menu": [
             {
@@ -1238,7 +1261,6 @@
                 "description": "Non-alcoholic.",
                 "priceUSD": 3,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 250
             }
         ]
@@ -1286,7 +1308,10 @@
                     "saleEndIso": "2026-12-19T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "southern_us"
+            ]
         },
         "menu": [
             {
@@ -1297,7 +1322,6 @@
                 "description": "Fried whiting with fries and slaw.",
                 "priceUSD": 14,
                 "priceJMD": 0,
-                "imageUrl": "/images/escovitch_fish.jpg",
                 "availableStock": 150
             },
             {
@@ -1341,7 +1365,6 @@
                 "description": "Non-alcoholic.",
                 "priceUSD": 3,
                 "priceJMD": 0,
-                "imageUrl": "/images/tropical_island_smoothie.jpg",
                 "availableStock": 200
             }
         ]
@@ -1409,7 +1432,10 @@
                     "saleEndIso": "2026-12-13T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_music_reggae_concert.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -1529,7 +1555,11 @@
                     "saleEndIso": "2027-01-09T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_culture_carnival.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean",
+                "latin_american"
+            ]
         },
         "menu": [
             {
@@ -1649,7 +1679,10 @@
                     "saleEndIso": "2027-01-23T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -1660,8 +1693,7 @@
                 "description": "Whole fried snapper with festival and slaw. Contains fish; festival contains gluten.",
                 "priceUSD": 18,
                 "priceJMD": 0,
-                "availableStock": 120,
-                "imageUrl": "/images/escovitch_fish.jpg"
+                "availableStock": 120
             },
             {
                 "id": "tam-main2",
@@ -1768,7 +1800,11 @@
                     "saleEndIso": "2027-02-13T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean",
+                "latin_american"
+            ]
         },
         "menu": [
             {
@@ -1887,7 +1923,11 @@
                     "saleEndIso": "2027-02-27T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean",
+                "southern_us"
+            ]
         },
         "menu": [
             {
@@ -1919,8 +1959,7 @@
                 "description": "Contains gluten, dairy and egg.",
                 "priceUSD": 14,
                 "priceJMD": 0,
-                "availableStock": 120,
-                "imageUrl": "/images/fried_chicken.jpg"
+                "availableStock": 120
             },
             {
                 "id": "jax-side",
@@ -2007,7 +2046,13 @@
                     "saleEndIso": "2026-12-04T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean",
+                "east_southeast_asian",
+                "latin_american",
+                "south_asian"
+            ]
         },
         "menu": [
             {
@@ -2126,7 +2171,11 @@
                     "saleEndIso": "2027-01-30T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_culture_carnival.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean",
+                "southern_us"
+            ]
         },
         "menu": [
             {
@@ -2246,7 +2295,10 @@
                     "saleEndIso": "2027-03-13T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_music_reggae_concert.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -2278,8 +2330,7 @@
                 "description": "Steamed callaloo with cassava bammy. Vegan; gluten-free.",
                 "priceUSD": 12,
                 "priceJMD": 0,
-                "availableStock": 120,
-                "imageUrl": "/images/bammy.jpg"
+                "availableStock": 120
             },
             {
                 "id": "hem-side",
@@ -2366,7 +2417,11 @@
                     "saleEndIso": "2027-02-27T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_festival_sunset.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "brazilian_portuguese",
+                "caribbean"
+            ]
         },
         "menu": [
             {
@@ -2485,7 +2540,12 @@
                     "saleEndIso": "2027-03-06T12:00:00-05:00"
                 }
             ],
-            "flyer_path": "/images/island_culture_carnival.jpg"
+            "flyer_path": null,
+            "traditions": [
+                "african",
+                "caribbean",
+                "south_asian"
+            ]
         },
         "menu": [
             {

@@ -223,7 +223,7 @@ class CheckoutController extends Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return back()->with('success', 'Thanks. Your ticket now shows Confirmation submitted until the organiser checks the payment.');
+        return back()->with('success', 'Thanks. Your ticket now shows Confirmation submitted until the organizer checks the payment.');
     }
 
     /** Stop the flow for events that can't take orders, with the reason. */
@@ -233,7 +233,7 @@ class CheckoutController extends Controller
             abort(404);
         }
         if (!$event->is_ordering_open) {
-            return redirect()->route('events.show', $event->id)->with('error', 'The organiser has paused ordering for this event.');
+            return redirect()->route('events.show', $event->id)->with('error', 'The organizer has paused ordering for this event.');
         }
         if ($event->advance_order_deadline && now()->greaterThan($event->advance_order_deadline)) {
             return redirect()->route('events.show', $event->id)->with('error', 'The ordering deadline for this event has passed.');

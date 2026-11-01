@@ -47,6 +47,9 @@ class StoreEventRequest extends FormRequest
             'packaging_fee_usd' => 'nullable|numeric|min:0',
             'packaging_fee_jmd' => 'nullable|integer|min:0',
             'event_date_iso' => 'nullable|date_format:Y-m-d',
+            // The traditions and cuisines the host says the event celebrates (config/traditions.php keys).
+            'traditions' => 'nullable|array|max:4',
+            'traditions.*' => ['string', Rule::in(array_keys((array) config('traditions', [])))],
             // Same image rules as the dedicated flyer upload: the create and edit forms may attach one too.
             'flyer' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120|dimensions:min_width=300,min_height=200,max_width=4500,max_height=4500',
             // Ticket types from the event form (one row each); converted to the stored tier format by the controller.
@@ -66,6 +69,8 @@ class StoreEventRequest extends FormRequest
     {
         return [
             'event_date_iso' => 'event date',
+            'traditions' => 'traditions and cuisines',
+            'traditions.*' => 'tradition',
             'ticket_tiers.*.name' => 'ticket name',
             'ticket_tiers.*.price' => 'ticket price',
             'ticket_tiers.*.available_stock' => 'tickets available',

@@ -550,8 +550,7 @@
                         </svg>
                     </span>
                     <select id="preferred_display_currency" name="preferred_display_currency" class="auth-select">
-                        <option value="USD" {{ old('preferred_display_currency', 'USD') === 'USD' ? 'selected' : '' }}>USD — United States Dollar (US$)</option>
-                        <option value="JMD" {{ old('preferred_display_currency') === 'JMD' ? 'selected' : '' }}>JMD — Jamaican Dollar (historical transactions)</option>
+                        <option value="USD" selected>USD — US dollar ($)</option>
                     </select>
                 </div>
             </div>

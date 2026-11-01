@@ -27,6 +27,12 @@
   top: var(--space-3);
   left: var(--space-3);
   z-index: 1;
+  /* Two chips share the top edge; each keeps to its half so a long category never covers the status */
+  max-width: calc(50% - var(--space-4));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 .eb-card-chip-end { left: auto; right: var(--space-3); }
 .eb-clamp-2 {
@@ -104,6 +110,10 @@
 }
 .eb-qty-btn[data-qty="up"] { background: var(--color-accent); color: var(--color-accent-text); }
 .eb-qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* Touch screens: 44px targets for the steppers */
+@media (pointer: coarse), (max-width: 640px) {
+  .eb-qty-btn { width: 2.75rem; height: 2.75rem; }
+}
 .eb-qty-input {
   width: 3rem; border: 0; background: transparent; text-align: center;
   font: inherit; font-weight: 700; color: var(--color-text-primary);

@@ -45,6 +45,8 @@ Route::get('/locations', [LocationCatalogController::class, 'index'])->name('loc
 
 // Event QR short links: resolve only for published events; never used for admission
 Route::get('/e/{code}', [EventQrController::class, 'resolve'])->where('code', '[A-Za-z0-9]{10}')->name('event-qr.resolve')->middleware('throttle:120,1');
+// A typographic flyer for events whose host has not uploaded one
+Route::get('/events/{id}/flyer.svg', [EventController::class, 'generatedFlyer'])->name('events.generated-flyer')->middleware('throttle:240,1');
 Route::get('/e/{code}/qr.svg', [EventQrController::class, 'publicArtwork'])->where('code', '[A-Za-z0-9]{10}')->name('event-qr.public')->middleware('throttle:120,1');
 Route::get('/events/{eventSlug}/menu', [MenuController::class, 'index'])->name('events.menu.index');
 

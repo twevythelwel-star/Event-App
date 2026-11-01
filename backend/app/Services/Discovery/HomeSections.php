@@ -11,26 +11,17 @@ use Illuminate\Support\Collection;
 
 /**
  * Homepage sections, built only from published, upcoming events in the database. A section with nothing in
- * it is left out rather than filled with placeholders. Each event's "traditions" (cuisines and cultures) are
- * read from its own title, description, category and menu, so Jamaican and Caribbean events are one tradition
- * among several rather than the default.
+ * it is left out rather than filled with placeholders. Each event's traditions are the ones its host chose
+ * (config/traditions.php), or a suggestion from its own text until the host chooses; no tradition is the default.
  */
 final class HomeSections
 {
-    /** Tradition label => words that identify it in an event's own text. */
-    public const TRADITIONS = [
-        'Jamaican & Caribbean' => ['jamaica', 'caribbean', 'trinidad', 'haitian', 'jerk', 'escovitch', 'soca', 'kompa', 'reggae', 'dancehall'],
-        'Latin American' => ['cuban', 'colombian', 'puerto rican', 'venezuelan', 'mexican', 'latin', 'arepa', 'taco'],
-        'African' => ['african', 'ethiopian', 'jollof', 'injera', 'bissap', 'puff-puff'],
-        'Asian' => ['asian', 'vietnamese', 'thai', 'nepali', 'indian', 'banh mi', 'momo', 'samosa', 'masala', 'lassi'],
-        'Southern U.S.' => ['southern', 'low-country', 'collard', 'bbq', 'gospel', 'smothered'],
-        'Brazilian & Portuguese' => ['brazilian', 'portuguese', 'feijoada', 'bifana', 'samba', 'fado'],
-        'Mediterranean & Middle Eastern' => ['mediterranean', 'middle eastern', 'falafel', 'italian', 'arancini'],
-    ];
-
     /** Words that mark a seasonal or cultural celebration. */
     private const CELEBRATION_WORDS = ['independence', 'heritage', 'holiday', 'lunar new year', 'carnival', 'juneteenth',
         'thanksgiving', 'christmas', 'kwanzaa', 'diwali', 'emancipation', 'black history', 'hispanic heritage', 'new year'];
+
+    /** Words that mark live music, across genres. */
+    private const MUSIC_PATTERN = '/\b(live music|concert|band|dj|jazz|gospel|reggae|dancehall|salsa|samba|soca|kompa|afrobeats|hip[- ]hop|r&b|blues|mariachi|bachata|k-pop|bhangra)\b/u';
 
     /** Upcoming celebrations are featured only when they fall within this many days. */
     private const SEASONAL_WINDOW_DAYS = 120;
@@ -43,27 +34,16 @@ final class HomeSections
             ->reject(fn (Event $e) => EventListing::hasEnded($e))->values();
     }
 
-    /** @return list<string> the traditions an event's own text points to */
+    /** @return list<string> the labels of the traditions an event celebrates */
     public static function traditions(Event $event): array
     {
-        $text = self::text($event);
-        $found = [];
-        foreach (self::TRADITIONS as $label => $words) {
-            foreach ($words as $word) {
-                if (str_contains($text, $word)) {
-                    $found[] = $label;
-                    break;
-                }
-            }
-        }
-
-        return $found;
+        return $event->traditionLabels();
     }
 
     /**
      * @return array{
      *     featured: Collection, near: Collection, foodFestivals: Collection, foodTraditions: Collection,
-     *     reggae: Collection, culture: Collection, family: Collection, seasonal: Collection,
+     *     music: Collection, culture: Collection, family: Collection, seasonal: Collection,
      *     markets: Collection, traditions: array<string, int>, market: ?TargetMarket
      * }
      */
@@ -103,7 +83,7 @@ final class HomeSections
             ->filter(fn (TargetMarket $m) => $m->upcoming_count > 0)->take(12)->values();
 
         $traditionCounts = [];
-        foreach (array_keys(self::TRADITIONS) as $label) {
+        foreach (array_column((array) config('traditions', []), 'label') as $label) {
             $count = $events->filter(fn (Event $e) => in_array($label, self::traditions($e), true))->count();
             if ($count > 0) {
                 $traditionCounts[$label] = $count;
@@ -115,7 +95,8 @@ final class HomeSections
             'near' => $near,
             'foodFestivals' => $foodFestivals,
             'foodTraditions' => $foodTraditions,
-            'reggae' => $events->filter(fn (Event $e) => preg_match('/\b(reggae|dancehall)\b/', self::text($e)) === 1)->take(4)->values(),
+            // Live music of every kind; no single genre gets a section of its own.
+            'music' => self::diverse($events->filter(fn (Event $e) => str_contains($category($e), 'music') || preg_match(self::MUSIC_PATTERN, self::text($e)) === 1), 4),
             'culture' => $events->filter(fn (Event $e) => preg_match('/cultur|communit|heritage|celebrat/', $category($e) . ' ' . strtolower((string) $e->title)) === 1)->take(4)->values(),
             'family' => $events->filter(fn (Event $e) => str_contains($category($e), 'family') || self::hasFamilyTickets($e))->take(4)->values(),
             'seasonal' => $events->filter(fn (Event $e) => ($e->event_date_iso ?? '9999') <= $seasonalCutoff

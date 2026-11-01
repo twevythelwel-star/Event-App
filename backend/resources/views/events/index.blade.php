@@ -504,7 +504,7 @@
             <button type="button" class="category-btn cat-music" onclick="selectCategory('music')" id="cat-btn-music">
                 <div class="category-icon-circle">🎵</div>
                 <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Music</div>
-                <div style="font-size: 0.68rem; color: #94A3B8;">Live Reggae & Sets</div>
+                <div style="font-size: 0.68rem; color: #94A3B8;">Concerts, DJs & live sets</div>
             </button>
 
             <!-- Food -->

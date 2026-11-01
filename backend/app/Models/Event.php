@@ -66,6 +66,7 @@ class Event extends Model
         'packaging_fee_minor',
         'supports_food_ordering',
         'ticket_tiers',
+        'traditions',
         'flyer_path',
         'flyer_thumbnail_path',
         'flyer_mime_type',
@@ -84,6 +85,7 @@ class Event extends Model
         'packaging_fee_minor' => 'integer',
         'supports_food_ordering' => 'boolean',
         'ticket_tiers' => 'array',
+        'traditions' => 'array',
         'flyer_size_bytes' => 'integer',
         'flyer_width' => 'integer',
         'flyer_height' => 'integer',
@@ -135,7 +137,8 @@ class Event extends Model
 
     /**
      * Image to show for this event. Uploaded flyers go through the access-checked media route;
-     * seeded events point at a public /images path; anything else falls back to a stock photo.
+     * seeded events point at a public /images path. Without a flyer the event gets a typographic flyer of its
+     * own name, date and place (App\Support\GeneratedFlyer), never a photo of one culture standing in for it.
      */
     public function getDisplayImageUrlAttribute(): string
     {
@@ -147,7 +150,52 @@ class Event extends Model
             return $path;
         }
 
-        return '/images/island_festival_sunset.jpg';
+        return $this->id ? route('events.generated-flyer', $this->id) : '/images/event-placeholder.svg';
+    }
+
+    /** Whether the host uploaded artwork (or the event points at a real image), rather than using the generated flyer. */
+    public function hasFlyer(): bool
+    {
+        $path = (string) ($this->flyer_path ?? '');
+
+        return $path !== '' && (\App\Services\MediaStorageService::isStoredPath($path) || str_starts_with($path, '/images/') || str_starts_with($path, 'https://'));
+    }
+
+    /**
+     * The traditions and cuisines this event celebrates, as config/traditions.php keys: the host's own choice,
+     * or, until the host chooses, a suggestion from the event's title, description and active menu.
+     *
+     * @return list<string>
+     */
+    public function traditionKeys(): array
+    {
+        $catalog = (array) config('traditions', []);
+        $chosen = is_array($this->traditions) ? array_values(array_filter($this->traditions, fn ($key) => isset($catalog[$key]))) : [];
+        if ($this->traditions !== null) {
+            return $chosen;
+        }
+
+        $menu = $this->relationLoaded('menuItems')
+            ? $this->menuItems->where('is_active', true)->map(fn ($item) => $item->name . ' ' . $item->description)->implode(' ')
+            : '';
+        $text = mb_strtolower(implode(' ', [$this->title, $this->tagline, $this->description, $this->category, $menu]));
+        $found = [];
+        foreach ($catalog as $key => $tradition) {
+            foreach ($tradition['words'] ?? [] as $word) {
+                if (preg_match('/\b' . preg_quote($word, '/') . '/u', $text) === 1) {
+                    $found[] = $key;
+                    break;
+                }
+            }
+        }
+
+        return $found;
+    }
+
+    /** @return list<string> human labels for traditionKeys() */
+    public function traditionLabels(): array
+    {
+        return array_map(fn ($key) => (string) config("traditions.{$key}.label", $key), $this->traditionKeys());
     }
 
     /**

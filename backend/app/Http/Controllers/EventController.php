@@ -51,6 +51,24 @@ class EventController extends Controller
     }
 
     /**
+     * The typographic flyer shown for an event without uploaded artwork. Only published events are drawn;
+     * anything else gets the plain placeholder, so a draft's name is never exposed through this URL.
+     */
+    public function generatedFlyer(string $id): \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\BinaryFileResponse
+    {
+        $event = Event::allTenants()->whereKey($id)->where('status', 'published')->first();
+        if (!$event) {
+            return response()->file(public_path('images/event-placeholder.svg'), ['Content-Type' => 'image/svg+xml']);
+        }
+
+        return response(\App\Support\GeneratedFlyer::svg($event), 200, [
+            'Content-Type' => 'image/svg+xml',
+            'Cache-Control' => 'public, max-age=600',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    /**
      * Display the specified event.
      * Enforces configurable browsing policy (require_login_for_browsing).
      */
@@ -225,6 +243,9 @@ class EventController extends Controller
         }
 
         $validated = app(LocationAddressNormalizer::class)->normalize($request->safe()->except(['flyer', 'ticket_tiers']));
+        if ($request->boolean('traditions_submitted')) {
+            $validated['traditions'] = array_values(array_unique((array) $request->validated('traditions', [])));
+        }
         if ($request->has('ticket_tiers')) {
             $validated['ticket_tiers'] = self::tiersFromForm((array) $request->validated('ticket_tiers', []), [], $validated['timezone'] ?? null);
         }
@@ -294,6 +315,10 @@ class EventController extends Controller
             'timezone' => $event->timezone,
         ];
         $changes = app(LocationAddressNormalizer::class)->normalize(array_merge($location, $request->safe()->except(['flyer', 'ticket_tiers'])));
+        if ($request->boolean('traditions_submitted')) {
+            // Unticking every box is a choice too: the event then shows no traditions.
+            $changes['traditions'] = array_values(array_unique((array) $request->validated('traditions', [])));
+        }
         if ($request->boolean('ticket_tiers_submitted')) {
             // Through the management service, which checks the tiers and audits the change.
             try {
