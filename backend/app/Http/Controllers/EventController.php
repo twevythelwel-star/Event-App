@@ -224,7 +224,10 @@ class EventController extends Controller
             return redirect()->route('host.apply')->with('error', 'You must apply and be approved as an Event Host to create events.');
         }
 
-        $validated = app(LocationAddressNormalizer::class)->normalize($request->validated());
+        $validated = app(LocationAddressNormalizer::class)->normalize($request->safe()->except(['flyer', 'ticket_tiers']));
+        if ($request->has('ticket_tiers')) {
+            $validated['ticket_tiers'] = self::tiersFromForm((array) $request->validated('ticket_tiers', []), [], $validated['timezone'] ?? null);
+        }
         $organizerId = $user ? $this->organizerForNewEvent($request) : null;
         if ($organizerId === null) {
             $message = 'Choose the organizer this event belongs to. Your account is not linked to exactly one organizer you can manage.';
@@ -289,7 +292,19 @@ class EventController extends Controller
             'longitude' => $event->longitude,
             'timezone' => $event->timezone,
         ];
-        $event->update(app(LocationAddressNormalizer::class)->normalize(array_merge($location, $request->validated())));
+        $changes = app(LocationAddressNormalizer::class)->normalize(array_merge($location, $request->safe()->except(['flyer', 'ticket_tiers'])));
+        if ($request->boolean('ticket_tiers_submitted')) {
+            // Through the management service, which checks the tiers and audits the change.
+            try {
+                app(\App\Services\EventManagementService::class)->updateEvent($request->user(), $event->id, [
+                    'ticket_tiers' => self::tiersFromForm((array) $request->validated('ticket_tiers', []), (array) ($event->ticket_tiers ?? []), $event->timezone),
+                ]);
+            } catch (\InvalidArgumentException $e) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['ticket_tiers' => $e->getMessage()]);
+            }
+            $event->refresh();
+        }
+        $event->update($changes);
 
         if ($request->hasFile('flyer')) {
             $file = $request->file('flyer');
@@ -320,7 +335,8 @@ class EventController extends Controller
             ]);
         }
 
-        return redirect()->route('host.dashboard')->with('status', "Event '{$event->title}' updated successfully.");
+        // Back to the form, so the host sees what was saved.
+        return redirect()->route('events.edit', $event->id)->with('status', "Event '{$event->title}' saved.");
     }
 
     /**
@@ -532,5 +548,44 @@ class EventController extends Controller
                 'notice' => "Owner Preview Mode: Event is in '{$event->status}' state.",
             ],
         ]);
+    }
+    /**
+     * Ticket types from the event form, in the stored tier format. A row with the id of an existing tier keeps
+     * that tier's other keys (so nothing the form does not show is lost); new rows get a new id. Removed rows
+     * are dropped.
+     *
+     * @param array<int, array<string, mixed>> $rows
+     * @param array<int, array<string, mixed>> $existing
+     * @return list<array<string, mixed>>
+     */
+    private static function tiersFromForm(array $rows, array $existing, ?string $timezone): array
+    {
+        // Sale times are typed in the event's own time zone and stored with their offset.
+        $tz = $timezone ?: config('events.market.default_timezone', 'America/New_York');
+        $byId = collect($existing)->filter(fn ($tier) => is_array($tier) && isset($tier['id']))->keyBy('id');
+
+        return collect($rows)->values()->map(function (array $row) use ($byId, $tz) {
+            $id = (string) ($row['id'] ?? '');
+            $tier = $id !== '' && $byId->has($id) ? $byId->get($id) : ['id' => 'tier-' . Str::lower(Str::random(8)), 'priceJMD' => 0];
+            $price = round((float) $row['price'], 2);
+
+            $tier['name'] = trim((string) $row['name']);
+            $tier['description'] = trim((string) ($row['description'] ?? ''));
+            $tier['priceUSD'] = $price;
+            if (array_key_exists('price_usd', $tier)) {
+                $tier['price_usd'] = $price; // the catalog reads this key first when present
+            }
+            if (array_key_exists('price_minor', $tier)) {
+                $tier['price_minor'] = (int) round($price * 100);
+                $tier['currency'] = 'USD';
+            }
+            $tier['priceJMD'] = $tier['priceJMD'] ?? 0;
+            $tier['availableStock'] = (int) $row['available_stock'];
+            $tier['maxPerCustomer'] = (int) $row['max_per_customer'];
+            $tier['saleStartIso'] = !empty($row['sale_start']) ? \Illuminate\Support\Carbon::parse($row['sale_start'], $tz)->toIso8601String() : null;
+            $tier['saleEndIso'] = !empty($row['sale_end']) ? \Illuminate\Support\Carbon::parse($row['sale_end'], $tz)->toIso8601String() : null;
+
+            return $tier;
+        })->all();
     }
 }

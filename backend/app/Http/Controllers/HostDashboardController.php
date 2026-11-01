@@ -17,6 +17,7 @@ use App\Models\OrganizerUser;
 use App\Services\AuditLogService;
 use App\Services\TenantContext;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -25,7 +26,7 @@ class HostDashboardController extends Controller
     /**
      * Event Host Dashboard Overview: Ticketing, Kitchen Operations & Worker Oversight.
      */
-    public function index(Request $request): JsonResponse|View
+    public function index(Request $request): JsonResponse|View|RedirectResponse
     {
         $user = $request->user();
 
@@ -96,16 +97,56 @@ class HostDashboardController extends Controller
         $workers = $workersQuery->with('user')->get();
         $opsRule = $tenantId ? HostOperationalRule::where('organizer_id', $tenantId)->first() : null;
 
-        // Kitchen portion forecasting
+        // Kitchen portion forecasting: food portions on paid orders (ticket lines are not food), per menu item.
         $paidOrders = $orders->where('status', 'paid');
-        $totalSoldPortions = $paidOrders->sum(function ($order) {
-            return count($order->items ?? []);
-        });
-
         $bufferPercent = $opsRule->food_prep_buffer_percent ?? 10;
-        $prepWithBuffer = $opsRule 
-            ? $opsRule->calculatePrepForecast($totalSoldPortions) 
-            : (int) ceil(($totalSoldPortions * (100 + $bufferPercent)) / 100);
+        $eventTitles = [];
+        foreach ($events as $event) {
+            $eventTitles[$event->id] = $event->title;
+        }
+        $settledOrderEvents = [];
+        foreach ($orders as $order) {
+            if (in_array($order->status, ['paid', 'partially_refunded'], true)) {
+                $settledOrderEvents[$order->id] = $order->event_id;
+            }
+        }
+        $prep = [];
+        if ($settledOrderEvents !== []) {
+            $foodLines = \App\Models\OrderItem::whereIn('order_id', array_keys($settledOrderEvents))->get();
+            foreach ($foodLines as $line) {
+                if ($line->ticket_tier_id !== null || $line->category === 'Tickets') {
+                    continue;
+                }
+                $eventId = $settledOrderEvents[$line->order_id] ?? '';
+                $key = $eventId . '|' . $line->name;
+                $prep[$key] ??= ['event' => $eventTitles[$eventId] ?? 'Event', 'item' => $line->name, 'category' => $line->category, 'sold' => 0, 'collected' => 0];
+                $prep[$key]['sold'] += (int) $line->quantity;
+                $prep[$key]['collected'] += (int) $line->collected_quantity;
+            }
+        }
+        ksort($prep);
+        $totalSoldPortions = 0;
+        $remainingPortions = 0;
+        foreach ($prep as $key => $row) {
+            $remaining = max(0, $row['sold'] - $row['collected']);
+            $prep[$key]['remaining'] = $remaining;
+            $prep[$key]['prep_target'] = (int) ceil(($remaining * (100 + $bufferPercent)) / 100);
+            $totalSoldPortions += $row['sold'];
+            $remainingPortions += $remaining;
+        }
+        $prepItems = array_values($prep);
+
+        // Manual payments waiting for the host's decision, oldest first.
+        $reviewOrders = [];
+        foreach ($orders as $order) {
+            if (in_array($order->status, ['payment_submitted', 'under_verification'], true)) {
+                $reviewOrders[] = $order;
+            }
+        }
+        usort($reviewOrders, fn ($a, $b) => strcmp((string) $a->created_at, (string) $b->created_at));
+        $prepWithBuffer = $opsRule
+            ? $opsRule->calculatePrepForecast($remainingPortions)
+            : (int) ceil(($remainingPortions * (100 + $bufferPercent)) / 100);
 
         // Money per currency from the integer *_minor columns; currencies are never added together.
         $financials = \App\Services\Pricing\RevenueSummary::byCurrency($orders, $cashRecords);
@@ -148,9 +189,11 @@ class HostDashboardController extends Controller
             'sold_portions' => $totalSoldPortions,
             'prep_with_buffer' => $prepWithBuffer,
             'buffer_percent' => $bufferPercent,
+            'prep_items' => $prepItems,
             'active_workers_count' => $workers->where('is_active', true)->count(),
             'events' => $events,
             'recent_orders' => $orders->take(10),
+            'review_orders' => $reviewOrders,
             'workers' => $workers,
         ];
 

@@ -91,7 +91,7 @@
                                 </div>
                                 <div class="ac-field">
                                     <span class="ac-label">Assigned organizers</span>
-                                    <div style="max-height:150px;overflow:auto;border:1px solid var(--ac-line);border-radius:8px;padding:8px;background:#fff">
+                                    <div style="max-height:150px;overflow:auto;border:1px solid var(--ac-line);border-radius:8px;padding:8px;background:var(--ac-surface-muted)">
                                         @forelse($organizers as $organizer)
                                             <label class="ac-check"><input type="checkbox" name="organizer_ids[]" value="{{ $organizer->id }}" @checked(in_array((string) $organizer->id, array_map('strval', $assigned), true))> {{ $organizer->name }}</label>
                                         @empty

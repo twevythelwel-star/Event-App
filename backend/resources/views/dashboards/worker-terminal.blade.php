@@ -1,15 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $workerRole->label() . ' Terminal — ' . ($event->title ?? 'Event Operations'))
-
-@section('navigation')
-    <a href="{{ route('worker.terminal', $event->id) }}" class="active">📲 On-Site Terminal</a>
-    @if ($workerRole->value === 'event_supervisor')
-        <a href="#roster">👥 Worker Roster</a>
-        <a href="#reports">📊 Station Reports</a>
-    @endif
-    <a href="{{ route('attendee.dashboard') }}">🎟️ My Tickets</a>
-@endsection
+@section('page-title', 'Staff terminal')
 
 @section('content')
 <div class="worker-terminal" style="max-width: 900px; margin: 0 auto;">

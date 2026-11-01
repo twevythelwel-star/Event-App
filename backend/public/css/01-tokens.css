@@ -170,4 +170,13 @@
   --color-indigo-subtle: var(--color-accent-border);
   --sidebar-width: var(--layout-sidebar-width);
   --header-height: var(--layout-header-height);
+
+  /* Older names still used by the staff terminal and Livewire panels */
+  --border-color: var(--color-border);
+  --text-primary: var(--color-text-primary);
+  --text-secondary: var(--color-text-secondary);
+  --accent-emerald: var(--color-success-text);
+  --accent-blue: var(--color-info-text);
+  --accent-rose: var(--color-error-text);
+  --shadow-md: var(--shadow-card);
 }

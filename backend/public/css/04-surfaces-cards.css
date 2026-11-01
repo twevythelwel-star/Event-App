@@ -350,6 +350,7 @@
 .table-responsive {
   width: 100%;
   overflow-x: auto;
+  position: relative; /* keeps visually hidden labels inside, so a wide table never widens the page */
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);

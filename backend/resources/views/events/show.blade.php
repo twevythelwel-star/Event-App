@@ -11,8 +11,9 @@
         min-height: 100vh;
         color: #FFFFFF;
         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        margin: -1.5rem -1rem 0;
+        margin: calc(-1 * var(--layout-page-padding-y)) calc(-1 * var(--layout-page-padding-x)) 0;
         padding-bottom: 5rem;
+        overflow-wrap: anywhere;
     }
 
     .detail-hero {
@@ -96,14 +97,15 @@
         position: relative;
         z-index: 5;
         display: grid;
-        grid-template-columns: 1fr 380px;
+        /* minmax(0, 1fr): long words and links wrap instead of widening the column past the screen */
+        grid-template-columns: minmax(0, 1fr) 380px;
         gap: 32px;
         align-items: start;
     }
 
     @media (max-width: 900px) {
         .detail-main-layout {
-            grid-template-columns: 1fr;
+            grid-template-columns: minmax(0, 1fr);
             margin-top: -20px;
             padding: 0 16px;
         }
@@ -246,10 +248,7 @@
             </a>
 
             <div style="display: flex; align-items: center; gap: 10px;">
-                <button type="button" class="icon-glass-btn" id="btn-favorite-toggle" onclick="toggleDetailFavorite()" title="Save to Favorites">
-                    <span id="fav-icon">🤍</span>
-                </button>
-                <button type="button" class="icon-glass-btn" onclick="shareCurrentEvent()" title="Share Event">
+                <button type="button" class="icon-glass-btn" onclick="shareCurrentEvent()" title="Share Event" aria-label="Share this event">
                     <span>🔗</span>
                 </button>
             </div>
@@ -594,14 +593,6 @@
         if (targetPane) targetPane.classList.add('active');
     }
 
-
-    // Favorite Toggle
-    let isFaved = false;
-    function toggleDetailFavorite() {
-        isFaved = !isFaved;
-        document.getElementById('fav-icon').innerText = isFaved ? '❤️' : '🤍';
-        showDetailToast(isFaved ? 'Event saved to your Island Favorites! ❤️' : 'Removed from favorites.');
-    }
 
     // Share Event
     function shareCurrentEvent() {

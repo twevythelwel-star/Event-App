@@ -25,4 +25,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        // Never put typed passwords back into the session after a validation error.
+        $exceptions->dontFlash(['current_password', 'password', 'password_confirmation', 'new_password', 'new_password_confirmation']);
     })->create();

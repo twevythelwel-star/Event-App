@@ -8,7 +8,8 @@ class UpdateHostSettingsRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user() !== null && $this->user()->canOperateOwnEvents();
+        // Which organizer is checked in the controller; here, only hosts may change host settings at all.
+        return $this->user()?->hasRole(\App\Enums\AccountType::EVENT_HOST) ?? false;
     }
 
     public function rules(): array
@@ -32,6 +33,7 @@ class UpdateHostSettingsRequest extends FormRequest
             'deposit_percentage' => ['nullable', 'integer', 'min:10', 'max:90'],
             'refund_policy_deadline_hours' => ['nullable', 'integer', 'min:0', 'max:168'],
             'refund_policy_notes' => ['nullable', 'string', 'max:1000'],
+            'food_prep_buffer_percent' => ['nullable', 'integer', 'min:0', 'max:50'],
         ];
     }
 }

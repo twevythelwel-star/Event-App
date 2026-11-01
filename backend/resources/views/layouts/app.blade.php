@@ -244,7 +244,7 @@
                         <x-icon name="menu-bars" size="md" />
                     </button>
                     <nav class="breadcrumb-wrap" aria-label="Breadcrumb">
-                        <span class="breadcrumb-item">EventBite</span>
+                        <a class="breadcrumb-item" href="{{ route('home') }}">EventBite</a>
                         <span class="breadcrumb-separator" aria-hidden="true">&rsaquo;</span>
                         <span class="breadcrumb-current" aria-current="page">@yield('page-title', 'Dashboard')</span>
                     </nav>
@@ -293,17 +293,20 @@
 
             <!-- Main Canvas -->
             <main class="content-canvas">
-                @if(session('success'))
-                    <div class="eb-alert eb-alert-success flash-alert flash-success" role="alert">
-                        <x-icon name="check" size="md" />
-                        <span>{{ session('success') }}</span>
-                    </div>
-                @endif
+                @foreach(['success', 'status'] as $flashKey)
+                    @if(session($flashKey) && is_string(session($flashKey)))
+                        <div class="eb-alert eb-alert-success flash-alert flash-success" role="status">
+                            <x-icon name="check" size="md" />
+                            <span>{{ session($flashKey) }}</span>
+                        </div>
+                    @endif
+                @endforeach
 
-                @if(session('error'))
+                @if(session('error') || $errors->has('error'))
+                    {{-- 'error' is the key controllers use for a refused action; field errors show beside their fields --}}
                     <div class="eb-alert eb-alert-error flash-alert flash-error" role="alert">
                         <x-icon name="alert" size="md" />
-                        <span>{{ session('error') }}</span>
+                        <span>{{ session('error') ?: $errors->first('error') }}</span>
                     </div>
                 @endif
 

@@ -6,6 +6,7 @@
     $nav = collect([
         ['route' => 'admin.console.overview', 'match' => 'admin.console.overview', 'label' => 'Dashboard', 'icon' => 'dashboard', 'can' => Admin::ACCESS],
         ['route' => 'admin.console.users.index', 'match' => 'admin.console.users.*', 'label' => 'Users', 'icon' => 'users', 'can' => Admin::USERS_VIEW],
+        ['route' => 'admin.host-applications', 'match' => 'admin.host-applications', 'label' => 'Host applications', 'icon' => 'checkin', 'can' => Admin::ACCESS],
         ['route' => 'admin.console.roles.index', 'match' => 'admin.console.roles.*', 'label' => 'Roles & Permissions', 'icon' => 'roles', 'can' => Admin::ROLES_VIEW],
         ['route' => 'admin.console.events.index', 'match' => 'admin.console.events.*', 'label' => 'Events', 'icon' => 'events', 'can' => Admin::EVENTS_VIEW],
         ['route' => 'admin.console.charges.index', 'match' => 'admin.console.charges.*', 'label' => 'Fees & Taxes', 'icon' => 'settings', 'can' => Admin::SETTINGS_MANAGE],
@@ -35,7 +36,9 @@
     <title>@yield('title', 'Administration') · EventBite Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    {{-- Same design tokens as the rest of EventBite; the console styles are built on them. --}}
+    <link rel="stylesheet" href="/css/01-tokens.css">
     <link rel="stylesheet" href="/css/admin-console.css">
     <link rel="stylesheet" href="{{ asset('css/brand.css') }}">
 </head>

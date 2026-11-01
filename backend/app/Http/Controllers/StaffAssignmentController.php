@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\AccountType;
-use App\Enums\EventWorkerRole;
 use App\Exceptions\SecurityException;
 use App\Models\Event;
 use App\Models\EventWorkerAssignment;
@@ -87,18 +85,12 @@ class StaffAssignmentController extends Controller
         $user = $request->user();
         $event = Event::findOrFail($eventId);
 
-        // Verify host ownership or supervisor assignment
-        $isHost = $user->hasRole(AccountType::EVENT_HOST) && ($event->organizer_id === $user->organizer_id || empty($user->organizer_id));
-        $isAdmin = $user->hasRole(AccountType::SYSTEM_ADMIN);
-        $isSupervisor = EventWorkerAssignment::where('user_id', $user->id)
-            ->where('event_id', $event->id)
-            ->where('worker_role', EventWorkerRole::EVENT_SUPERVISOR->value)
-            ->where('is_active', true)
-            ->exists();
-
-        if (!$isHost && !$isAdmin && !$isSupervisor) {
+        // This event's own host, a current supervisor on it, or a system administrator
+        $managerRole = EventWorkerService::staffManagerRole($user, $event);
+        if ($managerRole === null) {
             abort(403, 'Unauthorized: You do not have permission to manage staff for this event.');
         }
+        $isSupervisor = $managerRole === 'supervisor';
 
         $assignments = EventWorkerAssignment::with(['user', 'assignedBy'])
             ->where('event_id', $event->id)
@@ -116,7 +108,7 @@ class StaffAssignmentController extends Controller
         return view('events.staff', [
             'event' => $event,
             'assignments' => $assignments,
-            'isSupervisor' => $isSupervisor && !$isHost,
+            'isSupervisor' => $isSupervisor,
         ]);
     }
 
@@ -267,6 +259,10 @@ class StaffAssignmentController extends Controller
     {
         $user = $request->user();
         $assignment = EventWorkerAssignment::where('event_id', $eventId)->findOrFail($assignmentId);
+        $event = Event::allTenants()->findOrFail($eventId);
+        if (EventWorkerService::staffManagerRole($user, $event) === null) {
+            abort(403, 'Unauthorized: You cannot revoke this worker assignment.');
+        }
         $reason = (string) ($request->input('reason') ?? 'Administrative revocation');
 
         try {

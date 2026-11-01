@@ -101,6 +101,7 @@ class SystemAdminDashboardController extends Controller
             return response()->json($data);
         }
 
-        return view('dashboards.system-admin', $data);
+        // Browsers use the admin console; this summary is JSON only.
+        return redirect()->route('admin.console.overview');
     }
 }

@@ -9,7 +9,8 @@
     .discovery-root {
         background-color: #0B132B;
         color: #F8FAFC;
-        margin: -1.75rem -2rem;
+        /* Bleed to the edges of the page padding, whatever it is at this width */
+        margin: calc(-1 * var(--layout-page-padding-y)) calc(-1 * var(--layout-page-padding-x));
         padding: 0 0 100px;
         min-height: calc(100vh - 68px);
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -132,7 +133,16 @@
         gap: 12px;
     }
 
+    /* Filter groups wrap onto new lines on phones instead of running off the screen */
+    .discovery-selectors-bar > div,
+    .discovery-selectors-bar > div > div {
+        flex-wrap: wrap;
+        min-width: 0;
+        max-width: 100%;
+    }
+
     .discovery-select {
+        max-width: 100%;
         background-color: #0F172A;
         color: #F8FAFC;
         border: 1px solid rgba(255, 255, 255, 0.15);

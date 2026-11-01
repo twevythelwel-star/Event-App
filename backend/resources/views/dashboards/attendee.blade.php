@@ -3,38 +3,6 @@
 @section('title', 'My Digital Tickets & Orders — EventBite')
 @section('page-title', 'My Ticket Wallet')
 
-@section('navigation')
-    <div class="nav-section-title">Events Platform</div>
-    <a href="{{ route('events.index') }}">
-        <span class="nav-icon">🌴</span>
-        <span>Browse Events</span>
-    </a>
-
-    <div class="nav-section-title">My Event Wallet</div>
-    <a href="{{ route('attendee.dashboard') }}" class="active">
-        <span class="nav-icon">🎟️</span>
-        <span>Active Passes</span>
-    </a>
-    <a href="#orders">
-        <span class="nav-icon">📦</span>
-        <span>Order History</span>
-    </a>
-    <a href="#receipts">
-        <span class="nav-icon">🧾</span>
-        <span>Receipts & Payments</span>
-    </a>
-
-    <div class="nav-section-title">Preferences</div>
-    <a href="{{ route('settings.show') }}">
-        <span class="nav-icon">👤</span>
-        <span>Profile & Currency</span>
-    </a>
-    <a href="{{ route('settings.show') }}#security">
-        <span class="nav-icon">🔒</span>
-        <span>Password & Security</span>
-    </a>
-@endsection
-
 @section('content')
 <div class="attendee-wallet-view">
     <!-- Header -->
@@ -57,13 +25,6 @@
             <a href="{{ route('settings.show') }}#currency" style="font-size: 0.75rem; color: var(--color-text-muted); text-decoration: underline;">Change</a>
         </div>
     </div>
-
-    @if (session('status'))
-        <div class="alert alert-success" style="background: rgba(16, 185, 129, 0.15); border: 1px solid var(--color-success); color: #065f46; padding: 0.85rem 1.25rem; border-radius: var(--radius-md); margin-bottom: 1.5rem; font-size: 0.88rem; display: flex; align-items: center; gap: 0.5rem;">
-            <span>✓</span>
-            <span>{{ session('status') }}</span>
-        </div>
-    @endif
 
     <!-- Event Host Status & Privileges Card -->
     @if(Auth::user()->hasRole(\App\Enums\AccountType::EVENT_HOST))
@@ -206,8 +167,8 @@
                 <span style="font-size: 0.75rem; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.5rem;">
                     My Event Staff Assignments
                 </span>
-                <div class="table-container" style="margin-bottom: 0;">
-                    <table>
+                <div class="eb-table-wrap" style="margin-bottom: 0;">
+                    <table class="eb-table">
                         <thead>
                             <tr>
                                 <th>Event</th>
@@ -339,9 +300,9 @@
                                     </span>
                                 </td>
                                 <td style="text-align: right;">
-                                    <button class="btn btn-secondary btn-sm" onclick="alert('Receipt #{{ $order->order_number }} generated. Invariant: Validated against database transaction.')">
-                                        View
-                                    </button>
+                                    <a href="{{ route('tickets.show', $order->id) }}" class="eb-btn eb-btn-secondary eb-btn-sm">
+                                        View<span class="sr-only"> order {{ $order->order_number }}</span>
+                                    </a>
                                 </td>
                             </tr>
                         @endforeach

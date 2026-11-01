@@ -34,20 +34,14 @@ class EventWorkerService
     ): EventWorkerAssignment {
         $workerRole = $role instanceof EventWorkerRole ? $role : EventWorkerRole::from($role);
 
-        // Security check: Assigner must be host, supervisor, or system admin
-        $isHost = $assigner->hasRole(AccountType::EVENT_HOST) || $assigner->hasRole(AccountType::SYSTEM_ADMIN);
-        $isSupervisor = EventWorkerAssignment::where('user_id', $assigner->id)
-            ->where('event_id', $event->id)
-            ->where('worker_role', EventWorkerRole::EVENT_SUPERVISOR->value)
-            ->where('is_active', true)
-            ->exists();
-
-        if (!$isHost && !$isSupervisor) {
+        // Security check: Assigner must be this event's host, a current supervisor on it, or a system admin
+        $managerRole = self::staffManagerRole($assigner, $event);
+        if ($managerRole === null) {
             throw new SecurityException('Unauthorized: You do not have permission to manage event workers for this event.');
         }
 
         // Prohibit privilege escalation: Supervisors cannot create other Supervisors or give platform permissions
-        if ($isSupervisor && !$isHost) {
+        if ($managerRole === 'supervisor') {
             if ($workerRole === EventWorkerRole::EVENT_SUPERVISOR) {
                 throw new SecurityException('Privilege Escalation Blocked: Event Supervisors cannot appoint additional Event Supervisors.');
             }
@@ -279,18 +273,12 @@ class EventWorkerService
     ): array {
         $workerRole = $role instanceof EventWorkerRole ? $role : EventWorkerRole::from($role);
 
-        $isHost = $host->hasRole(AccountType::EVENT_HOST) || $host->hasRole(AccountType::SYSTEM_ADMIN);
-        $isSupervisor = EventWorkerAssignment::where('user_id', $host->id)
-            ->where('event_id', $event->id)
-            ->where('worker_role', EventWorkerRole::EVENT_SUPERVISOR->value)
-            ->where('is_active', true)
-            ->exists();
-
-        if (!$isHost && !$isSupervisor) {
+        $managerRole = self::staffManagerRole($host, $event);
+        if ($managerRole === null) {
             throw new SecurityException('Unauthorized: You do not have permission to invite workers to this event.');
         }
 
-        if ($isSupervisor && !$isHost && $workerRole === EventWorkerRole::EVENT_SUPERVISOR) {
+        if ($managerRole === 'supervisor' && $workerRole === EventWorkerRole::EVENT_SUPERVISOR) {
             throw new SecurityException('Privilege Escalation Blocked: Event Supervisors cannot appoint additional Event Supervisors.');
         }
 
@@ -391,19 +379,47 @@ class EventWorkerService
     /**
      * Revoke worker assignment immediately and create immutable audit log.
      */
+    /**
+     * How the actor may manage staff on this event: 'admin' (system administrator), 'host' (an active owner
+     * membership of the event's own organizer) or 'supervisor' (a supervisor assignment on this event that is
+     * current right now); null when they may not. Holding the host role alone is not enough: it must be this
+     * event's organizer.
+     */
+    public static function staffManagerRole(User $actor, Event $event): ?string
+    {
+        if ($actor->hasRole(AccountType::SYSTEM_ADMIN)) {
+            return 'admin';
+        }
+
+        if ($actor->hasRole(AccountType::EVENT_HOST) && OrganizerUser::where('organizer_id', $event->organizer_id)
+            ->where('user_id', $actor->id)
+            ->where('is_active', true)
+            ->where('role', TenantRole::EVENT_OWNER->value)
+            ->exists()) {
+            return 'host';
+        }
+
+        $assignments = EventWorkerAssignment::withoutGlobalScopes()
+            ->where('user_id', $actor->id)
+            ->where('event_id', $event->id)
+            ->where('worker_role', EventWorkerRole::EVENT_SUPERVISOR->value)
+            ->get();
+        foreach ($assignments as $assignment) {
+            if ($assignment->isCurrentlyActive()) {
+                return 'supervisor';
+            }
+        }
+
+        return null;
+    }
+
     public static function revokeWorkerAssignment(
         User $actor,
         EventWorkerAssignment $assignment,
         string $reason = 'Administrative revocation'
     ): bool {
-        $isHost = $actor->hasRole(AccountType::EVENT_HOST) || $actor->hasRole(AccountType::SYSTEM_ADMIN);
-        $isSupervisor = EventWorkerAssignment::where('user_id', $actor->id)
-            ->where('event_id', $assignment->event_id)
-            ->where('worker_role', EventWorkerRole::EVENT_SUPERVISOR->value)
-            ->where('is_active', true)
-            ->exists();
-
-        if (!$isHost && !$isSupervisor) {
+        $event = Event::withoutGlobalScopes()->where('id', $assignment->event_id)->first();
+        if (!$event || self::staffManagerRole($actor, $event) === null) {
             throw new SecurityException('Unauthorized: You cannot revoke this worker assignment.');
         }
 
@@ -473,19 +489,13 @@ class EventWorkerService
     ): EventWorkerAssignment {
         $workerRole = $role instanceof EventWorkerRole ? $role : EventWorkerRole::from($role);
 
-        // Security check: Assigner must be host, supervisor, or system admin
-        $isHost = $host->hasRole(AccountType::EVENT_HOST) || $host->hasRole(AccountType::SYSTEM_ADMIN);
-        $isSupervisor = EventWorkerAssignment::where('user_id', $host->id)
-            ->where('event_id', $event->id)
-            ->where('worker_role', EventWorkerRole::EVENT_SUPERVISOR->value)
-            ->where('is_active', true)
-            ->exists();
-
-        if (!$isHost && !$isSupervisor) {
+        // Security check: Assigner must be this event's host, a current supervisor on it, or a system admin
+        $managerRole = self::staffManagerRole($host, $event);
+        if ($managerRole === null) {
             throw new SecurityException('Unauthorized: You do not have permission to assign staff for this event.');
         }
 
-        if ($isSupervisor && !$isHost && $workerRole === EventWorkerRole::EVENT_SUPERVISOR) {
+        if ($managerRole === 'supervisor' && $workerRole === EventWorkerRole::EVENT_SUPERVISOR) {
             throw new SecurityException('Privilege Escalation Blocked: Event Supervisors cannot appoint additional Event Supervisors.');
         }
 

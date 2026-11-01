@@ -86,7 +86,13 @@
                             <td><span class="ac-badge {{ $statusTone[$user->status] ?? '' }}">{{ ucfirst(str_replace('_', ' ', $user->status)) }}</span></td>
                             <td>{{ $user->active_assignments_count ? $user->active_assignments_count . ' active' : '—' }}</td>
                             <td><time datetime="{{ $user->created_at?->toDateString() }}">{{ $user->created_at?->format('M j, Y') }}</time></td>
-                            <td class="num"><a class="ac-link" href="{{ route('admin.console.users.show', $user) }}">View<span class="sr-only"> {{ $user->name }}</span></a></td>
+                            <td class="num">
+                                @can(\App\Support\AdminAuthorization::USER_VIEW, $user)
+                                    <a class="ac-link" href="{{ route('admin.console.users.show', $user) }}">View<span class="sr-only"> {{ $user->name }}</span></a>
+                                @else
+                                    <span class="ac-hint" title="Only a system administrator can open this account">Restricted</span>
+                                @endcan
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>

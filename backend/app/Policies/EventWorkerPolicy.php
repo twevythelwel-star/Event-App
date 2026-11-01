@@ -32,17 +32,8 @@ class EventWorkerPolicy
      */
     public function manageWorkerAssignments(User $user, Event $event): bool
     {
-        // Event Host owns the event
-        if ($user->hasRole(AccountType::EVENT_HOST)) {
-            return true;
-        }
-
-        // Event Supervisor assigned to this event
-        return EventWorkerAssignment::where('user_id', $user->id)
-            ->where('event_id', $event->id)
-            ->where('worker_role', EventWorkerRole::EVENT_SUPERVISOR->value)
-            ->where('is_active', true)
-            ->exists();
+        // This event's own host, or a supervisor whose assignment on it is current
+        return \App\Services\EventWorkerService::staffManagerRole($user, $event) !== null;
     }
 
     /**

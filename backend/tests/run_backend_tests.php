@@ -2081,6 +2081,25 @@ class TestRunner
             'title' => 'Kingston Carnival 2026',
         ]);
         $event->save();
+        // The host owns the event's organizer: holding the host role alone does not cover other organizers' events.
+        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\OrganizerUser::class][] = new \App\Models\OrganizerUser([
+            'organizer_id' => 'org-uuid-island-vibes',
+            'user_id' => 60,
+            'role' => 'event_owner',
+            'is_active' => true,
+        ]);
+
+        // 0. A host of a different organizer cannot invite staff to this event
+        $otherHost = new \App\Models\User(['id' => 61, 'email' => 'host.other@islandevents.app', 'status' => 'active', 'current_context_role' => 'event_host']);
+        $otherHost->save();
+        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\UserRole::class][] = new \App\Models\UserRole(['user_id' => 61, 'role' => 'event_host', 'is_active' => true]);
+        $otherHostBlocked = false;
+        try {
+            \App\Services\EventWorkerService::createWorkerInvitation(host: $otherHost, event: $event, inviteEmail: 'x@mail.com', role: \App\Enums\EventWorkerRole::TICKET_CHECKER);
+        } catch (\SecurityException $e) {
+            $otherHostBlocked = true;
+        }
+        $this->assert($otherHostBlocked, "A host of another organizer cannot invite staff to this event");
 
         // 1. Host creates worker invitation
         $inviteResult = \App\Services\EventWorkerService::createWorkerInvitation(
@@ -2272,6 +2291,12 @@ class TestRunner
             'timezone' => 'America/Jamaica',
         ]);
         $event->save();
+        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\OrganizerUser::class][] = new \App\Models\OrganizerUser([
+            'organizer_id' => 'org-uuid-kingston-sunsplash',
+            'user_id' => 100,
+            'role' => 'event_owner',
+            'is_active' => true,
+        ]);
 
         // 2. Authenticated user generates 10-minute single-use claim code
         $codeResult = \App\Services\StaffClaimCodeService::generateCode($attendeeWorker, lifetimeMinutes: 10);

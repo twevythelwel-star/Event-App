@@ -1,214 +1,145 @@
 @extends('layouts.app')
 
-@section('title', 'Account Settings — EventBite')
-@section('page-title', 'Account Settings')
+@section('title', 'Account settings — EventBite')
+@section('page-title', 'Settings')
 
-@section('navigation')
-    <div class="nav-section-title">Settings Navigation</div>
-    <a href="{{ route('settings.show') }}" class="active">
-        <span class="nav-icon">👤</span>
-        <span>Personal Profile</span>
-    </a>
-    <a href="#security">
-        <span class="nav-icon">🔒</span>
-        <span>Password & Security</span>
-    </a>
-    @if(Auth::user()->getActiveRole() === \App\Enums\AccountType::SYSTEM_ADMIN)
-        <a href="#system">
-            <span class="nav-icon">🌐</span>
-            <span>Platform Configuration</span>
-        </a>
-    @endif
-    @if(Auth::user()->getActiveRole() === \App\Enums\AccountType::EVENT_HOST)
-        <a href="#host">
-            <span class="nav-icon">🎪</span>
-            <span>Host Event Defaults</span>
-        </a>
-        <a href="#payments">
-            <span class="nav-icon">💳</span>
-            <span>Payment Policies</span>
-        </a>
-    @endif
-    @if(Auth::user()->getActiveRole() === \App\Enums\AccountType::ATTENDEE)
-        <a href="#currency">
-            <span class="nav-icon">💱</span>
-            <span>Display Currency</span>
-        </a>
-    @endif
-@endsection
+@php
+    $user = Auth::user();
+    $isSystemAdmin = $user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN);
+    $isAdmin = $user->hasRole(\App\Enums\AccountType::ADMINISTRATOR);
+    $sections = array_filter([
+        'profile' => 'Profile',
+        'security' => 'Password',
+        'host' => $hostOrganizer ? 'Event defaults' : null,
+        'payments' => $hostOrganizer ? 'Payments & refunds' : null,
+        'access' => ($isAdmin || $isSystemAdmin) ? 'Administration access' : null,
+    ]);
+    $timezones = ['America/New_York' => 'Eastern', 'America/Chicago' => 'Central', 'America/Denver' => 'Mountain',
+        'America/Phoenix' => 'Arizona', 'America/Los_Angeles' => 'Pacific', 'America/Anchorage' => 'Alaska', 'Pacific/Honolulu' => 'Hawaii'];
+    $toggle = function (string $name, string $label, bool $checked, ?string $help = null) {
+        return view('components.settings-toggle', compact('name', 'label', 'checked', 'help'))->render();
+    };
+@endphp
 
 @section('content')
-<div class="settings-view">
-    <!-- Header -->
-    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.35rem;">
-                <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--color-navy); letter-spacing: -0.02em;">
-                    Account & Preferences
-                </h1>
-                <span class="badge badge-scope">Scope: {{ Auth::user()->getActiveRole()->label() }}</span>
-            </div>
-            <p style="color: var(--color-text-secondary); font-size: 0.92rem;">
-                Manage profile credentials, scoped host preferences, and security authentication settings.
-            </p>
-        </div>
-    </div>
+<div class="eb-stack" style="gap: var(--layout-section-gap);">
+    <x-page-header title="Settings" :badge="$user->getActiveRole()->label()"
+                   description="Your profile and password{{ $hostOrganizer ? ', and the defaults, payment instructions and refund policy for ' . $hostOrganizer->name : '' }}." />
 
-    <style>
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-        }
-        .form-label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: var(--color-text-primary);
-        }
-        .form-input {
-            width: 100%;
-            background: var(--color-white);
-            border: 1px solid var(--color-border);
-            color: var(--color-text-primary);
-            padding: 0.65rem 0.85rem;
-            border-radius: var(--radius-sm);
-            font-size: 0.875rem;
-            outline: none;
-            transition: border-color var(--transition-speed);
-        }
-        .form-input:focus {
-            border-color: var(--color-indigo);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
-        }
-    </style>
+    <nav aria-label="Settings sections" class="eb-cluster" style="gap: var(--space-2);">
+        @foreach($sections as $id => $label)
+            <a href="#{{ $id }}" class="eb-btn eb-btn-secondary eb-btn-sm">{{ $label }}</a>
+        @endforeach
+    </nav>
 
-    <!-- 1. Personal Profile (Common) -->
-    <div id="profile">
-        @component('components.settings-form', [
-            'title' => 'Personal Profile & Contact Information',
-            'description' => 'Update your official contact email, full name, and mobile telephone number.',
-            'action' => route('settings.profile'),
-            'scopeTag' => 'All Account Tiers'
-        ])
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Full Name</label>
-                    <input type="text" name="name" class="form-input" value="{{ Auth::user()->name }}" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-input" value="{{ Auth::user()->email }}" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Mobile Phone (SMS & Alerts)</label>
-                    <input type="text" name="phone" class="form-input" value="{{ Auth::user()->phone }}" placeholder="+1-555-019-2834">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Preferred Display Currency</label>
-                    <select name="preferred_display_currency" class="form-input">
-                        <option value="USD" {{ (Auth::user()->preferred_display_currency ?? 'USD') === 'USD' ? 'selected' : '' }}>USD — US Dollar ($)</option>
-                        <option value="JMD" {{ (Auth::user()->preferred_display_currency ?? 'USD') === 'JMD' ? 'selected' : '' }}>JMD — Jamaican Dollar (Archived)</option>
-                    </select>
-                </div>
+    <section id="profile">
+        <x-settings-form title="Profile" description="Your name, sign-in email and mobile number." :action="route('settings.profile')">
+            <div class="eb-grid-2">
+                <x-form-field name="name" label="Full name" :value="old('name', $user->name)" :required="true" />
+                <x-form-field name="email" type="email" label="Email address" :value="old('email', $user->email)" :required="true"
+                              help="You sign in with this address and receipts are sent to it." />
+                <x-form-field name="phone" type="tel" label="Mobile number" :value="old('phone', $user->phone)" placeholder="+1 305 555 0100"
+                              help="Used for order and pickup messages." />
+                <x-form-field name="preferred_display_currency" type="select" label="Display currency"
+                              :value="old('preferred_display_currency', $user->preferred_display_currency ?? 'USD')"
+                              :options="collect(\App\Support\Currency::supportedCodes())->mapWithKeys(fn ($code) => [$code => $code . ' — ' . \App\Support\Currency::of($code)->name])->all()"
+                              help="Only changes how amounts are shown. You are always charged in the event's currency." />
             </div>
-        @endcomponent
-    </div>
+        </x-settings-form>
+    </section>
 
-    <!-- 2. Password & Security -->
-    <div id="security">
-        @component('components.settings-form', [
-            'title' => 'Password & Two-Factor Authentication',
-            'description' => 'Enforce strong cryptographic credentials. Minimum 8 characters required.',
-            'action' => route('settings.password'),
-            'scopeTag' => 'Credential Security'
-        ])
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Current Password</label>
-                    <input type="password" name="current_password" class="form-input" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">New Password</label>
-                    <input type="password" name="new_password" class="form-input" required minlength="8">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Confirm New Password</label>
-                    <input type="password" name="new_password_confirmation" class="form-input" required minlength="8">
-                </div>
+    <section id="security">
+        <x-settings-form title="Password" description="Use at least 10 characters. Changing it does not sign you out on this device." :action="route('settings.password')">
+            <div class="eb-grid-3">
+                <x-form-field name="current_password" type="password" label="Current password" :required="true" />
+                <x-form-field name="new_password" type="password" label="New password" :required="true" :min="10" />
+                <x-form-field name="new_password_confirmation" type="password" label="Confirm new password" :required="true" />
             </div>
-        @endcomponent
-    </div>
+        </x-settings-form>
+    </section>
 
-    <!-- 3. Host-Specific Event Defaults -->
-    @if(Auth::user()->getActiveRole() === \App\Enums\AccountType::EVENT_HOST)
-    <div id="host">
-        @component('components.settings-form', [
-            'title' => 'Host Event Defaults & Cutoff Rules',
-            'description' => 'Set default event locations, timezones, and advance food prep buffers.',
-            'action' => route('settings.show'),
-            'scopeTag' => 'Event Host Scope'
-        ])
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Default Currency</label>
-                    <select name="default_currency" class="form-input">
-                        <option value="USD" selected>USD (US Dollar - $)</option>
-                    </select>
+    @if($hostOrganizer)
+        <form action="{{ route('settings.host') }}" method="POST" class="eb-stack" style="gap: var(--layout-section-gap);">
+            @csrf
+            <section id="host" class="eb-panel card" style="margin: 0;">
+                <div class="eb-card-header card-header">
+                    <div>
+                        <h2 class="eb-card-title card-title">Event defaults</h2>
+                        <p class="eb-card-subtitle card-subtitle">Starting values for new events from {{ $hostOrganizer->name }}. Existing events keep their own settings.</p>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Default Timezone</label>
-                    <select name="default_timezone" class="form-input">
-                        <option value="America/New_York" selected>America/New_York (Eastern Time - EDT/EST)</option>
-                        <option value="America/Chicago">America/Chicago (Central Time)</option>
-                        <option value="America/Los_Angeles">America/Los_Angeles (Pacific Time)</option>
-                        <option value="America/Denver">America/Denver (Mountain Time)</option>
-                        <option value="America/Phoenix">America/Phoenix (Arizona Time)</option>
-                        <option value="America/Anchorage">America/Anchorage (Alaska Time)</option>
-                        <option value="Pacific/Honolulu">Pacific/Honolulu (Hawaii Time)</option>
-                    </select>
+                <div class="eb-grid-3">
+                    <x-form-field name="default_timezone" type="select" label="Time zone"
+                                  :value="old('default_timezone', $hostDefaults->default_timezone ?? 'America/New_York')"
+                                  :options="collect($timezones)->mapWithKeys(fn ($label, $tz) => [$tz => $label . ' (' . $tz . ')'])->all()" />
+                    <x-form-field name="default_order_deadline_hours" type="number" label="Food order cutoff (hours before start)" :min="1" :max="168"
+                                  :value="old('default_order_deadline_hours', $hostDefaults->default_order_deadline_hours ?? 24)" />
+                    <x-form-field name="food_prep_buffer_percent" type="number" label="Food preparation buffer (%)" :min="0" :max="50"
+                                  :value="old('food_prep_buffer_percent', $hostRule->food_prep_buffer_percent ?? 10)"
+                                  help="Added on top of paid portions in Food to prepare." />
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Kitchen Safety Buffer %</label>
-                    <input type="number" name="food_prep_buffer_percent" class="form-input" value="10" min="0" max="50">
+                <x-form-field name="default_pickup_instructions" type="textarea" label="Pickup instructions" :rows="3"
+                              :value="old('default_pickup_instructions', $hostDefaults->default_pickup_instructions)"
+                              help="Shown to customers on the event page and their ticket." />
+            </section>
+
+            <section id="payments" class="eb-panel card" style="margin: 0;">
+                <div class="eb-card-header card-header">
+                    <div>
+                        <h2 class="eb-card-title card-title">Payments &amp; refunds</h2>
+                        <p class="eb-card-subtitle card-subtitle">What customers see when they choose a manual payment. Leave instructions empty to not offer that method. Card payments are not available yet.</p>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Default Order Cutoff (Hours Before Event)</label>
-                    <input type="number" name="default_cutoff_hours" class="form-input" value="24" min="1" max="168">
+                <div class="eb-stack">
+                    {!! $toggle('enable_cash', 'Accept cash at the event', (bool) old('enable_cash', $hostPolicy->enable_cash ?? true)) !!}
+                    <div class="eb-grid-3">
+                        <x-form-field name="zelle_instructions" type="textarea" label="Zelle instructions" :rows="3"
+                                      :value="old('zelle_instructions', $hostPolicy->zelle_instructions)" placeholder="Send to payments@yourorg.example and put your order number in the memo." />
+                        <x-form-field name="cash_app_instructions" type="textarea" label="Cash App instructions" :rows="3"
+                                      :value="old('cash_app_instructions', $hostPolicy->cash_app_instructions)" placeholder="Send to $YourCashtag with your order number." />
+                        <x-form-field name="bank_transfer_instructions" type="textarea" label="Bank transfer instructions" :rows="3"
+                                      :value="old('bank_transfer_instructions', $hostPolicy->bank_transfer_instructions)" />
+                    </div>
+                    <div class="eb-grid-2">
+                        {!! $toggle('require_transfer_reference', 'Require a transfer reference', (bool) old('require_transfer_reference', $hostPolicy->require_transfer_reference ?? true), 'Customers must enter the confirmation number from their app or bank.') !!}
+                        {!! $toggle('require_sender_name', 'Require the sender\'s name', (bool) old('require_sender_name', $hostPolicy->require_sender_name ?? false)) !!}
+                    </div>
+                    <div class="eb-grid-2">
+                        <x-form-field name="refund_policy_deadline_hours" type="number" label="Refund requests close (hours before start)" :min="0" :max="168"
+                                      :value="old('refund_policy_deadline_hours', $hostPolicy->refund_policy_deadline_hours)" />
+                        <x-form-field name="refund_policy_notes" type="textarea" label="Refund policy" :rows="3"
+                                      :value="old('refund_policy_notes', $hostPolicy->refund_policy_notes)"
+                                      help="Shown on every event page. Leave empty if you do not offer refunds." />
+                    </div>
                 </div>
-            </div>
-        @endcomponent
-    </div>
+                <div class="eb-cluster" style="justify-content: flex-end; margin-top: var(--space-6);">
+                    <button type="submit" class="eb-btn eb-btn-primary" data-prevent-double-submit="true">Save event and payment settings</button>
+                </div>
+            </section>
+        </form>
     @endif
 
-    <!-- 4. System Administrator Platform Governance Settings -->
-    @if(Auth::user()->getActiveRole() === \App\Enums\AccountType::SYSTEM_ADMIN)
-    <div id="system">
-        @component('components.settings-form', [
-            'title' => 'Root Platform Infrastructure Settings',
-            'description' => 'Configure connection pooling, queue concurrency, and storage buckets.',
-            'action' => route('settings.show'),
-            'scopeTag' => 'Superadmin Only'
-        ])
-            <div class="grid-2">
-                <div class="form-group">
-                    <label class="form-label">Storage Provider</label>
-                    <input type="text" class="form-input" value="Cloudflare R2 (S3 Compatible)" readonly>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Storage Bucket</label>
-                    <input type="text" class="form-input" value="island-events-flyers-prod" readonly>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Master Database Password</label>
-                    <input type="text" class="form-input" value="prod_••••••••9012" readonly style="font-family: monospace;">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Payment Webhook Secret</label>
-                    <input type="text" class="form-input" value="whsec_••••••••4567" readonly style="font-family: monospace;">
+    @if($isAdmin || $isSystemAdmin)
+        <section id="access" class="eb-panel card" style="margin: 0;">
+            <div class="eb-card-header card-header">
+                <div>
+                    <h2 class="eb-card-title card-title">Administration access</h2>
+                    <p class="eb-card-subtitle card-subtitle">
+                        {{ $isSystemAdmin ? 'You have full platform access. Platform-wide settings, fees, locations and roles are managed in the admin console.' : 'What a system administrator has allowed you to do. Ask them to change it.' }}
+                    </p>
                 </div>
             </div>
-        @endcomponent
-    </div>
+            @if(!$isSystemAdmin && isset($settings['admin_scope']))
+                <ul class="eb-grid-2" style="list-style: none; padding: 0; margin: 0 0 var(--space-4);">
+                    @foreach(['can_manage_events' => 'Manage events', 'can_moderate_content' => 'Moderate content', 'can_support_orders' => 'Support orders', 'can_view_payments' => 'View payments', 'can_view_reports' => 'View reports', 'can_access_audit_logs' => 'View audit logs'] as $key => $label)
+                        <li class="eb-cluster"><span class="eb-badge {{ $settings['admin_scope'][$key] ? 'eb-badge-success' : '' }}">{{ $settings['admin_scope'][$key] ? 'Allowed' : 'Not allowed' }}</span> {{ $label }}</li>
+                    @endforeach
+                </ul>
+            @endif
+            @can(\App\Support\AdminAuthorization::ACCESS)
+                <x-button variant="secondary" icon="shield" :href="$isSystemAdmin ? route('admin.console.settings.edit') : route('admin.console.overview')">Open the admin console</x-button>
+            @endcan
+        </section>
     @endif
 </div>
 @endsection

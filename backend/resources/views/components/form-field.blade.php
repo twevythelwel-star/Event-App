@@ -162,7 +162,8 @@
                 type="{{ $type }}"
                 name="{{ $name }}"
                 id="{{ $fieldId }}"
-                value="{{ old($name, $value) }}"
+                value="{{ $type === 'password' ? '' : old($name, $value) }}"
+                @if($type === 'password') autocomplete="{{ $name === 'current_password' ? 'current-password' : 'new-password' }}" @endif
                 class="eb-input {{ $type === 'number' ? 'eb-input-numeric' : '' }} {{ $hasError ? 'eb-input-error' : '' }}"
                 @if($placeholder) placeholder="{{ $placeholder }}" @endif
                 @if($required) required aria-required="true" @endif

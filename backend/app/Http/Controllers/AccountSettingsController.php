@@ -11,7 +11,11 @@ use App\Models\SystemPlatformSetting;
 use App\Services\AccountSettingsService;
 use App\Services\AuditLogService;
 use App\Services\TenantContext;
+use App\Enums\TenantRole;
+use App\Models\HostOperationalRule;
+use App\Models\OrganizerUser;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class AccountSettingsController extends Controller
@@ -28,16 +32,23 @@ class AccountSettingsController extends Controller
             return response()->json($settings);
         }
 
+        // A host who owns an organizer edits that organizer's saved defaults, payment instructions and refund policy.
+        $organizerId = $user->hasRole(\App\Enums\AccountType::EVENT_HOST) ? self::ownedOrganizerId($user) : null;
+
         return view('dashboards.settings', [
             'settings' => $settings,
             'user' => $user,
+            'hostOrganizer' => $organizerId ? \App\Models\Organizer::find($organizerId) : null,
+            'hostDefaults' => $organizerId ? \App\Models\HostEventSetting::firstOrNew(['organizer_id' => $organizerId]) : null,
+            'hostPolicy' => $organizerId ? HostPaymentPolicy::firstOrNew(['organizer_id' => $organizerId]) : null,
+            'hostRule' => $organizerId ? HostOperationalRule::firstOrNew(['organizer_id' => $organizerId]) : null,
         ]);
     }
 
     /**
      * Update personal profile information.
      */
-    public function updateProfile(UpdatePersonalProfileRequest $request): JsonResponse
+    public function updateProfile(UpdatePersonalProfileRequest $request): JsonResponse|RedirectResponse
     {
         $user = $request->user();
         $validated = $request->validated();
@@ -60,28 +71,30 @@ class AccountSettingsController extends Controller
             actor: $user
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Personal profile updated successfully.',
+        return $this->respond($request, 'Your profile was saved.', [
             'profile' => [
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
                 'preferred_display_currency' => $user->preferred_display_currency,
             ],
-        ]);
+        ], '#profile');
     }
 
     /**
      * Change user password.
      */
-    public function updatePassword(ChangePasswordRequest $request): JsonResponse
+    public function updatePassword(ChangePasswordRequest $request): JsonResponse|RedirectResponse
     {
         $user = $request->user();
         $validated = $request->validated();
 
         if (!password_verify($validated['current_password'], $user->password)) {
-            return response()->json(['error' => 'Current password does not match.'], 422);
+            if ($request->wantsJson()) {
+                return response()->json(['error' => 'Current password does not match.'], 422);
+            }
+
+            return redirect(route('settings.show') . '#security')->withErrors(['current_password' => 'Your current password is not correct.']);
         }
 
         $user->password = password_hash($validated['new_password'], PASSWORD_DEFAULT);
@@ -95,33 +108,34 @@ class AccountSettingsController extends Controller
             actor: $user
         );
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Password rotated successfully.',
-        ]);
+        return $this->respond($request, 'Your password was changed.', [], '#security');
     }
 
     /**
      * Update Attendee preferred display currency.
      * Invariant: Never changes currency charged for an order.
      */
-    public function updateDisplayCurrency(Request $request): JsonResponse
+    public function updateDisplayCurrency(Request $request): JsonResponse|RedirectResponse
     {
         $validated = $request->validate([
             'currency' => ['required', 'string', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
         ]);
 
         $result = AccountSettingsService::updateAttendeeDisplayCurrency($request->user(), $validated['currency']);
-        return response()->json($result);
+
+        return $this->respond($request, 'Your display currency was saved.', $result, '#profile');
     }
 
     /**
      * Update Event Host event defaults and payment policies.
      */
-    public function updateHostSettings(UpdateHostSettingsRequest $request): JsonResponse
+    public function updateHostSettings(UpdateHostSettingsRequest $request): JsonResponse|RedirectResponse
     {
         $user = $request->user();
-        $tenantId = TenantContext::id();
+        $tenantId = self::ownedOrganizerId($user);
+        if ($tenantId === null) {
+            abort(403, 'Only an owner of an organizer can change its event defaults and payment instructions.');
+        }
 
         $validated = $request->validated();
 
@@ -164,12 +178,22 @@ class AccountSettingsController extends Controller
         }
         $policies->save();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Event settings and payment policies saved successfully. Historical orders remain protected.',
+        if (isset($validated['food_prep_buffer_percent'])) {
+            HostOperationalRule::updateOrCreate(['organizer_id' => $tenantId], ['food_prep_buffer_percent' => (int) $validated['food_prep_buffer_percent']]);
+        }
+
+        AuditLogService::log(
+            action: 'host_payment_policy_updated',
+            targetEntity: 'host_payment_policies',
+            targetId: (string) $policies->id,
+            details: 'Host updated payment instructions and refund policy. Existing orders keep the terms they were placed under.',
+            actor: $user
+        );
+
+        return $this->respond($request, 'Event defaults and payment settings were saved. Existing orders are not changed.', [
             'event_defaults' => $eventDefaults,
             'payment_policies' => $policies,
-        ]);
+        ], '#host');
     }
 
     /**
@@ -194,5 +218,31 @@ class AccountSettingsController extends Controller
             'message' => 'Platform settings updated successfully.',
             'platform_settings' => $sys,
         ]);
+    }
+    /**
+     * JSON for API clients; for the settings page, back to the section that was saved with a message.
+     *
+     * @param array<string, mixed> $payload
+     */
+    private function respond(Request $request, string $message, array $payload = [], string $anchor = ''): JsonResponse|RedirectResponse
+    {
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => $message] + $payload);
+        }
+
+        return redirect(route('settings.show') . $anchor)->with('status', $message);
+    }
+
+    /** The organizer this host owns: the active tenant if they own it, otherwise their only owned organizer. */
+    private static function ownedOrganizerId(\App\Models\User $user): ?string
+    {
+        $owned = OrganizerUser::where('user_id', $user->id)->where('is_active', true)
+            ->where('role', TenantRole::EVENT_OWNER->value)->pluck('organizer_id');
+        $tenantId = TenantContext::id();
+        if ($tenantId !== null && $owned->contains($tenantId)) {
+            return $tenantId;
+        }
+
+        return $owned->count() === 1 ? (string) $owned->first() : null;
     }
 }

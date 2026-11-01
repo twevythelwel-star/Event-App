@@ -46,6 +46,32 @@ class StoreEventRequest extends FormRequest
             'pickup_instructions' => 'nullable|string',
             'packaging_fee_usd' => 'nullable|numeric|min:0',
             'packaging_fee_jmd' => 'nullable|integer|min:0',
+            'event_date_iso' => 'nullable|date_format:Y-m-d',
+            // Same image rules as the dedicated flyer upload: the create and edit forms may attach one too.
+            'flyer' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:5120|dimensions:min_width=300,min_height=200,max_width=4500,max_height=4500',
+            // Ticket types from the event form (one row each); converted to the stored tier format by the controller.
+            'ticket_tiers' => 'nullable|array|max:20',
+            'ticket_tiers.*.id' => 'nullable|string|max:64',
+            'ticket_tiers.*.name' => 'required|string|min:2|max:120',
+            'ticket_tiers.*.description' => 'nullable|string|max:300',
+            'ticket_tiers.*.price' => 'required|numeric|min:0|max:100000',
+            'ticket_tiers.*.available_stock' => 'required|integer|min:1|max:100000',
+            'ticket_tiers.*.max_per_customer' => 'required|integer|min:1|max:100|lte:ticket_tiers.*.available_stock',
+            'ticket_tiers.*.sale_start' => 'nullable|date',
+            'ticket_tiers.*.sale_end' => 'nullable|date|after_or_equal:ticket_tiers.*.sale_start',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'event_date_iso' => 'event date',
+            'ticket_tiers.*.name' => 'ticket name',
+            'ticket_tiers.*.price' => 'ticket price',
+            'ticket_tiers.*.available_stock' => 'tickets available',
+            'ticket_tiers.*.max_per_customer' => 'limit per customer',
+            'ticket_tiers.*.sale_start' => 'sales start',
+            'ticket_tiers.*.sale_end' => 'sales end',
         ];
     }
 }

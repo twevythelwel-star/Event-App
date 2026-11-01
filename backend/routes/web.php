@@ -100,7 +100,8 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/settings', [AccountSettingsController::class, 'show'])->name('settings.show');
     Route::post('/settings/profile', [AccountSettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::post('/settings/password', [AccountSettingsController::class, 'updatePassword'])->name('settings.password');
-    Route::post('/settings/currency', [AccountSettingsController::class, 'updateCurrency'])->name('settings.currency');
+    Route::post('/settings/currency', [AccountSettingsController::class, 'updateDisplayCurrency'])->name('settings.currency');
+    Route::post('/settings/host', [AccountSettingsController::class, 'updateHostSettings'])->name('settings.host')->middleware('throttle:20,1');
 
     // Event & Flyer Management
     Route::get('/events/create', [EventController::class, 'create'])->name('events.create');

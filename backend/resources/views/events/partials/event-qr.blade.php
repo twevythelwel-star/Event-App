@@ -11,10 +11,6 @@
         <p class="card-subtitle">For flyers, posters and social posts. Scanning it opens this event's public page. It is not a ticket and does not admit anyone; each ticket has its own code.</p>
     </div>
 
-    @if (session('status') && str_contains((string) session('status'), 'QR'))
-        <p role="status" class="eb-event-qr-flash">{{ session('status') }}</p>
-    @endif
-
     <div class="eb-event-qr-grid">
         <div class="eb-event-qr-preview">
             @if ($ready)
