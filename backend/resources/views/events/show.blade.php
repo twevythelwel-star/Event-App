@@ -293,7 +293,7 @@
                                 {{ $event->date_str ?? ($event->date ? (is_string($event->date) ? date('l, F j, Y', strtotime($event->date)) : $event->date->format('l, F j, Y')) : 'Date TBA') }}
                             </div>
                             <div style="font-size: 11px; color: #94A3B8;">
-                                {{ $event->time_str ?? '12:00 PM – 8:00 PM' }} ({{ $event->timezone ?? 'EST' }})
+                                {{ $event->time_str ?: 'Time to be announced' }}@if($event->timezone) ({{ $event->timezone }})@endif
                             </div>
                         </div>
                     </div>
@@ -303,10 +303,10 @@
                         <div>
                             <div style="font-size: 10px; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Venue & Location</div>
                             <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">
-                                {{ $event->venue_name ?? $event->venue ?? 'Waterfront Pavilion' }}
+                                {{ $event->venue_name ?: 'Venue to be announced' }}
                             </div>
                             <div style="font-size: 11px; color: #94A3B8;">
-                                {{ $event->venue_address ?? 'United States' }}
+                                {{ $event->venue_address }}
                             </div>
                         </div>
                     </div>
@@ -322,7 +322,7 @@
                     </button>
                     <button type="button" class="section-tab-btn" id="tab-food-btn" onclick="switchSection('food')">
                         <span>🍲</span>
-                        <span>Food & Dining ({{ count($event->menuItems ?? []) }})</span>
+                        <span>Food & Dining ({{ $menu->count() }})</span>
                     </button>
                     <button type="button" class="section-tab-btn" id="tab-details-btn" onclick="switchSection('details')">
                         <span>ℹ️</span>
@@ -336,7 +336,7 @@
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
                             <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No tickets on sale</h3>
                             <p style="font-size: 13px; color: #94A3B8; margin: 0;">
-                                {{ count($event->menuItems) > 0 ? 'This event sells food only. See the Food tab.' : 'The organiser hasn’t put tickets on sale yet.' }}
+                                {{ $menu->isNotEmpty() ? 'This event sells food only. See the Food tab.' : 'The organiser hasn’t put tickets on sale yet.' }}
                             </p>
                         </div>
                     @else
@@ -346,14 +346,10 @@
                                     <div style="min-width: 0;">
                                         <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $tier['name'] }}</h3>
                                         @if($tier['description'])<p style="font-size: 13px; color: #94A3B8; margin: 4px 0 0;">{{ $tier['description'] }}</p>@endif
-                                        @if($tier['sold_out'])
-                                            <span class="eb-badge eb-badge-error" style="margin-top: 8px;">Sold out</span>
-                                        @elseif($tier['available'] !== null && $tier['available'] <= 10)
-                                            <span class="eb-badge eb-badge-warning" style="margin-top: 8px;">{{ $tier['available'] }} left</span>
-                                        @endif
+                                        <div style="margin-top: 8px;"><x-tier-availability :tier="$tier" /></div>
                                     </div>
                                     <div style="text-align: right; flex-shrink: 0;">
-                                        <div style="font-size: 20px; font-weight: 900; color: #FFFFFF;">{{ \App\Support\Money::format($tier['price'], $currency) }}</div>
+                                        <div style="font-size: 20px; font-weight: 900; color: #FFFFFF;">{{ \App\Support\Money::formatMinor($tier['price_minor'], $tier['currency']) }}</div>
                                         <div style="font-size: 11px; color: #94A3B8;">per ticket</div>
                                     </div>
                                 </div>
@@ -362,34 +358,43 @@
                     @endif
                 </div>
 
-                <!-- TAB 2: FOOD & DINING -->
+                <!-- TAB 2: FOOD & DINING (active menu items only, as the organiser wrote them) -->
                 <div class="tab-pane" id="pane-food">
-                    @if(empty($event->menuItems) || count($event->menuItems) === 0)
+                    @if($menu->isEmpty())
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
-                            <span style="font-size: 36px;">🍲</span>
-                            <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 10px 0 6px;">Menu In Preparation</h3>
-                            <p style="font-size: 13px; color: #94A3B8; margin: 0;">The host is finalizing seasonal dishes and pricing tiers.</p>
+                            <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No food menu</h3>
+                            <p style="font-size: 13px; color: #94A3B8; margin: 0;">This event has no food to order in advance.</p>
                         </div>
                     @else
+                        <p style="font-size: 13px; color: #94A3B8; margin: 0 0 12px;">
+                            @if($canOrder && $event->supports_food_ordering)
+                                Order food with your tickets or on its own, and collect it at the event with your order QR code.
+                            @else
+                                Food ordering is closed for this event. The menu is shown for reference.
+                            @endif
+                        </p>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
-                            @foreach($event->menuItems as $item)
+                            @foreach($menu as $item)
                                 <div class="card-navy" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
                                     <div>
-                                        <div style="font-size: 10px; text-transform: uppercase; color: #818CF8; font-weight: 700;">{{ $item->category ?? 'Caribbean Specialty' }}</div>
+                                        @if($item->category)<div style="font-size: 10px; text-transform: uppercase; color: #818CF8; font-weight: 700;">{{ $item->category }}</div>@endif
                                         <h4 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 4px 0 6px;">{{ $item->name }}</h4>
-                                        <p style="font-size: 12px; color: #94A3B8; margin: 0 0 12px; line-height: 1.4;">{{ $item->description ?? 'Authentic Island dish freshly prepared.' }}</p>
+                                        @if($item->description)<p style="font-size: 12px; color: #94A3B8; margin: 0 0 8px; line-height: 1.4;">{{ $item->description }}</p>@endif
+                                        @if($item->pricing_type === 'customizable' && !empty($item->custom_option_groups))
+                                            <span class="eb-badge eb-badge-info" style="margin-bottom: 8px;">Choose options</span>
+                                        @endif
+                                        @if($item->available_stock !== null && (int) $item->available_stock <= 0)
+                                            <span class="eb-badge eb-badge-error" style="margin-bottom: 8px;">Sold out</span>
+                                        @endif
                                     </div>
                                     <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-                                        <span style="font-size: 16px; font-weight: 800; color: #FFFFFF;">{{ \App\Support\Money::format($currency === 'USD' ? $item->price_usd : $item->price_jmd, $currency) }}</span>
-                                        @auth
-                                            <a href="{{ route('checkout.food', $event) }}" style="background: rgba(199, 255, 69, 0.14); border: 1px solid rgba(199, 255, 69, 0.35); color: #C7FF45; border-radius: 8px; padding: 6px 12px; font-size: 12px; font-weight: 700; text-decoration: none;">
-                                                Pre-order
-                                            </a>
-                                        @else
-                                            <a href="{{ route('login') }}" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #CBD5E1; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 700; text-decoration: none;">
-                                                Sign In to Order
-                                            </a>
-                                        @endauth
+                                        <span style="font-size: 16px; font-weight: 800; color: #FFFFFF;">
+                                            @if($item->pricing_type === 'custom_amount')
+                                                You choose the amount
+                                            @else
+                                                {{ $item->priceMoney()->display() }}
+                                            @endif
+                                        </span>
                                     </div>
                                 </div>
                             @endforeach
@@ -397,22 +402,75 @@
                     @endif
                 </div>
 
-                <!-- TAB 3: DETAILS & EVENT GUIDE -->
+                <!-- TAB 3: DETAILS: description, pickup, payment, fees, refunds and the event QR code -->
                 <div class="tab-pane" id="pane-details">
-                    <div class="card-navy" style="display: flex; flex-direction: column; gap: 18px;">
+                    <div class="card-navy" style="display: flex; flex-direction: column; gap: 20px;">
                         <div>
-                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0 0 8px;">About This Experience</h3>
-                            <p style="font-size: 13px; color: #CBD5E1; line-height: 1.6; margin: 0;">
-                                {{ $event->description ?? 'Join us for this special Caribbean food and entertainment event. All food packages are prepared fresh on-site and redeemed with instant digital QR passes.' }}
-                            </p>
+                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0 0 8px;">About this event</h3>
+                            <p style="font-size: 13px; color: #CBD5E1; line-height: 1.6; margin: 0; white-space: pre-line;">{{ $event->description ?: $event->tagline }}</p>
                         </div>
 
-                        <div style="background: #0F172A; border-radius: 12px; padding: 14px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 12px; color: #94A3B8;">
-                            <strong style="color: #FFFFFF; display: block; margin-bottom: 6px;">Food Collection & Pass Protocol:</strong>
-                            <div>&bull; Present your QR ticket pass at the designated food station.</div>
-                            <div>&bull; Orders are verified in real-time by island staff terminals.</div>
-                            <div>&bull; Pre-ordered meals are held fresh under temperature control.</div>
+                        @if($event->pickup_instructions && $menu->isNotEmpty())
+                            <div>
+                                <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Food pickup</h3>
+                                <p style="font-size: 13px; color: #CBD5E1; margin: 0;">{{ $event->pickup_instructions }}</p>
+                            </div>
+                        @endif
+
+                        <div id="payment-methods">
+                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Accepted payment methods</h3>
+                            @if($paymentMethods === [])
+                                <p style="font-size: 13px; color: #94A3B8; margin: 0;">The organiser has not set up a payment method yet, so orders can't be paid for at the moment.</p>
+                            @else
+                                <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #CBD5E1; line-height: 1.6;">
+                                    @foreach($paymentMethods as $method)
+                                        <li><strong style="color: #FFFFFF;">{{ $method['label'] }}</strong>: {{ $method['description'] }}</li>
+                                    @endforeach
+                                </ul>
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Transfers and cash are marked paid only after the organiser confirms them.</p>
+                            @endif
                         </div>
+
+                        <div id="fees-and-taxes">
+                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Fees and taxes</h3>
+                            @if($packagingFeeMinor <= 0 && $chargeRules === [])
+                                <p style="font-size: 13px; color: #CBD5E1; margin: 0;">No fees or taxes are added. You pay the ticket and food prices shown.</p>
+                            @else
+                                <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #CBD5E1; line-height: 1.6;">
+                                    @if($packagingFeeMinor > 0)
+                                        <li><strong style="color: #FFFFFF;">Packaging fee</strong> (organizer fee): {{ \App\Support\Money::formatMinor($packagingFeeMinor, $currency) }} per order with food</li>
+                                    @endif
+                                    @foreach($chargeRules as $rule)
+                                        <li><strong style="color: #FFFFFF;">{{ $rule->label }}</strong> ({{ strtolower($rule->kindLabel()) }}): {{ $rule->describe() }}</li>
+                                    @endforeach
+                                </ul>
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">The exact amount of each fee and tax is shown, line by line, before you confirm your order.</p>
+                            @endif
+                        </div>
+
+                        <div id="refund-policy">
+                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Cancellations and refunds</h3>
+                            @if($policy && trim((string) $policy->refund_policy_notes) !== '')
+                                <p style="font-size: 13px; color: #CBD5E1; margin: 0; white-space: pre-line;">{{ $policy->refund_policy_notes }}</p>
+                            @else
+                                <p style="font-size: 13px; color: #CBD5E1; margin: 0;">The organiser has not published a refund policy. Contact them before you buy if you may need a refund.</p>
+                            @endif
+                            @if($policy && (int) $policy->refund_policy_deadline_hours > 0 && trim((string) $policy->refund_policy_notes) !== '')
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refund requests close {{ (int) $policy->refund_policy_deadline_hours }} hours before the event starts.</p>
+                            @endif
+                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refunds are issued by the organiser. If the event is cancelled, contact the organiser using the details on this page.</p>
+                        </div>
+
+                        @if($eventQr)
+                            <div id="event-qr" style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
+                                <img src="{{ $eventQr['image'] }}" alt="QR code linking to this event page" width="120" height="120" style="background: #FFFFFF; border-radius: 8px; padding: 6px;">
+                                <div>
+                                    <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 4px;">Share this event</h3>
+                                    <p style="font-size: 12px; color: #94A3B8; margin: 0;">Scan to open this page. This code is for sharing only and is not a ticket.</p>
+                                    <a href="{{ $eventQr['link'] }}" style="font-size: 12px; color: #C7FF45;">{{ $eventQr['link'] }}</a>
+                                </div>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -484,35 +542,30 @@
         <div style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px;">
             <div class="card-navy" style="box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.12);">
                 <div style="margin-bottom: 14px;">
-                    @if($fromPrice !== null)
-                        <div style="font-size: 11px; color: #94A3B8; font-weight: 700;">From</div>
-                        <div style="font-size: 26px; font-weight: 900; color: #FFFFFF;">{{ \App\Support\Money::format($fromPrice, $currency) }}</div>
-                    @else
-                        <div style="font-size: 15px; font-weight: 700; color: #FFFFFF;">Nothing on sale yet</div>
+                    @if($fromPriceText)
+                        <div style="font-size: 26px; font-weight: 900; color: #FFFFFF;">{{ $fromPriceText }}</div>
+                        <div style="font-size: 11px; color: #94A3B8; font-weight: 700;">Ticket prices; fees and taxes are shown before you pay</div>
                     @endif
-                    @unless($event->is_ordering_open)
-                        <span class="eb-badge eb-badge-warning" style="margin-top: 6px;">Ordering paused</span>
-                    @endunless
+                    @php $tone = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$availability['tone']] ?? 'eb-badge-info'; @endphp
+                    <span class="eb-badge {{ $tone }}" style="margin-top: 6px;">{{ $availability['label'] }}</span>
                 </div>
 
-                @auth
-                    @if($event->is_ordering_open && $fromPrice !== null)
+                @if($canOrder)
+                    @auth
                         <a href="{{ route('checkout.tickets', $event) }}" class="btn-gradient-purchase" id="btn-blade-purchase-tickets">
-                            <span>{{ empty($tiers) ? 'Order food' : 'Get tickets' }}</span>
+                            <span>{{ collect($tiers)->contains('on_sale', true) ? 'Get tickets' : 'Order food' }}</span>
                         </a>
                     @else
-                        <a href="{{ route('attendee.dashboard') }}" class="btn-gradient-purchase" id="btn-blade-view-tickets">
-                            <span>My tickets</span>
+                        <a href="{{ route('login') }}" class="btn-gradient-purchase" id="btn-blade-signin-purchase">
+                            <span>Sign in to get tickets</span>
                         </a>
-                    @endif
+                    @endauth
                 @else
-                    <a href="{{ route('login') }}" class="btn-gradient-purchase" id="btn-blade-signin-purchase">
-                        <span>Sign in to get tickets</span>
-                    </a>
-                @endauth
+                    <p style="font-size: 13px; color: #CBD5E1; margin: 0;">{{ $availability['label'] }}. Tickets can't be bought right now.</p>
+                @endif
 
                 <!-- Jump to Food Ordering -->
-                @if(!empty($event->menuItems) && count($event->menuItems) > 0)
+                @if($menu->isNotEmpty())
                     <button type="button" onclick="switchSection('food')" class="btn-glass" style="width: 100%; justify-content: center; margin-top: 10px; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
                         <span>🍲</span>
                         <span>View the menu</span>
@@ -520,7 +573,7 @@
                 @endif
 
                 <div style="margin-top: 14px; font-size: 11px; color: #94A3B8; text-align: center; line-height: 1.4;">
-                    Your QR ticket appears in My tickets after you order.
+                    Your ticket QR code appears in My tickets once your payment is confirmed. <a href="#payment-methods" onclick="switchSection('details')" style="color: #C7FF45;">Payment, fees and refunds</a>
                 </div>
             </div>
         </div>

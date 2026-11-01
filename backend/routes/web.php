@@ -38,29 +38,8 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-// Welcome & Onboarding Screen (cinematic guest landing, auto-redirect for authenticated users)
-Route::get('/', function (\Illuminate\Http\Request $request) {
-    if (auth()->check()) {
-        $user = auth()->user();
-        $activeRole = $user->current_context_role ?? $user->role;
-        $targetRoute = match ($activeRole) {
-            'system_admin' => 'system-admin.dashboard',
-            'admin' => 'admin.dashboard',
-            'event_host' => 'host.dashboard',
-            default => 'attendee.dashboard',
-        };
-        return redirect()->route($targetRoute);
-    }
-
-    if ($request->wantsJson()) {
-        return response()->json([
-            'success' => true,
-            'data' => \App\Models\Event::latest()->get(),
-        ]);
-    }
-
-    return view('welcome');
-})->name('home');
+// Public homepage: multicultural event discovery (signed-in users are sent to their dashboard)
+Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('home');
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/locations', [LocationCatalogController::class, 'index'])->name('locations.catalog');
 

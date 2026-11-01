@@ -83,6 +83,20 @@ final class ChargeCalculator
     }
 
     /** @return list<ChargeRule> */
+    /**
+     * The active rules an order at this event would be charged, for showing customers before they buy. Fixed
+     * amounts in another currency are left out, exactly as charges() leaves them out.
+     *
+     * @return list<ChargeRule>
+     */
+    public function applicableRules(Event $event): array
+    {
+        $currency = strtoupper((string) ($event->currency ?: \App\Support\Currency::defaultCode()));
+
+        return array_values(array_filter($this->rulesFor($event),
+            fn (ChargeRule $rule) => $rule->method === 'percent' || strtoupper((string) $rule->currency) === $currency));
+    }
+
     private function rulesFor(Event $event): array
     {
         if (!function_exists('app')) {

@@ -291,6 +291,56 @@ Pages now show the event's own category, tagline, flyer and dish images, labeled
 - Event ids and menu ids keep their old names (for example `evt-kingston-harbour-fry`), because renaming primary keys would break order history; they show in URLs.
 - Sample flyers reuse the three existing stock images.
 
+## Added 2026-10-31: discovery and customer journey
+
+**Homepage** (`HomeController`, `App\Services\Discovery\HomeSections`, `welcome.blade.php`). It is built only from published, upcoming events, and a section with nothing in it is not shown.
+- **Search and location:** a search for events, cities and towns, a location selector defaulting to "United States (all)", and "Show events near" a chosen city (same-state events, that city first).
+- **Event sections:** featured events (soonest in featured markets), food festivals, food from many traditions, reggae and dancehall, cultural and community celebrations, family-friendly events, and seasonal celebrations within 120 days.
+- **Diversity:** both food sections pick one event per tradition before repeating one.
+- **Browse by tradition:** chips counted from each event's own text and menu. Jamaican and Caribbean is one of seven traditions.
+- **Popular cities:** each shows its upcoming-event count.
+- **Signed-in users** still go to their dashboard.
+
+**Event cards** (`x-event-card`, `App\Support\EventListing`) show:
+- flyer, name, city and state, date and local time, category, host, and a link to the event;
+- the starting ticket price, taken only from tickets on sale now;
+- an availability status that the data supports: "Sold out" only when every ticket type is at its stock limit, and sales ended or not yet started from each tier's sale window. Ordering closed and cancelled come from the event itself.
+
+**Discovery** (`/events`):
+- now lists every organizer's published, upcoming events. Before, guests also saw draft, unpublished and cancelled events, and signed-in hosts saw only their own organizer's events.
+- uses the shared card;
+- search covers the event's text, menu, city, state, ZIP, host and traditions;
+- the price filter uses the starting ticket price;
+- homepage links arrive with `q`, `city` and `category` already applied.
+
+**Event details** now show:
+- accepted payment methods (names only, no account details);
+- fees and taxes from the packaging fee and the active charge rules that would apply. Fixed amounts in another currency are left out, matching the calculator.
+- the organizer's refund policy, or a plain statement that none is published;
+- the event's share QR code when one has been generated, labeled "not a ticket";
+- active menu items only, with no invented fallback text;
+- a purchase action only when something can actually be bought.
+
+Invented fallbacks are gone: a default time, a "Waterfront Pavilion" venue, "Caribbean Specialty" and "temperature control" claims.
+
+**Ticket sale windows:** `saleStartIso` and `saleEndIso` are now enforced in the tier catalog, the quote and at placement (before, they were only validated when saved).
+
+**Checkout:**
+- the customer can set the name on the order;
+- the receipt email stays the account email, because order access also matches on email;
+- the ticket page issues the admission QR only once the payment is settled. Before that it shows the order reference.
+- the ticket page shows the balance due rather than the full total, a receipt with the amount paid, method and confirmation time, and times in the event's time zone;
+- partly paid orders no longer read "You're all set".
+
+**Tests:**
+- new: `DiscoveryJourneyTest` (8), and a `CustomerCheckoutFlowTest` case for issuing the QR and receipt;
+- changed: an unpaid order's page no longer shows an admission QR.
+
+**Not done:**
+- Sample events have no share QR until a host generates one: seeding artwork for every event would slow the tests.
+- "Near" means the same state; markets have no coordinates.
+- Card, Apple Pay, Google Pay and PayPal checkout depends on the unfinished payment-processor work, so those methods are not offered.
+
 ## New findings (2026-10-30)
 
 | # | Severity | Finding | Evidence | Fix |

@@ -45,6 +45,10 @@
             <input type="hidden" name="quoted_total_minor" value="{{ $totals->totalMinor() }}">
 
             <h2 class="eb-text-section-title" style="margin: 0 0 var(--space-3);">Your details</h2>
+            <x-form-field name="customer_name" label="Name for the order"
+                :value="old('customer_name', auth()->user()->name)" :required="true" autocomplete="name"
+                help="Shown to staff when you collect food or check in." :error="$errors->first('customer_name')" />
+            <p class="eb-help-text" style="margin: 0 0 var(--space-3);">Your confirmation and receipt go to {{ auth()->user()->email }}, the email on your account.</p>
             <x-form-field name="customer_phone" type="tel" label="Phone or WhatsApp"
                 :value="old('customer_phone', auth()->user()->phone)" :required="true" placeholder="+1 305 555 0142"
                 help="We text your ticket here." :error="$errors->first('customer_phone')" />

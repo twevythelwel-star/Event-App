@@ -291,6 +291,12 @@ class OrderPlacementService
         foreach ($ticketTiers as $idx => $tier) {
             if (isset($tier['id']) && (string) $tier['id'] === $itemId) {
                 $name = (string) ($tier['name'] ?? 'Admission Ticket');
+                $window = TicketTierCatalog::saleWindow($tier);
+                if ($window !== 'open') {
+                    throw new OrderPlacementException($window === 'ended'
+                        ? "Sales for '{$name}' have ended."
+                        : "'{$name}' is not on sale yet.");
+                }
                 $maxPerCustomer = TicketTierCatalog::maxPerOrder($tier);
                 if ($maxPerCustomer > 0 && $quantity > $maxPerCustomer) {
                     throw new OrderPlacementException("Maximum {$maxPerCustomer} '{$name}' tickets allowed per order.");

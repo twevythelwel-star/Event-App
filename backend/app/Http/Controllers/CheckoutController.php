@@ -147,6 +147,7 @@ class CheckoutController extends Controller
         }
         $methods = array_column(PaymentOptions::forEvent($event), 'value');
         $data = $request->validate([
+            'customer_name' => ['nullable', 'string', 'min:2', 'max:120'],
             'customer_phone' => ['required', 'string', 'min:7', 'max:30'],
             'method' => ['required', Rule::in($methods)],
             'payment_reference' => ['nullable', 'string', 'max:100'],
@@ -174,7 +175,7 @@ class CheckoutController extends Controller
         }
 
         $result = $this->orders->placeOrder($event, [
-            'customer_name' => $request->user()->name,
+            'customer_name' => trim((string) ($data['customer_name'] ?? '')) ?: $request->user()->name,
             'customer_phone' => $data['customer_phone'],
             'email' => $request->user()->email,
             'method' => $data['method'],

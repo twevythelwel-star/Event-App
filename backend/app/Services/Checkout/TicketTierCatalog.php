@@ -63,6 +63,25 @@ final class TicketTierCatalog
         return $key === null ? null : max(0, (int) $tier[$key]);
     }
 
+    /**
+     * Where the tier is in its sale window: "not_started", "ended", or "open" (also when no window is set).
+     * Sale times are ISO 8601 with an offset, so they compare correctly whatever the server's time zone.
+     */
+    public static function saleWindow(array $tier, ?int $now = null): string
+    {
+        $now ??= time();
+        $start = $tier['saleStartIso'] ?? $tier['sale_start_iso'] ?? null;
+        $end = $tier['saleEndIso'] ?? $tier['sale_end_iso'] ?? null;
+        if (!empty($start) && ($ts = strtotime((string) $start)) !== false && $now < $ts) {
+            return 'not_started';
+        }
+        if (!empty($end) && ($ts = strtotime((string) $end)) !== false && $now >= $ts) {
+            return 'ended';
+        }
+
+        return 'open';
+    }
+
     public static function maxPerOrder(array $tier): int
     {
         return max(0, (int) ($tier['maxPerCustomer'] ?? $tier['max_per_customer'] ?? $tier['max_per_order'] ?? $tier['maxPerOrder'] ?? 10));
@@ -71,7 +90,9 @@ final class TicketTierCatalog
     /**
      * Tiers a customer can be offered: configured with an id and priced in the event's currency.
      *
-     * @return list<array{id: string, name: string, description: ?string, price: float, available: ?int, max: int, sold_out: bool}>
+     * A tier outside its sale window is still listed (so the page can say why) but has max 0 and on_sale false.
+     *
+     * @return list<array{id: string, name: string, description: ?string, price: float, available: ?int, max: int, sold_out: bool, sale_window: string, on_sale: bool}>
      */
     public static function sellable(Event $event): array
     {
@@ -87,6 +108,9 @@ final class TicketTierCatalog
             }
             $price = \App\Support\Money::ofMinor($priceMinor, $currency)->toMajorNumber();
             $available = self::available($tier);
+            $window = self::saleWindow($tier);
+            $soldOut = $available !== null && $available <= 0;
+            $max = $available === null ? self::maxPerOrder($tier) : min(self::maxPerOrder($tier), $available);
             $tiers[] = [
                 'id' => (string) $tier['id'],
                 'name' => (string) ($tier['name'] ?? 'Admission ticket'),
@@ -95,8 +119,10 @@ final class TicketTierCatalog
                 'price_minor' => $priceMinor,
                 'currency' => $currency,
                 'available' => $available,
-                'max' => $available === null ? self::maxPerOrder($tier) : min(self::maxPerOrder($tier), $available),
-                'sold_out' => $available !== null && $available <= 0,
+                'max' => $window === 'open' ? $max : 0,
+                'sold_out' => $soldOut,
+                'sale_window' => $window,
+                'on_sale' => $window === 'open' && !$soldOut && $max > 0,
             ];
         }
 

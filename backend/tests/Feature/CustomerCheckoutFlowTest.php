@@ -120,7 +120,8 @@ class CustomerCheckoutFlowTest extends TestCase
         $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
             ->assertSee('Waiting for your payment')
             ->assertSee($order->ticket_code)
-            ->assertSee('<svg', false)
+            ->assertSee('Order reference')
+            ->assertDontSee('QR code for ticket', false) // no admission QR until the payment is confirmed
             ->assertSee('Account: 000-000')
             ->assertSee('I’ve sent the payment')
             ->assertDontSee($order->secure_ticket_token);
@@ -235,6 +236,29 @@ class CustomerCheckoutFlowTest extends TestCase
         $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertSee('Pay at pickup')->assertDontSee('I’ve sent the payment');
         $this->actingAs($this->buyer)->post(route('tickets.payment-reference', $order), ['payment_reference' => 'X1234'])->assertSessionHas('error');
         $this->assertSame('awaiting_payment', $order->fresh()->status);
+    }
+
+    public function test_ticket_qr_and_receipt_are_issued_once_payment_is_confirmed(): void
+    {
+        $this->fillCart();
+        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
+            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
+        ]);
+        $order = Order::allTenants()->sole();
+
+        $order->forceFill(['status' => 'partially_paid', 'amount_paid_minor' => 200000])->save();
+        $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
+            ->assertSee('Part of your payment received')
+            ->assertSee('Still to pay')
+            ->assertDontSee('QR code for ticket', false);
+
+        $order->forceFill(['status' => 'paid', 'amount_paid_minor' => 710000, 'verified_at' => '2026-11-02 15:30:00'])->save();
+        $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
+            ->assertSee('You’re all set')
+            ->assertSee('QR code for ticket ' . $order->ticket_code, false)
+            ->assertSee('Receipt')
+            ->assertSee('Paid J$7,100.00 by Bank transfer')
+            ->assertDontSee('Still to pay');
     }
 
     public function test_refunded_ticket_hides_the_qr_code(): void

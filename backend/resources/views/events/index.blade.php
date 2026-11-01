@@ -321,22 +321,9 @@
         margin-bottom: 32px;
     }
 
-    .event-item-card {
-        background-color: #162038;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .event-item-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 24px rgba(0,0,0,0.35);
-        border-color: rgba(129, 140, 248, 0.3);
-    }
+    /* Filter wrapper around each shared event card component; the card brings its own styling. */
+    .event-item-card { display: flex; flex-direction: column; }
+    .event-item-card > .eb-event-card { flex: 1; }
 
     /* Fixed Bottom Navigation (5 items) */
     .discovery-bottom-nav {
@@ -445,7 +432,7 @@
                 <input
                     type="text"
                     id="events-search-input"
-                    placeholder="Search events, artists, performers, venues, organizers, categories..."
+                    placeholder="Search events, cities, towns, food or hosts..."
                     onkeyup="filterEvents()"
                 />
             </div>
@@ -655,55 +642,19 @@
         </div>
 
         <div class="discovery-grid" id="events-grid">
-            @foreach($events as $idx => $event)
+            @foreach($events as $event)
                 @php
-                    $gridImg = $event->display_image_url;
                     $eventCategory = strtolower((string) ($event->category ?? 'community'));
-                    $catType = str_contains($eventCategory, 'food') ? 'food' : (str_contains($eventCategory, 'music') ? 'music' : (str_contains($eventCategory, 'sport') ? 'sports' : (str_contains($eventCategory, 'culture') || str_contains($eventCategory, 'heritage') ? 'culture' : 'community')));
-                    $priceValues = collect($event->ticket_tiers ?? [])->pluck('priceUSD')
-                        ->merge($event->menuItems->where('is_active', true)->pluck('price_usd'))
-                        ->filter(fn ($price) => is_numeric($price));
-                    $lowestPrice = $priceValues->isEmpty() ? 0 : $priceValues->min();
+                    $catType = str_contains($eventCategory, 'food') ? 'food' : (str_contains($eventCategory, 'music') ? 'music' : (str_contains($eventCategory, 'sport') ? 'sports' : (str_contains($eventCategory, 'cultur') || str_contains($eventCategory, 'heritage') ? 'culture' : 'community')));
+                    $fromMinor = \App\Support\EventListing::fromPriceMinor($event);
+                    $availability = \App\Support\EventListing::availability($event);
+                    $search = \App\Services\Discovery\HomeSections::text($event) . ' ' . strtolower(implode(' ', array_filter([
+                        $event->venue_name, $event->venue_address, $event->city, $event->state_code, $event->zip_code, $event->organizer_name,
+                        implode(' ', \App\Services\Discovery\HomeSections::traditions($event)),
+                    ])));
                 @endphp
-                <div class="event-item-card" data-title="{{ strtolower($event->title) }}" data-desc="{{ strtolower($event->description ?? '') }}" data-venue="{{ strtolower($event->venue_name ?? $event->venue ?? '') }}" data-address="{{ strtolower($event->venue_address ?? '') }}" data-category="{{ $catType }}" data-date="{{ $event->date_str ?? '' }}" data-event-date="{{ substr((string) ($event->event_date_iso ?? ''), 0, 10) }}" data-state="{{ $event->state_code ?? '' }}" data-city="{{ strtolower($event->city ?? '') }}" data-zip="{{ $event->zip_code ?? '' }}" data-price="{{ $lowestPrice }}" data-available="{{ $event->isOrderingAllowed() ? '1' : '0' }}">
-                    <div style="height: 170px; position: relative;">
-                        <img src="{{ $gridImg }}" alt="{{ $event->title }}" style="width: 100%; height: 100%; object-fit: cover;">
-                        <div style="position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.85) 100%);"></div>
-                        <span style="position: absolute; top: 10px; left: 10px; background: rgba(15, 23, 42, 0.85); color: #fff; padding: 3px 10px; border-radius: 9999px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase;">
-                            {{ $catType }}
-                        </span>
-                    </div>
-
-                    <div style="padding: 18px; display: flex; flex-direction: column; flex: 1; justify-content: space-between;">
-                        <div>
-                            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.74rem; color: #818CF8; font-weight: 600; margin-bottom: 6px;">
-                                <span>📅 {{ $event->date_str ?? 'Date TBA' }}</span>
-                                <span>&bull;</span>
-                                <span>⏰ {{ $event->time_str ?? '12:00 PM' }}</span>
-                            </div>
-
-                            <h3 style="font-size: 1.05rem; font-weight: 700; color: #FFFFFF; line-height: 1.35; margin-bottom: 6px;">
-                                {{ $event->title }}
-                            </h3>
-
-                            <p style="font-size: 0.8rem; color: #94A3B8; line-height: 1.5; margin-bottom: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                {{ $event->description ?? $event->tagline ?? 'Authentic Caribbean entertainment & food.' }}
-                            </p>
-
-                            <div style="display: flex; align-items: center; gap: 5px; color: #CBD5E1; font-size: 0.75rem; margin-bottom: 14px;">
-                                <span style="color: #EC4899;">📍</span>
-                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600;">
-                                    {{ $event->venue_name ?? $event->venue ?? 'United States' }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <a href="{{ route('events.show', $event->id) }}" class="btn-gradient-cta" style="width: 100%; box-sizing: border-box; padding: 9px; font-size: 0.82rem;">
-                                View Event & Menu &rarr;
-                            </a>
-                        </div>
-                    </div>
+                <div class="event-item-card" data-search="{{ $search }}" data-category="{{ $catType }}" data-date="{{ $event->date_str ?? '' }}" data-event-date="{{ substr((string) ($event->event_date_iso ?? ''), 0, 10) }}" data-state="{{ $event->state_code ?? '' }}" data-city="{{ strtolower($event->city ?? '') }}" data-zip="{{ $event->zip_code ?? '' }}" data-price="{{ $fromMinor === null ? '' : \App\Support\Money::ofMinor($fromMinor, $event->currency ?: 'USD')->toDecimalString() }}" data-available="{{ in_array($availability['key'], ['on_sale', 'food'], true) ? '1' : '0' }}">
+                    <x-event-card :event="$event" />
                 </div>
             @endforeach
         </div>
@@ -784,10 +735,7 @@
         let visibleCount = 0;
 
         cards.forEach(card => {
-            const title = card.getAttribute('data-title') || '';
-            const desc = card.getAttribute('data-desc') || '';
-            const venue = card.getAttribute('data-venue') || '';
-            const addr = card.getAttribute('data-address') || '';
+            const searchText = card.getAttribute('data-search') || '';
             const cat = card.getAttribute('data-category') || '';
             const dateStr = card.getAttribute('data-date') || '';
             const eventDateText = card.getAttribute('data-event-date') || '';
@@ -797,7 +745,8 @@
             const state = card.getAttribute('data-state') || '';
             const city = card.getAttribute('data-city') || '';
             const zip = card.getAttribute('data-zip') || '';
-            const price = parseFloat(card.getAttribute('data-price') || '0');
+            const priceText = card.getAttribute('data-price') || '';
+            const price = priceText === '' ? null : parseFloat(priceText);
             const available = card.getAttribute('data-available') === '1';
             const stateFilter = document.getElementById('filter-state').value;
             const cityFilter = document.getElementById('filter-city').value;
@@ -805,7 +754,7 @@
 
             let matchQuery = true;
             if (q) {
-                matchQuery = title.includes(q) || desc.includes(q) || venue.includes(q) || addr.includes(q) || cat.includes(q);
+                matchQuery = q.split(/\s+/).every(word => searchText.includes(word) || cat.includes(word));
             }
 
             let matchLocation = true;
@@ -819,7 +768,8 @@
             const minPrice = document.getElementById('filter-price-min').value;
             const maxPrice = document.getElementById('filter-price-max').value;
             const availableOnly = document.getElementById('filter-available').checked;
-            const matchPrice = (!minPrice || price >= parseFloat(minPrice)) && (!maxPrice || price <= parseFloat(maxPrice));
+            // Events with no ticket on sale have no starting price, so a price filter leaves them out.
+            const matchPrice = (!minPrice && !maxPrice) || (price !== null && (!minPrice || price >= parseFloat(minPrice)) && (!maxPrice || price <= parseFloat(maxPrice)));
             const matchAvailability = !availableOnly || available;
 
             let matchDate = true;
@@ -840,7 +790,7 @@
             }
 
             if (matchQuery && matchLocation && matchDate && matchCategory && matchPrice && matchAvailability) {
-                card.style.display = 'flex';
+                card.style.display = '';
                 visibleCount++;
             } else {
                 card.style.display = 'none';
@@ -867,6 +817,24 @@
         document.getElementById('filter-date-to').value = '';
         selectCategory('all');
     }
+
+    // Links from the homepage arrive with ?q=, ?city=STATE:city and ?category= already chosen.
+    document.addEventListener('DOMContentLoaded', () => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('q')) document.getElementById('events-search-input').value = params.get('q');
+        const city = (params.get('city') || '').toLowerCase();
+        const cityOption = [...document.getElementById('filter-city').options].find(o => o.value.toLowerCase() === city);
+        if (cityOption) {
+            document.getElementById('filter-city').value = cityOption.value;
+            document.getElementById('filter-state').value = cityOption.value.split(':')[0];
+        }
+        const category = params.get('category');
+        if (category && document.getElementById('cat-btn-' + category)) {
+            selectCategory(category);
+        } else if (params.toString() !== '') {
+            filterEvents();
+        }
+    });
 
     function focusSearch() {
         const el = document.getElementById('events-search-input');

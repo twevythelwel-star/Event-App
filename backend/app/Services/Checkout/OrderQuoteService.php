@@ -46,7 +46,9 @@ final class OrderQuoteService
                 $problems[] = 'A ticket type in your order is no longer on sale and was left out.';
                 continue;
             }
-            if ($tier['available'] !== null && $quantity > $tier['available']) {
+            if ($tier['sale_window'] !== 'open') {
+                $problems[] = $tier['sale_window'] === 'ended' ? "Sales for {$tier['name']} have ended." : "{$tier['name']} is not on sale yet.";
+            } elseif ($tier['available'] !== null && $quantity > $tier['available']) {
                 $problems[] = $tier['available'] === 0
                     ? "{$tier['name']} is sold out."
                     : "Only {$tier['available']} {$tier['name']} left. Lower the quantity to continue.";

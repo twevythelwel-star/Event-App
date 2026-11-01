@@ -30,7 +30,11 @@ class EventController extends Controller
         }
 
         // Soonest first; events without a machine-readable date go last.
-        $events = Event::query()->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')->get();
+        // Public discovery: every organizer's published events (the signed-in user's own organizer scope must not
+        // narrow it), and never drafts, unpublished or cancelled events. Soonest first; undated events last.
+        $events = Event::allTenants()->with('menuItems')->where('status', 'published')
+            ->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')->get()
+            ->reject(fn (Event $event) => \App\Support\EventListing::hasEnded($event))->values();
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -77,16 +81,28 @@ class EventController extends Controller
             ]);
         }
 
-        // Real ticket types and the lowest price to show as "From"; ordering itself happens in CheckoutController.
-        $currency = $event->currency ?: 'USD';
+        // Everything below is read from the event's own configuration; ordering itself happens in CheckoutController.
+        $currency = $event->currency ?: \App\Support\Currency::defaultCode();
         $tiers = \App\Services\Checkout\TicketTierCatalog::sellable($event);
-        $prices = array_merge(
-            array_column($tiers, 'price'),
-            $event->menuItems->where('is_active', true)->map(fn ($item) => (float) ($currency === 'USD' ? $item->price_usd : $item->price_jmd))->filter(fn ($p) => $p > 0)->all(),
-        );
-        $fromPrice = $prices === [] ? null : min($prices);
+        $menu = $event->menuItems->where('is_active', true)->sortBy('sort_order')->values();
+        $availability = \App\Support\EventListing::availability($event);
+        $fromPriceText = \App\Support\EventListing::fromPriceText($event);
+        $canOrder = in_array($availability['key'], ['on_sale', 'food'], true)
+            || ($event->isOrderingAllowed() && $menu->isNotEmpty() && $event->supports_food_ordering);
 
-        return view('events.show', compact('event', 'tiers', 'fromPrice', 'currency'));
+        // Accepted payment methods: names only. Account details are shown on the customer's own order.
+        $paymentMethods = \App\Services\Checkout\PaymentOptions::forEvent($event);
+        $chargeRules = (new \App\Services\Pricing\ChargeCalculator())->applicableRules($event);
+        $packagingFeeMinor = $menu->isNotEmpty() ? (int) $event->packaging_fee_minor : 0;
+        $policy = \App\Models\HostPaymentPolicy::where('organizer_id', $event->organizer_id)->first();
+
+        $qr = \App\Models\EventQrCode::where('event_id', $event->id)->first();
+        $eventQr = $qr && $qr->isReady() && $event->status === 'published'
+            ? ['image' => route('event-qr.public', $qr->public_code), 'link' => route('event-qr.resolve', $qr->public_code)]
+            : null;
+
+        return view('events.show', compact('event', 'tiers', 'menu', 'currency', 'availability', 'fromPriceText', 'canOrder',
+            'paymentMethods', 'chargeRules', 'packagingFeeMinor', 'policy', 'eventQr'));
     }
 
     private function canManage(Request $request, Event $event): bool
