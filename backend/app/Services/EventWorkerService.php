@@ -681,10 +681,34 @@ class EventWorkerService
      */
     public static function assertActiveAssignmentValid(User $worker, Event $event, string $action): EventWorkerAssignment
     {
-        // System Administrators, and people who run this event's organizer (owner, platform admin or supervisor
-        // membership), act at the event without a staff assignment. Membership is read from organizer_users:
-        // users have no organizer_id column, so the old comparison never matched and locked hosts out.
-        if ($worker->hasRole(AccountType::SYSTEM_ADMIN) || self::managesOrganizer($worker, (string) $event->organizer_id)) {
+        $assignment = self::resolveActiveAssignment($worker, $event);
+
+        // People who run the event act without a staff assignment and are not limited by a staff role.
+        if (!self::actsWithoutAssignment($worker, $event) && !$assignment->canPerform($action)) {
+            throw new SecurityException("Access Denied: Your position ({$assignment->worker_role->label()}) is not authorized to perform '{$action}'.");
+        }
+
+        return $assignment;
+    }
+
+    /**
+     * System Administrators, and people who run this event's organizer (owner, platform admin or supervisor
+     * membership), act at the event without a staff assignment. Membership is read from organizer_users:
+     * users have no organizer_id column, so the old comparison never matched and locked hosts out.
+     */
+    public static function actsWithoutAssignment(User $worker, Event $event): bool
+    {
+        return $worker->hasRole(AccountType::SYSTEM_ADMIN) || self::managesOrganizer($worker, (string) $event->organizer_id);
+    }
+
+    /**
+     * The assignment someone works this event under right now, whatever the action. For a system administrator
+     * or someone who runs the event's organizer it is an unsaved supervisor assignment; for staff it is their own
+     * current, accepted assignment. Throws when there is none.
+     */
+    public static function resolveActiveAssignment(User $worker, Event $event): EventWorkerAssignment
+    {
+        if (self::actsWithoutAssignment($worker, $event)) {
             $fake = new EventWorkerAssignment([
                 'event_id' => $event->id,
                 'user_id' => $worker->id,
@@ -734,10 +758,6 @@ class EventWorkerService
 
         if (!$assignment->is_active || $assignment->status !== 'active') {
             throw new SecurityException("Access Denied: Staff assignment is not currently active (status: {$assignment->status}).");
-        }
-
-        if (!$assignment->canPerform($action)) {
-            throw new SecurityException("Access Denied: Your position ({$assignment->worker_role->label()}) is not authorized to perform '{$action}'.");
         }
 
         return $assignment;

@@ -36,6 +36,8 @@ class DemoAccountsSeeder extends Seeder
                 'password' => password_hash(self::DEMO_PASSWORD, PASSWORD_DEFAULT),
                 'status' => 'active',
                 'email_verified_at' => now(),
+                // Each demo account signs in to its own dashboard, even after an earlier context switch.
+                'current_context_role' => $account['role'] ?? 'attendee',
             ]);
 
             UserRole::updateOrCreate(['user_id' => $user->id, 'role' => 'attendee'], ['is_active' => true, 'assigned_at' => now()]);
