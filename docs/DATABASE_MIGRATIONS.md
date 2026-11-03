@@ -67,15 +67,29 @@ It is forward-only: it adds no table and changes no row.
   3. write an `order_adjustments` or audit-log entry for every converted record;
   4. run it as an explicit, reviewed command, never inside a schema migration or seeder.
 
-## Uncommitted migrations in the working copy (not part of this change)
+## Consolidation of the uncommitted migrations (2 November 2026)
 
-Migrations `000021`–`000030` are uncommitted. `000021` belongs to the unfinished payment-processor work; `000022`–`000030` come from separate work by another tool. They are not on the committed path and were not changed. Problems found:
+The working copy held uncommitted migrations from the unfinished payment work (`000021`) and from another tool (`000022`–`000030`), several of which duplicated existing tables. They were consolidated onto the existing schema:
 
-1. `000030` adds `system_platform_settings.payment_processors`, which `000021` already adds. On a fresh database it fails with "duplicate column", which is why the working copy's test suite fails at setup.
-2. Duplicate models:
-   - `host_payment_settings` (`000029`) duplicates `host_payment_policies`, which `000021` extends with the same enable switches.
-   - `payment_configurations` (`000027`) duplicates `system_platform_settings.payment_processors`.
-   - The platform fee and tax columns in `000030` duplicate `charge_rules`.
-   - `cuisine_categories` (`000023`) and `menu_items.cuisine` overlap `config/traditions.php` and `events.traditions`.
-   - `events.payment_methods` (`000026`) overlaps the organizer's payment switches.
-3. These should be consolidated onto the existing tables before they are committed.
+| Was | Now |
+|---|---|
+| `host_payment_settings` table and `HostPaymentSetting` model (`000029`) | Removed. The organizer's payment switches live on `host_payment_policies` (columns added by `000021`). `HostPaymentPolicy` lists them, and the host payment-settings API reads and writes that row, for organizer owners only. |
+| `payment_configurations` table and model (`000027`), storing Stripe and PayPal secret keys as plain JSON | Removed. Credentials come only from the environment (`config/payments.php`). Admins approve or withdraw a processor on `system_platform_settings.payment_processors` (`000021`), which is audited. The routes that saved credentials are gone. |
+| A second `payment_processors` column (`000030`) | Removed. This was the "duplicate column" that stopped every test. |
+| Platform fee and tax columns (`000030`) and their admin controllers | Removed. Fees and taxes are the existing `charge_rules` (Admin → Fees & Taxes). |
+| Host approval columns (`000030`) and `HostApprovalController`, which used organizer columns that never existed | Removed. Hosts are approved through `host_applications`. |
+| `cuisine_categories` table, model, controller and seeder (`000023`) | Removed. `menu_items.cuisine` holds a tradition key from `config/traditions.php`, the list hosts use for events, and is validated against it. |
+| An empty migration (`000028`) | Removed |
+
+The remaining new columns stay, because they duplicate nothing:
+- **Menu items:** dietary tags, allergens, spice level, portion sizes, vendor and preparation notes (now `000034`).
+- **Order items:** vendor (`000035`).
+- **Orders:** ticket restrictions (`000036`).
+- **Events:** the subset of the organizer's payment methods an event offers (`000037`).
+- **Platform settings (`000038`):** QR rules, notification channels, fraud limits and feature flags.
+
+These migrations were renamed to `000034`–`000038` so they run after the committed `000033`; none had run on any database. They, and the consolidated controllers, models and routes, are still uncommitted: they build on the unfinished payment work (`000021`), which is not committed either. Only `000043` and this document are committed so far.
+
+Later the same tool edited the committed, already-run `000033` to add four indexes, one of them on a non-existent `order_charges.type` column. SQLite accepted that silently; MySQL would not, so a fresh MySQL install would have failed. `000033` is restored to its committed version, and the four indexes are added forward-only by `000043_add_order_history_indexes`, using the real column `kind`. The tool also added a currency pre-check to the committed `000020`. That only affects fresh installs, and its own test covers it.
+
+**Removed for good:** the twelve files of the removed duplicates (four migrations, three models, four controllers, one seeder) were never committed and could not be backed up before removal.
