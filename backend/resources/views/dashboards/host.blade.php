@@ -207,7 +207,7 @@
                 </div>
             </div>
             @if(collect($prep_items ?? [])->isEmpty())
-                <x-empty-state icon="utensils" title="No paid food orders yet" description="Menu items appear here as customers pay for food." />
+                <x-empty-state icon="utensils" illustration="orders" title="No paid food orders yet" description="Menu items appear here as customers pay for food." />
             @else
                 <div class="eb-table-wrap">
                     <table class="eb-table">

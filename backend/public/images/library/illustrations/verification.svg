@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="A shield with a check mark inside a QR scanning frame">
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D9FF7A"/><stop offset="1" stop-color="#65A30D"/></linearGradient>
+    <linearGradient id="shieldSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3F6212"/><stop offset="1" stop-color="#1A2E05"/></linearGradient>
+    <linearGradient id="scan" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7DD3FC" stop-opacity="0"/><stop offset="0.5" stop-color="#7DD3FC"/><stop offset="1" stop-color="#7DD3FC" stop-opacity="0"/></linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#7DD3FC" stop-opacity="0.32"/><stop offset="1" stop-color="#7DD3FC" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="300" cy="210" r="220" fill="url(#glow)"/>
+  <ellipse cx="300" cy="396" rx="170" ry="26" fill="url(#shadow)"/>
+  <g fill="none" stroke="#C4B5FD" stroke-width="10" stroke-linecap="round">
+    <path d="M150 110 V70 H190"/><path d="M410 70 H450 V110"/><path d="M450 310 V350 H410"/><path d="M190 350 H150 V310"/>
+  </g>
+  <path d="M300 80 L410 120 V210 C410 290 360 340 300 362 C240 340 190 290 190 210 V120Z" fill="url(#shieldSide)" transform="translate(10 12)"/>
+  <path d="M300 80 L410 120 V210 C410 290 360 340 300 362 C240 340 190 290 190 210 V120Z" fill="url(#shield)"/>
+  <path d="M300 80 L410 120 V210 C410 290 360 340 300 362Z" fill="#000" fill-opacity="0.12"/>
+  <path d="M252 214 l34 34 l64 -70" fill="none" stroke="#07111F" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="140" y="226" width="320" height="6" rx="3" fill="url(#scan)"/>
+  <g fill="#F8FAFC"><path d="M486 100 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/><path d="M110 290 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z" fill-opacity="0.7"/></g>
+</svg>

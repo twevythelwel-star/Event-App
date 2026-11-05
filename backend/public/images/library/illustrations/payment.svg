@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="A phone and a payment card with a confirmed check mark">
+  <defs>
+    <linearGradient id="phone" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26384D"/><stop offset="1" stop-color="#10243A"/></linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#0B192B"/></linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <linearGradient id="cardSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5B21B6"/><stop offset="1" stop-color="#3B0764"/></linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#C7FF45" stop-opacity="0.3"/><stop offset="1" stop-color="#C7FF45" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="300" cy="220" r="220" fill="url(#glow)"/>
+  <ellipse cx="300" cy="398" rx="210" ry="28" fill="url(#shadow)"/>
+  <g transform="rotate(-8 230 230)">
+    <rect x="160" y="62" width="160" height="300" rx="28" fill="#07111F" transform="translate(10 10)"/>
+    <rect x="160" y="62" width="160" height="300" rx="28" fill="url(#phone)" stroke="#364F6B" stroke-width="3"/>
+    <rect x="174" y="82" width="132" height="260" rx="18" fill="url(#screen)"/>
+    <rect x="214" y="94" width="52" height="8" rx="4" fill="#07111F"/>
+    <circle cx="240" cy="190" r="42" fill="#C7FF45"/>
+    <path d="M222 190 l12 13 l24 -26" fill="none" stroke="#07111F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="196" y="252" width="88" height="10" rx="5" fill="#F8FAFC" fill-opacity="0.8"/>
+    <rect x="210" y="272" width="60" height="8" rx="4" fill="#A8B6C8" fill-opacity="0.6"/>
+    <rect x="196" y="304" width="88" height="22" rx="11" fill="#C7FF45" fill-opacity="0.9"/>
+  </g>
+  <g transform="rotate(14 420 280)">
+    <rect x="320" y="220" width="200" height="126" rx="16" fill="url(#cardSide)" transform="translate(8 12)"/>
+    <rect x="320" y="220" width="200" height="126" rx="16" fill="url(#card)"/>
+    <rect x="320" y="250" width="200" height="22" fill="#07111F" fill-opacity="0.5"/>
+    <rect x="340" y="290" width="40" height="28" rx="6" fill="#FDE68A"/>
+    <rect x="396" y="296" width="96" height="8" rx="4" fill="#F8FAFC" fill-opacity="0.8"/>
+    <rect x="396" y="312" width="60" height="8" rx="4" fill="#F8FAFC" fill-opacity="0.55"/>
+  </g>
+  <g fill="#F8FAFC"><path d="M110 120 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/><path d="M520 120 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z" fill-opacity="0.7"/></g>
+</svg>

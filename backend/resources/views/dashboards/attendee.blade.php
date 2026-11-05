@@ -243,7 +243,7 @@
             </div>
         @else
             <div class="empty-state">
-                <div class="empty-state-icon">🎟️</div>
+                <img src="{{ \App\Support\VisualAssets::emptyState('tickets') }}" alt="" class="eb-empty-state-art" width="200" height="138" loading="lazy">
                 <h3 class="empty-state-title">No ticket passes found</h3>
                 <p class="empty-state-desc">You do not currently have any active event passes or advance meal orders under this account.</p>
             </div>

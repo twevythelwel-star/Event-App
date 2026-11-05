@@ -29,7 +29,7 @@
     <section class="eb-card eb-checkout-body" aria-labelledby="summary-heading">
         <h2 id="summary-heading" class="eb-text-section-title" style="margin: 0 0 var(--space-3);">Your order</h2>
         @if($quote['empty'])
-            <x-empty-state icon="tickets" title="Nothing in your order" description="Choose tickets or food to continue."
+            <x-empty-state icon="tickets" illustration="orders" title="Nothing in your order" description="Choose tickets or food to continue."
                 :action-href="route($backRoute, $event)" action-label="Choose items" />
         @else
             <x-price-summary :lines="$lines" :charges="$totals->charges" :subtotal-minor="$totals->subtotalMinor"

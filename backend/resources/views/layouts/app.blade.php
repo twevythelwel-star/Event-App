@@ -4,15 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#11172f">
+    <meta name="theme-color" content="#07111F">
     <meta name="description" content="Discover events, order food, and manage EventBite tickets and payments.">
     <meta property="og:site_name" content="EventBite">
     <meta property="og:title" content="@yield('title', 'EventBite — Events, Tickets & Food')">
     <meta property="og:image" content="{{ asset('images/brand/eventbite-wordmark.webp') }}">
     <meta name="twitter:card" content="summary_large_image">
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('icons/eventbite-32.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('icons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('icons/eventbite-app-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('icons/eventbite-app-16.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/eventbite-app-192.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('icons/eventbite-app-180.png') }}">
     <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     <title>@yield('title', 'EventBite — Events, Tickets & Food')</title>
 

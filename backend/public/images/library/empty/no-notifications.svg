@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="A quiet notification bell">
+  <defs><radialGradient id="g" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#7DD3FC" stop-opacity="0.25"/><stop offset="1" stop-color="#7DD3FC" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="160" cy="110" r="110" fill="url(#g)"/>
+  <path d="M160 46 c-30 0 -50 22 -50 54 v30 l-16 22 h132 l-16 -22 v-30 c0 -32 -20 -54 -50 -54z" fill="#10243A" stroke="#364F6B" stroke-width="3"/>
+  <rect x="152" y="34" width="16" height="16" rx="8" fill="#364F6B"/>
+  <path d="M142 160 a18 18 0 0 0 36 0" fill="#C7FF45"/>
+  <g fill="#A8B6C8" font-family="'Plus Jakarta Sans', Inter, Arial, sans-serif" font-weight="800"><text x="214" y="70" font-size="22">z</text><text x="232" y="52" font-size="16" fill-opacity="0.7">z</text><text x="246" y="38" font-size="12" fill-opacity="0.5">z</text></g>
+</svg>

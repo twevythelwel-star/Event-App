@@ -63,6 +63,7 @@
                     @if($settled)
                         <div class="eb-ticket-qr-well">{!! \App\Support\QrCode::svg($order->secure_ticket_token, 220, 'QR code for ticket ' . $order->ticket_code) !!}</div>
                     @else
+                        <img src="{{ \App\Support\VisualAssets::illustration('payment')['url'] }}" alt="" width="180" height="135" style="display: block; margin: 0 auto var(--space-2); max-width: 60%; height: auto;">
                         <p class="eb-text-supporting" style="margin: 0;">Your ticket QR code appears here once your payment is confirmed.</p>
                     @endif
                     <p style="margin: var(--space-3) 0 0;">
@@ -98,6 +99,9 @@
             @if(!$void && !$settled && $order->reservation_expires_at)
                 <p class="eb-help-text" style="margin: 0;">Inventory held until {{ $local($order->reservation_expires_at) }}. Complete payment confirmation before this time to keep this reservation.</p>
             @endif
+            <div class="eb-ticket-card-brand">
+                <span class="brand-band"><x-brand-logo variant="compact" alt="EventBite ticket" style="width: 112px;" /></span>
+            </div>
         </div>
     </article>
 

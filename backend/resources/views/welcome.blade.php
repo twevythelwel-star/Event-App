@@ -145,7 +145,7 @@
                 <a class="eb-text-label" href="{{ route('events.index', ['city' => $marketValue($market)]) }}">See all in {{ $market->city }} →</a>
             </div>
             @if($near->isEmpty())
-                <x-empty-state title="No upcoming events in {{ $market->state_code }} yet" description="Try another city, or browse every event." />
+                <x-empty-state illustration="events" title="No upcoming events in {{ $market->state_code }} yet" description="Try another city, or browse every event." />
             @else
                 <div class="eb-grid-4">
                     @foreach($near as $event)
@@ -158,11 +158,15 @@
 
     @foreach($sections as $section)
         @continue($section['events']->isEmpty())
+        @php $sectionArt = \App\Support\VisualAssets::heroFor(['featured' => 'festival', 'food-festivals' => 'food', 'music' => 'music', 'culture' => 'culture', 'family' => 'family', 'food-traditions' => 'food', 'seasonal' => 'party'][$section['id']] ?? null); @endphp
         <section aria-labelledby="{{ $section['id'] }}-heading">
             <div class="eb-home-section-head">
-                <div>
+                <div class="eb-section-titled">
+                    <img src="{{ $sectionArt['url'] }}" alt="" class="eb-section-art" width="56" height="56" loading="lazy">
+                    <div>
                     <h2 id="{{ $section['id'] }}-heading" class="eb-text-section-title" style="margin: 0;">{{ $section['title'] }}</h2>
                     @if($section['note'])<p class="eb-text-supporting" style="margin: 2px 0 0;">{{ $section['note'] }}</p>@endif
+                    </div>
                 </div>
                 @if($section['more'])<a class="eb-text-label" href="{{ $section['more'] }}">See all →</a>@endif
             </div>
@@ -194,11 +198,13 @@
     @endif
 
     @if($featured->isEmpty())
-        <x-empty-state title="No upcoming events yet" description="Check back soon, or create an account to host your own." />
+        <x-empty-state illustration="events" title="No upcoming events yet" description="Check back soon, or create an account to host your own." />
     @endif
 
-    <section class="eb-card" style="display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between;">
-        <p class="eb-text-supporting" style="margin: 0;">Keep your tickets and food orders in one place.</p>
+    @php $ticketArt = \App\Support\VisualAssets::illustration('ticket'); @endphp
+    <section class="eb-card eb-home-cta" style="display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; justify-content: space-between;">
+        <img src="{{ $ticketArt['url'] }}" alt="" class="eb-home-cta-art" width="150" height="112" loading="lazy">
+        <p class="eb-text-supporting" style="margin: 0; flex: 1 1 220px;">Keep your tickets and food orders in one place.</p>
         <div style="display: flex; gap: var(--space-2);">
             <a href="{{ route('register') }}" class="eb-btn eb-btn-primary">Create account</a>
             <a href="{{ route('login') }}" class="eb-btn eb-btn-secondary">Sign in</a>

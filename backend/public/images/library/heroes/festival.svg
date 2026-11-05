@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Festival artwork: strings of bunting, lanterns and stage lights">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <radialGradient id="l1" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#C7FF45" stop-opacity="0.45"/><stop offset="1" stop-color="#C7FF45" stop-opacity="0"/></radialGradient>
+    <radialGradient id="l2" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.5"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F8FAFC" stop-opacity="0.18"/><stop offset="1" stop-color="#F8FAFC" stop-opacity="0"/></linearGradient>
+    <radialGradient id="lantern" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#F59E0B"/></radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="1250" cy="160" r="520" fill="url(#l1)"/>
+  <circle cx="300" cy="820" r="560" fill="url(#l2)"/>
+  <path d="M520 0 L380 900 L700 900 L620 0Z" fill="url(#beam)"/>
+  <path d="M1080 0 L960 900 L1280 900 L1180 0Z" fill="url(#beam)"/>
+  <g fill="none" stroke="#F8FAFC" stroke-opacity="0.35" stroke-width="3">
+    <path d="M-20 140 Q 400 320 820 150 T 1640 170"/>
+    <path d="M-20 300 Q 500 470 900 300 T 1640 330"/>
+  </g>
+  <g>
+    <path d="M60 165 l30 0 l-15 50z" fill="#C7FF45"/><path d="M170 205 l30 6 l-20 46z" fill="#C4B5FD"/><path d="M290 240 l30 4 l-18 48z" fill="#7DD3FC"/>
+    <path d="M410 254 l30 0 l-15 50z" fill="#FBBF24"/><path d="M530 244 l30 -4 l-12 48z" fill="#FCA5A5"/><path d="M650 212 l30 -6 l-10 48z" fill="#C7FF45"/>
+    <path d="M770 168 l30 -2 l-14 48z" fill="#C4B5FD"/><path d="M900 140 l30 2 l-16 48z" fill="#7DD3FC"/><path d="M1030 150 l30 4 l-18 46z" fill="#FBBF24"/>
+    <path d="M1160 186 l30 4 l-18 46z" fill="#FCA5A5"/><path d="M1290 205 l30 0 l-15 50z" fill="#C7FF45"/><path d="M1420 196 l30 -4 l-12 48z" fill="#C4B5FD"/><path d="M1540 178 l30 -2 l-14 48z" fill="#7DD3FC"/>
+    <path d="M90 330 l30 4 l-18 48z" fill="#FBBF24"/><path d="M260 392 l30 6 l-20 46z" fill="#C7FF45"/><path d="M440 430 l30 0 l-15 50z" fill="#FCA5A5"/>
+    <path d="M620 420 l30 -6 l-12 48z" fill="#7DD3FC"/><path d="M800 360 l30 -6 l-10 48z" fill="#C4B5FD"/><path d="M980 304 l30 0 l-15 50z" fill="#C7FF45"/>
+    <path d="M1160 330 l30 6 l-20 46z" fill="#FBBF24"/><path d="M1340 360 l30 2 l-16 48z" fill="#FCA5A5"/><path d="M1510 340 l30 -4 l-14 48z" fill="#7DD3FC"/>
+  </g>
+  <g>
+    <g transform="translate(240 500)"><line x1="0" y1="-60" x2="0" y2="0" stroke="#F8FAFC" stroke-opacity="0.4" stroke-width="2"/><ellipse cx="0" cy="40" rx="38" ry="46" fill="url(#lantern)"/><rect x="-14" y="-6" width="28" height="10" rx="3" fill="#B45309"/><circle cx="0" cy="40" r="70" fill="#FBBF24" fill-opacity="0.12"/></g>
+    <g transform="translate(1360 560)"><line x1="0" y1="-80" x2="0" y2="0" stroke="#F8FAFC" stroke-opacity="0.4" stroke-width="2"/><ellipse cx="0" cy="44" rx="44" ry="52" fill="url(#lantern)"/><rect x="-16" y="-6" width="32" height="10" rx="3" fill="#B45309"/><circle cx="0" cy="44" r="84" fill="#FBBF24" fill-opacity="0.12"/></g>
+    <g transform="translate(830 600)"><line x1="0" y1="-50" x2="0" y2="0" stroke="#F8FAFC" stroke-opacity="0.4" stroke-width="2"/><ellipse cx="0" cy="32" rx="30" ry="36" fill="url(#lantern)"/><rect x="-11" y="-5" width="22" height="8" rx="3" fill="#B45309"/></g>
+  </g>
+  <g fill-opacity="0.85">
+    <rect x="130" y="700" width="14" height="6" rx="2" fill="#C7FF45" transform="rotate(25 130 700)"/><rect x="420" y="640" width="12" height="5" rx="2" fill="#C4B5FD" transform="rotate(-30 420 640)"/>
+    <circle cx="610" cy="760" r="5" fill="#7DD3FC"/><rect x="1050" y="690" width="14" height="6" rx="2" fill="#FCA5A5" transform="rotate(40 1050 690)"/>
+    <circle cx="1180" cy="780" r="6" fill="#C7FF45"/><rect x="1500" y="720" width="12" height="5" rx="2" fill="#FBBF24" transform="rotate(-20 1500 720)"/>
+  </g>
+  <rect y="820" width="1600" height="80" fill="#07111F" fill-opacity="0.6"/>
+</svg>

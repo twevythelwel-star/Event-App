@@ -16,10 +16,11 @@ class BrandAssetsTest extends TestCase
 
         $markup = Blade::render('<x-brand-logo variant="compact" />');
 
-        $this->assertStringContainsString('https://events.example.com/images/brand/eventbite-wordmark.webp', $markup);
+        // The transparent derivative of the official logo (1594 × 543, so 144 wide is 49 high).
+        $this->assertStringContainsString('https://events.example.com/images/brand/eventbite-logo-360.webp', $markup);
         $this->assertStringContainsString('alt="EventBite"', $markup);
         $this->assertStringContainsString('width="144"', $markup);
-        $this->assertStringContainsString('height="51"', $markup);
+        $this->assertStringContainsString('height="49"', $markup);
     }
 
     public function test_transactional_email_includes_the_public_logo_and_text_fallback(): void
@@ -31,7 +32,8 @@ class BrandAssetsTest extends TestCase
         $html = view('emails.notification', ['log' => $log])->render();
         $text = view('emails.notification-text', ['log' => $log])->render();
 
-        $this->assertStringContainsString('https://events.example.com/images/brand/eventbite-wordmark.webp', $html);
+        // PNG, because not every mail client shows WebP.
+        $this->assertStringContainsString('https://events.example.com/images/brand/eventbite-logo-600.png', $html);
         $this->assertStringContainsString('alt="EventBite"', $html);
         $this->assertStringContainsString('Your order EB-100 is confirmed.', $html);
         $this->assertStringContainsString('EventBite', $text);

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220" role="img" aria-label="An empty takeaway bag">
+  <defs><radialGradient id="g" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#FBBF24" stop-opacity="0.25"/><stop offset="1" stop-color="#FBBF24" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="160" cy="110" r="110" fill="url(#g)"/>
+  <ellipse cx="160" cy="186" rx="84" ry="10" fill="#000" fill-opacity="0.35"/>
+  <path d="M100 76 H220 L232 180 H88Z" fill="#10243A" stroke="#364F6B" stroke-width="3"/>
+  <path d="M100 76 H220 L214 96 H106Z" fill="#26384D"/>
+  <path d="M132 76 V62 a28 28 0 0 1 56 0 V76" fill="none" stroke="#C4B5FD" stroke-width="6" stroke-linecap="round"/>
+  <path d="M128 132 q32 -22 64 0" fill="none" stroke="#364F6B" stroke-width="5" stroke-linecap="round" stroke-dasharray="2 10"/>
+  <circle cx="140" cy="118" r="4" fill="#A8B6C8"/><circle cx="180" cy="118" r="4" fill="#A8B6C8"/>
+  <path d="M138 150 q22 -14 44 0" fill="none" stroke="#A8B6C8" stroke-width="4" stroke-linecap="round"/>
+</svg>

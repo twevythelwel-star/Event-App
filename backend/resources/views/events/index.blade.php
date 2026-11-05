@@ -676,7 +676,7 @@
 
         <!-- Empty Results State -->
         <div id="no-events-found" style="display: none; background: #162038; border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 44px 20px; text-align: center; margin: 20px 0;">
-            <div style="font-size: 2.5rem; margin-bottom: 10px;">🔍</div>
+            <img src="{{ \App\Support\VisualAssets::emptyState('events') }}" alt="" class="eb-empty-state-art" width="200" height="138" loading="lazy">
             <h3 style="font-size: 1.2rem; font-weight: 700; color: #FFFFFF; margin-bottom: 6px;">No Events Found</h3>
             <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 16px;">Try adjusting your search terms or clearing your location and date filters.</p>
             <button type="button" onclick="clearAllFilters()" class="btn-gradient-cta" style="padding: 8px 20px; font-size: 0.82rem; border-radius: 9999px;">

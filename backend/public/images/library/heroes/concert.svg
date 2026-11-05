@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Concert artwork: a lit stage with light beams, speakers and a sound wave">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0B192B"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <linearGradient id="beamL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C7FF45" stop-opacity="0.55"/><stop offset="1" stop-color="#C7FF45" stop-opacity="0"/></linearGradient>
+    <linearGradient id="beamP" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#A78BFA" stop-opacity="0.6"/><stop offset="1" stop-color="#A78BFA" stop-opacity="0"/></linearGradient>
+    <linearGradient id="beamS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7DD3FC" stop-opacity="0.5"/><stop offset="1" stop-color="#7DD3FC" stop-opacity="0"/></linearGradient>
+    <linearGradient id="stage" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E3A5F"/><stop offset="1" stop-color="#0B192B"/></linearGradient>
+    <linearGradient id="speaker" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26384D"/><stop offset="1" stop-color="#10243A"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.55"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="800" cy="520" r="620" fill="url(#glow)"/>
+  <path d="M300 0 L120 640 L520 640 L380 0Z" fill="url(#beamL)" opacity="0.8"/>
+  <path d="M760 0 L560 640 L1040 640 L840 0Z" fill="url(#beamP)"/>
+  <path d="M1220 0 L1080 640 L1480 640 L1300 0Z" fill="url(#beamS)" opacity="0.8"/>
+  <g fill="#F8FAFC"><circle cx="340" cy="18" r="16"/><circle cx="800" cy="18" r="18"/><circle cx="1260" cy="18" r="16"/></g>
+  <rect x="120" y="0" width="1360" height="40" fill="#10243A"/>
+  <path d="M60 640 H1540 L1600 760 H0Z" fill="url(#stage)"/>
+  <rect x="0" y="760" width="1600" height="140" fill="#07111F"/>
+  <g>
+    <rect x="160" y="420" width="170" height="220" rx="12" fill="url(#speaker)" stroke="#364F6B" stroke-width="3"/>
+    <circle cx="245" cy="480" r="40" fill="#07111F" stroke="#C7FF45" stroke-opacity="0.6" stroke-width="4"/><circle cx="245" cy="580" r="26" fill="#07111F" stroke="#C7FF45" stroke-opacity="0.6" stroke-width="4"/>
+    <rect x="1270" y="420" width="170" height="220" rx="12" fill="url(#speaker)" stroke="#364F6B" stroke-width="3"/>
+    <circle cx="1355" cy="480" r="40" fill="#07111F" stroke="#A78BFA" stroke-opacity="0.7" stroke-width="4"/><circle cx="1355" cy="580" r="26" fill="#07111F" stroke="#A78BFA" stroke-opacity="0.7" stroke-width="4"/>
+  </g>
+  <g transform="translate(800 470)">
+    <rect x="-8" y="0" width="16" height="170" rx="6" fill="#364F6B"/>
+    <rect x="-22" y="-60" width="44" height="80" rx="22" fill="#26384D" stroke="#F8FAFC" stroke-opacity="0.4" stroke-width="3"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-width="8">
+    <path d="M420 330 C 480 230, 540 430, 600 330 S 720 230, 780 330 S 900 430, 960 330 S 1080 230, 1180 330" stroke="#C7FF45" stroke-opacity="0.85"/>
+    <path d="M420 360 C 480 290, 540 430, 600 360 S 720 290, 780 360 S 900 430, 960 360 S 1080 290, 1180 360" stroke="#A78BFA" stroke-opacity="0.6"/>
+  </g>
+  <g fill="#C7FF45">
+    <rect x="1000" y="700" width="16" height="40" rx="4" fill-opacity="0.8"/><rect x="1024" y="680" width="16" height="60" rx="4" fill-opacity="0.8"/><rect x="1048" y="660" width="16" height="80" rx="4"/>
+    <rect x="1072" y="690" width="16" height="50" rx="4" fill-opacity="0.8"/><rect x="1096" y="670" width="16" height="70" rx="4"/><rect x="1120" y="700" width="16" height="40" rx="4" fill-opacity="0.8"/>
+  </g>
+  <g fill="#10243A">
+    <rect x="80" y="780" width="120" height="160" rx="60"/><rect x="230" y="800" width="110" height="140" rx="55"/><rect x="370" y="770" width="130" height="170" rx="65"/>
+    <rect x="540" y="795" width="110" height="145" rx="55"/><rect x="690" y="775" width="125" height="165" rx="62"/><rect x="850" y="800" width="110" height="140" rx="55"/>
+    <rect x="990" y="780" width="120" height="160" rx="60"/><rect x="1140" y="795" width="115" height="145" rx="57"/><rect x="1290" y="770" width="130" height="170" rx="65"/><rect x="1450" y="790" width="120" height="150" rx="60"/>
+  </g>
+</svg>

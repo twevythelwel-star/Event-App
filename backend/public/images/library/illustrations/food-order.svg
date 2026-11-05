@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="A takeaway box and a covered bowl ready for pickup">
+  <defs>
+    <linearGradient id="boxFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F8FAFC"/><stop offset="1" stop-color="#CBD5E1"/></linearGradient>
+    <linearGradient id="boxSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#94A3B8"/><stop offset="1" stop-color="#64748B"/></linearGradient>
+    <linearGradient id="lid" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D9FF7A"/><stop offset="1" stop-color="#84CC16"/></linearGradient>
+    <linearGradient id="bowl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <radialGradient id="warm" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#FBBF24" stop-opacity="0.32"/><stop offset="1" stop-color="#FBBF24" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="300" cy="220" r="220" fill="url(#warm)"/>
+  <ellipse cx="300" cy="392" rx="230" ry="30" fill="url(#shadow)"/>
+  <g>
+    <path d="M140 200 L260 160 L380 200 L260 240Z" fill="url(#lid)"/>
+    <path d="M140 200 L260 240 V370 L160 336Z" fill="url(#boxFront)"/>
+    <path d="M260 240 L380 200 L360 336 L260 370Z" fill="url(#boxSide)"/>
+    <path d="M200 180 Q 260 110 320 180" fill="none" stroke="#C7FF45" stroke-width="10" stroke-linecap="round"/>
+    <rect x="180" y="268" width="56" height="34" rx="6" fill="#C7FF45" transform="skewY(18)"/>
+  </g>
+  <g transform="translate(410 250)">
+    <ellipse cx="0" cy="40" rx="90" ry="26" fill="#3B0764"/>
+    <path d="M-92 20 Q -88 110 0 116 Q 88 110 92 20Z" fill="url(#bowl)"/>
+    <ellipse cx="0" cy="20" rx="92" ry="28" fill="#DDD6FE"/>
+    <path d="M-80 18 Q 0 -70 80 18Z" fill="#F8FAFC" fill-opacity="0.9"/>
+    <circle cx="0" cy="-44" r="10" fill="#C7FF45"/>
+  </g>
+  <g fill="none" stroke="#F8FAFC" stroke-opacity="0.45" stroke-width="6" stroke-linecap="round">
+    <path d="M400 150 C 384 126, 416 112, 400 88"/><path d="M430 140 C 414 116, 446 102, 430 78"/>
+  </g>
+</svg>
