@@ -113,7 +113,8 @@ class EventWorkerService
         User $worker,
         Order $order,
         ?string $expectedEventId = null,
-        bool $manual = false
+        bool $manual = false,
+        ?string $requestId = null
     ): array {
         // 6. Authorized redemption check
         $scanningEventId = $expectedEventId ?? $order->event_id;
@@ -140,15 +141,25 @@ class EventWorkerService
 
         // The check and the admission run on the order row locked for update, so two scanners reading the
         // same ticket at the same moment cannot both admit it: the second waits and then sees the check-in.
-        return DB::transaction(function () use ($worker, $order, $expectedEventId, $manual, $assignment) {
+        return DB::transaction(function () use ($worker, $order, $expectedEventId, $manual, $assignment, $requestId) {
             $locked = Order::query()->withoutGlobalScopes()->where('id', $order->id)->lockForUpdate()->first();
             if ($locked !== null && $locked !== $order) {
                 $order->checked_in_at = $locked->checked_in_at;
                 $order->checked_in_by = $locked->checked_in_by;
                 $order->status = $locked->status;
+                $order->check_in_request_id = $locked->check_in_request_id;
             }
 
-            return self::admitLockedTicket($worker, $locked ?? $order, $order, $expectedEventId, $manual, $assignment);
+            $locked ??= $order;
+            if ($requestId !== null && hash_equals((string) $locked->check_in_request_id, $requestId)
+                && (int) $locked->checked_in_by === (int) $worker->id && $locked->checked_in_at !== null) {
+                return ['success' => true, 'already_admitted' => false, 'valid' => true, 'replayed' => true,
+                    'rejection_reason' => null, 'ticket' => ['order_number' => $locked->order_number,
+                        'ticket_code' => $locked->ticket_code, 'customer_name' => $locked->customer_name,
+                        'status' => $locked->status, 'checked_in_at' => $locked->checked_in_at?->format('Y-m-d H:i:s')]];
+            }
+
+            return self::admitLockedTicket($worker, $locked, $order, $expectedEventId, $manual, $assignment, $requestId);
         });
     }
 
@@ -162,7 +173,8 @@ class EventWorkerService
         Order $order,
         ?string $expectedEventId,
         bool $manual,
-        ?EventWorkerAssignment $assignment
+        ?EventWorkerAssignment $assignment,
+        ?string $requestId
     ): array {
         // 1. Authenticity check: Genuine ticket code & order number must exist
         $isAuthentic = !empty($order->ticket_code) && !empty($order->order_number);
@@ -202,10 +214,12 @@ class EventWorkerService
         if ($isSuccess) {
             $locked->checked_in_at = now();
             $locked->checked_in_by = $worker->id;
+            $locked->check_in_request_id = $requestId;
             $locked->save();
             if ($locked !== $order) {
                 $order->checked_in_at = $locked->checked_in_at;
                 $order->checked_in_by = $locked->checked_in_by;
+                $order->check_in_request_id = $locked->check_in_request_id;
             }
 
             AuditLogService::log(
@@ -249,6 +263,7 @@ class EventWorkerService
 
         return [
             'success' => $isSuccess,
+            'replayed' => false,
             'already_admitted' => $isAlreadyAdmitted,
             'valid' => $isSuccess,
             'rejection_reason' => $rejectionReason,

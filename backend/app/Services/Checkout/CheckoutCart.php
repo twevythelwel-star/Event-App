@@ -36,7 +36,7 @@ final class CheckoutCart
     {
         $cart = $this->session->get($this->sessionKey($event));
 
-        return is_array($cart) && (($cart['tiers'] ?? []) !== [] || ($cart['items'] ?? []) !== []);
+        return is_array($cart) && (($cart['tiers'] ?? []) !== [] || ($cart['items'] ?? []) !== [] || ($cart['packages'] ?? []) !== []);
     }
 
     /** @param array<string, int> $tiers */
@@ -52,6 +52,27 @@ final class CheckoutCart
     {
         $cart = $this->get($event);
         $cart['items'] = array_filter($items, fn (array $entry) => (int) ($entry['quantity'] ?? 0) > 0);
+        $this->session->put($this->sessionKey($event), $cart);
+    }
+
+    /**
+     * Meal packages, one entry per differently customised package: menu_item_id, quantity, selection
+     * (substitutions, choices, add_ons) and instructions.
+     *
+     * @param list<array> $packages
+     */
+    public function setPackages(Event $event, array $packages): void
+    {
+        $cart = $this->get($event);
+        $cart['packages'] = array_values(array_filter($packages, fn (array $entry) => (int) ($entry['quantity'] ?? 0) > 0));
+        $this->session->put($this->sessionKey($event), $cart);
+    }
+
+    /** How the food is collected: method (pickup or delivery), pickup_window, delivery_location. */
+    public function setFood(Event $event, array $food): void
+    {
+        $cart = $this->get($event);
+        $cart['food'] = $food;
         $this->session->put($this->sessionKey($event), $cart);
     }
 

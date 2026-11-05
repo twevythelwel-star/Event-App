@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   AlertTriangle,
@@ -133,10 +133,17 @@ export const StaffScanner: React.FC<Props> = ({
   const [supervisorReason, setSupervisorReason] = useState("");
   const [supervisorError, setSupervisorError] = useState("");
 
-  // Controlled Offline mode state
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
-  const [offlineSyncQueueCount, setOfflineSyncQueueCount] = useState(0);
-  const [isSyncingOffline, setIsSyncingOffline] = useState(false);
+  const [isConnected, setIsConnected] = useState(() => navigator.onLine);
+  useEffect(() => {
+    const online = () => setIsConnected(true);
+    const offline = () => setIsConnected(false);
+    window.addEventListener("online", online);
+    window.addEventListener("offline", offline);
+    return () => {
+      window.removeEventListener("online", online);
+      window.removeEventListener("offline", offline);
+    };
+  }, []);
 
   // Audit filter state
   const [auditSearch, setAuditSearch] = useState("");
@@ -383,6 +390,11 @@ export const StaffScanner: React.FC<Props> = ({
 
   // Handle Scan Action
   function handleExecuteScan(ticketCode: string) {
+    if (!navigator.onLine) {
+      setInvalidCodeAttempt(ticketCode);
+      showToast("Offline: ticket is NOT verified or admitted. Reconnect and scan again.");
+      return;
+    }
     setIsScanningActive(true);
     setInvalidCodeAttempt(null);
 
@@ -416,6 +428,10 @@ export const StaffScanner: React.FC<Props> = ({
 
   // Portion Handover Step (+1, -1, all)
   function handlePortionStep(itemIndex: number, delta: number) {
+    if (!navigator.onLine) {
+      showToast("Offline: food handover was not recorded. Reconnect before handing over items.");
+      return;
+    }
     if (!activeOrder) return;
     const item = activeOrder.items[itemIndex];
     if (!item) return;
@@ -451,10 +467,6 @@ export const StaffScanner: React.FC<Props> = ({
       actionType: delta > 0 ? "collection" : "reversal",
     });
 
-    if (isOfflineMode) {
-      setOfflineSyncQueueCount((c) => c + 1);
-    }
-
     if (delta > 0) {
       playBeep("success");
       showToast(`Handed over 1 portion of ${item.name}`);
@@ -466,6 +478,10 @@ export const StaffScanner: React.FC<Props> = ({
 
   // Hand over all remaining portions for this item
   function handlePortionAll(itemIndex: number) {
+    if (!navigator.onLine) {
+      showToast("Offline: food handover was not recorded. Reconnect before handing over items.");
+      return;
+    }
     if (!activeOrder) return;
     const item = activeOrder.items[itemIndex];
     if (!item) return;
@@ -483,16 +499,16 @@ export const StaffScanner: React.FC<Props> = ({
       actionType: "collection",
     });
 
-    if (isOfflineMode) {
-      setOfflineSyncQueueCount((c) => c + 1);
-    }
-
     playBeep("success");
     showToast(`All remaining portions of ${item.name} marked collected!`);
   }
 
   // Supervisor Override Execution
   function handleExecuteSupervisorOverride() {
+    if (!navigator.onLine) {
+      showToast("Offline: supervisor changes are not recorded. Reconnect before overriding.");
+      return;
+    }
     if (!activeOrder) return;
     if (supervisorPin.trim() !== "7722" && supervisorPin.trim() !== "1234") {
       setSupervisorError("Invalid Supervisor PIN. (Authorized demo PIN is 7722)");
@@ -523,6 +539,10 @@ export const StaffScanner: React.FC<Props> = ({
 
   // Collect Remaining Cash at Pickup
   function handleCollectRemainingCash(order: TicketOrder) {
+    if (!navigator.onLine) {
+      showToast("Offline: cash receipt was not recorded. Reconnect and record it with the server.");
+      return;
+    }
     const balance = order.totalAmount - (order.amountPaid || 0);
     if (balance <= 0) return;
 
@@ -544,16 +564,6 @@ export const StaffScanner: React.FC<Props> = ({
     void Promise.resolve(onRecordCashPayment(cashReceipt, order.id)).catch(() => undefined); // the app shows the server's reason
     playBeep("success");
     showToast(`Collected ${formatMoney(balance, order.currency)} in cash! Ticket is now PAID.`);
-  }
-
-  // Controlled Offline Sync simulation
-  function handleReconcileOfflineRecords() {
-    setIsSyncingOffline(true);
-    setTimeout(() => {
-      setIsSyncingOffline(false);
-      setOfflineSyncQueueCount(0);
-      showToast("Offline records synchronized with server! Conflict check passed: 0 duplicates.");
-    }, 1200);
   }
 
   // Filtered Handover Audit Logs
@@ -631,65 +641,26 @@ export const StaffScanner: React.FC<Props> = ({
             <Camera size={16} /> Open Camera Scanner
           </button>
 
-          {/* Controlled Offline Mode Toggle */}
           <div className="offline-toggle-box">
-            <button
-              type="button"
-              className={`offline-mode-pill ${isOfflineMode ? "offline" : "online"}`}
-              onClick={() => {
-                const nextMode = !isOfflineMode;
-                setIsOfflineMode(nextMode);
-                showToast(
-                  nextMode
-                    ? "Controlled Offline Mode enabled: Records cached locally."
-                    : "Online Mode restored: Real-time global duplicate prevention active."
-                );
-              }}
-              title="Toggle between real-time server duplicate prevention and controlled offline operation"
-            >
-              {isOfflineMode ? (
-                <>
-                  <WifiOff size={13} />
-                  <span>Controlled Offline Mode</span>
-                </>
-              ) : (
-                <>
-                  <Wifi size={13} />
-                  <span>Online · Global Sync Active</span>
-                </>
-              )}
-            </button>
+            <span className={`offline-mode-pill ${isConnected ? "online" : "offline"}`} role="status" aria-live="polite">
+              {isConnected ? <Wifi size={13} /> : <WifiOff size={13} />}
+              <span>{isConnected ? "Connected" : "Offline · server check required"}</span>
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Controlled Offline Mode Connectivity Notice Banner */}
-      {isOfflineMode && (
+      {!isConnected && (
         <div className="offline-warning-banner" role="alert">
           <div className="offline-banner-left">
             <WifiOff size={18} />
             <div>
-              <strong>Controlled Offline Mode Active (Unreliable Venue Internet):</strong>
+              <strong>Offline · admission and food handover are disabled:</strong>
               <p>
-                Offline scanners cannot guarantee immediate global duplicate prevention across
-                separate devices until synchronized. Each handover is stamped locally. Reconcile
-                when network reconnects.
+                This screen does not store offline admissions or fulfillment actions. Reconnect and
+                wait for the server response before admitting a guest or handing over food.
               </p>
             </div>
-          </div>
-          <div className="offline-banner-right">
-            <span className="queue-pill">
-              <Clock size={13} /> {offlineSyncQueueCount} local record(s) queued
-            </span>
-            <button
-              type="button"
-              className="sync-reconcile-btn"
-              disabled={isSyncingOffline || offlineSyncQueueCount === 0}
-              onClick={handleReconcileOfflineRecords}
-            >
-              <RefreshCw size={13} className={isSyncingOffline ? "animate-spin" : ""} />
-              {isSyncingOffline ? "Reconciling..." : "Sync & Reconcile Records"}
-            </button>
           </div>
         </div>
       )}
@@ -1231,7 +1202,13 @@ export const StaffScanner: React.FC<Props> = ({
                           type="button"
                           className="primary-button close-order-btn"
                           disabled={orderPortionStats.totalRemaining > 0}
-                          onClick={() => onCloseOrder(activeOrder.id)}
+                          onClick={() => {
+                            if (!navigator.onLine) {
+                              showToast("Offline: order completion was not recorded. Reconnect and retry.");
+                              return;
+                            }
+                            onCloseOrder(activeOrder.id);
+                          }}
                           title="The order must not be marked complete until all required items have been accounted for"
                         >
                           <CheckCircle2 size={16} /> Account for All Items First

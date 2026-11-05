@@ -17,6 +17,10 @@ use Illuminate\Support\Facades\Storage;
  * The promotional QR identity of each event: one stable public code per event, an approved random design,
  * and validated artwork on the private disk.
  *
+ * CRITICAL DISTINCTION: This is a PROMOTIONAL QR code for sharing event information. It is NOT an admission
+ * ticket QR code. Admission and food fulfillment use each ticket's own secure, server-generated token
+ * (orders.secure_ticket_token). Never use promotional QR codes to authenticate admission or fulfill food orders.
+ *
  * - ensureFor() is idempotent. The first call creates the identity (one row per event, enforced by a unique
  *   index) and renders the artwork; later calls do nothing once the artwork is ready, and retry a failed
  *   render without changing the code or design.

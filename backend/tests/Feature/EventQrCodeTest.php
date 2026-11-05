@@ -97,6 +97,21 @@ class EventQrCodeTest extends TestCase
         $this->assertSame(1, EventQrCode::where('event_id', $first->id)->count());
     }
 
+    public function test_event_qr_only_opens_public_event_and_never_admits_a_ticket(): void
+    {
+        $event = $this->createEvent();
+        $qr = $this->qrFor($event);
+        $this->get(route('event-qr.resolve', $qr->public_code))->assertRedirect(route('events.show', $event->id));
+
+        $order = Order::withoutGlobalScopes()->where('event_id', self::KINGSTON)->firstOrFail();
+        $order->forceFill(['status' => 'paid'])->save();
+        $this->assertNull($order->fresh()->checked_in_at);
+
+        $event->forceFill(['status' => 'unpublished'])->save();
+        $this->get(route('event-qr.resolve', $qr->public_code))->assertNotFound();
+        $this->assertNull($order->fresh()->checked_in_at);
+    }
+
     // 3
     public function test_designs_come_only_from_approved_configurations(): void
     {

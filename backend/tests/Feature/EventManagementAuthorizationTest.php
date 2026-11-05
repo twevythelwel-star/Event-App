@@ -133,6 +133,58 @@ class EventManagementAuthorizationTest extends TestCase
         $this->assertNull($this->kingston()->flyer_path);
     }
 
+    public function test_host_ticket_form_saves_full_configuration_and_both_currency_prices(): void
+    {
+        $event = $this->kingston();
+        $tier = $event->ticket_tiers[0];
+        $stock = (int) ($tier['availableStock'] ?? 50);
+        $maxPerCustomer = max(2, (int) ($tier['maxPerCustomer'] ?? 4));
+        $row = [
+            'id' => $tier['id'],
+            'name' => 'Gold Family Pass',
+            'description' => 'Two admissions with reserved seating.',
+            'category' => 'Family Pass',
+            'price' => \App\Services\Checkout\TicketTierCatalog::priceFor($tier, 'USD') ?? 25,
+            'price_jmd' => \App\Services\Checkout\TicketTierCatalog::priceFor($tier, 'JMD') ?? 4000,
+            'available_stock' => $stock,
+            'max_per_customer' => min($maxPerCustomer, $stock),
+            'min_per_order' => 1,
+            'admission_count' => 2,
+            'age_restriction' => '18+',
+            'admission_privileges' => 'Priority entry',
+            'included_food_and_drinks' => 'One drink',
+            'benefits' => "Priority entry\nReserved seating",
+            'refund_eligible' => '0',
+            'visibility' => 'public',
+            'design_style' => 'elegant_gold',
+            'accent_color' => 'gold',
+            'background_style' => 'gradient',
+            'is_active' => '1',
+            'sale_start' => '',
+            'sale_end' => '',
+        ];
+
+        $this->actingAs($this->user('host'))
+            ->put('/events/' . self::KINGSTON, $this->form([
+                'currency' => $event->currency,
+                'ticket_tiers_submitted' => '1',
+                'ticket_tiers' => [$row],
+            ]))
+            ->assertRedirect();
+
+        $saved = $this->kingston()->fresh()->ticket_tiers[0];
+        $this->assertSame('Family Pass', $saved['category']);
+        $this->assertSame('Gold Family Pass', $saved['name']);
+        $this->assertSame(2, $saved['admissionCount']);
+        $this->assertSame('18+', $saved['ageRestriction']);
+        $this->assertSame(['Priority entry', 'Reserved seating'], $saved['benefits']);
+        $this->assertFalse($saved['refundEligible']);
+        $this->assertSame('elegant_gold', $saved['designStyle']);
+        $this->assertSame('gold', $saved['accentColor']);
+        $this->assertSame('gradient', $saved['backgroundStyle']);
+        $this->assertNotNull(\App\Services\Checkout\TicketTierCatalog::priceFor($saved, 'JMD'));
+    }
+
     public function test_new_events_belong_to_the_hosts_own_organizer(): void
     {
         $this->actingAs($this->user('host'))->post('/events', $this->form(['title' => 'New Kingston Night']))->assertRedirect();

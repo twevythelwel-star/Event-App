@@ -12,7 +12,7 @@ class LocationAddressNormalizer
     public static function supportedTimezones(): array
     {
         return array_values(array_unique(array_merge(
-            \DateTimeZone::listIdentifiers(\DateTimeZone::PER_COUNTRY, 'US'),
+            \DateTimeZone::listIdentifiers(),
             ['America/Puerto_Rico', 'America/St_Thomas', 'Pacific/Guam', 'Pacific/Saipan', 'Pacific/Pago_Pago'],
         )));
     }
@@ -25,12 +25,27 @@ class LocationAddressNormalizer
      */
     public function normalize(array $data): array
     {
-        $data['country_code'] = strtoupper(trim((string) ($data['country_code'] ?? 'US')));
-        if ($data['country_code'] !== 'US') {
-            throw ValidationException::withMessages(['country_code' => 'Events are currently available only in the United States and U.S. territories.']);
+        $data['country_code'] = strtoupper(trim((string) ($data['country_code'] ?? config('events.market.default_country', 'US'))));
+        // The market's countries come from configuration. U.S. regions use the curated catalog; other enabled
+        // countries can use free-form region and postal values without constraining future location catalogs.
+        if (!in_array($data['country_code'], (array) config('events.market.allowed_countries', ['US']), true)) {
+            throw ValidationException::withMessages(['country_code' => 'Choose a country enabled for event locations.']);
         }
+        $usesStateCatalog = $data['country_code'] === 'US';
         if (!empty($data['timezone']) && !in_array($data['timezone'], self::supportedTimezones(), true)) {
-            throw ValidationException::withMessages(['timezone' => 'Choose an event time zone used in the United States or its territories.']);
+            throw ValidationException::withMessages(['timezone' => 'Choose a valid event time zone.']);
+        }
+
+        if (($data['event_format'] ?? 'in_person') === 'virtual') {
+            $data['venue_name'] = filled($data['virtual_url'] ?? null) ? 'Online event' : ($data['venue_name'] ?? 'Online event');
+            $data['venue_address'] = '';
+            $data['street_address'] = null;
+            $data['venue_building_name'] = null;
+            $data['city'] = null;
+            $data['state_code'] = null;
+            $data['zip_code'] = null;
+            $data['target_market_id'] = null;
+            return $data;
         }
 
         foreach (['street_address', 'venue_building_name', 'city', 'zip_code'] as $field) {
@@ -43,7 +58,7 @@ class LocationAddressNormalizer
         }
 
         $stateCode = strtoupper(trim((string) ($data['state_code'] ?? '')));
-        if ($stateCode !== '') {
+        if ($usesStateCatalog && $stateCode !== '') {
             $state = UsState::where('code', $stateCode)->where('is_enabled', true)->first();
             if (!$state) {
                 throw ValidationException::withMessages(['state_code' => 'Choose an enabled U.S. state or territory.']);
@@ -51,12 +66,22 @@ class LocationAddressNormalizer
             $data['state_code'] = $stateCode;
         } else {
             $state = null;
+            if ($stateCode !== '') {
+                $data['state_code'] = trim((string) $data['state_code']);
+            }
+            if ($usesStateCatalog && !empty($data['zip_code']) && !preg_match('/^\d{5}(?:-\d{4})?$/', (string) $data['zip_code'])) {
+                throw ValidationException::withMessages(['zip_code' => 'Enter a valid U.S. ZIP code.']);
+            }
         }
 
-        if (empty($data['street_address']) || empty($data['city']) || !$state || empty($data['zip_code'])) {
-            throw ValidationException::withMessages([
-                'street_address' => 'A complete U.S. street address, city, state, and ZIP code are required.',
-            ]);
+        if (empty($data['street_address']) || empty($data['city']) || ($usesStateCatalog && (!$state || empty($data['zip_code'])))) {
+            if (($data['event_status'] ?? null) === 'draft') {
+                return $data;
+            }
+            $message = $usesStateCatalog
+                ? 'A complete U.S. street address, city, state, and ZIP code are required.'
+                : 'A street address and city are required for an international venue.';
+            throw ValidationException::withMessages(['street_address' => $message]);
         }
 
         if ((isset($data['latitude']) && $data['latitude'] !== null) !== (isset($data['longitude']) && $data['longitude'] !== null)) {
@@ -77,14 +102,14 @@ class LocationAddressNormalizer
             $data['target_market_id'] = null;
         }
 
-        if (!empty($data['street_address']) && !empty($data['city']) && $state) {
+        if (!empty($data['street_address']) && !empty($data['city']) && ($state || !$usesStateCatalog)) {
             $parts = array_filter([
                 $data['street_address'],
                 $data['venue_building_name'] ?? null,
                 $data['city'],
-                $state->code,
+                $state?->code ?? ($data['state_code'] ?? null),
                 $data['zip_code'] ?? null,
-                'United States',
+                $usesStateCatalog ? 'United States' : $data['country_code'],
             ]);
             $data['venue_address'] = implode(', ', $parts);
         }

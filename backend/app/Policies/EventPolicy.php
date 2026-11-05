@@ -2,85 +2,137 @@
 
 namespace App\Policies;
 
-use App\Enums\TenantRole;
 use App\Models\Event;
-use App\Models\OrganizerUser;
 use App\Models\User;
-use App\Services\TenantContext;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class EventPolicy
 {
-    /**
-     * Intercept all checks: platform admins have global bypass.
-     */
-    public function before(User $user, string $ability): ?bool
-    {
-        if ($user->is_platform_admin ?? false) {
-            return true;
-        }
-        return null;
-    }
+    use HandlesAuthorization;
 
     /**
-     * Determine whether the user can view the event.
+     * Determine if the user can view the event.
      */
     public function view(User $user, Event $event): bool
     {
-        // Publicly viewable if published, or if user is a member of the event's organizer
-        if ($event->is_ordering_open) {
+        // Published events are viewable by all authenticated users
+        if ($event->is_published) {
             return true;
         }
 
-        return $this->getUserRoleOnTenant($user, $event->organizer_id) !== null;
+        // Unpublished events require host or admin access
+        if ($user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN)) {
+            return true;
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::ADMINISTRATOR)) {
+            return \App\Support\AdminAuthorization::isActiveAdmin($user)
+                && \Illuminate\Support\Facades\Gate::forUser($user)->allows(\App\Support\AdminAuthorization::EVENT_VIEW, $event);
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $event->organizer_id === $user->organizer_id;
+        }
+
+        return false;
     }
 
     /**
-     * Determine whether the user can update the event, flyers, or menu pricing.
-     * Boundary: Strictly restricted to EVENT_OWNER.
+     * Determine if the user can update the event.
      */
     public function update(User $user, Event $event): bool
     {
-        // Cross-organizer check
-        if ($event->organizer_id !== TenantContext::id()) {
-            return false;
+        if ($user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN)) {
+            return true;
         }
 
-        $role = $this->getUserRoleOnTenant($user, $event->organizer_id);
-        return $role === TenantRole::EVENT_OWNER;
+        if ($user->hasRole(\App\Enums\AccountType::ADMINISTRATOR)) {
+            return \App\Support\AdminAuthorization::isActiveAdmin($user)
+                && (bool) ($user->adminPermissions?->can_manage_events ?? false)
+                && \App\Support\AdminAuthorization::organizerInScope($user, $event->organizer_id);
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $event->organizer_id === $user->organizer_id;
+        }
+
+        return false;
     }
 
     /**
-     * Determine whether the user can create an event for this organizer.
-     */
-    public function create(User $user): bool
-    {
-        $tenantId = TenantContext::id();
-        if (!$tenantId) return false;
-
-        $role = $this->getUserRoleOnTenant($user, $tenantId);
-        return $role === TenantRole::EVENT_OWNER;
-    }
-
-    /**
-     * Determine whether the user can delete the event.
+     * Determine if the user can delete the event.
      */
     public function delete(User $user, Event $event): bool
     {
-        if ($event->organizer_id !== TenantContext::id()) {
-            return false;
-        }
-
-        $role = $this->getUserRoleOnTenant($user, $event->organizer_id);
-        return $role === TenantRole::EVENT_OWNER;
+        // Only system administrators can delete events
+        return $user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN);
     }
 
-    private function getUserRoleOnTenant(User $user, string $organizerId): ?TenantRole
+    /**
+     * Determine if the user can manage event staff.
+     */
+    public function manageStaff(User $user, Event $event): bool
     {
-        $membership = OrganizerUser::where('organizer_id', $organizerId)
-            ->where('user_id', $user->id)
-            ->where('is_active', true)
-            ->first();
+        if ($user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN)) {
+            return true;
+        }
 
-        return $membership?->role;
+        if ($user->hasRole(\App\Enums\AccountType::ADMINISTRATOR)) {
+            return \App\Support\AdminAuthorization::isActiveAdmin($user)
+                && (bool) ($user->adminPermissions?->can_manage_events ?? false)
+                && \App\Support\AdminAuthorization::organizerInScope($user, $event->organizer_id);
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $event->organizer_id === $user->organizer_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if the user can view event reports.
+     */
+    public function viewReports(User $user, Event $event): bool
+    {
+        if ($user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN)) {
+            return true;
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::ADMINISTRATOR)) {
+            return \App\Support\AdminAuthorization::isActiveAdmin($user)
+                && \App\Support\AdminAuthorization::organizerInScope($user, $event->organizer_id)
+                && \Illuminate\Support\Facades\Gate::forUser($user)->allows(\App\Support\AdminAuthorization::REPORTS_VIEW);
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $event->organizer_id === $user->organizer_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Determine if the user can change event prices.
+     */
+    public function changePrices(User $user, Event $event): bool
+    {
+        // Only event hosts and administrators can change prices
+        if ($user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN)) {
+            return true;
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::ADMINISTRATOR)) {
+            return \App\Support\AdminAuthorization::isActiveAdmin($user)
+                && (bool) ($user->adminPermissions?->can_manage_events ?? false)
+                && \App\Support\AdminAuthorization::organizerInScope($user, $event->organizer_id);
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $event->organizer_id === $user->organizer_id;
+        }
+
+        // Workers cannot change prices (prohibited)
+        return false;
     }
 }

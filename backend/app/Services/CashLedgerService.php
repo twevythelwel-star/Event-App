@@ -231,7 +231,7 @@ class CashLedgerService
      * Record a refund paid back to the customer. Partial refunds keep the order's status; refunding everything
      * received marks the order refunded (which also blocks further handover).
      */
-    public function refundOrder(User $user, string $orderId, float|int|string $amount, string $reason): Order
+    public function refundOrder(User $user, string $orderId, float|int|string $amount, string $reason, ?string $refundReference = null): Order
     {
         $order = $this->operations->operableOrdersQuery($user)->whereKey($orderId)->first();
         if (!$order) {
@@ -241,9 +241,20 @@ class CashLedgerService
             throw new SecurityException('Unauthorized: only the event owner can issue refunds.');
         }
 
+        // Never write a local ledger refund for provider-collected money. Provider refunds must be executed
+        // and confirmed by that provider before the order ledger can move; no provider refund adapter is enabled yet.
+        if (\App\Models\Payment::where('order_id', $order->id)->where('status', \App\Models\Payment::SUCCEEDED)->exists()) {
+            throw new \InvalidArgumentException('This order was paid through a provider; a verified provider refund integration is required.');
+        }
+        $this->assertEventRefundPolicyAllows($order);
+
         $reason = trim($reason);
         if ($reason === '') {
             throw new \InvalidArgumentException('A reason is required for a refund.');
+        }
+        $refundReference = trim((string) $refundReference);
+        if ($refundReference === '') {
+            throw new \InvalidArgumentException('Record the completed manual refund receipt or transfer reference before closing the refund.');
         }
 
         try {
@@ -254,12 +265,20 @@ class CashLedgerService
 
         // The refundable amount is read from the order row locked for update, so two refunds sent at the same
         // moment cannot both pass the check against the same, stale history.
-        return DB::transaction(function () use ($user, $order, $amount, $reason) {
+        return DB::transaction(function () use ($user, $order, $amount, $reason, $refundReference) {
             $order = Order::withoutGlobalScopes()->lockForUpdate()->find($order->id);
+            if (\App\Models\Payment::where('order_id', $order->id)->where('status', \App\Models\Payment::SUCCEEDED)->exists()) {
+                throw new \InvalidArgumentException('This order was paid through a provider; a verified provider refund integration is required.');
+            }
+            $this->assertEventRefundPolicyAllows($order);
 
             $refundable = Money::ofMinor((int) $order->amount_paid_minor - (int) $order->refunded_minor, $order->currency);
             if (!$amount->isPositive() || $amount->compareTo($refundable) > 0) {
                 throw new \InvalidArgumentException("Refund must be more than zero and at most " . $refundable->max(Money::zero($order->currency))->display() . " ({$order->currency}), the amount received and not yet refunded.");
+            }
+            $event = \App\Models\Event::withoutGlobalScopes()->find($order->event_id);
+            if (($event?->refund_policy_mode ?? 'manual_full_and_partial') === 'manual_full_only' && $amount->compareTo($refundable) !== 0) {
+                throw new \InvalidArgumentException('This event policy allows full refunds only.');
             }
 
             // The refund is its own auditable row; refund_details is kept in step for older readers.
@@ -272,6 +291,7 @@ class CashLedgerService
                 'reason' => $reason,
                 'actor_user_id' => $user->id,
                 'actor_name' => $user->name,
+                'metadata' => ['manual_refund_reference' => $refundReference, 'completion_confirmed_by' => $user->id],
                 'occurred_at' => now(),
             ]);
             $order->refunded_minor = (int) $order->refunded_minor + $amount->minor();
@@ -282,6 +302,7 @@ class CashLedgerService
                 'reason' => $reason,
                 'refundedAt' => now()->toIso8601String(),
                 'refundedBy' => $user->name,
+                'refundReference' => $refundReference,
             ];
             $order->refund_details = $refunds;
 
@@ -294,11 +315,28 @@ class CashLedgerService
             }
             $order->save();
 
-            $this->audit($user, 'order_refunded', $order->id, "Refund of {$amount->display()} ({$order->currency}) on order {$order->order_number}. Reason: {$reason}.{$stockNote}", 'orders');
+            \App\Models\CancellationRequest::where('order_id', $order->id)->where('status', 'approved')
+                ->latest('requested_at')->limit(1)->update(['status' => (int) $order->refunded_minor >= (int) $order->amount_paid_minor ? 'refunded' : 'partially_refunded', 'updated_at' => now()]);
+
+            $this->audit($user, 'order_refunded', $order->id, "Manual refund of {$amount->display()} ({$order->currency}) on order {$order->order_number}. Reference: {$refundReference}. Reason: {$reason}.{$stockNote}", 'orders');
             NotificationService::notifyOrder($order, 'refund_completed', ['amount' => $amount->toDecimalString()], (string) $adjustment->id);
 
             return $order->fresh(['items', 'event']);
         });
+    }
+
+    private function assertEventRefundPolicyAllows(Order $order): void
+    {
+        $event = \App\Models\Event::withoutGlobalScopes()->find($order->event_id);
+        if (!$event) return;
+        $mode = $event->refund_policy_mode ?? 'manual_full_and_partial';
+        if ($mode === 'non_refundable') {
+            throw new \InvalidArgumentException('This event is configured as non-refundable.');
+        }
+        $category = CancellationService::nonRefundableTicketCategory($event, $order);
+        if ($category !== null) {
+            throw new \InvalidArgumentException("The {$category} ticket type is non-refundable.");
+        }
     }
 
     /**

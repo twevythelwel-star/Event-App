@@ -428,6 +428,7 @@
                 @endauth
 
                 <button type="button" onclick="window.location.reload()" title="Refresh Catalog" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #94A3B8; cursor: pointer;">
+                    <span class="sr-only">Refresh event catalog</span>
                     🔄
                 </button>
             </div>
@@ -442,6 +443,7 @@
                 <input
                     type="text"
                     id="events-search-input"
+                    aria-label="Search events, cities, towns, food or hosts"
                     placeholder="Search events, cities, towns, food or hosts..."
                     onkeyup="filterEvents()"
                 />
@@ -451,13 +453,13 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.85rem;">📍</span>
-                        <select id="filter-state" class="discovery-select" onchange="filterEvents()">
+                        <select id="filter-state" class="discovery-select" aria-label="Filter by state" onchange="filterEvents()">
                             <option value="all">All states & territories</option>
                             @foreach($states as $state)
                                 <option value="{{ $state->code }}">{{ $state->name }}</option>
                             @endforeach
                         </select>
-                        <select id="filter-city" class="discovery-select" onchange="filterEvents()">
+                        <select id="filter-city" class="discovery-select" aria-label="Filter by city" onchange="filterEvents()">
                             <option value="all">All cities and towns</option>
                             @foreach($markets as $market)
                                 <option value="{{ $market->state_code }}:{{ strtolower($market->city) }}" data-state="{{ $market->state_code }}">{{ $market->city }}, {{ $market->state_code }}</option>
@@ -473,7 +475,7 @@
 
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.85rem;">📅</span>
-                        <select id="filter-date" class="discovery-select" onchange="filterEvents()">
+                        <select id="filter-date" class="discovery-select" aria-label="Filter by date" onchange="filterEvents()">
                             <option value="all">All Dates</option>
                             <option value="weekend">This Weekend</option>
                         </select>
@@ -485,7 +487,7 @@
                     <label style="font-size:0.8rem;color:#CBD5E1"><input id="filter-available" type="checkbox" onchange="filterEvents()"> Taking orders</label>
                 </div>
 
-                <div style="font-size: 0.8rem; color: #94A3B8; font-weight: 600;">
+                <div role="status" aria-live="polite" aria-atomic="true" style="font-size: 0.8rem; color: #94A3B8; font-weight: 600;">
                     Showing <strong style="color: #FFFFFF;" id="events-count">{{ count($events) }}</strong> events
                 </div>
             </div>
@@ -541,7 +543,7 @@
 
         <div class="featured-event-card" id="primary-featured-card">
             <div class="featured-event-img-wrap">
-                <img src="{{ $featuredEvent->display_image_url }}" alt="{{ $featuredEvent->title }}">
+                <img src="{{ $featuredEvent->display_thumbnail_url }}" alt="{{ $featuredEvent->flyer_alt_text ?: $featuredEvent->title }}" style="object-position: {{ (int) ($featuredEvent->flyer_position_x ?? 50) }}% {{ (int) ($featuredEvent->flyer_position_y ?? 50) }}%;">
                 <div class="featured-event-overlay"></div>
                 <div class="featured-badge-pill">
                     <span class="featured-badge-tag">★ FEATURED</span>
@@ -611,11 +613,11 @@
         <div class="trending-scroll-container" id="trending-container">
             @foreach($events->take(6) as $idx => $trend)
                 @php
-                    $trendImg = $trend->display_image_url;
+                    $trendImg = $trend->display_thumbnail_url;
                 @endphp
                 <div class="trending-card">
                     <div style="height: 130px; position: relative;">
-                        <img src="{{ $trendImg }}" alt="{{ $trend->title }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="{{ $trendImg }}" alt="{{ $trend->flyer_alt_text ?: $trend->title }}" style="width: 100%; height: 100%; object-fit: cover; object-position: {{ (int) ($trend->flyer_position_x ?? 50) }}% {{ (int) ($trend->flyer_position_y ?? 50) }}%;">
                         <span style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(6px); color: #fff; padding: 2px 8px; border-radius: 9999px; font-size: 0.65rem; font-weight: 700;">
                             UPCOMING
                         </span>
@@ -668,6 +670,9 @@
                 </div>
             @endforeach
         </div>
+        <nav aria-label="Event result pages" style="margin: 20px 0;">
+            {{ $events->links() }}
+        </nav>
 
         <!-- Empty Results State -->
         <div id="no-events-found" style="display: none; background: #162038; border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 44px 20px; text-align: center; margin: 20px 0;">

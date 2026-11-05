@@ -43,6 +43,60 @@ final class TicketTierCatalog
         return \App\Support\Money::parse(is_string($price) ? $price : (string) $price, $currency)->minor();
     }
 
+    /**
+     * What this tier costs right now: its early-bird price while the event's early-bird period runs (when the host
+     * set one, in this currency), otherwise the regular price. Null when the tier has no price in this currency.
+     */
+    public static function currentPriceMinor(array $tier, string $currency, ?Event $event, ?int $now = null): ?int
+    {
+        $regular = self::priceMinorFor($tier, $currency);
+        if ($regular === null || !self::isEarlyBird($event, $now)) {
+            return $regular;
+        }
+        $early = strtoupper($currency) === 'USD' ? ($tier['earlyBirdPriceUSD'] ?? null) : null;
+        if (!is_numeric($early) || (float) $early < 0) {
+            return $regular;
+        }
+
+        return min($regular, \App\Support\Money::parse((string) $early, $currency)->minor());
+    }
+
+    /** Whether the event's early-bird period is running inside its configured start/end window. */
+    public static function isEarlyBird(?Event $event, ?int $now = null): bool
+    {
+        if (!$event?->early_bird_ends_at) {
+            return false;
+        }
+        $now ??= time();
+        $startsAt = $event->early_bird_starts_at ?? $event->ticket_sales_start_at;
+
+        return $now < $event->early_bird_ends_at->getTimestamp()
+            && (!$startsAt || $now >= $startsAt->getTimestamp());
+    }
+
+    /**
+     * The tier with the event's own ticket sales period applied: sales open no earlier than the event's start of
+     * sales and close no later than its end of sales, whatever the tier says.
+     */
+    public static function withEventSaleWindow(array $tier, ?Event $event): array
+    {
+        if (!$event) {
+            return $tier;
+        }
+        $start = $tier['saleStartIso'] ?? $tier['sale_start_iso'] ?? null;
+        $end = $tier['saleEndIso'] ?? $tier['sale_end_iso'] ?? null;
+        if ($event->ticket_sales_start_at && (empty($start) || strtotime((string) $start) < $event->ticket_sales_start_at->getTimestamp())) {
+            $tier['saleStartIso'] = $event->ticket_sales_start_at->toIso8601String();
+            unset($tier['sale_start_iso']);
+        }
+        if ($event->ticket_sales_end_at && (empty($end) || strtotime((string) $end) > $event->ticket_sales_end_at->getTimestamp())) {
+            $tier['saleEndIso'] = $event->ticket_sales_end_at->toIso8601String();
+            unset($tier['sale_end_iso']);
+        }
+
+        return $tier;
+    }
+
     /** The JSON key holding remaining stock, or null when the tier has no stock limit. */
     public static function availabilityKey(array $tier): ?string
     {
@@ -87,6 +141,11 @@ final class TicketTierCatalog
         return max(0, (int) ($tier['maxPerCustomer'] ?? $tier['max_per_customer'] ?? $tier['max_per_order'] ?? $tier['maxPerOrder'] ?? 10));
     }
 
+    public static function minPerOrder(array $tier): int
+    {
+        return max(1, (int) ($tier['minPerOrder'] ?? $tier['min_per_order'] ?? 1));
+    }
+
     /**
      * Tiers a customer can be offered: configured with an id and priced in the event's currency.
      *
@@ -99,24 +158,37 @@ final class TicketTierCatalog
         $currency = (string) ($event->currency ?: \App\Support\Currency::defaultCode());
         $tiers = [];
         foreach (is_array($event->ticket_tiers) ? $event->ticket_tiers : [] as $tier) {
-            if (!is_array($tier) || !isset($tier['id'])) {
+            if (!is_array($tier) || !isset($tier['id']) || ($tier['isActive'] ?? true) === false
+                || ($tier['visibility'] ?? 'public') !== 'public') {
                 continue;
             }
-            $priceMinor = self::priceMinorFor($tier, $currency);
+            $priceMinor = self::currentPriceMinor($tier, $currency, $event);
             if ($priceMinor === null) {
                 continue;
             }
+            $regularMinor = self::priceMinorFor($tier, $currency);
             $price = \App\Support\Money::ofMinor($priceMinor, $currency)->toMajorNumber();
             $available = self::available($tier);
-            $window = self::saleWindow($tier);
+            $window = self::saleWindow(self::withEventSaleWindow($tier, $event));
             $soldOut = $available !== null && $available <= 0;
             $max = $available === null ? self::maxPerOrder($tier) : min(self::maxPerOrder($tier), $available);
+            $min = self::minPerOrder($tier);
             $tiers[] = [
                 'id' => (string) $tier['id'],
                 'name' => (string) ($tier['name'] ?? 'Admission ticket'),
                 'description' => isset($tier['description']) ? (string) $tier['description'] : null,
+                'category' => (string) ($tier['category'] ?? 'General Admission'),
+                'benefits' => is_array($tier['benefits'] ?? null) ? array_values($tier['benefits']) : [],
+                'admission_privileges' => isset($tier['admissionPrivileges']) ? (string) $tier['admissionPrivileges'] : null,
+                'included_food_and_drinks' => isset($tier['includedFoodAndDrinks']) ? (string) $tier['includedFoodAndDrinks'] : null,
+                'age_restriction' => isset($tier['ageRestriction']) ? (string) $tier['ageRestriction'] : null,
+                'admission_count' => max(1, (int) ($tier['admissionCount'] ?? 1)),
+                'min' => $min,
+                'max_per_order' => self::maxPerOrder($tier),
                 'price' => $price,
                 'price_minor' => $priceMinor,
+                'regular_price_minor' => $regularMinor,
+                'early_bird' => $priceMinor < $regularMinor,
                 'currency' => $currency,
                 'available' => $available,
                 'max' => $window === 'open' ? $max : 0,

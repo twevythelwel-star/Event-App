@@ -2679,7 +2679,13 @@ export const DEFAULT_HOST_PAYMENT_POLICIES: HostPaymentPolicySettings = {
   autoEmailReceipt: true,
   autoSmsReceipt: true,
   refundPolicyDeadlineHours: 48,
-  refundPolicyNotes: "Full refund available up to 48 hours before order deadline. Cancellations after cutoff subject to prep costs.",
+  refundPolicyNotes: "Refund requests are reviewed by the organizer. EventBite cannot process refunds for provider-backed payments. Contact the organizer about cancellations, postponements, weather changes, or food-order changes.",
+  refundPolicyMode: "manual_full_and_partial",
+  hostCancellationPolicy: "contact_organizer",
+  postponementPolicy: "tickets_valid_for_new_date",
+  weatherCancellationPolicy: "contact_organizer",
+  foodOrderCancellationDeadlineHours: 24,
+  foodOrderModificationDeadlineHours: 24,
 };
 
 export const DEFAULT_HOST_COMMUNICATION_TEMPLATES: HostCommunicationTemplates = {

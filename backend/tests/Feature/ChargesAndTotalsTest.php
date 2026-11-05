@@ -195,14 +195,123 @@ class ChargesAndTotalsTest extends TestCase
         $this->assertSame(6801, Order::allTenants()->firstOrFail()->total_minor);
     }
 
+    public function test_meal_package_quotes_once_reserves_components_and_rejects_insufficient_inventory(): void
+    {
+        $side = MenuItem::allTenants()->create([
+            'organizer_id' => $this->organizer->id,
+            'event_id' => $this->event->id,
+            'name' => 'Festival',
+            'category' => 'Sides',
+            'pricing_type' => 'fixed',
+            'price_usd' => '4.00',
+            'price_jmd' => 0,
+            'available_stock' => 5,
+            'is_active' => true,
+        ]);
+        $package = MenuItem::allTenants()->create([
+            'organizer_id' => $this->organizer->id,
+            'event_id' => $this->event->id,
+            'name' => 'Sunday Dinner',
+            'category' => 'Meal Packages',
+            'pricing_type' => 'fixed',
+            'price_usd' => '20.00',
+            'price_jmd' => 0,
+            'item_type' => 'package',
+            'package_config' => [
+                'components' => [[
+                    'menu_item_id' => $this->dish->id,
+                    'quantity' => 1,
+                    'substitutes' => [['menu_item_id' => $side->id, 'extra_minor' => 500]],
+                ]],
+                'choice_groups' => [[
+                    'id' => 'main-choice',
+                    'title' => 'Choose a main',
+                    'min' => 1,
+                    'max' => 1,
+                    'options' => [['menu_item_id' => $this->dish->id, 'extra_minor' => 200]],
+                ]],
+                'add_ons' => [['menu_item_id' => $side->id, 'price_minor' => 100, 'max' => 2]],
+            ],
+            'is_active' => true,
+        ]);
+        $cart = [
+            'packages' => [[
+                'menu_item_id' => $package->id,
+                'quantity' => 1,
+                'selection' => [
+                    'substitutions' => [$side->id],
+                    'choices' => ['main-choice' => [$this->dish->id]],
+                    'add_ons' => [$side->id => 1],
+                ],
+            ]],
+        ];
+
+        $quote = app(OrderQuoteService::class)->quote($this->event, $cart);
+        $this->assertSame([], $quote['problems']);
+        $this->assertSame(2800, $quote['totals']->subtotalMinor);
+        $this->assertSame(2950, $quote['total_minor'], 'The package is charged once, plus the event packaging fee.');
+
+        $result = app(OrderPlacementService::class)->placeOrder($this->event, [
+            'customer_name' => 'Charges Buyer',
+            'customer_phone' => '+1 305 555 0100',
+            'method' => 'cash',
+            'currency' => 'USD',
+            'items' => app(OrderQuoteService::class)->toOrderItems($cart),
+        ], $this->buyer);
+
+        $this->assertTrue($result['success'], $result['error'] ?? '');
+        $order = $result['order']->fresh('items');
+        $packageLine = $order->items->firstWhere('line_type', 'package');
+        $components = $order->items->where('line_type', 'component');
+        $this->assertSame(2800, (int) $packageLine->line_total_minor);
+        $this->assertCount(3, $components);
+        $this->assertSame(0, (int) $components->sum('line_total_minor'));
+        $this->assertTrue($components->every(fn ($line) => $line->package_line_id === $packageLine->id));
+        $this->assertSame(3, (int) $side->fresh()->available_stock);
+        $this->assertSame(49, (int) $this->dish->fresh()->available_stock);
+
+        $tooMany = array_replace_recursive($cart, ['packages' => [['quantity' => 2]]]);
+        $rejectedQuote = app(OrderQuoteService::class)->quote($this->event, $tooMany);
+        $this->assertNotEmpty($rejectedQuote['problems']);
+        $rejectedOrder = app(OrderPlacementService::class)->placeOrder($this->event, [
+            'customer_name' => 'Charges Buyer',
+            'customer_phone' => '+1 305 555 0100',
+            'method' => 'cash',
+            'currency' => 'USD',
+            'items' => app(OrderQuoteService::class)->toOrderItems($tooMany),
+        ], $this->buyer);
+        $this->assertFalse($rejectedOrder['success']);
+        $this->assertSame(3, (int) $side->fresh()->available_stock, 'A rejected order reserves no stock.');
+    }
+
+    public function test_food_quote_reports_full_event_and_pickup_window_capacities(): void
+    {
+        $existingOrder = $this->place();
+        $window = ['start' => '12:00', 'end' => '13:00', 'max_orders' => 1];
+        $windowKey = \App\Services\Events\EventSchedule::windowKey($window);
+        $existingOrder->forceFill(['pickup_window' => $windowKey])->save();
+        $this->event->forceFill([
+            'food_max_orders' => 1,
+            'food_pickup_windows' => [$window],
+        ])->save();
+
+        $quote = app(OrderQuoteService::class)->quote($this->event->fresh(), [
+            'items' => [$this->dish->id => ['quantity' => 1]],
+            'food' => ['method' => 'pickup', 'pickup_window' => $windowKey],
+        ]);
+
+        $this->assertContains('Food orders for this event are full.', $quote['problems']);
+        $this->assertContains('The 12:00–13:00 pickup time is full. Choose another.', $quote['problems']);
+    }
+
     public function test_refunds_are_auditable_rows_and_reports_keep_currencies_apart(): void
     {
         $order = $this->place();
         $order->forceFill(['status' => 'paid', 'amount_paid_minor' => $order->total_minor])->save();
         $ledger = app(CashLedgerService::class);
 
-        $ledger->refundOrder($this->host, $order->id, '10.25', 'Missed the first set');
-        $ledger->refundOrder($this->host, $order->id, '53.75', 'Event cancelled');
+        $ledger->refundOrder($this->host, $order->id, '10.25', 'Missed the first set', 'charges-refund-1');
+        $ledger->refundOrder($this->host, $order->id, '53.75', 'Event cancelled', 'charges-refund-2');
 
         $order->refresh();
         $this->assertSame('refunded', $order->status);
@@ -241,6 +350,31 @@ class ChargesAndTotalsTest extends TestCase
         $this->assertSame([1999, 29, 2028, 2028, 510], [(int) $row->subtotal_minor, (int) $row->fees_minor, (int) $row->total_minor, (int) $row->amount_paid_minor, (int) $row->refunded_minor]);
         $this->assertSame(510, (int) DB::table('order_adjustments')->where('order_id', $orderId)->value('amount_minor'));
         $this->assertSame(29, (int) DB::table('order_charges')->where('order_id', $orderId)->value('amount_minor'));
+    }
+
+    public function test_migration_rejects_unknown_historical_currency_before_schema_changes(): void
+    {
+        $orderId = (string) \Illuminate\Support\Str::uuid();
+        DB::table('orders')->insert([
+            'id' => $orderId, 'organizer_id' => $this->organizer->id, 'event_id' => $this->event->id,
+            'ticket_code' => 'SFF-UNKNOWN-CURRENCY', 'order_number' => 'ORD-UNKNOWN-CURRENCY', 'customer_name' => 'Legacy', 'customer_phone' => '1',
+            'method' => 'bank', 'subtotal' => '19.99', 'packaging_fee' => '0', 'total_amount' => '19.99', 'amount_paid' => '19.99',
+            'currency' => 'EUR', 'status' => 'paid', 'fulfillment_status' => 'unprepared', 'secure_ticket_token' => 'tok_unknown_currency',
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $migration = require database_path('migrations/2026_10_30_000020_money_minor_units_and_charges.php');
+        try {
+            (new \ReflectionMethod($migration, 'assertCurrenciesAreKnown'))->invoke($migration);
+            $this->fail('Unknown historical currencies must block the backfill.');
+        } catch (\ReflectionException $exception) {
+            throw $exception;
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('orders.currency contains unsupported currency', $exception->getMessage());
+        }
+
+        $this->assertSame('EUR', DB::table('orders')->where('id', $orderId)->value('currency'));
+        $this->assertFalse(Schema::hasColumn('orders', 'subtotal_minor'), 'Preflight must stop before adding or changing columns.');
     }
 
     public function test_only_settings_admins_configure_rules_and_rates_are_exact(): void

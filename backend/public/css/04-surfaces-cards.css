@@ -159,6 +159,25 @@
   object-position: center;
 }
 
+/* A host's sample photo is labelled so guests never mistake it for the dish being sold. */
+.eb-food-card-illustrative {
+  position: absolute;
+  left: var(--space-2);
+  bottom: var(--space-2);
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 999px);
+  background: rgba(7, 17, 31, 0.78);
+  color: var(--color-text-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.eb-food-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .eb-food-card-body,
 .food-card-body {
   padding: var(--layout-card-padding);

@@ -30,6 +30,10 @@ class EventQrController extends Controller
     /**
      * Where a scanned event QR code lands. Only published events resolve; a draft, unpublished or cancelled
      * event does not become reachable because a code for it exists. The code never admits anyone.
+     *
+     * IMPORTANT: This is a PROMOTIONAL QR code for sharing. It is NOT an admission ticket. Admission uses
+     * each ticket's own secure token (orders.secure_ticket_token). Never use this QR code to authenticate
+     * admission or fulfill food orders.
      */
     public function resolve(string $code): RedirectResponse
     {
@@ -53,6 +57,7 @@ class EventQrController extends Controller
             'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'",
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'public, max-age=300',
+            'X-EventBite-QR-Type' => 'promotional', // Distinguish from ticket QR codes
         ]);
     }
 
@@ -64,10 +69,11 @@ class EventQrController extends Controller
         abort_unless($qr->isReady(), 409, 'The QR artwork is not ready. Try generating it again.');
 
         $base = Str::slug((string) $event->title) ?: 'event';
+        $status = $event->status === 'published' ? '' : '-draft';
         [$body, $type, $name] = match ($format) {
-            'svg' => [$this->qr->svg($qr), 'image/svg+xml', "{$base}-qr.svg"],
-            'png' => [$this->qr->png($qr, 24), 'image/png', "{$base}-qr.png"],
-            'poster' => [$this->qr->poster($qr, $event), 'image/svg+xml', "{$base}-qr-poster.svg"],
+            'svg' => [$this->qr->svg($qr), 'image/svg+xml', "{$base}{$status}-qr.svg"],
+            'png' => [$this->qr->png($qr, 24), 'image/png', "{$base}{$status}-qr.png"],
+            'poster' => [$this->qr->poster($qr, $event), 'image/svg+xml', "{$base}{$status}-qr-poster.svg"],
             default => abort(404),
         };
 
@@ -79,6 +85,25 @@ class EventQrController extends Controller
             'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'",
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
+            'X-EventBite-QR-Type' => 'promotional', // Distinguish from ticket QR codes
+            'X-Event-Publication-Status' => $event->status, // Indicate draft/published state
+        ]);
+    }
+
+    /** Preview QR artwork for draft events (authorized hosts only). */
+    public function previewArtwork(Request $request, string $id): Response
+    {
+        $event = $this->events->findEvent($request->user(), $id);
+        $qr = $this->qr->ensureFor($event);
+        abort_unless($qr->isReady(), 409, 'The QR artwork is not ready. Try generating it again.');
+
+        return response($this->qr->svg($qr), 200, [
+            'Content-Type' => 'image/svg+xml',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'",
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+            'X-EventBite-QR-Type' => 'promotional',
+            'X-Event-Publication-Status' => $event->status,
         ]);
     }
 

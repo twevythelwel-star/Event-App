@@ -5,9 +5,13 @@ declare(strict_types=1);
 use App\Http\Controllers\AccountSettingsController;
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\Api\CatalogController;
+use App\Http\Controllers\Api\EventReportsController;
 use App\Http\Controllers\Api\HostEventsController;
+use App\Http\Controllers\HostPaymentSettingsController;
 use App\Http\Controllers\Api\MediaController;
 use App\Http\Controllers\Api\LocationCatalogController;
+use App\Http\Controllers\Api\CulturalCatalogController;
+use App\Http\Controllers\Admin\CulturalCatalogController as AdminCulturalCatalogController;
 use App\Http\Controllers\Api\OrderOperationsController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\SupportRequestsController;
@@ -107,19 +111,33 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // Event & Flyer Management
     Route::get('/events/create', [EventController::class, 'create'])->name('events.create');
+    Route::post('/events/create/autosave', [EventController::class, 'autosave'])->name('events.create.autosave')->middleware('throttle:30,1');
     Route::post('/events', [EventController::class, 'store'])->name('events.store');
     Route::get('/events/{id}/edit', [EventController::class, 'edit'])->name('events.edit');
+    Route::get('/events/{id}/preview', [EventController::class, 'preview'])->name('events.preview');
     Route::put('/events/{id}', [EventController::class, 'update'])->name('events.update');
     Route::post('/events/{id}/flyer', [EventController::class, 'uploadFlyer'])->name('events.flyer.upload');
     Route::delete('/events/{id}/flyer', [EventController::class, 'removeFlyer'])->name('events.flyer.remove');
+    Route::get('/events/{id}/review', [EventController::class, 'review'])->name('events.review');
     Route::post('/events/{id}/publish', [EventController::class, 'publish'])->name('events.publish');
     Route::post('/events/{id}/unpublish', [EventController::class, 'unpublish'])->name('events.unpublish');
     Route::post('/events/{id}/toggle-ordering', [EventController::class, 'toggleOrdering'])->name('events.toggle-ordering');
 
     // Event QR artwork (only for events the user manages)
     Route::get('/events/{id}/qr/{format}', [EventQrController::class, 'download'])->where('format', 'svg|png|poster')->name('events.qr.download')->middleware('throttle:60,1');
+    Route::get('/events/{id}/qr/preview', [EventQrController::class, 'previewArtwork'])->name('events.qr.preview')->middleware('throttle:60,1');
     Route::post('/events/{id}/qr/design', [EventQrController::class, 'redesign'])->name('events.qr.redesign')->middleware('throttle:20,1');
     Route::post('/events/{id}/qr/retry', [EventQrController::class, 'retry'])->name('events.qr.retry')->middleware('throttle:20,1');
+
+    // Menu studio: Menu Builder, Package Builder and Attendee Preview (events the user manages)
+    Route::get('/events/{id}/menu-studio', [\App\Http\Controllers\MenuStudioController::class, 'show'])->name('events.menu-studio');
+    Route::post('/events/{id}/menu-studio/items', [\App\Http\Controllers\MenuStudioController::class, 'storeItem'])->name('events.menu-studio.items.store')->middleware('throttle:60,1');
+    Route::post('/events/{id}/menu-studio/packages', [\App\Http\Controllers\MenuStudioController::class, 'storePackage'])->name('events.menu-studio.packages.store')->middleware('throttle:60,1');
+    Route::post('/events/{id}/menu-studio/order', [\App\Http\Controllers\MenuStudioController::class, 'reorder'])->name('events.menu-studio.order')->middleware('throttle:120,1');
+    Route::put('/events/{id}/menu-studio/{itemId}', [\App\Http\Controllers\MenuStudioController::class, 'update'])->name('events.menu-studio.update')->middleware('throttle:60,1');
+    Route::delete('/events/{id}/menu-studio/{itemId}', [\App\Http\Controllers\MenuStudioController::class, 'destroy'])->name('events.menu-studio.destroy');
+    // Venue address lookup through the configured mapping service
+    Route::post('/events/location-lookup', [\App\Http\Controllers\EventLocationController::class, 'lookup'])->name('events.location-lookup')->middleware('throttle:30,1');
 
     // Event Menu Management (Event Owners)
     Route::post('/events/{eventSlug}/menu', [MenuController::class, 'store'])->name('events.menu.store')->middleware('throttle:30,1');
@@ -142,10 +160,13 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // 1. Attendee Dashboard & Orders Wallet
     Route::get('/attendee/dashboard', [AttendeeDashboardController::class, 'index'])->name('attendee.dashboard');
+    Route::post('/attendee/orders/{orderId}/cancellation-requests', [AttendeeDashboardController::class, 'requestCancellation'])->name('attendee.cancellations.store')->middleware('throttle:10,1');
     Route::post('/attendee/retrieve-ticket', [AttendeeDashboardController::class, 'retrieveTicket'])->name('attendee.retrieve-ticket');
 
     // 2. Event Host Command Center
     Route::get('/host/dashboard', [HostDashboardController::class, 'index'])->name('host.dashboard');
+    Route::post('/host/cancellation-requests/{cancellationId}/review', [HostDashboardController::class, 'reviewCancellationRequest'])->name('host.cancellations.review')->middleware('throttle:30,1');
+    Route::post('/host/cancellation-requests/{cancellationId}/refund', [HostDashboardController::class, 'recordCancellationRefund'])->name('host.cancellations.refund')->middleware('throttle:10,1');
 
     // 3. Delegated Administrator Operations Desk (System Administrators also pass this gate)
     Route::middleware(EnsureAccountType::class . ':admin')->group(function () {
@@ -161,13 +182,23 @@ Route::middleware(['auth', 'active'])->group(function () {
         ->name('system-admin.dashboard');
 
     // Event-Worker Scoped Terminals (Payment Clerk, Ticket Checker, Food Station Worker, Supervisor)
-    Route::prefix('worker/events/{event}')->group(function () {
-        Route::get('/terminal', [WorkerTerminalController::class, 'index'])->name('worker.terminal');
-        Route::post('/scan', [WorkerTerminalController::class, 'scanTicket'])->name('worker.scan')->middleware('throttle:30,1');
-        Route::post('/cash', [WorkerTerminalController::class, 'recordCash'])->name('worker.cash');
-        Route::post('/lookup', [WorkerTerminalController::class, 'lookupOrder'])->name('worker.lookup')->middleware('throttle:60,1');
-        Route::post('/collect', [WorkerTerminalController::class, 'collectFood'])->name('worker.collect')->middleware('throttle:60,1');
-    });
+    Route::prefix('worker/events/{event}')
+        ->middleware(['auth', 'worker.active'])
+        ->group(function () {
+            Route::get('/terminal', [WorkerTerminalController::class, 'index'])->name('worker.terminal');
+            Route::post('/scan', [WorkerTerminalController::class, 'scanTicket'])
+                ->name('worker.scan')
+                ->middleware('throttle:30,1', 'worker.permission:scan_qr_tickets');
+            Route::post('/cash', [WorkerTerminalController::class, 'recordCash'])
+                ->name('worker.cash')
+                ->middleware('worker.permission:record_cash_received');
+            Route::post('/lookup', [WorkerTerminalController::class, 'lookupOrder'])
+                ->name('worker.lookup')
+                ->middleware('throttle:60,1', 'worker.permission:view_relevant_orders');
+            Route::post('/collect', [WorkerTerminalController::class, 'collectFood'])
+                ->name('worker.collect')
+                ->middleware('throttle:60,1', 'worker.permission:mark_quantities_collected');
+        });
 });
 
 // Single-Page App JSON API (cookie session + XSRF token, served same-origin through the Vite proxy)
@@ -177,12 +208,16 @@ Route::prefix('api/v1')->group(function () {
     Route::post('/register', [SessionController::class, 'register'])->name('api.register')->middleware('throttle:10,1');
     Route::get('/events', [CatalogController::class, 'events'])->name('api.events.index');
     Route::get('/locations', [LocationCatalogController::class, 'index'])->name('api.locations.index');
+    Route::get('/cultural-catalog', [CulturalCatalogController::class, 'index'])->name('api.cultural-catalog.index');
 
     // Uploaded images: public for published events, otherwise only for accounts that manage the event
     Route::get('/media/events/{eventId}/flyer', [MediaController::class, 'flyer'])->name('api.media.flyer');
     Route::get('/media/menu/{itemId}/photo', [MediaController::class, 'menuPhoto'])->name('api.media.menu-photo');
 
     Route::middleware(['auth', 'active'])->group(function () {
+        Route::post('/admin/cultural-catalog/{type}', [AdminCulturalCatalogController::class, 'store'])->name('api.admin.cultural-catalog.store');
+        Route::put('/admin/cultural-catalog/{type}/{id}', [AdminCulturalCatalogController::class, 'update'])->name('api.admin.cultural-catalog.update');
+        Route::delete('/admin/cultural-catalog/{type}/{id}', [AdminCulturalCatalogController::class, 'deactivate'])->name('api.admin.cultural-catalog.deactivate');
         Route::delete('/session', [SessionController::class, 'destroy'])->name('api.session.destroy');
         Route::put('/profile', [SessionController::class, 'updateProfile'])->name('api.profile.update');
         Route::put('/profile/password', [SessionController::class, 'updatePassword'])->name('api.profile.password')->middleware('throttle:10,1');
@@ -191,6 +226,7 @@ Route::prefix('api/v1')->group(function () {
         Route::post('/notifications/{id}/read', [SessionController::class, 'markNotificationRead'])->name('api.notifications.read');
         Route::post('/events/{eventSlug}/orders', [CatalogController::class, 'placeOrder'])->name('api.orders.store')->middleware('throttle:15,1');
         Route::get('/orders', [CatalogController::class, 'myOrders'])->name('api.orders.index');
+        Route::post('/orders/{orderId}/cancellation-requests', [CatalogController::class, 'requestCancellation'])->name('api.orders.cancellations.store')->middleware('throttle:10,1');
 
         // Host verification & event-day scanner; access is checked per order against its organizer/event
         Route::get('/operations/orders', [OrderOperationsController::class, 'index'])->name('api.operations.orders');
@@ -200,6 +236,8 @@ Route::prefix('api/v1')->group(function () {
         Route::post('/operations/orders/{orderId}/items/{itemId}/handover', [OrderOperationsController::class, 'handover'])->name('api.operations.handover');
         Route::post('/operations/orders/{orderId}/close', [OrderOperationsController::class, 'close'])->name('api.operations.close');
         Route::post('/operations/orders/{orderId}/refund', [OrderOperationsController::class, 'refund'])->name('api.operations.refund');
+        Route::get('/operations/cancellation-requests', [OrderOperationsController::class, 'cancellationRequests'])->name('api.operations.cancellations.index');
+        Route::post('/operations/cancellation-requests/{cancellationId}/review', [OrderOperationsController::class, 'reviewCancellation'])->name('api.operations.cancellations.review')->middleware('throttle:30,1');
         Route::get('/operations/cash', [OrderOperationsController::class, 'cashLedger'])->name('api.operations.cash.index');
         Route::post('/operations/cash', [OrderOperationsController::class, 'recordCash'])->name('api.operations.cash.store')->middleware('throttle:60,1');
         Route::post('/operations/cash/{receiptId}/reverse', [OrderOperationsController::class, 'reverseCash'])->name('api.operations.cash.reverse');
@@ -209,6 +247,7 @@ Route::prefix('api/v1')->group(function () {
 
         // Event Host editing of their own events and menus (organizer owners only; checked per event)
         Route::get('/host/dashboard', [HostDashboardController::class, 'index'])->name('api.host.dashboard');
+        Route::post('/host/location-lookup', [\App\Http\Controllers\EventLocationController::class, 'lookup'])->name('api.host.location-lookup')->middleware('throttle:30,1');
         Route::get('/host/events', [HostEventsController::class, 'index'])->name('api.host.events');
         Route::post('/host/events', [HostEventsController::class, 'store'])->name('api.host.events.store')->middleware('throttle:30,1');
         Route::patch('/host/events/{eventId}', [HostEventsController::class, 'update'])->name('api.host.events.update')->middleware('throttle:120,1');
@@ -218,7 +257,19 @@ Route::prefix('api/v1')->group(function () {
         Route::delete('/host/events/{eventId}/menu/{itemId}', [HostEventsController::class, 'destroyMenuItem'])->name('api.host.menu.destroy');
         Route::post('/host/events/{eventId}/flyer', [HostEventsController::class, 'uploadFlyer'])->name('api.host.flyer.store')->middleware('throttle:20,1');
         Route::delete('/host/events/{eventId}/flyer', [HostEventsController::class, 'removeFlyer'])->name('api.host.flyer.destroy');
+        Route::post('/host/events/{eventId}/media', [HostEventsController::class, 'uploadEventMedia'])->name('api.host.event-media.store')->middleware('throttle:30,1');
+        Route::delete('/host/events/{eventId}/media/{mediaId}', [HostEventsController::class, 'removeEventMedia'])->name('api.host.event-media.destroy');
+        Route::get('/media/event-media/{mediaId}', [MediaController::class, 'eventMedia'])->name('api.media.event-media');
         Route::post('/host/events/{eventId}/menu/{itemId}/photo', [HostEventsController::class, 'uploadMenuPhoto'])->name('api.host.menu.photo')->middleware('throttle:30,1');
+
+        // Event reports and analytics
+        Route::get('/host/events/{eventId}/reports/financial', [EventReportsController::class, 'financialReport'])->name('api.host.events.reports.financial');
+        Route::get('/host/events/{eventId}/reports/check-in', [EventReportsController::class, 'checkInReport'])->name('api.host.events.reports.check-in');
+        Route::get('/host/events/{eventId}/reports/fulfillment', [EventReportsController::class, 'fulfillmentReport'])->name('api.host.events.reports.fulfillment');
+
+        // Host Payment Settings
+        Route::get('/host/payment-settings', [HostPaymentSettingsController::class, 'index'])->name('api.host.payment-settings');
+        Route::put('/host/payment-settings', [HostPaymentSettingsController::class, 'update'])->name('api.host.payment-settings.update');
 
         // Event Host worker assignments & staff claim code verification
         Route::get('/host/events/{event}/staff', [StaffAssignmentController::class, 'showEventStaff'])->name('api.host.events.staff');
@@ -227,6 +278,8 @@ Route::prefix('api/v1')->group(function () {
         Route::post('/host/events/{event}/staff/{assignment}/revoke', [StaffAssignmentController::class, 'revokeAssignment'])->name('api.host.events.staff.revoke');
         Route::post('/staff-codes/generate', [StaffAssignmentController::class, 'generateClaimCode'])->name('api.staff-codes.generate')->middleware('throttle:10,1');
         Route::post('/staff-codes/{id}/revoke', [StaffAssignmentController::class, 'revokeClaimCode'])->name('api.staff-codes.revoke');
+        Route::post('/staff/assignments/{id}/accept', [StaffAssignmentController::class, 'acceptAssignment'])->name('api.staff.assignments.accept');
+        Route::post('/staff/assignments/{id}/decline', [StaffAssignmentController::class, 'declineAssignment'])->name('api.staff.assignments.decline');
 
         // Attendee requests: Event Host applications and order disputes
         Route::get('/host-applications', [SupportRequestsController::class, 'myHostApplications'])->name('api.host-applications.mine');

@@ -284,6 +284,10 @@ class OrderOperationsService
             if (!$item) {
                 throw new \InvalidArgumentException('Order item not found on this order.');
             }
+            if ($item->line_type === OrderItem::PACKAGE) {
+                // A package is handed over through its items, so each station marks only what it serves.
+                throw new \InvalidArgumentException("Hand over the items in '{$item->name}' one by one.");
+            }
 
             $collected = (int) $item->collected_quantity + $delta;
             if ($collected < 0 || $collected > $item->quantity) {
@@ -380,6 +384,19 @@ class OrderOperationsService
     private function refreshHandoverTotals(Order $order): void
     {
         $items = $order->items()->get();
+        // A package counts as collected as far as all of its items are: two dinners are both collected only when
+        // every item for both has been handed over.
+        foreach ($items->where('line_type', OrderItem::PACKAGE) as $package) {
+            $parts = $items->where('package_line_id', $package->id);
+            $done = $parts->isEmpty() ? 0 : (int) $parts->min(fn (OrderItem $part) => $part->quantity > 0
+                ? intdiv((int) $part->collected_quantity * (int) $package->quantity, (int) $part->quantity) : (int) $package->quantity);
+            if ($done !== (int) $package->collected_quantity) {
+                $package->collected_quantity = $done;
+                $package->handover_status = $done >= $package->quantity ? 'collected' : 'pending';
+                $package->handed_over_at = $done >= $package->quantity ? ($package->handed_over_at ?? now()) : null;
+                $package->save();
+            }
+        }
         $allDone = $items->isNotEmpty() && $items->every(fn (OrderItem $i) => (int) $i->collected_quantity >= $i->quantity);
         $wasDone = (bool) $order->all_handed_over;
 
@@ -428,9 +445,12 @@ class OrderOperationsService
      */
     public function notificationsQuery(User $user): Builder
     {
-        $orderIds = $this->operableOrdersQuery($user)->get()
-            ->filter(fn (Order $order) => $this->capabilities($user, $order)['verify'])
-            ->pluck('id');
+        $reach = $this->reach($user);
+        $orderIds = Order::withoutGlobalScopes()->whereNull('deleted_at')
+            ->where(function (Builder $query) use ($reach) {
+                $query->whereIn('organizer_id', $reach['organizers'])->orWhereIn('event_id', $reach['events']);
+            })->whereIn('status', ['payment_submitted', 'under_verification', 'partially_paid', 'awaiting_payment'])
+            ->select('id');
 
         return NotificationLog::withoutGlobalScopes()->whereIn('order_id', $orderIds)->latest();
     }

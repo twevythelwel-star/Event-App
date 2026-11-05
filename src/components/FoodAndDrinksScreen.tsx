@@ -15,6 +15,7 @@ import {
   Filter,
 } from "lucide-react";
 import { Currency, EventDetails, MenuItem, Settings } from "../types";
+import { FoodPhoto } from "./FoodPhoto";
 
 export type CartItem = {
   menuItemId: string;
@@ -486,19 +487,11 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                         overflow: "hidden",
                       }}
                     >
-                      <img
+                      <FoodPhoto
                         src={item.imageUrl}
                         alt={item.name}
                         loading={itemIndex < 4 ? "eager" : "lazy"}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                          transition: "transform 0.3s ease",
-                        }}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/images/escovitch_fish.jpg";
-                        }}
+                        style={{ transition: "transform 0.3s ease" }}
                       />
                       {/* Category Pill Tag */}
                       <span

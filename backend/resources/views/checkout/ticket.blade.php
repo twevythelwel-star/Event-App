@@ -18,6 +18,8 @@
     $awaitingDetails = !$void && !$settled && $order->method !== 'cash';
     $tickets = $order->items->where('category', 'Tickets');
     $food = $order->items->where('category', '!=', 'Tickets');
+    // The design the host chose for the ticket type bought (the ticket designer), shown as the ticket's accent.
+    $tierDesign = collect(is_array($event?->ticket_tiers) ? $event->ticket_tiers : [])->firstWhere('id', $tickets->first()?->ticket_tier_id) ?? [];
     $local = fn ($time) => $time ? $time->copy()->setTimezone($tz)->format('M j, Y g:i A T') : null;
 
     // What the customer should do next, in one line.
@@ -36,7 +38,7 @@
 <div class="eb-checkout">
     <x-alert :type="$nextTone" :title="$nextTitle">{{ $nextDetail }}</x-alert>
 
-    <article class="eb-ticket-card" aria-labelledby="ticket-title">
+    <article class="eb-ticket-card" aria-labelledby="ticket-title" @if($tickets->isNotEmpty()) data-design="{{ $tierDesign['designStyle'] ?? 'premium_minimal' }}" data-accent="{{ $tierDesign['accentColor'] ?? 'indigo' }}" @endif>
         @if($event)
             <div class="eb-ticket-card-head">
                 <img src="{{ $event->display_image_url }}" alt="">
@@ -67,6 +69,9 @@
                         <span class="eb-text-label">{{ $settled ? 'Ticket code' : 'Order reference' }}</span><br>
                         <span class="eb-text-ticket-code eb-ticket-card-code" style="font-size: 1.25rem;">{{ $order->ticket_code }}</span>
                     </p>
+                    @if($settled && !$checkedIn)
+                        <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-no-print onclick="window.print()" style="margin-top: var(--space-3);">Print ticket</button>
+                    @endif
                 </div>
             @endunless
 
@@ -90,6 +95,9 @@
                 @if($order->payment_reference && in_array($order->method, ['bank', 'zelle', 'cashapp'], true)) · your reference {{ $order->payment_reference }}@endif
             </p>
             <p class="eb-help-text" style="margin: 0;">Order {{ $order->order_number }} · placed {{ $local($order->created_at) }}</p>
+            @if(!$void && !$settled && $order->reservation_expires_at)
+                <p class="eb-help-text" style="margin: 0;">Inventory held until {{ $local($order->reservation_expires_at) }}. Complete payment confirmation before this time to keep this reservation.</p>
+            @endif
         </div>
     </article>
 

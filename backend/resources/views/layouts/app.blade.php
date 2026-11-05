@@ -31,6 +31,16 @@
     <link rel="stylesheet" href="{{ asset('css/brand.css') }}">
 
     <style>
+        :focus-visible {
+            outline: 3px solid #005fcc !important;
+            outline-offset: 3px !important;
+            box-shadow: 0 0 0 2px #fff !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+        }
+
         :root {
             --color-background: #07111F;
             --color-background-secondary: #0B192B;

@@ -175,9 +175,9 @@ class DiscoveryJourneyTest extends TestCase
         $this->assertStringNotContainsString('Verified Host', $page->getContent());
 
         HostPaymentPolicy::where('organizer_id', 'org-kingston-youth')->update([
-            'refund_policy_notes' => 'Full refunds until 48 hours before the event.', 'refund_policy_deadline_hours' => 48,
+            'refund_policy_notes' => 'Refund requests are reviewed by the organizer. Provider-backed refunds are not supported in EventBite.', 'refund_policy_deadline_hours' => 48,
         ]);
-        $this->get('/events/' . self::SOUTH_FLORIDA)->assertSee('Full refunds until 48 hours before the event.')
+        $this->get('/events/' . self::SOUTH_FLORIDA)->assertSee('Provider-backed refunds are not supported in EventBite.')
             ->assertSee('Refund requests close 48 hours before the event starts.');
     }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Event;
+use App\Models\EventMedia;
 use App\Models\MenuItem;
 use App\Services\EventManagementService;
 use App\Services\MediaStorageService;
@@ -31,7 +32,18 @@ class MediaController extends Controller
             abort(404);
         }
 
-        return $this->serve($event->flyer_path, $event->flyer_mime_type, $event->status === 'published');
+        $variant = $request->query('variant', 'original');
+        $path = match ($variant) {
+            'small' => $event->flyer_thumbnail_path ?? $event->flyer_path,
+            'medium' => $event->flyer_thumbnail_path ?? $event->flyer_path,
+            'large' => $event->flyer_thumbnail_path ?? $event->flyer_path,
+            'thumbnail' => $event->flyer_thumbnail_path ?? $event->flyer_path,
+            default => $event->flyer_path,
+        };
+
+        $mime = ($variant !== 'original' && $path !== $event->flyer_path) ? 'image/webp' : $event->flyer_mime_type;
+
+        return $this->serve($path, $mime, $event->status === 'published');
     }
 
     public function menuPhoto(Request $request, string $itemId): Response
@@ -43,6 +55,26 @@ class MediaController extends Controller
         }
 
         return $this->serve($item->image_path, null, $event->status === 'published');
+    }
+
+    public function eventMedia(Request $request, string $mediaId): Response
+    {
+        $media = EventMedia::find($mediaId);
+        $event = $media?->event;
+        if (!$media || !$event || !$this->canView($request, $event)) abort(404);
+
+        $variant = $request->query('variant', 'original');
+        $path = match ($variant) {
+            'small' => $media->small_thumbnail_path ?? $media->original_path,
+            'medium' => $media->medium_thumbnail_path ?? $media->original_path,
+            'large' => $media->large_thumbnail_path ?? $media->thumbnail_path ?? $media->original_path,
+            'thumbnail' => $media->thumbnail_path ?? $media->original_path,
+            default => $media->original_path,
+        };
+
+        $mime = ($variant !== 'original' && $path !== $media->original_path) ? 'image/webp' : $media->mime_type;
+
+        return $this->serve($path, $mime, $event->status === 'published');
     }
 
     private function canView(Request $request, Event $event): bool

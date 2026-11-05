@@ -171,6 +171,31 @@ class CustomerCheckoutFlowTest extends TestCase
         $this->assertSame(0, Order::allTenants()->count());
     }
 
+    public function test_processor_methods_stay_unavailable_even_when_configured_and_approved(): void
+    {
+        $this->fillCart();
+        config([
+            'payments.stripe.secret_key' => 'sk_test_not_real',
+            'payments.stripe.publishable_key' => 'pk_test_not_real',
+            'payments.stripe.webhook_secret' => 'whsec_not_real',
+        ]);
+        \App\Models\SystemPlatformSetting::create([
+            'supported_payment_methods' => ['card'],
+            'payment_processors' => ['stripe' => true],
+        ]);
+        HostPaymentPolicy::updateOrCreate(
+            ['organizer_id' => $this->organizer->id],
+            ['enable_card' => true],
+        );
+
+        $this->actingAs($this->buyer)->get(route('checkout.review', $this->event))
+            ->assertOk()->assertDontSee('Pay by debit or credit card');
+        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
+            'customer_phone' => '+1 876 555 0123', 'method' => 'card', 'quoted_total_minor' => 710000,
+        ])->assertSessionHasErrors('method');
+        $this->assertSame(0, Order::allTenants()->count());
+    }
+
     public function test_paused_and_unpublished_events_cannot_be_ordered(): void
     {
         $this->event->forceFill(['is_ordering_open' => false])->save();

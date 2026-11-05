@@ -59,6 +59,7 @@ same private root, so the flyer route finds the file.
 Production requirements:
 - `storage/` must be **persistent and shared across releases**. See the `shared/storage` link in §9. On a multi-server
   or ephemeral-container host, mount a persistent volume there.
+- Set `PRIVATE_MEDIA_ROOT=/var/www/eventbite/shared/storage/app/private` so media paths stay stable across releases.
 - Back up `storage/app/private` together with the database (§6).
 
 **Not in place:** S3 or R2 object storage. To move to it, install `league/flysystem-aws-s3-v3`, switch the
@@ -98,55 +99,75 @@ bottleneck. That means installing `laravel/horizon` and `predis/predis` and prov
 
 ## 5. Scheduler
 
-**Current state:** `routes/console.php` schedules nothing. Event reminders are sent on demand by the host
-(`POST /api/v1/operations/events/{eventId}/reminders`). Ordering cut-offs are checked when an order is placed, not by
-a background task.
-
-Install the standard cron line anyway, so scheduled tasks start working as soon as any are added:
+**Current state:** Laravel schedules queue-failure pruning daily, unpaid inventory reservation expiry every minute,
+and Stripe payment reconciliation every five minutes. Event reminders remain on demand by the host
+(`POST /api/v1/operations/events/{eventId}/reminders`). Run the standard cron line so these schedules execute:
 ```bash
 # crontab -u www-data -e
 * * * * * cd /var/www/eventbite/current && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-**Recommended next:** schedule `queue:prune-failed --hours=168` daily, and add automatic event reminders if hosts
-shouldn't have to send them by hand.
+The reservation expiry command is `php artisan commerce:expire-reservations --batch=200`. It locks each order and
+event/menu inventory rows, restores tracked stock only once, marks the unpaid order expired, and writes an audit event.
+The default hold is 15 minutes (`COMMERCE_RESERVATION_MINUTES`). A provider attempt that is pending, processing, or
+already succeeded is held for reconciliation rather than having its stock released. Partially paid/manual exceptions
+require an authorized refund/cancellation decision; the expiry job does not discard a received payment.
+
+The provider reconciliation command is `php artisan payments:reconcile-stripe --limit=100 --stale-minutes=5`. It
+queries Stripe PaymentIntents directly, compares the provider ID, amount, currency, EventBite order metadata, received
+amount and available refund total, and applies a delayed successful settlement only when all values match. It records
+matched/mismatch/error state and alerts on mismatches. The provider checkout/webhook integration is still disabled;
+this command does not make card checkout available. A future integration must create intents with
+`metadata[eventbite_order_id]` and internal `Payment` rows before reconciliation can match them. Configure
+`STRIPE_SECRET_KEY` through the deployment secret store, then verify the command against Stripe test mode before
+enabling any customer payment method.
+
+### Event-day connectivity and safe retry
+
+The Laravel worker terminal validates every admission online against the order row under a database lock. If its
+request loses connectivity, it preserves the code for retry and displays **NOT ADMITTED**. Each retry reuses a
+random request ID; if the server committed admission but its response was lost, the same authorized worker receives
+the original successful verdict. A different request or scanner is still rejected as a duplicate. The terminal does
+not authorize admission while offline. This fail-closed behavior avoids duplicate admissions across disconnected
+devices; staff should use the ticket QR scanner and supervisor-authorized manual lookup when the service is reachable.
+No offline admission cache or synchronization protocol is enabled.
 
 ---
 
 ## 6. Backups and restore
 
-**Not in place in the application.** There is no backup package. Use one of these and test it (see the drill
-below).
+**Repository tooling added:** `scripts/production-backup.sh` creates a MySQL dump and private media archive,
+verifies archive integrity, creates SHA-256 checksums, supports GPG recipient encryption, retention cleanup,
+and an operator-supplied offsite copy command. Configure a host secret-backed defaults file and offsite storage;
+do not put credentials or encryption keys in the repository. Schedule it daily (02:00 UTC), retain 30 days, and
+monitor successful offsite copies. Daily backups provide a target RPO <= 24 hours only when the offsite copy
+completes; enable managed MySQL binary-log/PITR for a lower RPO. Target RTO <= 4 hours pending measured drills.
 
 **Option A (preferred): managed MySQL backups.** On a managed database (AWS RDS, DigitalOcean, Laravel Cloud and
 similar), turn on daily automated snapshots with at least 14 days' retention, plus binary-log point-in-time recovery.
 
-**Option B: scheduled dump**, on a self-managed server:
-```bash
-#!/usr/bin/env bash
-# /usr/local/bin/eventbite-backup.sh  (cron: 0 2 * * *)
-set -euo pipefail
-STAMP=$(date -u +%Y%m%dT%H%M%SZ)
-DEST=/var/backups/eventbite/$STAMP
-mkdir -p "$DEST"
-mysqldump --single-transaction --routines --triggers --set-gtid-purged=OFF \
-  --defaults-extra-file=/etc/eventbite/mysql-backup.cnf eventbite | gzip > "$DEST/db.sql.gz"
-tar -czf "$DEST/private-storage.tar.gz" -C /var/www/eventbite/shared/storage/app private
-# Copy $DEST off the server (object storage with versioning or object lock), then prune local copies older than 7 days.
-find /var/backups/eventbite -mindepth 1 -maxdepth 1 -mtime +7 -exec rm -rf {} +
+**Option B: scheduled dump**, on a self-managed server. Configure offsite storage and encryption, then schedule the added script:
+```cron
+0 2 * * * APP_ROOT=/var/www/eventbite BACKUP_ROOT=/var/backups/eventbite MYSQL_DATABASE=eventbite RETENTION_DAYS=30 MYSQL_DEFAULTS_FILE=/etc/eventbite/mysql-backup.cnf BACKUP_GPG_RECIPIENT=backup@example.invalid BACKUP_OFFSITE_COMMAND='rclone copy "$1" remote:eventbite-backups/' bash /var/www/eventbite/current/scripts/production-backup.sh
 ```
-`/etc/eventbite/mysql-backup.cnf` (mode 600) holds the backup user's credentials, so no password appears on the
-command line.
+
+The cron command above is the supported self-managed backup entry point; do not substitute an unverified dump
+snippet. `/etc/eventbite/mysql-backup.cnf` (mode 600) holds the backup user's credentials, so no password appears
+on the command line. Verify the offsite command exits successfully and alert on missing daily backup directories.
 
 **Restore:**
 ```bash
-gunzip -c db.sql.gz | mysql --defaults-extra-file=/etc/eventbite/mysql-restore.cnf eventbite_restore
-tar -xzf private-storage.tar.gz -C /var/www/eventbite/shared/storage/app
+BACKUP_GPG_PRIVATE_KEY_FILE=/etc/eventbite/backup-private-key.asc \
+MYSQL_DEFAULTS_FILE=/etc/eventbite/mysql-restore.cnf \
+bash /var/www/eventbite/current/scripts/production-restore-drill.sh \
+  /var/backups/eventbite/20261101T020000Z eventbite_restore_drill_20261101 /tmp/eventbite-restore-drill-20261101
 ```
 
-**Restore drill (monthly):** restore the latest backup into a scratch database, then point a copy of the app at it
-with `APP_ENV=staging`. Check that the event, order and audit counts match production for the same moment, and that
-a stored flyer and a QR artwork load. Record the time the drill took; that is your real recovery time.
+**Restore drill (monthly):** restore only into a disposable database named `eventbite_restore_*` and a `/tmp/eventbite-restore-*`
+media directory. The script verifies checksums, MySQL load, table counts and media files. Then point a staging app at
+the restored DB/media and verify private flyer/menu media through authorized routes, ticket lookup, login, and a queue
+operation. Record start/end time, counts, checksums and media verification. Until the staging drill is executed and
+recorded, backups are unverified and RTO is only a target.
 
 ---
 
@@ -155,8 +176,10 @@ a stored flyer and a QR artwork load. Record the time the drill took; that is yo
 The app expects HTTPS in production. Required settings:
 - `APP_ENV=production`, `APP_DEBUG=false`, and `APP_URL=https://your-domain`. `APP_URL` is also the base of every
   event QR code (`/e/{code}`), so set it before the first event is created.
-- `SESSION_SECURE_COOKIE=true` (its default is unset). `SESSION_HTTP_ONLY` and `SESSION_SAME_SITE=lax` are already
-  the defaults.
+- `SESSION_SECURE_COOKIE=true`, `DB_CONNECTION=mysql`, production database credentials, `PRIVATE_MEDIA_ROOT` on
+  durable storage, a real mail provider (`MAIL_MAILER`), `QUEUE_CONNECTION=database`, and a durable cache store.
+  Laravel startup now fails in production when debug, URL, secure cookie, database, mail, queue/cache or media-root
+  configuration is unsafe. `SESSION_HTTP_ONLY` and `SESSION_SAME_SITE=lax` remain secure defaults.
 
 Example NGINX origin configuration (replace the domain):
 ```nginx
@@ -195,19 +218,22 @@ server {
 
 ## 8. Logging, error monitoring and secrets
 
-- **Logging (in place):** Laravel's default `stack` channel writing `storage/logs/laravel.log`. In production set
-  `LOG_STACK=daily`, `LOG_LEVEL=info` and `LOG_DAILY_DAYS=14`. **Not in place:** structured JSON logging and
-  automatic PII redaction, so don't ship logs to a third party without adding redaction first.
+- **Logging and critical alerts (implemented, target unverified):** configure `LOG_CHANNEL=daily`,
+  `LOG_SLACK_WEBHOOK_URL` (HTTPS secret), `LOG_LEVEL=info`, `LOG_SLACK_LEVEL=error`, and `LOG_DAILY_DAYS=14`.
+  Detailed exceptions stay in retained local logs; curated exception, queue and payment failure alerts go to Slack.
+  Startup refuses production without both channels configured.
+  Failed queue jobs, payment failures/transitions, slow requests, hashed failed sign-ins, and ticket redemption
+  conflicts are logged. Do not include customer payment data or secrets in alert payloads.
 - **Audit trail (in place):** security-relevant actions are written to `security_audit_logs`, and food handovers to
   `handover_audit_logs`. These include payment decisions, refunds, cash, check-ins and admin changes.
-- **Error monitoring (not in place):** there is no Sentry or Bugsnag. Recommended before launch: install
-  `sentry/sentry-laravel`, set `SENTRY_LARAVEL_DSN`, and alert on new errors.
+- **Error monitoring:** Slack critical/error alerts are configured as above. Sentry is not installed; it remains
+  recommended for exception grouping and performance traces.
 - **Secrets (in place):** `backend/.env` is in `.gitignore`. Keep production secrets in the host's secret store
   or a mode-600 `.env` in `shared/`. `php artisan env:encrypt` and `env:decrypt` are available if you deploy an
   encrypted file. These values must be set: `APP_KEY`, `APP_URL`, the `DB_*` values, `SESSION_SECURE_COOKIE`,
-  `MAIL_*`, and `TWILIO_*` (for SMS).
-- **Note:** `backend/.env.example` currently contains a realistic-looking Twilio account identifier. Replace it
-  with a placeholder.
+  `MAIL_*`, `LOG_SLACK_WEBHOOK_URL`, and `TWILIO_*` when SMS notifications are offered.
+- **Notification providers:** SMS is disabled unless real Twilio account credentials and sender configuration are
+  supplied. Verify a delivery and signed callback in staging before advertising SMS to customers.
 
 ---
 
@@ -232,7 +258,7 @@ RELEASE="$APP/releases/$(date +%Y%m%d_%H%M%S)"
 git clone --depth 1 -b main git@github.com:twevythelwel-star/Event-App.git "$RELEASE"
 cd "$RELEASE/backend"
 ln -s "$APP/shared/.env" .env
-rm -rf storage && ln -s "$APP/shared/storage" storage
+ln -sfn "$APP/shared/storage" storage
 
 composer install --no-dev --prefer-dist --optimize-autoloader --no-interaction
 php artisan config:cache
@@ -263,7 +289,10 @@ tested. Restore from backup (§6) instead if data was damaged.
 | File storage (private local disk) | In place and verified | Feature tests (`FlyerStorageTest`, media and QR tests). Persistence across releases depends on the host |
 | Queue (database driver) | In place, not verified in production | Worker command in §4 |
 | Scheduler | Nothing scheduled | — |
-| Backups and restore | Not in place in the app | Use §6 and run the restore drill |
-| HTTPS, secure cookies | Configuration required | §7 |
+| Backups and restore | Scripts supplied; no staging restore has been run | §6 |
+| HTTPS, secure cookies | Required and app startup guarded; host TLS not verified | §7 |
 | Error monitoring | Not in place | §8 |
 | Structured logging and PII redaction | Not in place | §8 |
+| Production configuration guard | In code; actual host variables still need validation | `AppServiceProvider` startup checks |
+| Ticket QR vs event QR | Separate IDs and routes; event QR cannot admit | `EventQrCodeTest`, `TicketCheckInTest` |
+| Mobile camera scan | Not verified on physical devices | Staging/device check required |

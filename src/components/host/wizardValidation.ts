@@ -220,6 +220,13 @@ export function isValidIanaTimezone(tz: string | undefined | null): boolean {
 }
 
 /**
+ * Validates a HH:MM time string (24-hour clock).
+ */
+export function isValidTime(value: string): boolean {
+  return /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+/**
  * Formats an ISO timestamp or date string consistently in the event's IANA timezone
  * and also returns the canonical UTC ISO-8601 string for database storage.
  */
@@ -410,14 +417,137 @@ export function validateWizardDateLocation(
     fieldErrors.dateStr = "Event date is required.";
   }
 
+  if (!event.eventDateIso || !/^\d{4}-\d{2}-\d{2}$/.test(event.eventDateIso)) {
+    fieldErrors.eventDateIso = "Select a valid event start date.";
+  }
+
   if (!event.timeStr || event.timeStr.trim().length < 3) {
     fieldErrors.timeStr = "Event start and end times are required.";
   }
+  if (!event.startTime || !isValidTime(event.startTime)) {
+    fieldErrors.startTime = "Select a valid event start time.";
+  }
+  if (!event.endTime || !isValidTime(event.endTime)) {
+    fieldErrors.endTime = "Select a valid event end time.";
+  }
+
+  const startDate = event.eventDateIso;
+  const endDate = event.endDateIso;
+
+  const isValidDate = (value: string) =>
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    !Number.isNaN(Date.parse(`${value}T00:00:00Z`)) &&
+    new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+  if (startDate && !isValidDate(startDate)) {
+    fieldErrors.eventDateIso = "Select a valid event start date.";
+  }
+  if (endDate && !isValidDate(endDate)) {
+    fieldErrors.endDateIso = "Select a valid event end date.";
+  }
 
   if (event.startTime && event.endTime) {
-    if (event.startTime >= event.endTime) {
-      fieldErrors.endTime = "Event end time must be after the start time.";
+    if (startDate && endDate === startDate && event.endTime <= event.startTime) {
+      fieldErrors.endTime =
+        "Event end time must be after its start time when the end date is the same.";
     }
+  }
+
+  if (startDate && endDate && endDate < startDate) {
+    fieldErrors.endDateIso = "Event end date must be on or after the event start date.";
+  }
+
+  if (event.doorsOpenTime && event.startTime && !isValidTime(event.doorsOpenTime)) {
+    fieldErrors.doorsOpenTime = "Doors-open time must be a valid time (HH:MM).";
+  } else if (event.doorsOpenTime && event.startTime && event.doorsOpenTime > event.startTime) {
+    fieldErrors.doorsOpenTime = "Doors-open time should be before the event start time.";
+  }
+
+  if (event.foodServiceStartTime || event.foodServiceEndTime) {
+    if (event.foodServiceStartTime && !isValidTime(event.foodServiceStartTime)) {
+      fieldErrors.foodServiceStartTime = "Food service start time must be a valid time (HH:MM).";
+    }
+    if (event.foodServiceEndTime && !isValidTime(event.foodServiceEndTime)) {
+      fieldErrors.foodServiceEndTime = "Food service end time must be a valid time (HH:MM).";
+    }
+    const runsPastMidnight = Boolean(
+      event.endDateIso && startDate && event.endDateIso > startDate
+    ) || Boolean(
+      !event.endDateIso && event.startTime && event.endTime && event.endTime <= event.startTime
+    );
+    if (
+      event.foodServiceStartTime &&
+      event.foodServiceEndTime &&
+      isValidTime(event.foodServiceStartTime) &&
+      isValidTime(event.foodServiceEndTime) &&
+      event.foodServiceEndTime < event.foodServiceStartTime &&
+      !runsPastMidnight
+    ) {
+      fieldErrors.foodServiceEndTime =
+        "Food service end time must be after its start, or the event must run past midnight.";
+    }
+  }
+
+  if (event.setupTime && !isValidTime(event.setupTime)) {
+    fieldErrors.setupTime = "Setup time must be a valid time (HH:MM).";
+  }
+
+  const validDateTimeLocal = (value: string) =>
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value) &&
+    isValidDate(value.slice(0, 10)) &&
+    isValidTime(value.slice(11));
+  const ticketSalesStart = event.ticketSalesStartIso;
+  const ticketSalesEnd = event.ticketSalesEndIso;
+  const earlyBirdStart = event.earlyBirdSaleStartIso;
+  const earlyBirdEnd = event.earlyBirdSaleEndIso;
+  for (const [field, value, label] of [
+    ["ticketSalesStartIso", ticketSalesStart, "Ticket sales start"],
+    ["ticketSalesEndIso", ticketSalesEnd, "Ticket sales end"],
+    ["earlyBirdSaleStartIso", earlyBirdStart, "Early-bird sales start"],
+    ["earlyBirdSaleEndIso", earlyBirdEnd, "Early-bird sales end"],
+  ] as const) {
+    if (value && !validDateTimeLocal(value)) {
+      fieldErrors[field] = `${label} must be a valid local date and time.`;
+    }
+  }
+  if (ticketSalesStart && ticketSalesEnd && ticketSalesStart >= ticketSalesEnd) {
+    fieldErrors.ticketSalesEndIso = "Ticket sales must end after they start.";
+  }
+  const eventStarts = event.eventDateIso && event.startTime
+    ? `${event.eventDateIso}T${event.startTime}`
+    : null;
+  let eventEndDate = event.endDateIso || event.eventDateIso;
+  if (!event.endDateIso && event.eventDateIso && isValidDate(event.eventDateIso) && event.startTime && event.endTime && event.endTime <= event.startTime) {
+    const nextDay = new Date(`${event.eventDateIso}T00:00:00Z`);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+    eventEndDate = nextDay.toISOString().slice(0, 10);
+  }
+  const eventEnds = eventEndDate && event.endTime
+    ? `${eventEndDate}T${event.endTime}`
+    : eventStarts;
+  if (ticketSalesStart && eventStarts && ticketSalesStart >= eventStarts) {
+    fieldErrors.ticketSalesStartIso = "Ticket sales must open before the event.";
+  }
+  if (ticketSalesEnd && eventEnds && ticketSalesEnd > eventEnds) {
+    fieldErrors.ticketSalesEndIso = "Ticket sales must end by the event end.";
+  }
+  if (earlyBirdStart && ticketSalesStart && earlyBirdStart < ticketSalesStart) {
+    fieldErrors.earlyBirdSaleStartIso = "Early-bird sales cannot start before ticket sales open.";
+  }
+  if (earlyBirdStart && ticketSalesEnd && earlyBirdStart >= ticketSalesEnd) {
+    fieldErrors.earlyBirdSaleStartIso = "Early-bird sales must start before ticket sales close.";
+  }
+  if (earlyBirdStart && eventStarts && earlyBirdStart >= eventStarts) {
+    fieldErrors.earlyBirdSaleStartIso = "Early-bird sales must start before the event.";
+  }
+  const effectiveEarlyBirdStart = earlyBirdStart || ticketSalesStart;
+  if (earlyBirdEnd && effectiveEarlyBirdStart && earlyBirdEnd <= effectiveEarlyBirdStart) {
+    fieldErrors.earlyBirdSaleEndIso = "Early-bird sales must end after they start.";
+  }
+  if (earlyBirdEnd && ticketSalesEnd && earlyBirdEnd > ticketSalesEnd) {
+    fieldErrors.earlyBirdSaleEndIso = "Early-bird sales must end before ticket sales close.";
+  }
+  if (earlyBirdEnd && eventStarts && earlyBirdEnd > eventStarts) {
+    fieldErrors.earlyBirdSaleEndIso = "Early-bird sales must end before the event starts.";
   }
 
   const tz = event.timezone || "America/New_York";
@@ -425,26 +555,33 @@ export function validateWizardDateLocation(
     fieldErrors.timezone = `Invalid IANA timezone '${tz}'. Select a valid region timezone.`;
   }
 
-  if (!event.venueName || event.venueName.trim().length < 2) {
+  const isVirtual = event.eventFormat === "virtual";
+  if (!isVirtual && (!event.venueName || event.venueName.trim().length < 2)) {
     fieldErrors.venueName = "Venue name is required.";
   }
 
-  if (!event.venueAddress || event.venueAddress.trim().length < 5) {
-    fieldErrors.venueAddress = "Full U.S. venue address is required.";
+  if (!isVirtual && (!event.venueAddress || event.venueAddress.trim().length < 5)) {
+    fieldErrors.venueAddress = "Full venue address is required.";
   }
 
   const hasStructuredAddress = Boolean(
+    !isVirtual && (
     event.countryCode === "US" ||
     event.streetAddress ||
     event.city ||
     event.stateCode ||
-    event.zipCode
+    event.zipCode)
   );
   if (hasStructuredAddress) {
     if (!event.streetAddress?.trim()) fieldErrors.streetAddress = "Street address is required.";
     if (!event.city?.trim()) fieldErrors.city = "City or town is required.";
-    if (!/^[A-Z]{2}$/.test(event.stateCode || "")) fieldErrors.stateCode = "Select a valid U.S. state or territory code.";
-    if (!/^\d{5}(?:-\d{4})?$/.test(event.zipCode || "")) fieldErrors.zipCode = "Enter a valid ZIP code.";
+    // State/ZIP format validation applies to the default US launch market.
+    // Other countries are captured free-form through the modular location catalog.
+    const isDefaultMarketUS = event.countryCode === "US" || event.countryCode == null;
+    if (isDefaultMarketUS) {
+      if (!/^[A-Z]{2}$/.test(event.stateCode || "")) fieldErrors.stateCode = "Select a valid U.S. state or territory code.";
+      if (!/^\d{5}(?:-\d{4})?$/.test(event.zipCode || "")) fieldErrors.zipCode = "Enter a valid ZIP code.";
+    }
   }
 
   if ((event.latitude == null) !== (event.longitude == null)) {
@@ -513,7 +650,7 @@ export function validateWizardTickets(
     fieldErrors.packagingFeeJMD = "JMD packaging fee cannot be negative.";
   }
 
-  const activeTiers = tiers.filter((t) => t.isActive !== false);
+  const activeTiers = tiers.filter((t) => t.isActive !== false && t.visibility !== "hidden");
   if (activeTiers.length === 0) {
     fieldErrors.ticketTiers =
       "At least one active ticket type must be configured.";
@@ -545,7 +682,7 @@ export function validateWizardTickets(
       tier.availableStock <= 0
     ) {
       errs.push("Quantity limit must be a positive whole number.");
-    } else if (tier.isActive !== false) {
+    } else if (tier.isActive !== false && tier.visibility !== "hidden") {
       totalCapacity += tier.availableStock;
     }
 
@@ -557,6 +694,19 @@ export function validateWizardTickets(
       errs.push(
         `Max per order must be between 1 and ${Math.max(1, tier.availableStock)}.`
       );
+    }
+    const minPerOrder = tier.minPerOrder ?? 1;
+    if (
+      !Number.isInteger(minPerOrder) ||
+      minPerOrder < 1 ||
+      minPerOrder > tier.maxPerCustomer ||
+      minPerOrder > tier.availableStock
+    ) {
+      errs.push("Minimum per order must be between 1 and the maximum per order.");
+    }
+    const admissionCount = tier.admissionCount ?? 1;
+    if (!Number.isInteger(admissionCount) || admissionCount < 1 || admissionCount > 100) {
+      errs.push("Admissions per ticket must be between 1 and 100.");
     }
 
     if (tier.saleStartIso && tier.saleEndIso) {

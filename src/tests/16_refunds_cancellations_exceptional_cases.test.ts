@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { TicketOrder } from "../types";
+import { refundPolicyPreviewLines } from "../lib/refundPolicy";
 
 describe("16: Refunds, Cancellations, and Exceptional Cases Suite", () => {
   function createPaidOrder(): TicketOrder {
@@ -152,5 +153,26 @@ describe("16: Refunds, Cancellations, and Exceptional Cases Suite", () => {
     const cancelled = cancelUnpaidOrder(unpaidOrder, "Customer decided not to attend");
     expect(cancelled.status).toBe("rejected");
     expect(cancelled.rejectionReason).toContain("Cancelled by customer/organizer");
+  });
+
+  it("previews manual refund limits and never promises provider-backed refunds", () => {
+    const lines = refundPolicyPreviewLines({
+      refundPolicyDeadlineHours: 48,
+      refundPolicyMode: "manual_full_and_partial",
+      hostCancellationPolicy: "contact_organizer",
+      postponementPolicy: "tickets_valid_for_new_date",
+      weatherCancellationPolicy: "contact_organizer",
+      foodOrderCancellationDeadlineHours: 24,
+      foodOrderModificationDeadlineHours: 12,
+      nonRefundableTicketCategories: ["VIP"],
+    });
+    const preview = lines.join(" ");
+
+    expect(preview).toContain("full or partial manual refunds");
+    expect(preview).toContain("cannot process provider-backed refunds");
+    expect(preview).toContain("tickets remain valid for the new date");
+    expect(preview).toContain("Food cancellation requests close 24 hours");
+    expect(preview).toContain("cannot be made in EventBite");
+    expect(preview).toContain("Non-refundable ticket types: VIP");
   });
 });

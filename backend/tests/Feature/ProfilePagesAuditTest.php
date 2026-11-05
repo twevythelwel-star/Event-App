@@ -136,17 +136,29 @@ class ProfilePagesAuditTest extends TestCase
             'require_transfer_reference' => '1',
             'require_sender_name' => '0',
             'refund_policy_deadline_hours' => 48,
-            'refund_policy_notes' => 'Full refunds until 48 hours before the event.',
+            'refund_policy_notes' => 'Refund requests are reviewed by the organizer. Provider-backed refunds are not supported in EventBite.',
+            'refund_policy_mode' => 'manual_full_only',
+            'host_cancellation_policy' => 'manual_refund_if_supported',
+            'postponement_policy' => 'contact_organizer',
+            'weather_cancellation_policy' => 'reschedule_tickets_valid',
+            'food_order_cancellation_deadline_hours' => 36,
+            'food_order_modification_deadline_hours' => 12,
         ])->assertRedirect(route('settings.show') . '#host')->assertSessionHas('status');
 
         $policy = HostPaymentPolicy::where('organizer_id', 'org-kingston-youth')->firstOrFail();
         $this->assertFalse($policy->enable_cash);
         $this->assertSame('Send to pay@demo.example with your order number.', $policy->zelle_instructions);
         $this->assertSame(48, (int) $policy->refund_policy_deadline_hours);
+        $this->assertSame('manual_full_only', $policy->refund_policy_mode);
+        $this->assertSame('reschedule_tickets_valid', $policy->weather_cancellation_policy);
+        $this->assertSame(36, (int) $policy->food_order_cancellation_deadline_hours);
         $this->assertSame(15, (int) HostOperationalRule::where('organizer_id', 'org-kingston-youth')->value('food_prep_buffer_percent'));
 
         // The refund policy is what the public event page shows.
-        $this->get('/events/' . self::EVENT)->assertSee('Full refunds until 48 hours before the event.');
+        $this->get('/events/' . self::EVENT)
+            ->assertSee('Provider-backed refunds are not supported in EventBite.')
+            ->assertSee('EventBite cannot process provider-backed refunds.')
+            ->assertDontSee('Full refund available up to 48 hours');
 
         // Out of range and wrong role are refused.
         $this->actingAs($this->host())->post('/settings/host', ['food_prep_buffer_percent' => 90])->assertSessionHasErrors('food_prep_buffer_percent');
@@ -198,10 +210,37 @@ class ProfilePagesAuditTest extends TestCase
 
     public function test_new_events_keep_their_date_so_they_are_listed_as_upcoming(): void
     {
-        $this->actingAs($this->host())->post('/events', $this->eventForm(['title' => 'Winter Supper Club', 'event_date_iso' => '2027-01-16', 'status' => 'published']))
-            ->assertRedirect();
+        $this->actingAs($this->host())->post('/events', $this->eventForm([
+            'title' => 'Winter Supper Club',
+            'event_date_iso' => '2027-01-16',
+            'end_date_iso' => '2027-01-17',
+            'start_time' => '22:00',
+            'end_time' => '02:00',
+            'ticket_sales_start_at' => '2027-01-01T09:00',
+            'ticket_sales_end_at' => '2027-01-15T18:00',
+            'early_bird_starts_at' => '2027-01-02T09:00',
+            'early_bird_ends_at' => '2027-01-10T18:00',
+            'ticket_tiers_submitted' => '1',
+            'ticket_tiers' => [[
+                'name' => 'General admission',
+                'price' => '12.50',
+                'available_stock' => 80,
+                'max_per_customer' => 6,
+            ]],
+            'menu_items' => [[
+                'name' => 'Winter dinner plate',
+                'category' => 'Mains',
+                'price_usd' => 12,
+                'price_jmd' => 1800,
+                'pricing_type' => 'fixed',
+                'available_stock' => 80,
+            ]],
+            'status' => 'published',
+        ]))->assertRedirect()->assertSessionHasNoErrors();
         $event = Event::allTenants()->where('title', 'Winter Supper Club')->firstOrFail();
         $this->assertSame('2027-01-16', substr((string) $event->event_date_iso, 0, 10));
+        $this->assertSame('2027-01-17', substr((string) $event->end_date_iso, 0, 10));
+        $this->assertSame('2027-01-02 14:00:00', $event->early_bird_starts_at->utc()->format('Y-m-d H:i:s'));
 
         $this->actingAs($this->host())->post('/events', $this->eventForm(['title' => 'Bad Date', 'event_date_iso' => '16/01/2027']))
             ->assertSessionHasErrors('event_date_iso');

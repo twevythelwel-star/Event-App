@@ -40,6 +40,8 @@ return [
     */
 
     'debug' => (bool) env('APP_DEBUG', false),
+    'slow_request_threshold_ms' => (int) env('SLOW_REQUEST_THRESHOLD_MS', 2000),
+    'slow_query_threshold_ms' => (int) env('SLOW_QUERY_THRESHOLD_MS', 250),
 
     /*
     |--------------------------------------------------------------------------

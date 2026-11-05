@@ -10,9 +10,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'active'])->group(function () {
     Route::prefix('events/{event}/order')->name('checkout.')->group(function () {
         Route::get('/tickets', [CheckoutController::class, 'tickets'])->name('tickets');
-        Route::post('/tickets', [CheckoutController::class, 'saveTickets'])->name('tickets.save');
+        Route::post('/tickets', [CheckoutController::class, 'saveTickets'])->name('tickets.save')->middleware('throttle:60,1');
         Route::get('/food', [CheckoutController::class, 'food'])->name('food');
-        Route::post('/food', [CheckoutController::class, 'saveFood'])->name('food.save');
+        Route::post('/food', [CheckoutController::class, 'saveFood'])->name('food.save')->middleware('throttle:60,1');
         Route::get('/checkout', [CheckoutController::class, 'review'])->name('review');
         Route::post('/checkout', [CheckoutController::class, 'place'])->name('place')->middleware('throttle:15,1');
     });

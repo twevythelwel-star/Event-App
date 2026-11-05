@@ -1,7 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\FraudPreventionController;
+use App\Http\Controllers\Admin\FeatureFlagController;
 use App\Http\Controllers\Admin\LocationManagementController;
+use App\Http\Controllers\Admin\NotificationSettingsController;
+use App\Http\Controllers\Admin\PaymentConfigurationController;
+use App\Http\Controllers\Admin\QrCodeConfigurationController;
 use App\Http\Controllers\Admin\EventOversightController;
 use App\Http\Controllers\Admin\OrderOversightController;
 use App\Http\Controllers\Admin\OverviewController;
@@ -56,4 +61,28 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
         Route::patch('/locations/states/{state}', [LocationManagementController::class, 'updateState'])->name('locations.states.update')->middleware('throttle:30,1');
         Route::post('/locations/markets', [LocationManagementController::class, 'storeMarket'])->name('locations.markets.store')->middleware('throttle:20,1');
         Route::patch('/locations/markets/{market}', [LocationManagementController::class, 'updateMarket'])->name('locations.markets.update')->middleware('throttle:30,1');
+
+        // Payment Configuration
+        Route::get('/payments', [PaymentConfigurationController::class, 'index'])->name('payments.index');
+        Route::post('/payments/{processor}/approve', [PaymentConfigurationController::class, 'approveProcessor'])->name('payments.approve')->middleware('throttle:20,1');
+        Route::post('/payments/{processor}/disable', [PaymentConfigurationController::class, 'disableProcessor'])->name('payments.disable')->middleware('throttle:20,1');
+        Route::get('/payments/webhooks', [PaymentConfigurationController::class, 'webhookHealth'])->name('payments.webhooks');
+        Route::get('/payments/transactions', [PaymentConfigurationController::class, 'transactionLogs'])->name('payments.transactions');
+
+        // QR Code Configuration
+        Route::get('/qr-codes', [QrCodeConfigurationController::class, 'index'])->name('qr-codes.index');
+        Route::post('/qr-codes', [QrCodeConfigurationController::class, 'update'])->name('qr-codes.update')->middleware('throttle:20,1');
+
+        // Notification Settings
+        Route::get('/notifications', [NotificationSettingsController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications', [NotificationSettingsController::class, 'update'])->name('notifications.update')->middleware('throttle:20,1');
+
+        // Fraud Prevention
+        Route::get('/fraud', [FraudPreventionController::class, 'index'])->name('fraud.index');
+        Route::post('/fraud', [FraudPreventionController::class, 'update'])->name('fraud.update')->middleware('throttle:20,1');
+
+        // Feature Flags
+        Route::get('/feature-flags', [FeatureFlagController::class, 'index'])->name('feature-flags.index');
+        Route::post('/feature-flags', [FeatureFlagController::class, 'update'])->name('feature-flags.update')->middleware('throttle:20,1');
+
     });

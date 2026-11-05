@@ -49,9 +49,16 @@ class Order extends Model
         'authorized_unpaid',
         'secure_ticket_token',
         'idempotency_key',
+        'ticket_restrictions',
         'all_handed_over',
         'closed_at',
+        'reservation_expires_at',
+        'inventory_released_at',
+        'check_in_request_id',
         'notes',
+        'food_fulfillment_method',
+        'pickup_window',
+        'delivery_location',
     ];
 
     protected $casts = [
@@ -67,11 +74,14 @@ class Order extends Model
         'amount_paid_minor' => 'integer',
         'refunded_minor' => 'integer',
         'refund_details' => 'array',
+        'ticket_restrictions' => 'array',
         'authorized_unpaid' => 'boolean',
         'all_handed_over' => 'boolean',
         'verified_at' => 'datetime',
         'closed_at' => 'datetime',
         'checked_in_at' => 'datetime',
+        'reservation_expires_at' => 'datetime',
+        'inventory_released_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -138,5 +148,59 @@ class Order extends Model
     public function balanceMinor(): int
     {
         return max(0, (int) $this->total_minor - (int) $this->amount_paid_minor);
+    }
+
+    /**
+     * Add a ticket restriction to this order.
+     *
+     * @param string $type Restriction type (e.g., 'time_window', 'max_uses', 'age_restriction')
+     * @param mixed $value Restriction value
+     * @return void
+     */
+    public function addTicketRestriction(string $type, mixed $value): void
+    {
+        $restrictions = $this->ticket_restrictions ?? [];
+        $restrictions[] = [
+            'type' => $type,
+            'value' => $value,
+            'added_at' => now()->toIso8601String(),
+        ];
+        $this->ticket_restrictions = $restrictions;
+    }
+
+    /**
+     * Check if the ticket has a specific restriction type.
+     */
+    public function hasTicketRestriction(string $type): bool
+    {
+        if (empty($this->ticket_restrictions) || !is_array($this->ticket_restrictions)) {
+            return false;
+        }
+
+        foreach ($this->ticket_restrictions as $restriction) {
+            if (($restriction['type'] ?? '') === $type) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Get a specific ticket restriction by type.
+     */
+    public function getTicketRestriction(string $type): mixed
+    {
+        if (empty($this->ticket_restrictions) || !is_array($this->ticket_restrictions)) {
+            return null;
+        }
+
+        foreach ($this->ticket_restrictions as $restriction) {
+            if (($restriction['type'] ?? '') === $type) {
+                return $restriction['value'] ?? null;
+            }
+        }
+
+        return null;
     }
 }

@@ -279,6 +279,24 @@
                                 <td>
                                     <div style="font-weight: 700; color: var(--color-navy);">#{{ $order->order_number }}</div>
                                     <span style="font-size: 0.75rem; color: var(--color-text-muted);">Code: {{ $order->ticket_code }}</span>
+                                    @php($cancellation = $ordersWithEstimates->firstWhere('id', $order->id)['cancellation'] ?? [])
+                                    <div style="font-size:0.75rem;color:var(--color-text-secondary);margin-top:.35rem">
+                                        Refund: {{ str_replace('_', ' ', $cancellation['refundStatus'] ?? 'not_started') }}
+                                        @if(!empty($cancellation['deadline'])) · Requests close {{ \Illuminate\Support\Carbon::parse($cancellation['deadline'])->format('M d, Y g:i A T') }} @endif
+                                    </div>
+                                    @if(!empty($cancellation['policyNotes']))<div style="font-size:.75rem;color:var(--color-text-muted);margin-top:.2rem">{{ $cancellation['policyNotes'] }}</div>@endif
+                                    @foreach(($cancellation['refundHistory'] ?? []) as $refund)
+                                        <div style="font-size:.75rem;color:var(--color-text-secondary);margin-top:.2rem">Refund {{ \App\Support\Money::formatMinor((int) $refund['amount_minor'], $order->currency) }} · {{ $refund['refundedAt'] }} · {{ $refund['reason'] }}</div>
+                                    @endforeach
+                                    @if(!empty($cancellation['eligible']))
+                                        <form method="POST" action="{{ route('attendee.cancellations.store', $order->id) }}" style="margin-top:.4rem">
+                                            @csrf
+                                            <input name="reason" maxlength="500" placeholder="Reason (optional)" aria-label="Cancellation reason">
+                                            <button class="eb-btn eb-btn-secondary eb-btn-sm" type="submit">Request cancellation</button>
+                                        </form>
+                                    @elseif(!empty($cancellation['status']))
+                                        <div style="font-size:.75rem;color:var(--color-text-secondary);margin-top:.3rem">Request status: {{ str_replace('_', ' ', $cancellation['status']) }}</div>
+                                    @endif
                                 </td>
                                 <td>
                                     <span>{{ date('M d, Y', strtotime($order->created_at)) }}</span>

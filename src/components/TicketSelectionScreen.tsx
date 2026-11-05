@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { FoodPhoto } from "./FoodPhoto";
 import {
   ArrowLeft,
   Calendar,
@@ -16,13 +17,15 @@ import {
 export interface TicketOption {
   id: string;
   name: string;
-  category: "General" | "VIP" | "Early Bird" | "Group";
+  category: string;
   priceUSD: number;
   priceJMD: number;
   description: string;
   benefits: string[];
   availableStock: number;
   maxPerCustomer: number;
+  minPerOrder: number;
+  admissionCount: number;
   saleStatus: "available" | "low_stock" | "sold_out" | "sale_ended";
   restrictions?: string;
   badge?: string;
@@ -77,6 +80,8 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
         ],
         availableStock: 185,
         maxPerCustomer: 6,
+        minPerOrder: 1,
+        admissionCount: 1,
         saleStatus: "available",
         restrictions: "Maximum 6 passes per customer",
         badge: "POPULAR",
@@ -96,6 +101,8 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
         ],
         availableStock: 38,
         maxPerCustomer: 4,
+        minPerOrder: 1,
+        admissionCount: 1,
         saleStatus: "low_stock",
         restrictions: "Maximum 4 passes per customer • Age 18+ for VIP lounge access",
         badge: "VIP EXPERIENCE",
@@ -113,6 +120,8 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
         ],
         availableStock: 0,
         maxPerCustomer: 4,
+        minPerOrder: 1,
+        admissionCount: 1,
         saleStatus: "sale_ended",
         restrictions: "Sale ended Nov 15 • Tier sold out",
         badge: "SOLD OUT",
@@ -131,6 +140,8 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
         ],
         availableStock: 25,
         maxPerCustomer: 2,
+        minPerOrder: 1,
+        admissionCount: 4,
         saleStatus: "available",
         restrictions: "Admits 4 people • Maximum 2 packages per customer",
         badge: "GROUP SAVINGS",
@@ -138,44 +149,77 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
     ];
 
     if (Array.isArray(event?.ticketTiers) && event.ticketTiers.length > 0) {
-      return event.ticketTiers.map((t: any, idx: number): TicketOption => {
-        const stock = Number(t.quantityLimit ?? t.quantity_limit ?? t.availableStock ?? 100);
-        const maxPer = Number(t.maxPerCustomer ?? t.max_per_customer ?? 6);
+      return event.ticketTiers
+        .filter((tier: any) => tier && tier.isActive !== false && tier.is_active !== false
+          && tier.visibility !== "hidden")
+        .map((t: any, idx: number): TicketOption => {
+        const stock = Number(t.available ?? t.availableStock ?? t.available_stock ?? t.quantityLimit ?? t.quantity_limit ?? 0);
+        const configuredMax = Number(t.maxPerCustomer ?? t.max_per_customer ?? t.max_per_order ?? t.max ?? 6);
+        const maxPer = Number.isFinite(stock) && stock > 0 ? Math.min(configuredMax, stock) : configuredMax;
+        const minPer = Number(t.min ?? t.minPerOrder ?? t.min_per_order ?? 1);
+        const saleStart = t.saleStartIso ?? t.sale_start_iso;
+        const saleEnd = t.saleEndIso ?? t.sale_end_iso;
+        const now = Date.now();
+        const saleNotStarted = saleStart && new Date(saleStart).getTime() > now;
+        const saleEnded = saleEnd && new Date(saleEnd).getTime() < now;
+        const unavailableByWindow = t.on_sale === false || saleNotStarted || saleEnded;
+        const price = Number(t.price ?? 0);
+        const ticketPriceUSD = Number(t.priceUSD ?? t.price_usd ?? (currency === "USD" ? price : 0));
+        const ticketPriceJMD = Number(t.priceJMD ?? t.price_jmd ?? (currency === "JMD" ? price : 0));
+        const benefits = Array.isArray(t.benefits) ? t.benefits.filter(Boolean).map(String) : [];
+        if (t.admissionPrivileges ?? t.admission_privileges) {
+          benefits.push(String(t.admissionPrivileges ?? t.admission_privileges));
+        }
+        if (t.includedFoodAndDrinks ?? t.included_food_and_drinks) {
+          benefits.push(`Included: ${t.includedFoodAndDrinks ?? t.included_food_and_drinks}`);
+        }
+        const ageRestriction = t.ageRestriction ?? t.age_restriction;
+        const restrictions = [
+          `Maximum ${maxPer} per order`,
+          minPer > 1 ? `Minimum ${minPer} per order` : "",
+          Number(t.admissionCount ?? t.admission_count ?? 1) > 1
+            ? `Admits ${Number(t.admissionCount ?? t.admission_count)} people`
+            : "",
+          ageRestriction ? `Age: ${ageRestriction}` : "",
+        ].filter(Boolean).join(" · ");
+        const ticketStatus = t.sold_out || stock <= 0
+          ? "sold_out"
+          : unavailableByWindow
+            ? "sale_ended"
+            : stock <= 25
+              ? "low_stock"
+              : "available";
         return {
           id: String(t.id || `tier-${idx}`),
           name: String(t.name || "Admission Pass"),
-          category: String(t.name || "").toLowerCase().includes("vip")
-            ? "VIP"
-            : String(t.name || "").toLowerCase().includes("group")
-            ? "Group"
-            : "General",
-          priceUSD: Number(t.priceUSD ?? t.price_usd ?? 15),
-          priceJMD: Number(t.priceJMD ?? t.price_jmd ?? 2250),
+          category: String(t.category || "General Admission"),
+          priceUSD: ticketPriceUSD,
+          priceJMD: ticketPriceJMD,
           description: String(t.description || "Includes event admission and instant digital QR pass."),
-          benefits: ["Admission to main event grounds", "Instant digital QR pass issued to mobile"],
+          benefits: benefits.length > 0 ? benefits : ["Admission to the event"],
           availableStock: stock,
           maxPerCustomer: maxPer,
-          saleStatus: stock <= 0 ? "sold_out" : stock <= 25 ? "low_stock" : "available",
-          restrictions: `Maximum ${maxPer} passes per customer`,
-          badge: stock <= 0 ? "SOLD OUT" : idx === 0 ? "POPULAR" : undefined,
+          minPerOrder: minPer,
+          admissionCount: Number(t.admissionCount ?? t.admission_count ?? 1),
+          saleStatus: ticketStatus,
+          restrictions,
+          badge: ticketStatus === "sold_out" ? "SOLD OUT" : t.early_bird ? "EARLY BIRD" : undefined,
         };
       });
     }
 
     return defaults;
-  }, [event?.ticketTiers]);
+  }, [event?.ticketTiers, currency]);
 
   // Ticket quantities state (preserves initial state if returning from food menu)
   const [ticketQuantities, setTicketQuantities] = useState<Record<string, number>>(() => {
     if (initialSelectedTickets && Object.keys(initialSelectedTickets).length > 0) {
       return initialSelectedTickets;
     }
-    return {
-      "tier-ga": 1,
-      "tier-vip": 0,
-      "tier-early-bird": 0,
-      "tier-group": 0,
-    };
+    const firstAvailableTier = ticketOptions.find((tier) =>
+      tier.saleStatus === "available" || tier.saleStatus === "low_stock"
+    );
+    return firstAvailableTier ? { [firstAvailableTier.id]: firstAvailableTier.minPerOrder } : {};
   });
 
   // Optional food quantities state (preserves selections)
@@ -216,6 +260,14 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
 
     if (newQty > tier.availableStock) {
       showError(`Only ${tier.availableStock} passes remaining in stock for "${tier.name}".`);
+      return;
+    }
+    if (delta < 0 && newQty > 0 && newQty < tier.minPerOrder) {
+      if (currentQty === tier.minPerOrder) {
+        setTicketQuantities((prev) => ({ ...prev, [tier.id]: 0 }));
+        return;
+      }
+      showError(`Select at least ${tier.minPerOrder} "${tier.name}" passes or remove the selection.`);
       return;
     }
 
@@ -259,7 +311,7 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
     return acc + qty * unitPriceCents;
   }, 0);
 
-  const totalTicketCount = Object.values(ticketQuantities).reduce((a, b) => a + b, 0);
+  const totalTicketCount = ticketOptions.reduce((total, tier) => total + (ticketQuantities[tier.id] || 0), 0);
   const totalFoodCount = Object.values(foodQuantities).reduce((a, b) => a + b, 0);
 
   // Applicable packaging / facility fee
@@ -284,13 +336,36 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
 
   // Proceed to next stage of checkout
   const handleContinue = () => {
+    const unavailableSelection = ticketOptions.find((tier) => {
+      const quantity = ticketQuantities[tier.id] || 0;
+      return quantity > 0 && (
+        tier.saleStatus === "sold_out" ||
+        tier.saleStatus === "sale_ended" ||
+        quantity > tier.availableStock ||
+        quantity > tier.maxPerCustomer
+      );
+    });
+    if (unavailableSelection) {
+      showError(`"${unavailableSelection.name}" is no longer available in the selected quantity. Please update your tickets.`);
+      return;
+    }
+    const invalidMinimum = ticketOptions.find((tier) => {
+      const quantity = ticketQuantities[tier.id] || 0;
+      return quantity > 0 && quantity < tier.minPerOrder;
+    });
+    if (invalidMinimum) {
+      showError(`Select at least ${invalidMinimum.minPerOrder} "${invalidMinimum.name}" passes or remove the selection.`);
+      return;
+    }
     if (totalTicketCount === 0 && totalFoodCount === 0) {
       showError("Please select at least 1 ticket pass to continue.");
       return;
     }
 
     onContinueToCheckout({
-      selectedTickets: ticketQuantities,
+      selectedTickets: Object.fromEntries(ticketOptions
+        .filter((tier) => (ticketQuantities[tier.id] || 0) > 0)
+        .map((tier) => [tier.id, ticketQuantities[tier.id]])),
       selectedFood: foodQuantities,
       ticketSubtotal,
       foodSubtotal,
@@ -498,6 +573,11 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
 
               {/* Ticket Cards Grid */}
               <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {ticketOptions.length === 0 && (
+                  <p role="status" style={{ color: "var(--att-text-2)" }}>
+                    No tickets are currently available for this event.
+                  </p>
+                )}
                 {ticketOptions.map((tier) => {
                   const qty = ticketQuantities[tier.id] || 0;
                   const isSoldOut = tier.saleStatus === "sold_out" || tier.saleStatus === "sale_ended";
@@ -554,6 +634,9 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
                             )}
                           </div>
 
+                          <div style={{ fontSize: "11px", color: "var(--att-accent)", marginTop: "5px", fontWeight: 700 }}>
+                            {tier.category}{tier.admissionCount > 1 ? ` · Admits ${tier.admissionCount}` : ""}
+                          </div>
                           <p style={{ fontSize: "13px", color: "var(--att-text-2)", margin: "6px 0 12px", lineHeight: "1.4" }}>
                             {tier.description}
                           </p>
@@ -798,10 +881,11 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "12px", minWidth: 0 }}>
-                          <img
-                            src={dish.imageUrl || "/images/escovitch_fish.jpg"}
+                          <FoodPhoto
+                            src={dish.imageUrl}
                             alt={dish.name}
-                            style={{ width: "48px", height: "48px", borderRadius: "10px", objectFit: "cover", flexShrink: 0 }}
+                            showUnavailableText={false}
+                            style={{ width: "48px", height: "48px", borderRadius: "10px", flexShrink: 0 }}
                           />
                           <div style={{ minWidth: 0 }}>
                             <div style={{ fontSize: "14px", fontWeight: 700, color: "#FFFFFF", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

@@ -157,6 +157,22 @@ async function validateTicket() {
     const code = input.value.trim();
     if (!code) return;
 
+    // A network retry reuses the original idempotency key. If the server admitted the guest
+    // but the response was lost, the retry returns the same successful verdict instead of a
+    // misleading duplicate rejection. Offline scans are never shown as admitted.
+    const requestKey = `eventbite:scan:{{ $event->id }}`;
+    const codeHashBytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(code));
+    const codeHash = Array.from(new Uint8Array(codeHashBytes), b => b.toString(16).padStart(2, '0')).join('');
+    let scanRequestId = null;
+    try {
+        const saved = JSON.parse(sessionStorage.getItem(requestKey) || 'null');
+        if (saved?.code_hash === codeHash && saved?.id) scanRequestId = saved.id;
+    } catch (_) {}
+    if (!scanRequestId) {
+        scanRequestId = crypto.randomUUID();
+        try { sessionStorage.setItem(requestKey, JSON.stringify({ code_hash: codeHash, id: scanRequestId })); } catch (_) {}
+    }
+
     button.disabled = true;
     box.hidden = false;
     box.style.borderColor = 'var(--border-color)';
@@ -165,12 +181,13 @@ async function validateTicket() {
     details.textContent = '';
 
     try {
-        const { ok, data } = await postJson(form.dataset.url, { ticket_code: code });
+        const { ok, status, data } = await postJson(form.dataset.url, { ticket_code: code, scan_request_id: scanRequestId });
+        if (status < 500) { try { sessionStorage.removeItem(requestKey); } catch (_) {} }
         const admitted = ok && data.success === true;
         box.style.borderColor = admitted ? 'var(--accent-emerald)' : 'var(--accent-rose, #f87171)';
         verdict.style.color = admitted ? 'var(--accent-emerald)' : 'var(--accent-rose, #f87171)';
         if (admitted) {
-            verdict.textContent = '✓ ADMIT';
+            verdict.textContent = data.replayed ? '✓ ADMIT (confirmed retry)' : '✓ ADMIT';
             details.textContent = [data.ticket?.customer_name, data.ticket?.order_number].filter(Boolean).join(' • ');
         } else if (data.already_admitted) {
             verdict.textContent = '✕ ALREADY USED — DO NOT ADMIT';
@@ -180,16 +197,27 @@ async function validateTicket() {
             details.textContent = data.rejection_reason || data.error || data.message || 'The ticket could not be verified.';
         }
     } catch (e) {
-        box.style.borderColor = 'var(--accent-rose, #f87171)';
-        verdict.style.color = 'var(--accent-rose, #f87171)';
-        verdict.textContent = '✕ NOT CHECKED';
-        details.textContent = 'Could not reach the server. Do not admit until the ticket is checked.';
+        box.style.borderColor = 'var(--accent-amber, #fbbf24)';
+        verdict.style.color = 'var(--accent-amber, #fbbf24)';
+        verdict.textContent = 'CONNECTION LOST — NOT ADMITTED';
+        details.textContent = 'The scan is still in the input. Reconnect and retry this same code; do not admit based on an offline result.';
     } finally {
         button.disabled = false;
-        input.value = '';
+        if (navigator.onLine && verdict.textContent.startsWith('✓ ADMIT')) input.value = '';
         input.focus();
     }
 }
+
+function updateScannerConnection() {
+    const status = document.getElementById('scanner_connection');
+    if (!status) return;
+    status.textContent = navigator.onLine
+        ? 'Connected. Each admission is verified and recorded by the server.'
+        : 'Offline. Ticket lookup may be unavailable; scans cannot admit guests until the server confirms them.';
+}
+window.addEventListener('online', updateScannerConnection);
+window.addEventListener('offline', updateScannerConnection);
+updateScannerConnection();
 
 // Food station: look up an order, then hand over portions one line at a time.
 let currentFoodOrder = null;

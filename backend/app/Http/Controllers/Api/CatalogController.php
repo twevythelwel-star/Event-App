@@ -53,11 +53,13 @@ class CatalogController extends Controller
             throw ValidationException::withMessages(['latitude' => 'Latitude and longitude must be supplied together.']);
         }
 
+        $perPage = min(48, max(12, (int) $request->query('per_page', 24)));
         $events = TenantContext::withoutTenantScope(function () use (
-            $search, $category, $stateCode, $city, $zipCode,
+            $perPage, $request, $search, $category, $stateCode, $city, $zipCode,
         ) {
             $query = Event::query()
                 ->where('status', 'published')
+                ->where('visibility', 'public')
                 ->where('country_code', 'US')
                 ->with(['state', 'menuItems' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')]);
 
@@ -91,11 +93,14 @@ class CatalogController extends Controller
                 });
             }
 
-            return $query->orderBy('advance_order_deadline')->get();
+            $page = $query->orderByDesc('is_featured')->orderBy('event_date_iso')->orderBy('start_time')->paginate($perPage)->withQueryString();
+            return $page;
         });
 
+        $eventItems = $events->getCollection();
+
         if ($latitude !== null && $longitude !== null) {
-            $events = $events->filter(function (Event $event) use ($latitude, $longitude, $radiusMiles) {
+            $eventItems = $eventItems->filter(function (Event $event) use ($latitude, $longitude, $radiusMiles) {
                 if ($event->latitude === null || $event->longitude === null) {
                     return false;
                 }
@@ -111,11 +116,11 @@ class CatalogController extends Controller
         }
 
         if ($availableOnly) {
-            $events = $events->filter(fn (Event $event) => $event->isOrderingAllowed());
+            $eventItems = $eventItems->filter(fn (Event $event) => $event->isOrderingAllowed());
         }
         if ($priceMin !== null || $priceMax !== null) {
             // Compared in integer minor units in each event's own currency; the filter values are parsed exactly.
-            $events = $events->filter(function (Event $event) use ($priceMin, $priceMax) {
+            $eventItems = $eventItems->filter(function (Event $event) use ($priceMin, $priceMax) {
                 $currency = (string) ($event->currency ?: \App\Support\Currency::defaultCode());
                 $prices = collect(\App\Services\Checkout\TicketTierCatalog::sellable($event))->pluck('price_minor')
                     ->merge($event->menuItems->where('is_active', true)->map(fn ($item) => $item->price_minor))
@@ -128,13 +133,14 @@ class CatalogController extends Controller
             })->values();
         }
 
+        $events->setCollection($eventItems);
         return EventResource::collection($events);
     }
 
     public function placeOrder(StoreOrderRequest $request, string $eventSlug): JsonResponse
     {
         $event = TenantContext::withoutTenantScope(
-            fn () => Event::where('slug', $eventSlug)->where('status', 'published')->first()
+            fn () => Event::where('slug', $eventSlug)->where('status', 'published')->where('visibility', '!=', 'private')->first()
         );
 
         if (!$event) {
@@ -158,8 +164,20 @@ class CatalogController extends Controller
             ->where('user_id', $request->user()->id)
             ->with('items')
             ->latest()
-            ->get());
+            ->paginate(min(100, max(10, (int) $request->query('per_page', 25))))->withQueryString());
 
         return OrderResource::collection($orders);
+    }
+
+    public function requestCancellation(Request $request, string $orderId, \App\Services\CancellationService $cancellations): JsonResponse
+    {
+        $data = $request->validate(['reason' => ['nullable', 'string', 'max:500']]);
+        $order = Order::withoutGlobalScopes()->whereKey($orderId)->where('user_id', $request->user()->id)->firstOrFail();
+        try {
+            $cancellations->request($request->user(), $order, $data['reason'] ?? null);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 422);
+        }
+        return (new OrderResource($order->fresh(['items', 'event'])))->response();
     }
 }

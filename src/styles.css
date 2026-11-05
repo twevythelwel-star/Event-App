@@ -56,6 +56,17 @@ body { min-width: 320px; margin: 0; background: var(--color-background); color: 
 button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 
+.cultural-country-card { transition: transform 160ms ease, border-color 160ms ease, background-color 160ms ease; }
+.cultural-country-card:hover:not(:disabled) { transform: translateY(-2px); border-color: #34D399 !important; }
+.cultural-selection-panel { animation: cultural-selection-reveal 220ms ease-out both; }
+.cultural-served-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; color: #CBD5E1; font-size: 11px; }
+.cultural-served-summary strong { color: #A7F3D0; margin-right: 3px; }
+.cultural-served-summary span { padding: 5px 8px; border: 1px solid rgba(52, 211, 153, .22); border-radius: 6px; background: rgba(52, 211, 153, .08); }
+@keyframes cultural-selection-reveal { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) {
+  .cultural-country-card, .cultural-selection-panel { animation: none; transition: none; }
+}
+
 .app-shell { display: block; width: min(1140px, calc(100% - 48px)); margin: 0 auto; padding-bottom: 40px; }
 .guest-journey-container { min-width: 0; max-width: 100%; }
 
@@ -7878,4 +7889,114 @@ button { cursor: pointer; }
 @media (max-width: 600px) {
   #island-digital-ticket-pass { --att-ticket-art-height: 150px; }
   #island-digital-ticket-pass h1 { font-size: 22px !important; }
+}
+*:focus-visible {
+  outline: 3px solid #005fcc !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 2px #fff !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.admin-catalog-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  align-items: end;
+  gap: 14px;
+  margin: 18px 0 24px;
+  padding: 18px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.admin-catalog-form label,
+.admin-catalog-section .panel-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-catalog-form input,
+.admin-catalog-form select,
+.admin-catalog-section .panel-toolbar input {
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  color: #0f172a;
+  font: inherit;
+}
+
+.admin-catalog-form .admin-catalog-check {
+  flex-direction: row;
+  align-items: center;
+}
+
+.admin-catalog-actions,
+.admin-catalog-row > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-catalog-section .secondary-button {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: white;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-catalog-section .secondary-button:hover {
+  background: #f1f5f9;
+}
+
+.admin-catalog-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-catalog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+}
+
+.admin-catalog-row span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.admin-catalog-row small {
+  color: #64748b;
+  font-size: 10px;
+}
+
+@media (max-width: 600px) {
+  .admin-catalog-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

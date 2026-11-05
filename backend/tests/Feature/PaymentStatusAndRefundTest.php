@@ -166,20 +166,20 @@ class PaymentStatusAndRefundTest extends TestCase
         $total = (float) $order->total_amount;
         $ledger = app(CashLedgerService::class);
 
-        $ledger->refundOrder($this->host, $order->id, $total - 100, 'Most of it');
+        $ledger->refundOrder($this->host, $order->id, $total - 100, 'Most of it', 'test-refund-1');
         try {
-            $ledger->refundOrder($this->host, $order->id, 200, 'More than is left');
+            $ledger->refundOrder($this->host, $order->id, 200, 'More than is left', 'test-refund-over');
             $this->fail('Refunded more than was received.');
         } catch (\InvalidArgumentException) {
         }
-        $ledger->refundOrder($this->host, $order->id, 100, 'The rest');
+        $ledger->refundOrder($this->host, $order->id, 100, 'The rest', 'test-refund-2');
 
         $fresh = $order->fresh();
         $this->assertSame('refunded', $fresh->status);
         $this->assertEqualsWithDelta($total, array_sum(array_column(CashLedgerService::refundEntries($fresh), 'amount')), 0.001);
 
         try {
-            $ledger->refundOrder($this->host, $order->id, 1, 'Again');
+            $ledger->refundOrder($this->host, $order->id, 1, 'Again', 'test-refund-again');
             $this->fail('Refunded a fully refunded order.');
         } catch (\InvalidArgumentException) {
         }
@@ -194,13 +194,13 @@ class PaymentStatusAndRefundTest extends TestCase
         $this->assertSame(17, (int) $this->dish->fresh()->available_stock);
 
         // A partial refund is an amount, not items: nothing comes back.
-        $ledger->refundOrder($this->host, $order->id, 100, 'Goodwill');
+        $ledger->refundOrder($this->host, $order->id, 100, 'Goodwill', 'test-refund-partial');
         $this->assertSame(8, $this->tierStock());
         $this->assertSame(17, (int) $this->dish->fresh()->available_stock);
 
         // One portion was already handed over; the other two come back with both tickets.
         $order->items()->whereNotNull('menu_item_id')->update(['collected_quantity' => 1]);
-        $ledger->refundOrder($this->host, $order->id, (float) $order->fresh()->amount_paid - 100, 'Event postponed');
+        $ledger->refundOrder($this->host, $order->id, (float) $order->fresh()->amount_paid - 100, 'Event postponed', 'test-refund-final');
 
         $this->assertSame('refunded', $order->fresh()->status);
         $this->assertSame(10, $this->tierStock());
@@ -214,7 +214,7 @@ class PaymentStatusAndRefundTest extends TestCase
         $order = $this->paidOrder(2, 0);
         $order->forceFill(['checked_in_at' => now()])->save();
 
-        app(CashLedgerService::class)->refundOrder($this->host, $order->id, (float) $order->amount_paid, 'Left early');
+        app(CashLedgerService::class)->refundOrder($this->host, $order->id, (float) $order->amount_paid, 'Left early', 'test-refund-stock');
 
         $this->assertSame('refunded', $order->fresh()->status);
         $this->assertSame(8, $this->tierStock());

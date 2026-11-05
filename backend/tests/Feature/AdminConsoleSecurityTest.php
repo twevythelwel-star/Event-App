@@ -65,6 +65,17 @@ class AdminConsoleSecurityTest extends TestCase
         return $user->fresh();
     }
 
+    public function test_delegated_admin_policies_enforce_organizer_scope_and_do_not_grant_refunds(): void
+    {
+        $event = Event::withoutGlobalScopes()->where('organizer_id', self::KINGSTON)->firstOrFail();
+        $order = Order::withoutGlobalScopes()->where('organizer_id', self::KINGSTON)->firstOrFail();
+        $admin = $this->delegatedAdmin(['can_manage_events' => true, 'can_view_payments' => true], [self::HELLSHIRE]);
+
+        $this->assertFalse(\Illuminate\Support\Facades\Gate::forUser($admin)->allows('update', $event));
+        $this->assertFalse(\Illuminate\Support\Facades\Gate::forUser($admin)->allows('view', $order));
+        $this->assertFalse(\Illuminate\Support\Facades\Gate::forUser($admin)->allows('issueRefund', $order));
+    }
+
     private function eventOf(string $organizerId): Event
     {
         return Event::allTenants()->where('organizer_id', $organizerId)->firstOrFail();

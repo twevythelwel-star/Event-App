@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Services\CashLedgerService;
+use App\Services\CancellationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -65,32 +66,49 @@ class OrderResource extends JsonResource
                 'refundedAt' => $lastRefund['refundedAt'],
                 'refundedBy' => $lastRefund['refundedBy'],
             ] : null,
+            'cancellation' => app(CancellationService::class)->statusFor($this->resource),
             'authorizedUnpaid' => $this->authorized_unpaid,
             'createdAt' => $this->created_at?->toIso8601String(),
+            'reservationExpiresAt' => $this->reservation_expires_at?->toIso8601String(),
             'allHandedOver' => $this->all_handed_over,
             'closedAt' => $this->closed_at?->toIso8601String(),
             'notes' => $this->notes,
             'secureTicketToken' => $this->secure_ticket_token,
-            'items' => $this->items->map(fn ($item) => [
-                'id' => $item->id,
-                'menuItemId' => $item->menu_item_id,
-                'name' => $item->name,
-                'category' => $item->category,
-                'pricingType' => $item->pricing_type,
-                'basePrice' => (float) $item->base_price,
-                'selectedOptionsSummary' => $item->selected_options_summary ?? [],
-                'optionsTotalExtra' => (float) $item->options_total_extra,
-                'customDonationAmount' => $item->custom_donation_amount !== null ? (float) $item->custom_donation_amount : null,
-                'finalItemPrice' => (float) $item->final_item_price,
-                'currency' => $item->currency,
-                'quantity' => (int) $item->quantity,
-                'collectedQuantity' => (int) $item->collected_quantity,
-                'specialInstructions' => $item->special_instructions,
-                'handoverStatus' => $item->handover_status,
-                'handedOverAt' => $item->handed_over_at ? (string) $item->handed_over_at : null,
-                'handedOverBy' => $item->handed_over_by,
-                'stationHandedOver' => $item->station_handed_over,
-            ])->values(),
+            'items' => $this->items->map(function ($item) {
+                $item->setRelation('order', $this->resource);
+
+                return [
+                    'id' => $item->id,
+                    'menuItemId' => $item->menu_item_id,
+                    'name' => $item->name,
+                    'category' => $item->category,
+                    'pricingType' => $item->pricing_type,
+                    'basePrice' => (float) $item->base_price,
+                    'selectedOptionsSummary' => $item->selected_options_summary ?? [],
+                    'optionsTotalExtra' => (float) $item->options_total_extra,
+                    'customDonationAmount' => $item->custom_donation_amount !== null ? (float) $item->custom_donation_amount : null,
+                    'finalItemPrice' => (float) $item->final_item_price,
+                    'currency' => $item->currency,
+                    'quantity' => (int) $item->quantity,
+                    'collectedQuantity' => (int) $item->collected_quantity,
+                    'fulfilledQuantity' => (int) $item->collected_quantity,
+                    'remainingQuantity' => $item->remaining_quantity,
+                    'paymentStatus' => $item->payment_status,
+                    'preparationStatus' => $item->preparation_status,
+                    'pickupStatus' => match ($item->pickup_status) {
+                        'not_collected' => 'pending',
+                        'partly_collected' => 'partlyCollected',
+                        'collected' => 'collected',
+                    },
+                    'lineType' => $item->line_type,
+                    'packageLineId' => $item->package_line_id,
+                    'specialInstructions' => $item->special_instructions,
+                    'handoverStatus' => $item->handover_status,
+                    'handedOverAt' => $item->handed_over_at ? (string) $item->handed_over_at : null,
+                    'handedOverBy' => $item->handed_over_by,
+                    'stationHandedOver' => $item->station_handed_over,
+                ];
+            })->values(),
         ];
     }
 }

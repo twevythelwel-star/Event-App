@@ -309,7 +309,7 @@ export function OrganizerDashboard({
     setDishDescription("");
     setDishPriceUSD("10");
     setDishPriceJMD("1500");
-    setDishImage("/images/escovitch_fish.jpg");
+    setDishImage("");
     setDishStock("120");
     setDishOptionGroups([]);
     setIsAddModalOpen(true);
@@ -334,6 +334,10 @@ export function OrganizerDashboard({
   const handleSaveDish = (e: React.FormEvent) => {
     e.preventDefault();
     if (!dishName.trim()) return;
+    if (!dishImage.trim() && !editingItem?.imageUrl) {
+      triggerToast("Upload a photo of the actual food before saving.");
+      return;
+    }
     const usd = parseFloat(dishPriceUSD) || 8;
     const jmd = parseFloat(dishPriceJMD) || 1200;
     const stock = parseInt(dishStock, 10) || 100;
@@ -368,7 +372,7 @@ export function OrganizerDashboard({
         description: dishDescription.trim() || "Freshly prepared for your event menu.",
         priceUSD: usd,
         priceJMD: jmd,
-        imageUrl: dishImage.trim() || "/images/escovitch_fish.jpg",
+        imageUrl: dishImage.trim(),
         availableStock: stock,
         allowSpecialInstructions: true,
         customOptionGroups:
@@ -500,13 +504,14 @@ export function OrganizerDashboard({
 
   const handleFlyerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.currentTarget.value = "";
     if (!file) return;
     const allowedMimeTypes = ["image/jpeg", "image/png", "image/webp"];
     if (!allowedMimeTypes.includes(file.type)) {
       setFlyerWarningToast("Unsupported format. Please upload JPG, PNG, or WebP.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size <= 0 || file.size > 5 * 1024 * 1024) {
       setFlyerWarningToast("Flyer exceeds 5MB limit.");
       return;
     }
@@ -517,6 +522,11 @@ export function OrganizerDashboard({
         const dataUrl = reader.result;
         const img = new Image();
         img.onload = () => {
+          if (img.width < 300 || img.height < 200 || img.width > 4500 || img.height > 4500) {
+            setFlyerWarningToast(`Flyer dimensions ${img.width}×${img.height}px are outside the 300×200 to 4500×4500 limit.`);
+            return;
+          }
+          setFlyerWarningToast(null);
           setPreSaveConfirmFlyer({
             url: dataUrl,
             mimeType: file.type,
@@ -527,9 +537,11 @@ export function OrganizerDashboard({
             fileName: file.name,
           });
         };
+        img.onerror = () => setFlyerWarningToast("The selected file is not a readable image.");
         img.src = dataUrl;
       }
     };
+    reader.onerror = () => setFlyerWarningToast("The selected image could not be read.");
     reader.readAsDataURL(file);
   };
 

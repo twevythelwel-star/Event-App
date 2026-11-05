@@ -3153,7 +3153,7 @@ class TestRunner
         // Stripe automated gateway readiness
         $stripeGateway = new \App\Services\Gateways\StripePaymentGateway();
         $this->assert($stripeGateway->getIdentifier() === 'stripe_us', "Stripe gateway identifier is stripe_us");
-        $this->assert($stripeGateway->isAvailable('USD', 'US') === true, "Stripe gateway is available for US operations");
+        $this->assert($stripeGateway->isAvailable('USD', 'US') === false, "Stripe gateway is unavailable until provider-backed checkout is implemented");
 
         // =========================================================================
         // 4. US Addresses and IANA Timezones with DST Handling

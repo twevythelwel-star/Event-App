@@ -14,6 +14,7 @@
                    description="Change details, tickets and the flyer. Publishing makes the event visible and lets people buy tickets."
                    :breadcrumbs="['Host dashboard' => route('host.dashboard'), $event->title => null]">
         <x-slot:actions>
+            <x-button variant="secondary" size="sm" icon="eye" :href="route('events.preview', $event->id)">👁️ Preview</x-button>
             <x-button variant="ghost" size="sm" :href="route('events.show', $event->id)">View public page</x-button>
             <x-button variant="secondary" size="sm" icon="staff" :href="route('host.events.staff', $event->id)">Staff</x-button>
             @if($event->status === 'published')
@@ -27,13 +28,31 @@
                     <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Unpublish</button>
                 </form>
             @else
-                <form action="{{ route('events.publish', $event->id) }}" method="POST" style="display: inline;">
-                    @csrf
-                    <button type="submit" class="eb-btn eb-btn-primary eb-btn-sm">Publish</button>
-                </form>
+                {{-- Publishing goes through the review screen and its readiness check. --}}
+                <x-button variant="primary" size="sm" :href="route('events.review', $event->id)">Review and publish</x-button>
             @endif
         </x-slot:actions>
     </x-page-header>
+
+    @if($event->status !== 'published')
+        @php
+            $readiness = app(\App\Services\EventManagementService::class)->publicationReadiness($event, auth()->user());
+            $missing = array_values(array_filter($readiness, fn ($i) => $i['critical']));
+        @endphp
+        <x-alert :type="$missing ? 'warning' : 'success'" :title="$missing ? 'Draft: ' . count($missing) . ' ' . \Illuminate\Support\Str::plural('thing', count($missing)) . ' to finish before publishing' : 'Ready to publish'">
+            @if($missing)
+                <ul style="margin: 4px 0 0; padding-left: 1.1rem;">
+                    @foreach(array_slice($missing, 0, 5) as $issue)
+                        <li>{{ $issue['message'] }} <a href="{{ $issue['section'] === 'menu' ? route('events.menu-studio', $event->id) : '#studio-' . $issue['section'] }}">Go there</a></li>
+                    @endforeach
+                </ul>
+                @if(count($missing) > 5)<p style="margin: 4px 0 0;">And {{ count($missing) - 5 }} more on the <a href="{{ route('events.review', $event->id) }}">review screen</a>.</p>@endif
+            @else
+                Everything needed is in place. <a href="{{ route('events.review', $event->id) }}">Review and publish</a>.
+            @endif
+            <span style="display: block; margin-top: 4px;">This draft is visible only to you; nothing can be bought until it is published.</span>
+        </x-alert>
+    @endif
 
     @if($errors->any() && !$errors->has('error'))
         <x-alert type="error" title="Please check the highlighted fields">{{ $errors->count() === 1 ? $errors->first() : $errors->count() . ' fields need attention.' }}</x-alert>

@@ -2,98 +2,132 @@
 
 namespace App\Policies;
 
-use App\Enums\TenantRole;
+use App\Models\EventWorkerAssignment;
 use App\Models\Order;
-use App\Models\OrganizerUser;
 use App\Models\User;
-use App\Services\TenantContext;
+use Illuminate\Auth\Access\HandlesAuthorization;
 
 class OrderPolicy
 {
-    public function before(User $user, string $ability): ?bool
+    use HandlesAuthorization;
+
+    /**
+     * Determine if the user can view the order.
+     */
+    public function view(User $user, Order $order, ?EventWorkerAssignment $assignment = null): bool
     {
-        if ($user->is_platform_admin ?? false) {
+        // System administrators can view any order
+        if ($user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN)) {
             return true;
         }
-        return null;
-    }
 
-    /**
-     * Determine whether the user can view the order.
-     * Prevents cross-organizer IDOR breaches.
-     */
-    public function view(User $user, Order $order): bool
-    {
-        // 1. Attendee viewing own order
+        // Delegated administrators can view within their scope
+        if ($user->hasRole(\App\Enums\AccountType::ADMINISTRATOR)) {
+            return \App\Support\AdminAuthorization::isActiveAdmin($user)
+                && \App\Support\AdminAuthorization::organizerInScope($user, $order->organizer_id)
+                && \Illuminate\Support\Facades\Gate::forUser($user)->allows(\App\Support\AdminAuthorization::ORDER_VIEW, $order);
+        }
+
+        // Event hosts can view orders for their own events
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $order->event->organizer_id === $user->organizer_id;
+        }
+
+        // Attendees can view their own orders
         if ($user->hasRole(\App\Enums\AccountType::ATTENDEE)) {
-            if (!empty($user->email) && strtolower($order->email ?? '') === strtolower($user->email)) {
-                return true;
+            return $order->user_id === $user->id;
+        }
+
+        // Event workers based on role and assignment
+        if ($assignment && $assignment->isCurrentlyActive()) {
+            $role = $assignment->worker_role;
+
+            // Payment clerks can view relevant orders
+            if ($role === \App\Enums\EventWorkerRole::PAYMENT_CLERK) {
+                return $assignment->event_id === $order->event_id;
             }
-            if (!empty($user->phone) && !empty($order->customer_phone) && preg_replace('/\D/', '', $order->customer_phone) === preg_replace('/\D/', '', $user->phone)) {
-                return true;
+
+            // Event supervisors can view relevant orders
+            if ($role === \App\Enums\EventWorkerRole::EVENT_SUPERVISOR) {
+                return $assignment->event_id === $order->event_id;
             }
-        }
 
-        // 2. Strict tenant isolation: order must belong to active tenant
-        if ($order->organizer_id !== TenantContext::id()) {
+            // Custom restricted workers need explicit permission
+            if ($role === \App\Enums\EventWorkerRole::CUSTOM_RESTRICTED_WORKER) {
+                return $assignment->canPerform('view_relevant_orders') && $assignment->event_id === $order->event_id;
+            }
+
+            // Ticket checkers and food station workers cannot view full order details
             return false;
         }
 
-        $role = $this->getUserRoleOnTenant($user, $order->organizer_id);
-        return $role !== null;
+        return false;
     }
 
     /**
-     * View sensitive customer details (unmasked phone number, email, billing address).
-     * Food collectors only receive masked info to maintain customer privacy.
+     * Determine if the user can record cash payment.
      */
-    public function viewCustomerDetails(User $user, Order $order): bool
+    public function recordCashPayment(User $user, Order $order, ?EventWorkerAssignment $assignment = null): bool
     {
-        if ($order->organizer_id !== TenantContext::id()) {
-            return false;
+        if ($assignment && $assignment->isCurrentlyActive()) {
+            return $assignment->canPerform('record_cash_received') && $assignment->event_id === $order->event_id;
         }
 
-        $role = $this->getUserRoleOnTenant($user, $order->organizer_id);
-        return in_array($role, [TenantRole::EVENT_OWNER, TenantRole::PAYMENT_VERIFIER]);
+        return false;
     }
 
     /**
-     * Determine whether the user can verify or reject the payment for this order.
+     * Determine if the user can verify a payment.
      */
-    public function verifyPayment(User $user, Order $order): bool
+    public function verifyPayment(User $user, Order $order, ?EventWorkerAssignment $assignment = null): bool
     {
-        if ($order->organizer_id !== TenantContext::id()) {
-            return false;
+        if ($assignment && $assignment->isCurrentlyActive()) {
+            return $assignment->canPerform('verify_payments') && $assignment->event_id === $order->event_id;
         }
 
-        $role = $this->getUserRoleOnTenant($user, $order->organizer_id);
-        return in_array($role, [TenantRole::EVENT_OWNER, TenantRole::PAYMENT_VERIFIER]);
+        // Event hosts can verify payments for their events
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $order->event->organizer_id === $user->organizer_id;
+        }
+
+        return false;
     }
 
     /**
-     * Determine whether the user can record portion collection handover on this order.
+     * Determine if the user can issue a refund.
      */
-    public function collectItems(User $user, Order $order): bool
+    public function issueRefund(User $user, Order $order, ?EventWorkerAssignment $assignment = null): bool
     {
-        if ($order->organizer_id !== TenantContext::id()) {
+        // Only event hosts and administrators can issue refunds
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $order->event->organizer_id === $user->organizer_id;
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN)) {
+            return true;
+        }
+
+        if ($user->hasRole(\App\Enums\AccountType::ADMINISTRATOR)) {
+            // Delegated admins have no refund capability flag; scope or payment-review permission alone
+            // must not grant a financial mutation.
             return false;
         }
 
-        $role = $this->getUserRoleOnTenant($user, $order->organizer_id);
-        return in_array($role, [
-            TenantRole::EVENT_OWNER,
-            TenantRole::PAYMENT_VERIFIER,
-            TenantRole::FOOD_COLLECTOR,
-        ]);
+        // Workers cannot issue refunds (prohibited)
+        return false;
     }
 
-    private function getUserRoleOnTenant(User $user, string $organizerId): ?TenantRole
+    /**
+     * Determine if the user can modify order items.
+     */
+    public function modifyItems(User $user, Order $order, ?EventWorkerAssignment $assignment = null): bool
     {
-        $membership = OrganizerUser::where('organizer_id', $organizerId)
-            ->where('user_id', $user->id)
-            ->where('is_active', true)
-            ->first();
+        // Event hosts can modify their own event orders
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return $order->event->organizer_id === $user->organizer_id;
+        }
 
-        return $membership?->role;
+        // Workers cannot modify order items (prohibited)
+        return false;
     }
 }

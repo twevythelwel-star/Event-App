@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Enums\AccountType;
 use App\Enums\TenantRole;
 use App\Models\CashPayment;
+use App\Models\CancellationRequest;
 use App\Models\Event;
 use App\Models\EventWorkerAssignment;
 use App\Models\HostOperationalRule;
@@ -114,7 +115,8 @@ class HostDashboardController extends Controller
         if ($settledOrderEvents !== []) {
             $foodLines = \App\Models\OrderItem::whereIn('order_id', array_keys($settledOrderEvents))->get();
             foreach ($foodLines as $line) {
-                if ($line->ticket_tier_id !== null || $line->category === 'Tickets') {
+                // Kitchen prep counts what is cooked: package components, not the package lines that group them.
+                if ($line->ticket_tier_id !== null || $line->category === 'Tickets' || $line->line_type === \App\Models\OrderItem::PACKAGE) {
                     continue;
                 }
                 $eventId = $settledOrderEvents[$line->order_id] ?? '';
@@ -151,22 +153,75 @@ class HostDashboardController extends Controller
         // Money per currency from the integer *_minor columns; currencies are never added together.
         $financials = \App\Services\Pricing\RevenueSummary::byCurrency($orders, $cashRecords);
 
-        // Legacy JSON keys (read by the React client): JMD figures in major units, computed exactly as before.
+        // USD financial metrics for U.S. operations
+        $usd = $orders->where('currency', 'USD');
+        $usdPaid = $paidOrders->where('currency', 'USD');
+        $usdMajor = fn (int $minor) => \App\Support\Money::ofMinor($minor, 'USD')->toMajorNumber();
+
+        // Gross sales (total orders regardless of status)
+        $grossVolumeUSD = $usdMajor((int) $usd->sum('total_minor'));
+
+        // Verified/paid orders (status = paid or confirmed)
+        $verifiedPaymentsUSD = $usdMajor((int) $usdPaid->sum('total_minor'));
+
+        // Confirmed payments including partially paid
+        $confirmedPaymentsUSD = $usdMajor(
+            (int) $usdPaid->sum('total_minor') +
+            (int) $usd->where('status', 'partially_paid')->sum('amount_paid_minor')
+        );
+
+        // Pending payments (awaiting payment, payment_submitted, under_verification)
+        // Do NOT count pending manual-transfer orders as paid revenue
+        $pendingPaymentsUSD = $usdMajor(
+            (int) $usd->whereIn('status', ['payment_submitted', 'under_verification', 'pending_verification', 'awaiting_payment'])->sum('total_minor') +
+            (int) $usd->where('status', 'partially_paid')->sum(fn ($o) => max(0, (int) $o->total_minor - (int) $o->amount_paid_minor))
+        );
+
+        // Forecast revenue (confirmed + pending)
+        $forecastRevenueUSD = $confirmedPaymentsUSD + $pendingPaymentsUSD;
+
+        // Refunds
+        $refundsTotalUSD = $usdMajor((int) $usd->where('status', 'refunded')->sum('total_minor'));
+
+        // Cash received
+        $cashReceivedUSD = $usdMajor((int) $cashRecords->where('currency', 'USD')->sum('amount_minor'));
+
+        // Settled funds (confirmed - refunds)
+        $settledFundsUSD = max(0, $confirmedPaymentsUSD - $refundsTotalUSD);
+
+        // Fees and taxes (from order_charges)
+        $usdOrderIds = $usd->pluck('id');
+        $feesUSD = $usdMajor((int) \App\Models\OrderCharge::whereIn('order_id', $usdOrderIds)
+            ->where('currency', 'USD')
+            ->where('type', 'fee')
+            ->sum('amount_minor'));
+
+        $taxesUSD = $usdMajor((int) \App\Models\OrderCharge::whereIn('order_id', $usdOrderIds)
+            ->where('currency', 'USD')
+            ->where('type', 'tax')
+            ->sum('amount_minor'));
+
+        // Net amount (gross - fees - taxes - refunds)
+        $netUSD = max(0, $grossVolumeUSD - $feesUSD - $taxesUSD - $refundsTotalUSD);
+
+        // Pending manual-transfer count
+        $pendingTransfersCount = $orders->whereIn('status', ['payment_submitted', 'under_verification'])->count();
+
+        // Legacy JMD support
         $jmd = $orders->where('currency', 'JMD');
         $jmdPaid = $paidOrders->where('currency', 'JMD');
-        $major = fn (int $minor) => \App\Support\Money::ofMinor($minor, 'JMD')->toMajorNumber();
-        $grossVolumeJMD = $major((int) $jmd->sum('total_minor'));
-        $verifiedPaymentsJMD = $major((int) $jmdPaid->sum('total_minor'));
-        $confirmedPaymentsJMD = $major((int) $jmdPaid->sum('total_minor') + (int) $jmd->where('status', 'partially_paid')->sum('amount_paid_minor'));
-        $pendingPaymentsJMD = $major(
+        $jmdMajor = fn (int $minor) => \App\Support\Money::ofMinor($minor, 'JMD')->toMajorNumber();
+        $grossVolumeJMD = $jmdMajor((int) $jmd->sum('total_minor'));
+        $verifiedPaymentsJMD = $jmdMajor((int) $jmdPaid->sum('total_minor'));
+        $confirmedPaymentsJMD = $jmdMajor((int) $jmdPaid->sum('total_minor') + (int) $jmd->where('status', 'partially_paid')->sum('amount_paid_minor'));
+        $pendingPaymentsJMD = $jmdMajor(
             (int) $jmd->whereIn('status', ['payment_submitted', 'under_verification', 'pending_verification', 'awaiting_payment'])->sum('total_minor')
             + (int) $jmd->where('status', 'partially_paid')->sum(fn ($o) => max(0, (int) $o->total_minor - (int) $o->amount_paid_minor))
         );
         $forecastRevenueJMD = $confirmedPaymentsJMD + $pendingPaymentsJMD;
-        $refundsTotalJMD = $major((int) $jmd->where('status', 'refunded')->sum('total_minor'));
-        $cashReceivedJMD = $major((int) $cashRecords->where('currency', 'JMD')->sum('amount_minor'));
+        $refundsTotalJMD = $jmdMajor((int) $jmd->where('status', 'refunded')->sum('total_minor'));
+        $cashReceivedJMD = $jmdMajor((int) $cashRecords->where('currency', 'JMD')->sum('amount_minor'));
         $settledFundsJMD = max(0, $confirmedPaymentsJMD - $refundsTotalJMD);
-        $pendingTransfersCount = $orders->whereIn('status', ['payment_submitted', 'under_verification'])->count();
 
         $data = [
             'dashboard' => 'Event Host Command Center',
@@ -178,6 +233,19 @@ class HostDashboardController extends Controller
             'paid_orders_count' => $paidOrders->count(),
             'pending_verification_count' => $pendingTransfersCount,
             'financials' => $financials,
+            // USD Financial Metrics
+            'gross_volume_usd' => $grossVolumeUSD,
+            'verified_payments_usd' => $verifiedPaymentsUSD,
+            'confirmed_payments_usd' => $confirmedPaymentsUSD,
+            'pending_payments_usd' => $pendingPaymentsUSD,
+            'forecast_revenue_usd' => $forecastRevenueUSD,
+            'refunds_total_usd' => $refundsTotalUSD,
+            'cash_received_usd' => $cashReceivedUSD,
+            'settled_funds_usd' => $settledFundsUSD,
+            'fees_usd' => $feesUSD,
+            'taxes_usd' => $taxesUSD,
+            'net_usd' => $netUSD,
+            // Legacy JMD Financial Metrics
             'cash_receipts_total' => $cashReceivedJMD,
             'gross_volume_jmd' => $grossVolumeJMD,
             'verified_payments_jmd' => $verifiedPaymentsJMD,
@@ -186,6 +254,7 @@ class HostDashboardController extends Controller
             'forecast_revenue_jmd' => $forecastRevenueJMD,
             'refunds_total_jmd' => $refundsTotalJMD,
             'settled_funds_jmd' => $settledFundsJMD,
+            // Food and Staff
             'sold_portions' => $totalSoldPortions,
             'prep_with_buffer' => $prepWithBuffer,
             'buffer_percent' => $bufferPercent,
@@ -194,6 +263,8 @@ class HostDashboardController extends Controller
             'events' => $events,
             'recent_orders' => $orders->take(10),
             'review_orders' => $reviewOrders,
+            'cancellation_requests' => CancellationRequest::with(['order.event'])->whereIn('order_id', $orders->pluck('id'))
+                ->whereIn('status', ['pending', 'approved', 'partially_refunded'])->latest('requested_at')->limit(100)->get(),
             'workers' => $workers,
         ];
 
@@ -207,6 +278,34 @@ class HostDashboardController extends Controller
     /**
      * Record in-person cash receipt.
      */
+    public function reviewCancellationRequest(Request $request, string $cancellationId): RedirectResponse
+    {
+        $data = $request->validate(['decision' => ['required', 'in:approved,rejected'], 'reason' => ['required', 'string', 'max:500']]);
+        try {
+            app(\App\Services\CancellationService::class)->review($request->user(), CancellationRequest::findOrFail($cancellationId), $data['decision'], $data['reason']);
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['cancellation' => $e->getMessage()]);
+        }
+        return back()->with('success', 'Cancellation request reviewed.');
+    }
+
+    public function recordCancellationRefund(Request $request, string $cancellationId): RedirectResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'], 'reason' => ['required', 'string', 'max:500'],
+            'refund_reference' => ['required', 'string', 'max:128'],
+        ]);
+        $cancellation = CancellationRequest::findOrFail($cancellationId);
+        abort_unless(in_array($cancellation->status, ['approved', 'partially_refunded'], true), 422);
+        try {
+            app(\App\Services\CashLedgerService::class)->refundOrder($request->user(), $cancellation->order_id,
+                (string) $data['amount'], $data['reason'], $data['refund_reference']);
+        } catch (\InvalidArgumentException|\App\Exceptions\SecurityException $e) {
+            return back()->withErrors(['refund' => $e->getMessage()]);
+        }
+        return back()->with('success', 'Completed manual refund recorded.');
+    }
+
     public function recordCashReceipt(Request $request): JsonResponse
     {
         $user = $request->user();

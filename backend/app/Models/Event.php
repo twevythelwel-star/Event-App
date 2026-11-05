@@ -33,6 +33,18 @@ class Event extends Model
         'title',
         'tagline',
         'category',
+        'summary',
+        'event_types',
+        'event_format',
+        'expected_attendance',
+        'age_restriction',
+        'dress_code',
+        'accessibility_information',
+        'languages',
+        'visibility',
+        'is_featured',
+        'virtual_url',
+        'virtual_access_instructions',
         'date_str',
         'event_date_iso',
         'time_str',
@@ -53,6 +65,7 @@ class Event extends Model
         'coordinates',
         'description',
         'currency',
+        'payment_methods',
         'organizer_name',
         'organizer_phone',
         'organizer_whatsapp',
@@ -69,12 +82,58 @@ class Event extends Model
         'traditions',
         'flyer_path',
         'flyer_thumbnail_path',
+        'flyer_alt_text',
+        'flyer_position_x',
+        'flyer_position_y',
         'flyer_mime_type',
         'flyer_size_bytes',
         'flyer_width',
         'flyer_height',
         'is_flyer_public',
+        'refund_policy_deadline_hours',
+        'refund_policy_notes',
+        'refund_policy_mode',
+        'host_cancellation_policy',
+        'postponement_policy',
+        'weather_cancellation_policy',
+        'food_order_cancellation_deadline_hours',
+        'food_order_modification_deadline_hours',
+        'non_refundable_ticket_categories',
+        'end_date_iso',
+        'starts_at',
+        'ends_at',
+        'doors_open_time',
+        'setup_time',
+        'food_service_start_time',
+        'food_service_end_time',
+        'ticket_sales_start_at',
+        'ticket_sales_end_at',
+        'early_bird_starts_at',
+        'early_bird_ends_at',
+        'venue_type',
+        'venue_instructions',
+        'parking_information',
+        'location_source',
+        'location_place_id',
+        'location_verified_at',
+        'food_ordering_mode',
+        'food_fulfillment',
+        'food_delivery_instructions',
+        'food_service_fee_minor',
+        'food_pickup_windows',
+        'food_max_orders',
+        'creation_key',
     ];
+
+    /** How guests may order food: before the event, on the day during food service, or both. */
+    public const FOOD_ORDERING_MODES = ['preorder' => 'Preorders only', 'event_day' => 'Event-day purchases only', 'both' => 'Preorders and event-day purchases'];
+
+    /** How food reaches guests. Delivery means to a table or a designated area at the venue. */
+    public const FOOD_FULFILLMENT = ['pickup' => 'Pickup only', 'pickup_and_delivery' => 'Pickup, or delivery to a table or area'];
+
+    public const VENUE_TYPES = ['park' => 'Park or outdoor space', 'hall' => 'Hall or community center', 'restaurant' => 'Restaurant or bar',
+        'church' => 'Church or place of worship', 'school' => 'School or campus', 'stadium' => 'Stadium or arena', 'beach' => 'Beach or waterfront',
+        'private' => 'Private residence', 'street' => 'Street or block party', 'other' => 'Other'];
 
     protected $casts = [
         'advance_order_deadline' => 'datetime',
@@ -86,14 +145,116 @@ class Event extends Model
         'supports_food_ordering' => 'boolean',
         'ticket_tiers' => 'array',
         'traditions' => 'array',
+        'event_types' => 'array',
+        'languages' => 'array',
+        'is_featured' => 'boolean',
+        'expected_attendance' => 'integer',
+        'payment_methods' => 'array',
         'flyer_size_bytes' => 'integer',
         'flyer_width' => 'integer',
         'flyer_height' => 'integer',
+        'flyer_position_x' => 'integer',
+        'flyer_position_y' => 'integer',
+        'refund_policy_deadline_hours' => 'integer',
+        'food_order_cancellation_deadline_hours' => 'integer',
+        'food_order_modification_deadline_hours' => 'integer',
+        'non_refundable_ticket_categories' => 'array',
+        'starts_at' => 'datetime',
+        'ends_at' => 'datetime',
+        'ticket_sales_start_at' => 'datetime',
+        'ticket_sales_end_at' => 'datetime',
+        'early_bird_starts_at' => 'datetime',
+        'early_bird_ends_at' => 'datetime',
+        'location_verified_at' => 'datetime',
+        'food_service_fee_minor' => 'integer',
+        'food_pickup_windows' => 'array',
+        'food_max_orders' => 'integer',
     ];
+
+    /**
+     * Whether a guest may order food at this moment, and if not, why. Preorders close at the ordering deadline;
+     * event-day purchases are open during food service hours on the event's days.
+     *
+     * @return array{open: bool, reason: ?string}
+     */
+    public function foodOrderingState(?\DateTimeInterface $now = null): array
+    {
+        $now ??= now();
+        $mode = $this->food_ordering_mode ?: 'preorder';
+        $deadline = $this->advance_order_deadline;
+        $deadlineTs = $deadline instanceof \DateTimeInterface ? $deadline->getTimestamp() : (trim((string) $deadline) !== '' ? strtotime((string) $deadline) : null);
+        $preorderOpen = $deadlineTs === null || $deadlineTs === false || $now->getTimestamp() <= $deadlineTs;
+        $serviceOpen = $this->isDuringFoodService($now);
+
+        if ($mode === 'preorder') {
+            return $preorderOpen ? ['open' => true, 'reason' => null] : ['open' => false, 'reason' => 'Food preorders for this event have closed.'];
+        }
+        if ($mode === 'event_day') {
+            return $serviceOpen ? ['open' => true, 'reason' => null] : ['open' => false, 'reason' => 'Food can be bought only during food service hours at the event.'];
+        }
+
+        return $preorderOpen || $serviceOpen ? ['open' => true, 'reason' => null] : ['open' => false, 'reason' => 'Food preorders have closed and food service is not open right now.'];
+    }
+
+    /** Whether food service is running now, on any day of the event. */
+    public function isDuringFoodService(\DateTimeInterface $now): bool
+    {
+        if (!$this->food_service_start_time || !$this->food_service_end_time || !$this->event_date_iso) {
+            return false;
+        }
+        // Plain PHP dates, so this also runs where Carbon is not loaded.
+        $tz = new \DateTimeZone($this->timezone ?: config('events.market.default_timezone', 'America/New_York'));
+        $first = new \DateTimeImmutable(substr((string) $this->event_date_iso, 0, 10), $tz);
+        $last = $this->end_date_iso ? new \DateTimeImmutable(substr((string) $this->end_date_iso, 0, 10), $tz) : $first;
+        $nowTs = $now->getTimestamp();
+        for ($day = $first; $day <= $last; $day = $day->modify('+1 day')) {
+            $open = \DateTimeImmutable::createFromFormat('Y-m-d H:i', $day->format('Y-m-d') . ' ' . $this->food_service_start_time, $tz);
+            $close = \DateTimeImmutable::createFromFormat('Y-m-d H:i', $day->format('Y-m-d') . ' ' . $this->food_service_end_time, $tz);
+            if (!$open || !$close) {
+                return false;
+            }
+            if ($close <= $open) {
+                $close = $close->modify('+1 day');
+            }
+            if ($nowTs >= $open->getTimestamp() && $nowTs < $close->getTimestamp()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** @return list<array{start: string, end: string, max_orders: ?int}> */
+    public function pickupWindows(): array
+    {
+        return array_values(array_filter((array) ($this->food_pickup_windows ?? []), fn ($w) => is_array($w) && !empty($w['start']) && !empty($w['end'])));
+    }
 
     public function menuItems(): HasMany
     {
         return $this->hasMany(MenuItem::class, 'event_id');
+    }
+
+    public function culturalCategories(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(CulturalCategory::class, 'event_cultural_categories');
+    }
+
+    public function countries(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Country::class, 'event_countries');
+    }
+
+    public function dishes(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Dish::class, 'event_dishes')->withPivot([
+            'id', 'alternative_spellings', 'is_fusion', 'dietary_type',
+        ])->withTimestamps();
+    }
+
+    public function customDishes(): HasMany
+    {
+        return $this->hasMany(EventDish::class)->whereNull('dish_id');
     }
 
     public function state(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -132,7 +293,7 @@ class Event extends Model
      */
     public function isPubliclyViewable(): bool
     {
-        return $this->status === 'published';
+        return $this->status === 'published' && $this->visibility !== 'private';
     }
 
     /**
@@ -153,12 +314,26 @@ class Event extends Model
         return $this->id ? route('events.generated-flyer', $this->id) : '/images/event-placeholder.svg';
     }
 
+    public function getDisplayThumbnailUrlAttribute(): string
+    {
+        if (\App\Services\MediaStorageService::isStoredPath($this->flyer_thumbnail_path)) {
+            return "/api/v1/media/events/{$this->id}/flyer?variant=thumbnail";
+        }
+
+        return $this->display_image_url;
+    }
+
     /** Whether the host uploaded artwork (or the event points at a real image), rather than using the generated flyer. */
     public function hasFlyer(): bool
     {
         $path = (string) ($this->flyer_path ?? '');
 
         return $path !== '' && (\App\Services\MediaStorageService::isStoredPath($path) || str_starts_with($path, '/images/') || str_starts_with($path, 'https://'));
+    }
+
+    public function mediaItems(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EventMedia::class)->orderBy('sort_order')->orderBy('created_at');
     }
 
     /**
@@ -230,5 +405,40 @@ class Event extends Model
     protected function minorUnitCurrency(): string
     {
         return (string) ($this->currency ?: \App\Support\Currency::defaultCode());
+    }
+
+    /**
+     * Check if a specific payment method is enabled for this event.
+     */
+    public function hasPaymentMethod(string $method): bool
+    {
+        if (empty($this->payment_methods) || !is_array($this->payment_methods)) {
+            // Default: all methods enabled if not configured
+            return true;
+        }
+
+        return in_array($method, $this->payment_methods, true);
+    }
+
+    /**
+     * Get enabled payment methods for this event.
+     */
+    public function getEnabledPaymentMethods(): array
+    {
+        if (empty($this->payment_methods) || !is_array($this->payment_methods)) {
+            // Default payment methods
+            return ['bank', 'zelle', 'cashapp', 'cash', 'card'];
+        }
+
+        return $this->payment_methods;
+    }
+
+    /**
+     * Set enabled payment methods for this event.
+     */
+    public function setPaymentMethods(array $methods): void
+    {
+        $validMethods = ['bank', 'zelle', 'cashapp', 'cash', 'card'];
+        $this->payment_methods = array_intersect($methods, $validMethods);
     }
 }

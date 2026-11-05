@@ -1229,6 +1229,50 @@ export const AccountSettingsView: React.FC<Props> = ({
                     />
                   </div>
 
+                  <div className="form-group">
+                    <label>Refund handling</label>
+                    <select className="settings-input" value={paymentPolicies.refundPolicyMode}
+                      onChange={(e) => setPaymentPolicies({ ...paymentPolicies, refundPolicyMode: e.target.value as HostPaymentPolicySettings["refundPolicyMode"] })}>
+                      <option value="manual_full_only">Full manual refunds only</option>
+                      <option value="manual_full_and_partial">Full or partial manual refunds</option>
+                      <option value="non_refundable">No refunds</option>
+                    </select>
+                    <small>EventBite can only record completed manual refunds. Provider-backed refunds are not supported.</small>
+                  </div>
+
+                  <div className="form-grid-two">
+                    <label className="form-group">Host cancellation
+                      <select className="settings-input" value={paymentPolicies.hostCancellationPolicy}
+                        onChange={(e) => setPaymentPolicies({ ...paymentPolicies, hostCancellationPolicy: e.target.value as HostPaymentPolicySettings["hostCancellationPolicy"] })}>
+                        <option value="contact_organizer">Contact organizer; no automatic refund</option>
+                        <option value="manual_refund_if_supported">Manual refund if supported payment method</option>
+                      </select>
+                    </label>
+                    <label className="form-group">Postponement / rescheduling
+                      <select className="settings-input" value={paymentPolicies.postponementPolicy}
+                        onChange={(e) => setPaymentPolicies({ ...paymentPolicies, postponementPolicy: e.target.value as HostPaymentPolicySettings["postponementPolicy"] })}>
+                        <option value="tickets_valid_for_new_date">Existing tickets remain valid for the new date</option>
+                        <option value="contact_organizer">Contact organizer for next steps</option>
+                      </select>
+                    </label>
+                    <label className="form-group">Weather cancellation
+                      <select className="settings-input" value={paymentPolicies.weatherCancellationPolicy}
+                        onChange={(e) => setPaymentPolicies({ ...paymentPolicies, weatherCancellationPolicy: e.target.value as HostPaymentPolicySettings["weatherCancellationPolicy"] })}>
+                        <option value="contact_organizer">Contact organizer; no automatic refund</option>
+                        <option value="reschedule_tickets_valid">Reschedule; existing tickets remain valid</option>
+                        <option value="manual_refund_if_supported">Manual refund if supported payment method</option>
+                      </select>
+                    </label>
+                    <label className="form-group">Food order cancellation deadline (hours before event)
+                      <input type="number" min={0} max={720} className="settings-input" value={paymentPolicies.foodOrderCancellationDeadlineHours}
+                        onChange={(e) => setPaymentPolicies({ ...paymentPolicies, foodOrderCancellationDeadlineHours: Number(e.target.value) })} />
+                    </label>
+                    <label className="form-group">Food order modification request deadline (hours before event)
+                      <input type="number" min={0} max={720} className="settings-input" value={paymentPolicies.foodOrderModificationDeadlineHours}
+                        onChange={(e) => setPaymentPolicies({ ...paymentPolicies, foodOrderModificationDeadlineHours: Number(e.target.value) })} />
+                    </label>
+                  </div>
+
                   <div className="settings-actions-bar">
                     <button
                       type="button"

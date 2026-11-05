@@ -109,7 +109,42 @@
                                       :value="old('refund_policy_deadline_hours', $hostPolicy->refund_policy_deadline_hours)" />
                         <x-form-field name="refund_policy_notes" type="textarea" label="Refund policy" :rows="3"
                                       :value="old('refund_policy_notes', $hostPolicy->refund_policy_notes)"
-                                      help="Shown on every event page. Leave empty if you do not offer refunds." />
+                                      help="Shown on every event page. Avoid promising provider refunds; EventBite only records completed manual refunds." />
+                        <label class="eb-form-field">Refund handling
+                            <select name="refund_policy_mode" class="eb-input">
+                                @foreach(['manual_full_only' => 'Full manual refunds only', 'manual_full_and_partial' => 'Full or partial manual refunds', 'non_refundable' => 'No refunds'] as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('refund_policy_mode', $hostPolicy->refund_policy_mode ?? 'manual_full_and_partial') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <x-form-field name="food_order_cancellation_deadline_hours" type="number" label="Food cancellation requests close (hours before event)" :min="0" :max="720"
+                                      :value="old('food_order_cancellation_deadline_hours', $hostPolicy->food_order_cancellation_deadline_hours ?? 24)" />
+                        <x-form-field name="food_order_modification_deadline_hours" type="number" label="Food modification requests close (hours before event)" :min="0" :max="720"
+                                      :value="old('food_order_modification_deadline_hours', $hostPolicy->food_order_modification_deadline_hours ?? 24)"
+                                      help="Changes are not editable in-app; customers must contact the organizer." />
+                    </div>
+                    <div class="eb-grid-3">
+                        <label class="eb-form-field">Host cancellation
+                            <select name="host_cancellation_policy" class="eb-input">
+                                @foreach(['contact_organizer' => 'Contact organizer; no automatic refund', 'manual_refund_if_supported' => 'Manual refund if supported payment method'] as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('host_cancellation_policy', $hostPolicy->host_cancellation_policy ?? 'contact_organizer') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="eb-form-field">Postponement / rescheduling
+                            <select name="postponement_policy" class="eb-input">
+                                @foreach(['tickets_valid_for_new_date' => 'Existing tickets remain valid for the new date', 'contact_organizer' => 'Contact organizer for next steps'] as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('postponement_policy', $hostPolicy->postponement_policy ?? 'tickets_valid_for_new_date') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+                        <label class="eb-form-field">Weather cancellation
+                            <select name="weather_cancellation_policy" class="eb-input">
+                                @foreach(['contact_organizer' => 'Contact organizer; no automatic refund', 'reschedule_tickets_valid' => 'Reschedule; existing tickets remain valid', 'manual_refund_if_supported' => 'Manual refund if supported payment method'] as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('weather_cancellation_policy', $hostPolicy->weather_cancellation_policy ?? 'contact_organizer') === $value)>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </label>
                     </div>
                 </div>
                 <div class="eb-cluster" style="justify-content: flex-end; margin-top: var(--space-6);">

@@ -37,17 +37,18 @@ const HIGH_QUALITY_EVENT_THUMBNAILS: Record<string, string> = {
   "evt-us-miami-fishfry-2026": "/images/island_festival_sunset.jpg",
 };
 
-export function resolveEventThumbnail(event: { id?: string; flyerUrl?: string }): string {
-  if (event.flyerUrl) {
+export function resolveEventThumbnail(event: { id?: string; flyerUrl?: string; flyerThumbnailUrl?: string }): string {
+  if (event.flyerThumbnailUrl || event.flyerUrl) {
     // Prefer local high-res asset if the flyerUrl is an external placeholder that might fail offline
-    if (event.flyerUrl.startsWith("data:") || event.flyerUrl.startsWith("/api/") || event.flyerUrl.startsWith("/images/")) {
-      return event.flyerUrl;
+    const url = event.flyerThumbnailUrl || event.flyerUrl!;
+    if (url.startsWith("data:") || url.startsWith("/api/") || url.startsWith("/images/")) {
+      return url;
     }
   }
   if (event.id && HIGH_QUALITY_EVENT_THUMBNAILS[event.id]) {
     return HIGH_QUALITY_EVENT_THUMBNAILS[event.id];
   }
-  return "/images/escovitch_fish.jpg";
+  return "/images/event-placeholder.svg";
 }
 
 export function computeHostRolePermissions(role: TenantRole): HostRolePermissions {
@@ -855,7 +856,7 @@ export function computeHostPopularMenuItems(
       itemId: m.id,
       name: m.name,
       category: m.category,
-      imageUrl: m.imageUrl || "/images/escovitch_fish.jpg",
+      imageUrl: m.imageUrl || "",
       unitPrice,
       verifiedUnitsSold: 0,
       verifiedRevenue: 0,
@@ -893,7 +894,7 @@ export function computeHostPopularMenuItems(
         itemId: line.menuItemId,
         name: line.name,
         category: catalogItem?.category || "Mains",
-        imageUrl: catalogItem?.imageUrl || "/images/escovitch_fish.jpg",
+        imageUrl: catalogItem?.imageUrl || "",
         unitPrice: line.finalItemPrice,
         verifiedUnitsSold: 0,
         verifiedRevenue: 0,

@@ -176,6 +176,15 @@ class AccountSettingsController extends Controller
         if (isset($validated['refund_policy_notes'])) {
             $policies->refund_policy_notes = $validated['refund_policy_notes'];
         }
+        foreach ([
+            'refund_policy_mode', 'host_cancellation_policy', 'postponement_policy',
+            'weather_cancellation_policy', 'food_order_cancellation_deadline_hours',
+            'food_order_modification_deadline_hours',
+        ] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $policies->{$field} = $validated[$field];
+            }
+        }
         $policies->save();
 
         if (isset($validated['food_prep_buffer_percent'])) {

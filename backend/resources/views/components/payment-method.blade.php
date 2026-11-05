@@ -13,7 +13,13 @@
     'disabled' => false,
 ])
 
-@php $id = 'pm-' . $name . '-' . $value; @endphp
+@php
+    $id = 'pm-' . $name . '-' . $value;
+    // Each method gets its own illustration when the caller passes the generic one.
+    $icon = in_array($icon, ['payment', 'credit-card'], true)
+        ? (['bank' => 'bank', 'zelle' => 'phone', 'cashapp' => 'phone', 'cash_app_pay' => 'phone', 'cash' => 'cash', 'card' => 'credit-card', 'paypal' => 'globe'][$value] ?? $icon)
+        : $icon;
+@endphp
 
 <label class="eb-payment-option" for="{{ $id }}">
     <input type="radio" id="{{ $id }}" name="{{ $name }}" value="{{ $value }}" @checked($checked) @disabled($disabled) {{ $attributes }}>

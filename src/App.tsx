@@ -25,6 +25,7 @@ import {
   HandoverAuditEntry,
   HandoverStatus,
   MenuItem,
+  MenuPackage,
   MethodId,
   NotificationChannel,
   NotificationLogEntry,
@@ -47,7 +48,6 @@ import {
   DEFAULT_SYSTEM_HEALTH,
   DEFAULT_TICKET_DISPUTES,
   INITIAL_SAVED_STATE,
-  TEN_FISH_FRY_EVENTS,
 } from "./data/defaultData";
 import { GuestMenuCheckout } from "./components/GuestMenuCheckout";
 import { StaffScanner } from "./components/StaffScanner";
@@ -66,6 +66,7 @@ import {
   EventPatch,
   MenuItemPayload,
   closeOrder as closeOrderLive,
+  createHostEvent,
   createHostMenuItem,
   dataUrlToBlob,
   deleteHostMenuItem,
@@ -401,7 +402,7 @@ export function App() {
   const [isGuestAuthenticated, setIsGuestAuthenticated] = useState(false);
   const [storageError, setStorageError] = useState(initialState.error);
   const [toastMessage, setToastMessage] = useState("");
-  // "online" once the Laravel API answers; "offline" falls back to the bundled demo data in this browser
+  // This Vite client is a local demo shell; production sales run through Laravel Blade.
   const [apiStatus, setApiStatus] = useState<"connecting" | "online" | "offline">("connecting");
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [apiEvents, setApiEvents] = useState<FishFryEventItem[] | null>(null);
@@ -431,6 +432,42 @@ export function App() {
   } = savedState;
 
   useEffect(() => {
+    if (!showGatewayModal && !showAuthProfilesModal) return;
+    const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]');
+    if (!dialog) return;
+    const priorFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const selector = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+    const focusable = () => Array.from(dialog.querySelectorAll<HTMLElement>(selector)).filter((el) => el.getAttribute('aria-hidden') !== 'true');
+    const initial = focusable()[0] ?? dialog;
+    initial.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setShowGatewayModal(false);
+        setShowAuthProfilesModal(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (items.length === 0) {
+        event.preventDefault();
+        dialog.focus();
+      } else if (event.shiftKey && document.activeElement === items[0]) {
+        event.preventDefault();
+        items[items.length - 1].focus();
+      } else if (!event.shiftKey && document.activeElement === items[items.length - 1]) {
+        event.preventDefault();
+        items[0].focus();
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      priorFocus?.focus();
+    };
+  }, [showGatewayModal, showAuthProfilesModal]);
+
+  useEffect(() => {
     let cancelled = false;
     Promise.all([fetchSession(), fetchEvents(), fetchLocationCatalog()])
       .then(([user, events, locations]) => {
@@ -441,7 +478,7 @@ export function App() {
         setApiStatus("online");
       })
       .catch((error) => {
-        console.warn("EventBite API unreachable; using bundled demo data.", error);
+        console.warn("EventBite API is unavailable.", error);
         if (!cancelled) setApiStatus("offline");
       });
     return () => {
@@ -475,16 +512,16 @@ export function App() {
   }, [apiStatus, sessionUser]);
 
   const isApiOnline = apiStatus === "online";
-  const catalogEvents: FishFryEventItem[] = apiEvents ?? TEN_FISH_FRY_EVENTS;
+  const catalogEvents: FishFryEventItem[] = apiEvents ?? [];
   const sessionRoles = sessionUser?.roles ?? [];
   const hasSessionRole = (...roles: string[]) =>
     sessionRoles.includes("system_admin") || roles.some((role) => sessionRoles.includes(role));
   // With a live backend, dashboards are only offered to accounts that hold the matching role
   const canViewTab = {
-    organizer: !isApiOnline || hasSessionRole("event_host"),
-    admin: !isApiOnline || hasSessionRole("admin"),
-    system_admin: !isApiOnline || hasSessionRole("system_admin"),
-    staff: !isApiOnline || hasSessionRole("event_host") || hasOperableOrders,
+    organizer: isApiOnline && hasSessionRole("event_host"),
+    admin: isApiOnline && hasSessionRole("admin"),
+    system_admin: isApiOnline && hasSessionRole("system_admin"),
+    staff: isApiOnline && (hasSessionRole("event_host") || hasOperableOrders),
   };
   const isLiveSession = isApiOnline && Boolean(sessionUser);
   const isLiveAdmin = isLiveSession && hasSessionRole("admin");
@@ -778,9 +815,11 @@ export function App() {
   // Event fields typed in the dashboard are saved together after a short pause, not on every keystroke
   const pendingEventPatch = useRef<EventPatch>({});
   const eventSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const creatingDraftEventId = useRef<string | null>(null);
+  const latestDraftEvent = useRef<EventDetails | null>(null);
 
   function applyServerEvent(serverEvent: FishFryEventItem) {
-    setHostEvents((curr) => curr.map((e) => (e.id === serverEvent.id ? serverEvent : e)));
+    setHostEvents((curr) => [serverEvent, ...curr.filter((e) => e.id !== serverEvent.id)]);
     // Keep the public catalog in step: published events appear there, others drop out
     setApiEvents((curr) => {
       if (!curr) return curr;
@@ -817,12 +856,249 @@ export function App() {
     return Number.isNaN(Date.parse(normalized)) ? undefined : normalized;
   }
 
+  function foodServiceConfigPatch(details: EventDetails): Partial<EventPatch> {
+    const config = details.foodServiceConfig;
+    if (!config) return { supports_food_ordering: details.supportsFoodOrdering !== false };
+    const deadline = config.orderingDeadlineIso
+      ? parseDeadlineText(config.orderingDeadlineIso)
+      : undefined;
+    const currency = details.currency || "USD";
+
+    return {
+      supports_food_ordering: config.enabled,
+      food_ordering_mode: config.serviceMode === "eventDay"
+        ? "event_day"
+        : config.serviceMode === "both"
+          ? "both"
+          : "preorder",
+      food_fulfillment: config.fulfillmentMode || "pickup",
+      food_delivery_instructions: config.deliveryInstructions || null,
+      food_service_start_time: config.foodServiceStartTime || null,
+      food_service_end_time: config.foodServiceEndTime || null,
+      food_service_fee: currency === "JMD"
+        ? config.serviceFeeJMD || 0
+        : config.serviceFeeUSD || 0,
+      food_max_orders: config.maxOrdersPerEvent ?? null,
+      food_pickup_windows: (config.pickupWindows || []).map((window) => ({
+        start: window.startTime,
+        end: window.endTime,
+        max_orders: window.maxOrders ?? null,
+      })),
+      ...(deadline ? { advance_order_deadline: deadline } : {}),
+    };
+  }
+
+  function buildEventPatch(current: EventDetails, next: EventDetails): EventPatch {
+    const fields: [keyof EventDetails, keyof EventPatch][] = [
+      ["title", "title"], ["slug", "slug"], ["tagline", "tagline"], ["category", "category"],
+      ["summary", "summary"], ["eventTypes", "event_types"], ["eventFormat", "event_format"],
+      ["expectedAttendance", "expected_attendance"], ["ageRestriction", "age_restriction"],
+      ["dressCode", "dress_code"], ["accessibilityInformation", "accessibility_information"],
+      ["languages", "languages"], ["visibility", "visibility"], ["isFeatured", "is_featured"],
+      ["flyerAltText", "flyer_alt_text"], ["flyerPositionX", "flyer_position_x"], ["flyerPositionY", "flyer_position_y"],
+      ["refundPolicyDeadlineHours", "refund_policy_deadline_hours"], ["refundPolicyNotes", "refund_policy_notes"],
+      ["refundPolicyMode", "refund_policy_mode"], ["hostCancellationPolicy", "host_cancellation_policy"],
+      ["postponementPolicy", "postponement_policy"], ["weatherCancellationPolicy", "weather_cancellation_policy"],
+      ["foodOrderCancellationDeadlineHours", "food_order_cancellation_deadline_hours"],
+      ["foodOrderModificationDeadlineHours", "food_order_modification_deadline_hours"],
+      ["nonRefundableTicketCategories", "non_refundable_ticket_categories"],
+      ["virtualUrl", "virtual_url"], ["virtualAccessInstructions", "virtual_access_instructions"],
+      ["culturalCategoryIds", "cultural_category_ids"], ["countryIds", "country_ids"],
+      ["dishIds", "dish_ids"], ["customDishes", "custom_dishes"], ["dateStr", "date_str"],
+      ["eventDateIso", "event_date_iso"], ["endDateIso", "end_date_iso"],
+      ["timeStr", "time_str"], ["startTime", "start_time"], ["endTime", "end_time"],
+      ["doorsOpenTime", "doors_open_time"], ["setupTime", "setup_time"],
+      ["foodServiceStartTime", "food_service_start_time"], ["foodServiceEndTime", "food_service_end_time"],
+      ["ticketSalesStartIso", "ticket_sales_start_at"], ["ticketSalesEndIso", "ticket_sales_end_at"],
+      ["earlyBirdSaleStartIso", "early_bird_starts_at"], ["earlyBirdSaleEndIso", "early_bird_ends_at"],
+      ["venueName", "venue_name"], ["venueType", "venue_type"],
+      ["venueInstructions", "venue_instructions"], ["parkingInformation", "parking_information"],
+      ["venueAddress", "venue_address"],
+      ["streetAddress", "street_address"], ["venueBuildingName", "venue_building_name"],
+      ["city", "city"], ["stateCode", "state_code"], ["zipCode", "zip_code"],
+      ["countryCode", "country_code"], ["targetMarketId", "target_market_id"],
+      ["timezone", "timezone"], ["coordinates", "coordinates"], ["description", "description"],
+      ["pickupInstructions", "pickup_instructions"], ["organizerName", "organizer_name"],
+      ["organizerPhone", "organizer_phone"], ["organizerWhatsApp", "organizer_whatsapp"],
+      ["organizerEmail", "organizer_email"], ["packagingFeeUSD", "packaging_fee_usd"],
+      ["packagingFeeJMD", "packaging_fee_jmd"], ["isOrderingOpen", "is_ordering_open"],
+    ];
+    const patch: Record<string, unknown> = {};
+    for (const [from, to] of fields) {
+      if (next[from] === undefined || JSON.stringify(next[from]) === JSON.stringify(current[from])) continue;
+      patch[to] = from === "customDishes"
+        ? next.customDishes?.map((dish) => ({
+            name: dish.name,
+            country_id: dish.countryId,
+            alternative_spellings: dish.alternativeSpellings || [],
+            is_fusion: dish.isFusion || false,
+            dietary_type: dish.dietaryType || "any",
+          }))
+        : next[from];
+    }
+    if (next.latitude !== current.latitude || next.longitude !== current.longitude) {
+      if (next.latitude == null && next.longitude == null) {
+        patch.latitude = null;
+        patch.longitude = null;
+      } else if (next.latitude != null && next.longitude != null) {
+        patch.latitude = next.latitude;
+        patch.longitude = next.longitude;
+      }
+    }
+    if (next.advanceOrderDeadline !== current.advanceOrderDeadline) {
+      const deadline = parseDeadlineText(next.advanceOrderDeadline);
+      if (deadline) patch.advance_order_deadline = deadline;
+    }
+    if (next.locationToken && next.locationToken !== current.locationToken) {
+      patch.location_token = next.locationToken;
+    }
+    if (next.clearLocationPin) patch.clear_location_pin = true;
+    if (JSON.stringify(next.foodServiceConfig) !== JSON.stringify(current.foodServiceConfig)) {
+      Object.assign(patch, foodServiceConfigPatch(next));
+    }
+    return patch as EventPatch;
+  }
+
+  function createEventPayload(details: EventDetails): EventPatch {
+    const deadline = parseDeadlineText(details.advanceOrderDeadline);
+    if (!deadline) throw new Error("Enter a valid advance order cutoff before creating the event.");
+    const payload: EventPatch = {
+      organizer_id: details.organizerId || activeOrganizerId,
+      organizer_name: details.organizerName,
+      organizer_phone: details.organizerPhone,
+      advance_order_deadline: deadline,
+      title: details.title,
+      slug: details.slug,
+      tagline: details.tagline,
+      category: details.category,
+      summary: details.summary,
+      event_types: details.eventTypes || [],
+      event_format: details.eventFormat || "in_person",
+      expected_attendance: details.expectedAttendance ?? null,
+      age_restriction: details.ageRestriction,
+      dress_code: details.dressCode,
+      accessibility_information: details.accessibilityInformation,
+      languages: details.languages || [],
+      visibility: details.visibility || "public",
+      virtual_url: details.virtualUrl,
+      virtual_access_instructions: details.virtualAccessInstructions,
+      date_str: details.dateStr,
+      event_date_iso: details.eventDateIso || null,
+      end_date_iso: details.endDateIso || null,
+      time_str: details.timeStr,
+      start_time: details.startTime || null,
+      end_time: details.endTime || null,
+      doors_open_time: details.doorsOpenTime || null,
+      setup_time: details.setupTime || null,
+      food_service_start_time: details.foodServiceStartTime || null,
+      food_service_end_time: details.foodServiceEndTime || null,
+      ticket_sales_start_at: details.ticketSalesStartIso || null,
+      ticket_sales_end_at: details.ticketSalesEndIso || null,
+      early_bird_starts_at: details.earlyBirdSaleStartIso || null,
+      early_bird_ends_at: details.earlyBirdSaleEndIso || null,
+      timezone: details.timezone,
+      venue_name: details.venueName,
+      venue_type: details.venueType || null,
+      venue_instructions: details.venueInstructions || null,
+      parking_information: details.parkingInformation || null,
+      venue_address: details.venueAddress,
+      street_address: details.streetAddress || null,
+      venue_building_name: details.venueBuildingName || null,
+      city: details.city || null,
+      state_code: details.stateCode || null,
+      zip_code: details.zipCode || null,
+      country_code: details.countryCode || "US",
+      ...(details.locationToken ? { location_token: details.locationToken } : {}),
+      coordinates: details.coordinates,
+      description: details.description,
+      currency: details.currency || "USD",
+      pickup_instructions: details.pickupInstructions,
+      packaging_fee_usd: details.packagingFeeUSD,
+      packaging_fee_jmd: details.packagingFeeJMD,
+      supports_food_ordering: details.supportsFoodOrdering !== false,
+      flyer_alt_text: details.flyerAltText || `${details.title || "Event"} event flyer`,
+      flyer_position_x: details.flyerPositionX ?? 50,
+      flyer_position_y: details.flyerPositionY ?? 50,
+      refund_policy_deadline_hours: details.refundPolicyDeadlineHours ?? null,
+      refund_policy_notes: details.refundPolicyNotes || null,
+      refund_policy_mode: details.refundPolicyMode || "manual_full_and_partial",
+      host_cancellation_policy: details.hostCancellationPolicy || "contact_organizer",
+      postponement_policy: details.postponementPolicy || "tickets_valid_for_new_date",
+      weather_cancellation_policy: details.weatherCancellationPolicy || "contact_organizer",
+      food_order_cancellation_deadline_hours: details.foodOrderCancellationDeadlineHours ?? 24,
+      food_order_modification_deadline_hours: details.foodOrderModificationDeadlineHours ?? 24,
+      non_refundable_ticket_categories: details.nonRefundableTicketCategories || [],
+      ...foodServiceConfigPatch(details),
+      ticket_tiers: details.ticketTiers || [],
+      cultural_category_ids: details.culturalCategoryIds || [],
+      country_ids: details.countryIds || [],
+      dish_ids: details.dishIds || [],
+      custom_dishes: (details.customDishes || []).map((dish) => ({
+        name: dish.name,
+        country_id: dish.countryId,
+        alternative_spellings: dish.alternativeSpellings || [],
+        is_fusion: dish.isFusion || false,
+        dietary_type: dish.dietaryType || "any",
+      })),
+    };
+    if (details.isFeatured) payload.is_featured = true;
+    return payload;
+  }
+
   function liveUpdateEventDetails(next: EventDetails) {
+    if (next.id?.startsWith("evt-draft-")) {
+      latestDraftEvent.current = next;
+      setHostEvents((curr) => [
+        { ...next, id: next.id!, organizerId: next.organizerId || activeOrganizerId, slug: next.slug || "", menu: [] },
+        ...curr.filter((event) => event.id !== next.id),
+      ]);
+      if (creatingDraftEventId.current === next.id) return;
+      creatingDraftEventId.current = next.id;
+      let payload: EventPatch;
+      try {
+        payload = createEventPayload(next);
+      } catch (error) {
+        creatingDraftEventId.current = null;
+        reportLiveError(error);
+        return;
+      }
+      createHostEvent(payload)
+        .then((created) => {
+          const draft = latestDraftEvent.current;
+          const latest = draft && draft.id === next.id ? draft : next;
+          creatingDraftEventId.current = null;
+          latestDraftEvent.current = null;
+          setHostEvents((curr) => [
+            created,
+            ...curr.filter((event) => event.id !== next.id && event.id !== created.id),
+          ]);
+          const pending = buildEventPatch(created, latest);
+          const saveEvent = Object.keys(pending).length > 0
+            ? updateHostEvent(created.id, pending).then(applyServerEvent)
+            : Promise.resolve();
+          return saveEvent.then(() => {
+            if (latest.packages?.length) {
+              liveUpdatePackages(created.id, latest.packages, [], created.currency || "USD");
+            }
+          });
+        })
+        .catch((error) => {
+          creatingDraftEventId.current = null;
+          latestDraftEvent.current = null;
+          reportLiveError(error);
+          reloadHostEvents();
+        });
+      return;
+    }
+
     const current = hostLiveEvent;
     if (!current?.id) return;
 
     // Show the edit immediately; the server response later replaces it
     setHostEvents((curr) => curr.map((e) => (e.id === current.id ? { ...e, ...next, menu: e.menu } : e)));
+    if (JSON.stringify(next.packages) !== JSON.stringify(current.packages)) {
+      liveUpdatePackages(current.id, next.packages || [], current.packages || [], current.currency || "USD");
+    }
 
     if (next.status && next.status !== current.status) {
       const eventId = current.id;
@@ -842,7 +1118,14 @@ export function App() {
       const eventId = current.id;
       const flyerUrl = next.flyerUrl;
       const save = flyerUrl?.startsWith("data:")
-        ? dataUrlToBlob(flyerUrl).then((blob) => uploadHostFlyer(eventId, blob))
+        ? dataUrlToBlob(flyerUrl).then((blob) => uploadHostFlyer(
+            eventId,
+            blob,
+            "flyer",
+            next.flyerAltText || `${next.title || "Event"} event flyer`,
+            next.flyerPositionX ?? 50,
+            next.flyerPositionY ?? 50,
+          ))
         : !flyerUrl
         ? removeHostFlyer(eventId)
         : null;
@@ -857,7 +1140,25 @@ export function App() {
 
     const fields: [keyof EventDetails, keyof EventPatch][] = [
       ["title", "title"],
+      ["slug", "slug"],
       ["tagline", "tagline"],
+      ["category", "category"],
+      ["summary", "summary"],
+      ["eventTypes", "event_types"],
+      ["eventFormat", "event_format"],
+      ["expectedAttendance", "expected_attendance"],
+      ["ageRestriction", "age_restriction"],
+      ["dressCode", "dress_code"],
+      ["accessibilityInformation", "accessibility_information"],
+      ["languages", "languages"],
+      ["visibility", "visibility"],
+      ["isFeatured", "is_featured"],
+      ["virtualUrl", "virtual_url"],
+      ["virtualAccessInstructions", "virtual_access_instructions"],
+      ["culturalCategoryIds", "cultural_category_ids"],
+      ["countryIds", "country_ids"],
+      ["dishIds", "dish_ids"],
+      ["customDishes", "custom_dishes"],
       ["dateStr", "date_str"],
       ["timeStr", "time_str"],
       ["venueName", "venue_name"],
@@ -876,13 +1177,40 @@ export function App() {
       ["organizerPhone", "organizer_phone"],
       ["organizerWhatsApp", "organizer_whatsapp"],
       ["organizerEmail", "organizer_email"],
+      ["eventDateIso", "event_date_iso"],
+      ["endDateIso", "end_date_iso"],
+      ["startTime", "start_time"],
+      ["endTime", "end_time"],
+      ["doorsOpenTime", "doors_open_time"],
+      ["setupTime", "setup_time"],
+      ["foodServiceStartTime", "food_service_start_time"],
+      ["foodServiceEndTime", "food_service_end_time"],
+      ["ticketSalesStartIso", "ticket_sales_start_at"],
+      ["ticketSalesEndIso", "ticket_sales_end_at"],
+      ["earlyBirdSaleStartIso", "early_bird_starts_at"],
+      ["earlyBirdSaleEndIso", "early_bird_ends_at"],
+      ["venueType", "venue_type"],
+      ["venueInstructions", "venue_instructions"],
+      ["parkingInformation", "parking_information"],
       ["packagingFeeUSD", "packaging_fee_usd"],
       ["packagingFeeJMD", "packaging_fee_jmd"],
       ["isOrderingOpen", "is_ordering_open"],
     ];
     const patch: Record<string, unknown> = {};
     for (const [from, to] of fields) {
-      if (next[from] !== undefined && next[from] !== current[from]) patch[to] = next[from];
+      if (next[from] !== undefined && next[from] !== current[from]) {
+        if (from === "customDishes") {
+          patch[to] = next.customDishes?.map((dish) => ({
+            name: dish.name,
+            country_id: dish.countryId,
+            alternative_spellings: dish.alternativeSpellings || [],
+            is_fusion: dish.isFusion || false,
+            dietary_type: dish.dietaryType || "any",
+          }));
+        } else {
+          patch[to] = next[from];
+        }
+      }
     }
     const coordinatesChanged =
       next.latitude !== current.latitude || next.longitude !== current.longitude;
@@ -894,6 +1222,10 @@ export function App() {
         patch.latitude = next.latitude;
         patch.longitude = next.longitude;
       }
+      if (next.locationToken && next.locationToken !== current.locationToken) {
+        patch.location_token = next.locationToken;
+      }
+      if (next.clearLocationPin) patch.clear_location_pin = true;
     }
     if (next.advanceOrderDeadline !== current.advanceOrderDeadline) {
       const deadline = parseDeadlineText(next.advanceOrderDeadline);
@@ -910,6 +1242,13 @@ export function App() {
   }
 
   function toMenuPayload(item: MenuItem): MenuItemPayload {
+    const dietaryTags = item.dietaryClassification && item.dietaryClassification !== "none"
+      ? [item.dietaryClassification.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`)]
+      : [];
+    const knownAllergens = new Set(["milk", "eggs", "fish", "shellfish", "tree_nuts", "peanuts", "wheat", "soy", "sesame"]);
+    const allergens = (item.allergens || [])
+      .map((value) => value.trim().toLowerCase().replace(/[\s-]+/g, "_"))
+      .filter((value) => knownAllergens.has(value));
     return {
       name: item.name,
       category: item.category,
@@ -918,11 +1257,87 @@ export function App() {
       price_usd: Number(item.priceUSD) || 0,
       price_jmd: Math.round(Number(item.priceJMD) || 0),
       // A freshly picked photo is a browser data URL: it is uploaded separately, so send no link for it
-      image_url: item.imageUrl && !item.imageUrl.startsWith("data:") ? item.imageUrl : null,
+      image_url: item.imageUrl
+        ? item.imageUrl.startsWith("data:") || item.imageIsUploaded
+          ? undefined
+          : item.imageUrl
+        : null,
       custom_option_groups: item.pricingType === "customizable" ? item.customOptionGroups ?? null : null,
       custom_amount_config: item.pricingType === "custom_amount" ? item.customAmountConfig ?? null : null,
       allow_special_instructions: item.allowSpecialInstructions ?? true,
       available_stock: item.availableStock ?? null,
+      country_of_origin: item.countryOfOrigin || null,
+      ingredients: item.ingredients || null,
+      dietary_tags: dietaryTags,
+      allergens,
+      guest_instructions: null,
+      prep_minutes: item.prepTimeMinutes ?? null,
+      available_from: item.availabilityStartIso || null,
+      available_until: item.availabilityEndIso || null,
+      max_per_order: item.maxQtyPerOrder ?? null,
+      is_featured: item.isFeatured ?? false,
+      is_active: item.isAvailable !== false,
+    };
+  }
+
+  function toPackagePayload(pkg: MenuPackage, currency: Currency): MenuItemPayload {
+    const extraPrice = (usd: number | undefined, jmd: number | undefined) =>
+      currency === "JMD" ? jmd || 0 : usd || 0;
+    const components = pkg.components.filter((component) => component.isRequired).map((component) => ({
+      menu_item_id: component.menuItemId,
+      quantity: component.quantity,
+      substitutes: (component.substituteMenuItemIds || []).map((menu_item_id) => ({
+        menu_item_id,
+        extra: extraPrice(component.upgradePriceUSD, component.upgradePriceJMD),
+      })),
+    }));
+    const choiceGroups = [
+      ...pkg.components.filter((component) => !component.isRequired).map((component) => ({
+        id: `optional-${component.menuItemId}`,
+        title: `Optional: ${component.menuItemName}`,
+        min: 0,
+        max: 1,
+        options: [{ menu_item_id: component.menuItemId, extra: 0 }],
+      })),
+      ...(pkg.choiceGroups || []).map((group) => ({
+        id: group.id,
+        title: group.title,
+        min: group.min,
+        max: group.max,
+        options: group.options.map((option) => ({
+          menu_item_id: option.menuItemId,
+          extra: extraPrice(option.upgradePriceUSD, option.upgradePriceJMD),
+        })),
+      })),
+    ];
+
+    return {
+      name: pkg.name,
+      category: "Meal Packages",
+      description: pkg.description || null,
+      pricing_type: "fixed",
+      price_usd: Number(pkg.basePriceUSD) || 0,
+      price_jmd: Math.round(Number(pkg.basePriceJMD) || 0),
+      image_url: pkg.imageUrl
+        ? pkg.imageUrl.startsWith("data:") || pkg.imageIsUploaded
+          ? undefined
+          : pkg.imageUrl
+        : null,
+      allow_special_instructions: true,
+      available_stock: pkg.maxQty ?? null,
+      max_per_order: pkg.maxQtyPerOrder ?? null,
+      is_featured: pkg.isFeatured ?? false,
+      is_active: pkg.isAvailable !== false,
+      item_type: "package",
+      package_config: {
+        components,
+        choice_groups: choiceGroups,
+        add_ons: (pkg.optionalAdditions || []).map((addition) => ({
+          menu_item_id: addition.menuItemId,
+          price: extraPrice(addition.priceUSD, addition.priceJMD),
+          max: 20,
+        })),
+      },
     };
   }
 
@@ -966,6 +1381,51 @@ export function App() {
     }
 
     // Server ids replace the dashboard's temporary ids once the calls settle
+    Promise.all(calls)
+      .then((results) => {
+        if (results.length) applyServerEvent(results[results.length - 1]);
+      })
+      .catch((error) => {
+        reportLiveError(error);
+        reloadHostEvents();
+      });
+  }
+
+  function liveUpdatePackages(
+    eventId: string,
+    nextPackages: MenuPackage[],
+    previousPackages: MenuPackage[],
+    currency: Currency,
+  ) {
+    const calls: Promise<FishFryEventItem>[] = [];
+    const previousIds = new Set(previousPackages.map((pkg) => pkg.id));
+    const nextIds = new Set(nextPackages.map((pkg) => pkg.id));
+    const withPhoto = (pkg: MenuPackage, saved: Promise<FishFryEventItem>) =>
+      pkg.imageUrl?.startsWith("data:")
+        ? saved.then(async (event) => {
+            const serverPackage = event.packages?.find((candidate) =>
+              previousIds.has(pkg.id) ? candidate.id === pkg.id : candidate.name === pkg.name,
+            );
+            if (!serverPackage) return event;
+            return uploadHostMenuPhoto(eventId, serverPackage.id, await dataUrlToBlob(pkg.imageUrl));
+          })
+        : saved;
+
+    for (const pkg of nextPackages) {
+      const payload = toPackagePayload(pkg, currency);
+      if (!previousIds.has(pkg.id)) {
+        calls.push(withPhoto(pkg, createHostMenuItem(eventId, payload)));
+      } else {
+        const before = previousPackages.find((candidate) => candidate.id === pkg.id)!;
+        if (JSON.stringify(toPackagePayload(before, currency)) !== JSON.stringify(payload)) {
+          calls.push(withPhoto(pkg, updateHostMenuItem(eventId, pkg.id, payload)));
+        }
+      }
+    }
+    for (const pkg of previousPackages) {
+      if (!nextIds.has(pkg.id)) calls.push(deleteHostMenuItem(eventId, pkg.id));
+    }
+
     Promise.all(calls)
       .then((results) => {
         if (results.length) applyServerEvent(results[results.length - 1]);
@@ -1239,7 +1699,7 @@ export function App() {
       notes?: string;
       verifier?: string;
       rejectionReason?: string;
-      refundDetails?: { amount: number; reason: string; refundedAt: string; refundedBy: string };
+      refundDetails?: { amount: number; reason: string; refundedAt: string; refundedBy: string; refundReference?: string };
     }
   ) {
     if (isLiveSession && newStatus === "refunded") {
@@ -1248,7 +1708,12 @@ export function App() {
         showToast("Enter the refund amount.");
         return;
       }
-      refundOrderLive(orderId, { amount: refund.amount, reason: refund.reason })
+      const refundReference = refund.refundReference || window.prompt("Enter the completed refund receipt or transfer reference:")?.trim();
+      if (!refundReference) {
+        showToast("Record the completed refund reference before closing the refund.");
+        return;
+      }
+      refundOrderLive(orderId, { amount: refund.amount, reason: refund.reason, refund_reference: refundReference })
         .then((updated) => {
           applyServerOrder(updated);
           showToast(
@@ -1720,7 +2185,19 @@ export function App() {
     }));
   }
 
-  return (
+  return apiStatus !== "online" ? (
+    <main className="app-shell">
+      <header className="app-header"><BrandLogo /></header>
+      <section className="storage-alert" role="alert" aria-live="polite">
+        <Info size={18} />
+        <div>
+          <strong>{apiStatus === "connecting" ? "Connecting to EventBite…" : "EventBite is temporarily unavailable"}</strong>
+          <p>{apiStatus === "connecting" ? "Loading live event information." : "The live service could not be reached. Retry when your connection is restored. No local demo events or orders are shown."}</p>
+          {apiStatus === "offline" && <button type="button" onClick={() => window.location.reload()}>Retry</button>}
+        </div>
+      </section>
+    </main>
+  ) : (
     <main className="app-shell">
       {/* Top Application Header */}
       <header className="topbar">
@@ -1854,13 +2331,6 @@ export function App() {
         </span>
       </nav>
 
-      {apiStatus === "offline" && (
-        <div className="storage-alert" role="status">
-          <Info size={16} /> Backend not reachable: showing bundled demo data. Orders and sign-ins stay in this
-          browser. Start the Laravel server (php artisan serve) to use live data.
-        </div>
-      )}
-
       {isApiOnline && sessionUser && (hasOperableOrders || sessionRoles.some((role) => role !== "attendee")) && (
         <div className="storage-alert" role="note" style={{ background: "#eef2ff", borderColor: "#c7d2fe", color: "#3730a3" }}>
           <Info size={16} /> Live: ordering, payment verification, cash ledger, refunds, kitchen status, scanner
@@ -1938,6 +2408,12 @@ export function App() {
         />
       )}
 
+      {activeTab !== "guest" && !isApiOnline && (
+        <div className="storage-alert" role="alert">
+          <Info size={16} /> This workspace requires the live EventBite service. Reconnect to continue.
+        </div>
+      )}
+
       {activeTab === "organizer" && (
         <OrganizerDashboard
           eventDetails={isLiveSession && hostLiveEvent ? hostLiveEvent : eventDetails}
@@ -1972,7 +2448,7 @@ export function App() {
           onSwitchOrganizer={(orgId) => setSavedState((c) => ({ ...c, activeOrganizerId: orgId }))}
           onSwitchRolePerspective={(role) => setSavedState((c) => ({ ...c, activeRolePerspective: role }))}
           onUpdateEventDetails={(details) =>
-            isLiveSession && hostLiveEvent
+            isLiveSession
               ? liveUpdateEventDetails(details)
               : setSavedState((c) => ({ ...c, eventDetails: details }))
           }
@@ -2058,6 +2534,7 @@ export function App() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="gateway-title"
+            tabIndex={-1}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
@@ -2165,6 +2642,7 @@ export function App() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="profiles-title"
+            tabIndex={-1}
             style={{ maxWidth: "780px" }}
             onClick={(e) => e.stopPropagation()}
           >

@@ -86,6 +86,24 @@ class CheckoutCorrectnessTest extends TestCase
         $this->assertSame('awaiting_payment', $result['order']->status);
     }
 
+    public function test_ticket_minimum_order_quantity_is_enforced_before_reserving_inventory(): void
+    {
+        $tiers = $this->event->ticket_tiers;
+        $tiers[0]['quantity_available'] = 5;
+        $tiers[0]['minPerOrder'] = 2;
+        $this->event->ticket_tiers = $tiers;
+        $this->event->save();
+
+        $belowMinimum = $this->place([['menu_item_id' => 'tier-ga', 'quantity' => 1]]);
+        $this->assertFalse($belowMinimum['success']);
+        $this->assertStringContainsString('Minimum 2', $belowMinimum['error']);
+        $this->assertSame(0, Order::allTenants()->count());
+
+        $valid = $this->place([['menu_item_id' => 'tier-ga', 'quantity' => 2]]);
+        $this->assertTrue($valid['success'], $valid['error'] ?? '');
+        $this->assertEquals(4000, (float) $valid['order']->total_amount);
+    }
+
     public function test_ticket_types_the_host_never_created_are_rejected(): void
     {
         foreach (['tier-vip', 'family-bundle', 'general-admission'] as $invented) {

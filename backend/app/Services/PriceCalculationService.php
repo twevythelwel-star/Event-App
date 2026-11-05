@@ -32,13 +32,15 @@ class PriceCalculationService
      * customer's own amount for "pay what you like" items, validated against the host's minimum.
      *
      * @param array $selectedChoiceIndices [groupId => choiceIndex]
+     * @param string|null $portionSize The name of the portion size (e.g., 'small', 'medium', 'large')
      * @return array{base_price: float, options_total_extra: float, final_item_price: float, base_price_minor: int, options_extra_minor: int, final_price_minor: int, selected_options_summary: list<string>}
      */
     public static function calculateItemPrice(
         MenuItem $item,
         string $currency,
         array $selectedChoiceIndices = [],
-        float|int|string|null $customDonationAmount = null
+        float|int|string|null $customDonationAmount = null,
+        ?string $portionSize = null
     ): array {
         if ($item->pricing_type === 'custom_amount') {
             $config = is_array($item->custom_amount_config) ? $item->custom_amount_config : [];
@@ -69,21 +71,21 @@ class PriceCalculationService
             ];
         }
 
-        $base = self::basePrice($item, $currency);
+        // Handle portion size pricing if provided
+        if ($portionSize !== null && is_array($item->portion_sizes)) {
+            $portionPriceMinor = $item->getPriceForPortion($portionSize);
+            $base = Money::ofMinor($portionPriceMinor, $currency);
+            $summaryList[] = "Portion: " . ucfirst($portionSize);
+        } else {
+            $base = self::basePrice($item, $currency);
+        }
+
         $options = Money::zero($currency);
-        $summaryList = [];
+        $summaryList = $summaryList ?? [];
 
         if ($item->pricing_type === 'customizable' && !empty($item->custom_option_groups)) {
             foreach ($item->custom_option_groups as $group) {
-                $groupId = $group['id'] ?? '';
-                $selectedIndex = $selectedChoiceIndices[$groupId] ?? 0;
-                $choice = $group['choices'][$selectedIndex] ?? null;
-                if (!$choice && array_key_exists($groupId, $selectedChoiceIndices)) {
-                    // A choice that doesn't exist must not silently drop its price.
-                    throw new OrderPlacementException("That option for '{$item->name}' ({$group['title']}) isn't available.");
-                }
-
-                if ($choice) {
+                foreach (self::chosen($item, $group, $selectedChoiceIndices) as $choice) {
                     $extra = $currency === 'JMD' ? ($choice['extraPriceJMD'] ?? 0) : ($choice['extraPriceUSD'] ?? 0);
                     $options = $options->plus(Money::parse($extra ?? 0, $currency));
                     $summaryList[] = "{$group['title']}: {$choice['label']}";
@@ -102,6 +104,49 @@ class PriceCalculationService
             'final_price_minor' => $final->minor(),
             'selected_options_summary' => $summaryList,
         ];
+    }
+
+    /**
+     * The choices a guest picked in one option group, checked against the group's rules.
+     *
+     * A group is required (at least `min`, default 1, choices) or optional (none is fine), and takes up to `max`
+     * choices (default 1). A single-choice required group with nothing sent takes its first choice, as it always
+     * has; an optional group with nothing sent takes none, so nobody pays for an extra they did not pick. Several
+     * choices are sent as a list of indexes.
+     *
+     * @return list<array> the chosen choice definitions
+     */
+    public static function chosen(MenuItem $item, array $group, array $selected): array
+    {
+        $groupId = (string) ($group['id'] ?? '');
+        $title = (string) ($group['title'] ?? 'Option');
+        $choices = is_array($group['choices'] ?? null) ? array_values($group['choices']) : [];
+        $required = (bool) ($group['required'] ?? true);
+        $max = max(1, (int) ($group['max'] ?? 1));
+        $min = $required ? max(1, (int) ($group['min'] ?? 1)) : 0;
+
+        $raw = array_key_exists($groupId, $selected) ? $selected[$groupId] : null;
+        if ($raw === null || $raw === '' || $raw === 'none' || $raw === []) {
+            $indexes = $required && $max === 1 && $raw === null && $choices !== [] ? [0] : [];
+        } else {
+            $indexes = array_values(array_unique(array_map(fn ($v) => is_numeric($v) ? (int) $v : -1, (array) $raw)));
+        }
+        if (count($indexes) > $max) {
+            throw new OrderPlacementException("Choose at most {$max} for '{$item->name}' ({$title}).");
+        }
+        if (count($indexes) < $min) {
+            throw new OrderPlacementException("Choose " . ($min === 1 ? 'an option' : "at least {$min}") . " for '{$item->name}' ({$title}).");
+        }
+        $picked = [];
+        foreach ($indexes as $index) {
+            if (!isset($choices[$index]) || !is_array($choices[$index]) || ($choices[$index]['available'] ?? true) === false) {
+                // A choice that doesn't exist must not silently drop its price.
+                throw new OrderPlacementException("That option for '{$item->name}' ({$title}) isn't available.");
+            }
+            $picked[] = $choices[$index];
+        }
+
+        return $picked;
     }
 
     /**

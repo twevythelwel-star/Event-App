@@ -6,6 +6,7 @@ namespace App\Services\Checkout;
 
 use App\Models\Event;
 use App\Models\MenuItem;
+use App\Models\Order;
 use App\Services\OrderPlacementException;
 use App\Services\PriceCalculationService;
 use App\Services\Pricing\ChargeCalculator;
@@ -54,14 +55,26 @@ final class OrderQuoteService
                     : "Only {$tier['available']} {$tier['name']} left. Lower the quantity to continue.";
             } elseif ($quantity > $tier['max']) {
                 $problems[] = "{$tier['name']}: at most {$tier['max']} per order.";
+            } elseif ($quantity < $tier['min']) {
+                $problems[] = "{$tier['name']}: at least {$tier['min']} per order.";
             }
             $lines[] = $this->line('ticket', $tier['id'], $tier['name'], null, $quantity, (int) $tier['price_minor'], 'Tickets', $currency);
         }
 
-        $itemIds = array_keys($cart['items'] ?? []);
-        $menu = $itemIds === []
+        $hasFoodInCart = ($cart['items'] ?? []) !== [] || ($cart['packages'] ?? []) !== [];
+        $menu = !$hasFoodInCart
             ? collect()
-            : MenuItem::withoutGlobalScopes()->whereIn('id', $itemIds)->where('event_id', $event->id)->get()->keyBy('id');
+            : MenuItem::withoutGlobalScopes()->where('event_id', $event->id)->whereNull('deleted_at')->get()->keyBy('id');
+        if ($hasFoodInCart) {
+            $state = $event->supports_food_ordering === false
+                ? ['open' => false, 'reason' => 'This event is not taking food orders.']
+                : $event->foodOrderingState();
+            if (!$state['open']) {
+                $problems[] = $state['reason'];
+            }
+        }
+        // Units of each item this cart needs, single items and package parts together, checked against stock.
+        $needs = [];
 
         foreach ($cart['items'] ?? [] as $itemId => $entry) {
             $quantity = (int) ($entry['quantity'] ?? 0);
@@ -69,15 +82,14 @@ final class OrderQuoteService
                 continue;
             }
             $item = $menu->get((string) $itemId);
-            if (!$item || !$item->is_active) {
+            if (!$item || !$item->isAvailableAt() || $item->isPackage()) {
                 $problems[] = 'A dish in your order is no longer available and was left out.';
                 continue;
             }
-            if ($item->available_stock !== null && $quantity > (int) $item->available_stock) {
-                $problems[] = (int) $item->available_stock === 0
-                    ? "{$item->name} is sold out."
-                    : "Only {$item->available_stock} {$item->name} left. Lower the quantity to continue.";
+            if ($item->max_per_order && $quantity > $item->max_per_order) {
+                $problems[] = "{$item->name}: at most {$item->max_per_order} per customer.";
             }
+            $needs[$item->id] = ($needs[$item->id] ?? 0) + $quantity;
             try {
                 $price = PriceCalculationService::calculateItemPrice($item, $currency, (array) ($entry['choices'] ?? []), $entry['amount'] ?? null);
             } catch (OrderPlacementException $e) {
@@ -86,6 +98,80 @@ final class OrderQuoteService
             }
             $detail = $price['selected_options_summary'] ? implode(' · ', $price['selected_options_summary']) : null;
             $lines[] = $this->line('food', $item->id, $item->name, $detail, $quantity, (int) $price['final_price_minor'], $item->category, $currency);
+        }
+
+        foreach ($cart['packages'] ?? [] as $entry) {
+            $quantity = (int) ($entry['quantity'] ?? 0);
+            $package = $menu->get((string) ($entry['menu_item_id'] ?? ''));
+            if ($quantity <= 0) {
+                continue;
+            }
+            if (!$package || !$package->isPackage() || !$package->isAvailableAt()) {
+                $problems[] = 'A meal package in your order is no longer available and was left out.';
+                continue;
+            }
+            if ($package->max_per_order && $quantity > $package->max_per_order) {
+                $problems[] = "{$package->name}: at most {$package->max_per_order} per customer.";
+            }
+            try {
+                $priced = \App\Services\Menu\MealPackage::price($package, (array) ($entry['selection'] ?? []), $currency, $menu);
+            } catch (OrderPlacementException $e) {
+                $problems[] = $e->getMessage();
+                continue;
+            }
+            $needs[$package->id] = ($needs[$package->id] ?? 0) + $quantity;
+            foreach ($priced['parts'] as $part) {
+                $needs[$part['item']->id] = ($needs[$part['item']->id] ?? 0) + $part['quantity'] * $quantity;
+            }
+            $lines[] = $this->line('food', $package->id, $package->name, implode(' · ', $priced['summary']), $quantity, $priced['unit_minor'], $package->category, $currency)
+                + ['package' => true];
+        }
+
+        if ($hasFoodInCart) {
+            $food = (array) ($cart['food'] ?? []);
+            if ($event->food_max_orders) {
+                $foodOrders = Order::withoutGlobalScopes()
+                    ->where('event_id', $event->id)
+                    ->whereNotIn('status', ['cancelled', 'refunded'])
+                    ->whereHas('items', fn ($query) => $query->whereNotNull('menu_item_id'))
+                    ->count();
+                if ($foodOrders >= $event->food_max_orders) {
+                    $problems[] = 'Food orders for this event are full.';
+                }
+            }
+
+            $windows = collect($event->pickupWindows())->keyBy(fn ($window) => \App\Services\Events\EventSchedule::windowKey($window));
+            if (($food['method'] ?? 'pickup') === 'delivery') {
+                if ($event->food_fulfillment !== 'pickup_and_delivery') {
+                    $problems[] = 'This event offers food pickup only.';
+                } elseif (mb_strlen(trim((string) ($food['delivery_location'] ?? ''))) < 2) {
+                    $problems[] = 'Tell us your table number or area for food delivery.';
+                }
+            } elseif ($windows->isNotEmpty()) {
+                $key = (string) ($food['pickup_window'] ?? '');
+                $window = $windows->get($key);
+                if (!$window) {
+                    $problems[] = 'Choose a pickup time for your food.';
+                } elseif (!empty($window['max_orders'])) {
+                    $taken = Order::withoutGlobalScopes()
+                        ->where('event_id', $event->id)
+                        ->where('pickup_window', $key)
+                        ->whereNotIn('status', ['cancelled', 'refunded'])
+                        ->count();
+                    if ($taken >= (int) $window['max_orders']) {
+                        $problems[] = "The {$window['start']}–{$window['end']} pickup time is full. Choose another.";
+                    }
+                }
+            }
+        }
+
+        foreach ($needs as $itemId => $units) {
+            $item = $menu->get($itemId);
+            if ($item && $item->available_stock !== null && $units > (int) $item->available_stock) {
+                $problems[] = (int) $item->available_stock === 0
+                    ? "{$item->name} is sold out."
+                    : "Only {$item->available_stock} {$item->name} left. Lower the quantity to continue.";
+            }
         }
 
         $totals = OrderTotals::from($currency, $lines, $this->charges->charges($event, $lines, $currency));
@@ -148,7 +234,18 @@ final class OrderQuoteService
                     'quantity' => (int) $entry['quantity'],
                     'selected_choices' => $entry['choices'] ?? null,
                     'custom_donation_amount' => $entry['amount'] ?? null,
+                    'special_instructions' => $entry['instructions'] ?? null,
                 ], fn ($v) => $v !== null && $v !== []);
+            }
+        }
+        foreach ($cart['packages'] ?? [] as $entry) {
+            if ((int) ($entry['quantity'] ?? 0) > 0) {
+                $items[] = array_filter([
+                    'menu_item_id' => (string) $entry['menu_item_id'],
+                    'quantity' => (int) $entry['quantity'],
+                    'package' => (array) ($entry['selection'] ?? []),
+                    'special_instructions' => $entry['instructions'] ?? null,
+                ], fn ($v) => $v !== null);
             }
         }
 

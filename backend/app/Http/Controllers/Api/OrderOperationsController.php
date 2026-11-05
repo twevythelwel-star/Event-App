@@ -6,11 +6,13 @@ use App\Exceptions\SecurityException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\OrderResource;
 use App\Models\CashPayment;
+use App\Models\CancellationRequest;
 use App\Models\HandoverAuditLog;
 use App\Models\NotificationLog;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\CashLedgerService;
+use App\Services\CancellationService;
 use App\Services\OrderOperationsService;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
@@ -33,10 +35,12 @@ class OrderOperationsController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $orders = $this->operations->operableOrdersQuery($user)->limit(500)->get();
+        $orders = $this->operations->operableOrdersQuery($user)
+            ->paginate(min(100, max(10, (int) $request->query('per_page', 50))))->withQueryString();
 
         return response()->json([
-            'data' => $orders->map(fn (Order $order) => $this->present($user, $order, $request))->values(),
+            'data' => $orders->getCollection()->map(fn (Order $order) => $this->present($user, $order, $request))->values(),
+            'pagination' => ['current_page' => $orders->currentPage(), 'last_page' => $orders->lastPage(), 'per_page' => $orders->perPage(), 'total' => $orders->total()],
         ]);
     }
 
@@ -112,9 +116,11 @@ class OrderOperationsController extends Controller
 
     public function notifications(Request $request): JsonResponse
     {
-        $logs = $this->operations->notificationsQuery($request->user())->limit(500)->get();
+        $logs = $this->operations->notificationsQuery($request->user())
+            ->paginate(min(100, max(10, (int) $request->query('per_page', 50))))->withQueryString();
 
-        return response()->json(['data' => $logs->map(fn (NotificationLog $log) => $this->presentNotification($log))->values()]);
+        return response()->json(['data' => $logs->getCollection()->map(fn (NotificationLog $log) => $this->presentNotification($log))->values(),
+            'pagination' => ['current_page' => $logs->currentPage(), 'last_page' => $logs->lastPage(), 'per_page' => $logs->perPage(), 'total' => $logs->total()]]);
     }
 
     public function retryNotification(Request $request, string $logId): JsonResponse
@@ -164,9 +170,11 @@ class OrderOperationsController extends Controller
 
     public function cashLedger(Request $request): JsonResponse
     {
-        $rows = $this->cash->ledgerQuery($request->user())->limit(1000)->get();
+        $rows = $this->cash->ledgerQuery($request->user())
+            ->paginate(min(100, max(10, (int) $request->query('per_page', 50))))->withQueryString();
 
-        return response()->json(['data' => $rows->map(fn (CashPayment $row) => $this->presentCash($row))->values()]);
+        return response()->json(['data' => $rows->getCollection()->map(fn (CashPayment $row) => $this->presentCash($row))->values(),
+            'pagination' => ['current_page' => $rows->currentPage(), 'last_page' => $rows->lastPage(), 'per_page' => $rows->perPage(), 'total' => $rows->total()]]);
     }
 
     public function recordCash(Request $request): JsonResponse
@@ -198,6 +206,7 @@ class OrderOperationsController extends Controller
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
             'reason' => ['required', 'string', 'max:500'],
+            'refund_reference' => ['sometimes', 'string', 'max:128'],
         ]);
 
         return $this->runMoney($request, function (User $user) use ($data, $receiptId, $request) {
@@ -215,11 +224,49 @@ class OrderOperationsController extends Controller
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
             'reason' => ['required', 'string', 'max:500'],
+            'refund_reference' => ['required', 'string', 'max:128'],
         ]);
 
         return $this->runMoney($request, fn (User $user) => [
-            'data' => $this->present($user, $this->cash->refundOrder($user, $orderId, (string) $data['amount'], $data['reason']), $request),
+            'data' => $this->present($user, $this->cash->refundOrder($user, $orderId, (string) $data['amount'], $data['reason'], $data['refund_reference'] ?? null), $request),
         ]);
+    }
+
+    public function cancellationRequests(Request $request, CancellationService $cancellations): JsonResponse
+    {
+        $user = $request->user();
+        $orders = $this->operations->operableOrdersQuery($user)->get()->filter(function (Order $order) use ($user) {
+            return $this->operations->capabilities($user, $order)['refund']
+                || ($user->hasRole(\App\Enums\AccountType::ADMINISTRATOR)
+                    && \App\Support\AdminAuthorization::organizerInScope($user, $order->organizer_id)
+                    && \Illuminate\Support\Facades\Gate::forUser($user)->allows(\App\Support\AdminAuthorization::PAYMENTS_VIEW));
+        })->pluck('id');
+        $rows = CancellationRequest::with(['order.event', 'requester'])->whereIn('order_id', $orders)
+            ->where('status', $request->query('status', 'pending'))->latest('requested_at')->limit(500)->get();
+        return response()->json(['data' => $rows->map(fn ($row) => [
+            'id' => $row->id, 'status' => $row->status, 'customerReason' => $row->customer_reason,
+            'reviewReason' => $row->review_reason, 'requestedAt' => $row->requested_at?->toIso8601String(),
+            'order' => $row->order ? ['id' => $row->order->id, 'orderNumber' => $row->order->order_number,
+                'eventTitle' => $row->order->event?->title, 'customerName' => $row->order->customer_name,
+                'status' => $row->order->status, 'totalMinor' => (int) $row->order->total_minor,
+                'amountPaidMinor' => (int) $row->order->amount_paid_minor, 'refundedMinor' => (int) $row->order->refunded_minor,
+                'currency' => $row->order->currency, 'refunds' => \App\Models\OrderAdjustment::where('order_id', $row->order->id)
+                    ->where('type', \App\Models\OrderAdjustment::TYPE_REFUND)->oldest('occurred_at')->get()
+                    ->map(fn ($adjustment) => ['amountMinor' => (int) $adjustment->amount_minor, 'currency' => $adjustment->currency,
+                        'reason' => $adjustment->reason, 'reference' => $adjustment->metadata['manual_refund_reference'] ?? null,
+                        'refundedAt' => $adjustment->occurred_at?->toIso8601String(), 'refundedBy' => $adjustment->actor_name])->values(),
+                'cancellation' => $cancellations->statusFor($row->order)] : null,
+        ])->values()]);
+    }
+
+    public function reviewCancellation(Request $request, string $cancellationId, CancellationService $cancellations): JsonResponse
+    {
+        $data = $request->validate(['decision' => ['required', Rule::in(['approved', 'rejected'])], 'reason' => ['required', 'string', 'max:500']]);
+        return $this->runMoney($request, function (User $user) use ($cancellationId, $cancellations, $data) {
+            $reviewed = $cancellations->review($user, CancellationRequest::findOrFail($cancellationId), $data['decision'], $data['reason']);
+            return ['data' => ['id' => $reviewed->id, 'status' => $reviewed->status,
+                'reviewReason' => $reviewed->review_reason, 'reviewedAt' => $reviewed->reviewed_at?->toIso8601String()]];
+        });
     }
 
     /**

@@ -30,10 +30,11 @@ class MediaStorageService
     private const LIMITS = [
         'flyers' => ['min' => [300, 200], 'max' => [4500, 4500]],
         'menu' => ['min' => [200, 200], 'max' => [4500, 4500]],
+        'event-media' => ['min' => [200, 200], 'max' => [4500, 4500]],
     ];
 
     /**
-     * @param 'flyers'|'menu' $kind
+    * @param 'flyers'|'menu'|'event-media' $kind
      * @return array{path: string, mime: string, size: int, width: int, height: int}
      */
     public function storeImage(UploadedFile $file, string $organizerId, string $kind): array
@@ -76,6 +77,88 @@ class MediaStorageService
         if ($path && self::isStoredPath($path)) {
             Storage::disk(self::DISK)->delete($path);
         }
+    }
+
+    /**
+     * Create a separate responsive WebP derivative; the sanitized original is never modified.
+     *
+     * @return array{path: string, mime: string, size: int, width: int, height: int}
+     */
+    public function createThumbnail(string $originalPath, string $organizerId, string $kind, int $maxEdge = 1600): array
+    {
+        return $this->createDerivative($originalPath, $organizerId, $kind, $maxEdge, null);
+    }
+
+    /**
+     * Create a WebP derivative with optional cropping. The sanitized original is never modified.
+     *
+     * @param array|null $crop ['x' => int, 'y' => int, 'width' => int, 'height' => int]
+     * @return array{path: string, mime: string, size: int, width: int, height: int}
+     */
+    public function createDerivative(string $originalPath, string $organizerId, string $kind, int $maxEdge, ?array $crop): array
+    {
+        $disk = Storage::disk(self::DISK);
+        if (!$disk->exists($originalPath)) {
+            throw new \InvalidArgumentException('The original image is no longer available.');
+        }
+        $source = @imagecreatefromstring($disk->get($originalPath));
+        if ($source === false) {
+            throw new \InvalidArgumentException('The image could not be decoded for thumbnail generation.');
+        }
+
+        $sourceWidth = imagesx($source);
+        $sourceHeight = imagesy($source);
+
+        // Apply crop if specified
+        if ($crop && isset($crop['x'], $crop['y'], $crop['width'], $crop['height'])) {
+            $cropX = max(0, min($crop['x'], $sourceWidth - 1));
+            $cropY = max(0, min($crop['y'], $sourceHeight - 1));
+            $cropW = max(1, min($crop['width'], $sourceWidth - $cropX));
+            $cropH = max(1, min($crop['height'], $sourceHeight - $cropY));
+
+            $cropped = imagecreatetruecolor($cropW, $cropH);
+            imagealphablending($cropped, false);
+            imagesavealpha($cropped, true);
+            imagecopy($cropped, $source, 0, 0, $cropX, $cropY, $cropW, $cropH);
+            imagedestroy($source);
+            $source = $cropped;
+            $sourceWidth = $cropW;
+            $sourceHeight = $cropH;
+        }
+
+        $scale = min(1, $maxEdge / max($sourceWidth, $sourceHeight));
+        $width = max(1, (int) round($sourceWidth * $scale));
+        $height = max(1, (int) round($sourceHeight * $scale));
+        $derivative = imagecreatetruecolor($width, $height);
+        imagealphablending($derivative, false);
+        imagesavealpha($derivative, true);
+        imagecopyresampled($derivative, $source, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
+        ob_start();
+        imagewebp($derivative, null, 82);
+        $bytes = (string) ob_get_clean();
+        imagedestroy($source);
+        imagedestroy($derivative);
+
+        $path = "tenants/{$organizerId}/{$kind}-derivatives/" . Str::uuid() . '.webp';
+        $disk->put($path, $bytes);
+
+        return ['path' => $path, 'mime' => 'image/webp', 'size' => strlen($bytes), 'width' => $width, 'height' => $height];
+    }
+
+    /**
+     * Create multiple responsive derivatives for different contexts.
+     * Returns an array of derivative paths keyed by size name.
+     *
+     * @param array|null $crop Optional crop parameters
+     * @return array{small: ?array, medium: ?array, large: ?array}
+     */
+    public function createResponsiveDerivatives(string $originalPath, string $organizerId, string $kind, ?array $crop = null): array
+    {
+        return [
+            'small' => $this->createDerivative($originalPath, $organizerId, $kind, 400, $crop),
+            'medium' => $this->createDerivative($originalPath, $organizerId, $kind, 800, $crop),
+            'large' => $this->createDerivative($originalPath, $organizerId, $kind, 1600, $crop),
+        ];
     }
 
     /**

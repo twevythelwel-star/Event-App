@@ -81,9 +81,14 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.review', $event);
         }
 
+        $menu = $this->menu($event);
+
         return view('checkout.food', [
             'event' => $event,
-            'menu' => $this->menu($event),
+            'menu' => $menu->reject(fn (MenuItem $item) => $item->isPackage())->values(),
+            'packages' => $menu->filter(fn (MenuItem $item) => $item->isPackage())->values(),
+            'menuById' => MenuItem::withoutGlobalScopes()->where('event_id', $event->id)->whereNull('deleted_at')->get()->keyBy('id'),
+            'windows' => $event->pickupWindows(),
             'cart' => $this->cart($request)->get($event),
             'currency' => $event->currency ?: 'USD',
             'steps' => $this->steps($event),
@@ -101,21 +106,62 @@ class CheckoutController extends Controller
             'items.*.choices' => ['nullable', 'array'],
             'items.*.choices.*' => ['integer', 'min:0'],
             'items.*.amount' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'items.*.choices.*.*' => ['integer', 'min:0'],
+            'items.*.instructions' => ['nullable', 'string', 'max:300'],
+            'packages' => ['nullable', 'array', 'max:30'],
+            'packages.*.menu_item_id' => ['required', 'string', 'max:64'],
+            'packages.*.quantity' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'packages.*.substitutions' => ['nullable', 'array'],
+            'packages.*.substitutions.*' => ['nullable', 'string', 'max:64'],
+            'packages.*.choices' => ['nullable', 'array'],
+            'packages.*.choices.*' => ['nullable', 'array'],
+            'packages.*.choices.*.*' => ['nullable', 'string', 'max:64'],
+            'packages.*.add_ons' => ['nullable', 'array'],
+            'packages.*.add_ons.*' => ['nullable', 'integer', 'min:0', 'max:20'],
+            'packages.*.instructions' => ['nullable', 'string', 'max:300'],
+            'food.method' => ['nullable', 'in:pickup,delivery'],
+            'food.pickup_window' => ['nullable', 'string', 'max:11'],
+            'food.delivery_location' => ['nullable', 'string', 'max:160'],
         ]);
 
         $menu = $this->menu($event)->keyBy('id');
         $chosen = [];
         foreach ($data['items'] ?? [] as $itemId => $entry) {
-            if ((int) ($entry['quantity'] ?? 0) > 0 && $menu->has((string) $itemId)) {
+            if ((int) ($entry['quantity'] ?? 0) > 0 && $menu->has((string) $itemId) && !$menu->get((string) $itemId)->isPackage()) {
                 $chosen[(string) $itemId] = array_filter([
                     'quantity' => (int) $entry['quantity'],
                     'choices' => $entry['choices'] ?? null,
+                    'instructions' => trim((string) ($entry['instructions'] ?? '')) ?: null,
                     // Kept as the text the customer typed; parsed exactly (never as a float) when priced.
                     'amount' => isset($entry['amount']) && $entry['amount'] !== '' ? trim((string) $entry['amount']) : null,
                 ], fn ($v) => $v !== null);
             }
         }
         $this->cart($request)->setItems($event, $chosen);
+        // Each package row keeps its own customisation, so two differently built dinners stay two lines.
+        $packages = [];
+        foreach ($data['packages'] ?? [] as $entry) {
+            $package = $menu->get((string) $entry['menu_item_id']);
+            if (!$package || !$package->isPackage() || (int) ($entry['quantity'] ?? 0) <= 0) {
+                continue;
+            }
+            $packages[] = [
+                'menu_item_id' => $package->id,
+                'quantity' => (int) $entry['quantity'],
+                'selection' => [
+                    'substitutions' => array_filter((array) ($entry['substitutions'] ?? []), fn ($v) => $v !== null && $v !== ''),
+                    'choices' => array_map(fn ($ids) => array_values(array_filter((array) $ids)), (array) ($entry['choices'] ?? [])),
+                    'add_ons' => array_filter(array_map('intval', (array) ($entry['add_ons'] ?? [])), fn (int $qty) => $qty > 0),
+                ],
+                'instructions' => trim((string) ($entry['instructions'] ?? '')) ?: null,
+            ];
+        }
+        $this->cart($request)->setPackages($event, $packages);
+        $this->cart($request)->setFood($event, array_filter([
+            'method' => $data['food']['method'] ?? 'pickup',
+            'pickup_window' => $data['food']['pickup_window'] ?? null,
+            'delivery_location' => trim((string) ($data['food']['delivery_location'] ?? '')) ?: null,
+        ], fn ($v) => $v !== null));
 
         return redirect()->route('checkout.review', $event);
     }
@@ -182,6 +228,7 @@ class CheckoutController extends Controller
             'payment_reference' => $data['payment_reference'] ?? null,
             'sender_name' => $data['sender_name'] ?? null,
             'items' => $this->quotes->toOrderItems($contents),
+            'food' => (array) ($contents['food'] ?? []),
             'idempotency_key' => $contents['key'],
         ], $request->user());
 
@@ -235,8 +282,11 @@ class CheckoutController extends Controller
         if (!$event->is_ordering_open) {
             return redirect()->route('events.show', $event->id)->with('error', 'The organizer has paused ordering for this event.');
         }
-        if ($event->advance_order_deadline && now()->greaterThan($event->advance_order_deadline)) {
-            return redirect()->route('events.show', $event->id)->with('error', 'The ordering deadline for this event has passed.');
+        // Food closing (its preorder deadline or service hours) leaves tickets on sale, and the other way round.
+        if (TicketTierCatalog::sellable($event) !== [] && !$this->hasFood($event)
+            && !collect(TicketTierCatalog::sellable($event))->contains(fn ($tier) => $tier['on_sale'])
+            && $this->menu($event)->isNotEmpty()) {
+            return redirect()->route('events.show', $event->id)->with('error', $event->foodOrderingState()['reason'] ?? 'Nothing can be ordered for this event right now.');
         }
         if (TicketTierCatalog::sellable($event) === [] && !$this->hasFood($event)) {
             return redirect()->route('events.show', $event->id)->with('error', 'Nothing is on sale for this event yet.');
@@ -245,15 +295,20 @@ class CheckoutController extends Controller
         return null;
     }
 
+    /** Food can be ordered now: the host takes food orders, the food plan is open, and something is available. */
     private function hasFood(Event $event): bool
     {
-        return MenuItem::withoutGlobalScopes()->where('event_id', $event->id)->where('is_active', true)->exists();
+        return $event->supports_food_ordering !== false
+            && $event->foodOrderingState()['open']
+            && $this->menu($event)->isNotEmpty();
     }
 
+    /** Active menu items and packages inside their availability window, featured first. */
     private function menu(Event $event)
     {
         return MenuItem::withoutGlobalScopes()->where('event_id', $event->id)->where('is_active', true)
-            ->orderBy('sort_order')->orderBy('name')->get();
+            ->orderByDesc('is_featured')->orderBy('sort_order')->orderBy('name')->get()
+            ->filter(fn (MenuItem $item) => $item->isAvailableAt())->values();
     }
 
     /** @return list<array{label: string, route: ?string}> */

@@ -38,12 +38,8 @@ class OrderPlacementService
             return ['success' => false, 'error' => 'Ordering is currently paused by the organizer.'];
         }
 
-        if ($event->advance_order_deadline) {
-            $deadline = strtotime($event->advance_order_deadline);
-            if ($deadline && time() > $deadline) {
-                return ['success' => false, 'error' => 'The advance ordering deadline for this event has passed.'];
-            }
-        }
+        // When food can be ordered (the preorder deadline, event-day service hours) is checked per food line, and
+        // ticket sales windows per ticket line, inside the transaction below.
 
         // 2. Validate Customer Details
         $customerName = trim($payload['customer_name'] ?? ($authUser?->name ?? ''));
@@ -80,10 +76,30 @@ class OrderPlacementService
                 if (!$event || !$event->is_ordering_open) {
                     throw new OrderPlacementException('Ordering is currently paused by the organizer.');
                 }
-
+                // Only a published event sells anything; a draft's link alone never makes it purchasable.
+                if ($event->status !== 'published') {
+                    throw new OrderPlacementException('This event is not on sale.');
+                }
+                if ($idempotencyKey !== '' && ($existing = $this->findByIdempotencyKey($event, $idempotencyKey))) {
+                    return ['success' => true, 'order' => $existing];
+                }
                 $orderItemsToCreate = [];
                 $ticketTiers = is_array($event->ticket_tiers) ? $event->ticket_tiers : [];
                 $ticketTiersModified = false;
+                $foodChecked = false;
+                $foodGate = function () use ($event, &$foodChecked) {
+                    if ($foodChecked) {
+                        return;
+                    }
+                    $foodChecked = true;
+                    if ($event->supports_food_ordering === false) {
+                        throw new OrderPlacementException('This event is not taking food orders.');
+                    }
+                    $state = $event->foodOrderingState();
+                    if (!$state['open']) {
+                        throw new OrderPlacementException($state['reason']);
+                    }
+                };
 
                 foreach ($itemsPayload as $entry) {
                     $menuItemId = (string) ($entry['menu_item_id'] ?? '');
@@ -109,13 +125,32 @@ class OrderPlacementService
                             $quantity,
                             $currency,
                             $ticketTiers,
-                            $ticketTiersModified
+                            $ticketTiersModified,
+                            $event
                         );
                         continue;
                     }
 
                     if (!$menuItem) {
                         throw new OrderPlacementException("Menu item with ID {$menuItemId} not found.");
+                    }
+                    $foodGate();
+                    if (!$menuItem->isAvailableAt()) {
+                        throw new OrderPlacementException("'{$menuItem->name}' is not available to order right now.");
+                    }
+                    $this->assertWithinCustomerLimit($menuItem, $quantity, $event, $authUser, $orderItemsToCreate);
+
+                    if ($menuItem->isPackage()) {
+                        // A package line carries the price; its parts follow as component lines priced at zero, each
+                        // reserving its own stock, so they are prepared and handed over like single items.
+                        if ($menuItem->available_stock !== null) {
+                            if ($menuItem->available_stock < $quantity) {
+                                throw new OrderPlacementException("Only {$menuItem->available_stock} '{$menuItem->name}' left.");
+                            }
+                            $menuItem->decrement('available_stock', $quantity);
+                        }
+                        array_push($orderItemsToCreate, ...$this->packageLines($menuItem, $quantity, (array) ($entry['package'] ?? []), $currency, $event, $entry['special_instructions'] ?? null));
+                        continue;
                     }
 
                     // Stock limit check
@@ -131,12 +166,14 @@ class OrderPlacementService
                     $selectedChoices = $entry['selected_choices'] ?? [];
                     // Passed through as given (text or number) and parsed exactly; never cast to float.
                     $customDonationAmount = $entry['custom_donation_amount'] ?? null;
+                    $portionSize = $entry['portion_size'] ?? null;
 
                     $priceResult = PriceCalculationService::calculateItemPrice(
                         $menuItem,
                         $currency,
                         $selectedChoices,
-                        $customDonationAmount
+                        $customDonationAmount,
+                        $portionSize
                     );
 
                     // Prepare historical immutable snapshot
@@ -157,13 +194,16 @@ class OrderPlacementService
                         'quantity' => $quantity,
                         'collected_quantity' => 0,
                         'special_instructions' => $entry['special_instructions'] ?? null,
+                        'vendor_assignment' => $menuItem->vendor_assignment, // Frozen snapshot of vendor assignment
                         'handover_status' => 'pending',
+                        'line_type' => OrderItem::ITEM,
                     ];
                 }
 
                 if ($orderItemsToCreate === []) {
                     throw new OrderPlacementException('Your order must contain at least one ticket or food item.');
                 }
+                $food = $foodChecked ? $this->foodCollection($event, (array) ($payload['food'] ?? [])) : [];
 
                 if ($ticketTiersModified) {
                     $event->ticket_tiers = $ticketTiers;
@@ -172,11 +212,12 @@ class OrderPlacementService
 
                 // Totals in exact integer minor units: item subtotal, then the configured discounts, fees and
                 // taxes (ChargeCalculator, the same rules the checkout preview showed), then the total.
-                $pricedLines = array_map(fn (array $it) => [
+                // Package components are priced inside their package line, so they are not counted again.
+                $pricedLines = array_values(array_map(fn (array $it) => [
                     'kind' => !empty($it['ticket_tier_id']) ? 'ticket' : 'food',
                     'quantity' => (int) $it['quantity'],
                     'line_total_minor' => (int) $it['unit_price_minor'] * (int) $it['quantity'],
-                ], $orderItemsToCreate);
+                ], array_filter($orderItemsToCreate, fn (array $it) => ($it['line_type'] ?? OrderItem::ITEM) !== OrderItem::COMPONENT)));
                 $totals = \App\Services\Pricing\OrderTotals::from(
                     $currency,
                     $pricedLines,
@@ -227,15 +268,20 @@ class OrderPlacementService
                     'payment_reference' => $paymentRef ?: null,
                     'sender_name' => trim($payload['sender_name'] ?? '') ?: null,
                     'authorized_unpaid' => $authorizedUnpaid,
+                    'reservation_expires_at' => now()->addMinutes(max(1, (int) config('commerce.reservation_minutes', 15))),
                     'secure_ticket_token' => $secureToken,
                     'all_handed_over' => false,
                     'idempotency_key' => $idempotencyKey !== '' ? $idempotencyKey : null,
                     'notes' => trim((string) ($payload['notes'] ?? '')) ?: null,
+                    ...$food,
                 ]);
 
                 foreach ($orderItemsToCreate as $itemData) {
                     $itemData['order_id'] = $order->id;
-                    OrderItem::create($itemData);
+                    // The line keeps the id it was given, so package components can point at their package line.
+                    $line = new OrderItem($itemData);
+                    $line->id = $itemData['id'];
+                    $line->save();
                 }
 
                 // Each fee, tax and discount line is frozen with the order; later rule changes never alter it.
@@ -280,18 +326,171 @@ class OrderPlacementService
         return false;
     }
 
+    /**
+     * Food lines for one meal package: the package line (it carries the whole price) and a zero-priced component
+     * line per part, each reserving that item's stock.
+     *
+     * @return list<array>
+     */
+    private function packageLines(MenuItem $package, int $quantity, array $selection, string $currency, Event $event, ?string $instructions): array
+    {
+        $menu = MenuItem::withoutGlobalScopes()->where('event_id', $event->id)->whereNull('deleted_at')->get()->keyBy('id');
+        $priced = \App\Services\Menu\MealPackage::price($package, $selection, $currency, $menu);
+        $headerId = (string) Str::uuid();
+        $lines = [[
+            'id' => $headerId,
+            'menu_item_id' => $package->id,
+            'name' => $package->name,
+            'category' => $package->category,
+            'pricing_type' => 'package',
+            'base_price' => \App\Support\Money::ofMinor($priced['base_minor'], $currency)->toDecimalString(),
+            'selected_options_summary' => $priced['summary'],
+            'options_minor' => $priced['extras_minor'],
+            'custom_donation_amount' => null,
+            'unit_price_minor' => $priced['unit_minor'],
+            'currency' => $currency,
+            'quantity' => $quantity,
+            'collected_quantity' => 0,
+            'special_instructions' => $instructions !== null ? (trim($instructions) ?: null) : null,
+            'vendor_assignment' => $package->vendor_assignment,
+            'handover_status' => 'pending',
+            'line_type' => OrderItem::PACKAGE,
+        ]];
+
+        // Parts reserve stock together: the same item may appear twice (an included side and an extra portion).
+        $needed = [];
+        foreach ($priced['parts'] as $part) {
+            $needed[$part['item']->id] = ($needed[$part['item']->id] ?? 0) + $part['quantity'] * $quantity;
+        }
+        foreach ($needed as $itemId => $units) {
+            $locked = MenuItem::withoutGlobalScopes()->whereKey($itemId)->lockForUpdate()->first();
+            if ($locked && $locked->available_stock !== null) {
+                if ($locked->available_stock < $units) {
+                    throw new OrderPlacementException("Not enough {$locked->name} left for this many '{$package->name}'. Available: {$locked->available_stock}.");
+                }
+                $locked->decrement('available_stock', $units);
+            }
+        }
+
+        foreach ($priced['parts'] as $part) {
+            $lines[] = [
+                'id' => (string) Str::uuid(),
+                'menu_item_id' => $part['item']->id,
+                'name' => $part['label'],
+                'category' => $part['item']->category,
+                'pricing_type' => 'fixed',
+                'base_price' => '0.00',
+                'selected_options_summary' => [$package->name],
+                'options_minor' => 0,
+                'custom_donation_amount' => null,
+                'unit_price_minor' => 0,
+                'currency' => $currency,
+                'quantity' => $part['quantity'] * $quantity,
+                'collected_quantity' => 0,
+                'special_instructions' => null,
+                'vendor_assignment' => $part['item']->vendor_assignment,
+                'handover_status' => 'pending',
+                'line_type' => OrderItem::COMPONENT,
+                'package_line_id' => $headerId,
+            ];
+        }
+
+        return $lines;
+    }
+
+    /**
+     * The host's per-customer limit for an item: what this order adds to what the customer already ordered at this
+     * event (orders not cancelled or refunded) must stay within it.
+     */
+    private function assertWithinCustomerLimit(MenuItem $item, int $quantity, Event $event, ?\App\Models\User $user, array $linesSoFar): void
+    {
+        $limit = (int) ($item->max_per_order ?? 0);
+        if ($limit <= 0) {
+            return;
+        }
+        // Plain arrays: this service also runs under the legacy test runner, which has no collection helpers.
+        $inThisOrder = array_sum(array_map(fn ($line) => (int) $line['quantity'], array_filter($linesSoFar,
+            fn ($line) => ($line['menu_item_id'] ?? null) === $item->id && ($line['line_type'] ?? OrderItem::ITEM) !== OrderItem::COMPONENT)));
+        $before = 0;
+        if ($user) {
+            $before = (int) OrderItem::query()->where('menu_item_id', $item->id)->where('line_type', '!=', OrderItem::COMPONENT)
+                ->whereHas('order', fn ($q) => $q->withoutGlobalScopes()->where('event_id', $event->id)->where('user_id', $user->id)
+                    ->whereNotIn('status', ['cancelled', 'refunded']))
+                ->sum('quantity');
+        }
+        if ($before + $inThisOrder + $quantity > $limit) {
+            $left = max(0, $limit - $before - $inThisOrder);
+            throw new OrderPlacementException("'{$item->name}' is limited to {$limit} per customer" . ($before > 0 ? "; you can add {$left} more" : '') . '.');
+        }
+    }
+
+    /**
+     * How the customer collects their food: pickup (in a pickup window when the host set them, each with its own
+     * order limit) or, where the host offers it, delivery to a table or area. The event row is locked, so the
+     * window counts cannot race.
+     *
+     * @return array{food_fulfillment_method: string, pickup_window: ?string, delivery_location: ?string}
+     */
+    private function foodCollection(Event $event, array $choice): array
+    {
+        if ($event->food_max_orders) {
+            $foodOrders = Order::withoutGlobalScopes()->where('event_id', $event->id)->whereNotIn('status', ['cancelled', 'refunded'])
+                ->whereHas('items', fn ($q) => $q->whereNotNull('menu_item_id'))->count();
+            if ($foodOrders >= $event->food_max_orders) {
+                throw new OrderPlacementException('Food orders for this event are full.');
+            }
+        }
+
+        $method = ($choice['method'] ?? 'pickup') === 'delivery' ? 'delivery' : 'pickup';
+        if ($method === 'delivery') {
+            if ($event->food_fulfillment !== 'pickup_and_delivery') {
+                throw new OrderPlacementException('This event offers food pickup only.');
+            }
+            $where = trim((string) ($choice['delivery_location'] ?? ''));
+            if (mb_strlen($where) < 2) {
+                throw new OrderPlacementException('Tell us your table number or area for food delivery.');
+            }
+
+            return ['food_fulfillment_method' => 'delivery', 'pickup_window' => null, 'delivery_location' => mb_substr($where, 0, 160)];
+        }
+
+        $windows = [];
+        foreach ($event->pickupWindows() as $w) {
+            $windows[\App\Services\Events\EventSchedule::windowKey($w)] = $w;
+        }
+        if ($windows === []) {
+            return ['food_fulfillment_method' => 'pickup', 'pickup_window' => null, 'delivery_location' => null];
+        }
+        $key = (string) ($choice['pickup_window'] ?? '');
+        $window = $windows[$key] ?? null;
+        if (!$window) {
+            throw new OrderPlacementException('Choose a pickup time for your food.');
+        }
+        if (!empty($window['max_orders'])) {
+            $taken = Order::withoutGlobalScopes()->where('event_id', $event->id)->where('pickup_window', $key)
+                ->whereNotIn('status', ['cancelled', 'refunded'])->count();
+            if ($taken >= (int) $window['max_orders']) {
+                throw new OrderPlacementException("The {$window['start']}–{$window['end']} pickup time is full. Choose another.");
+            }
+        }
+
+        return ['food_fulfillment_method' => 'pickup', 'pickup_window' => $key, 'delivery_location' => null];
+    }
+
     private function resolveAndReserveTicketTier(
         string $itemId,
         int $quantity,
         string $currency,
         array &$ticketTiers,
-        bool &$ticketTiersModified
+        bool &$ticketTiersModified,
+        ?Event $event = null
     ): array {
         // Match against host-configured ticket_tiers first
         foreach ($ticketTiers as $idx => $tier) {
             if (isset($tier['id']) && (string) $tier['id'] === $itemId) {
                 $name = (string) ($tier['name'] ?? 'Admission Ticket');
-                $window = TicketTierCatalog::saleWindow($tier);
+                // The tier's own sale dates, inside the event's ticket sales period.
+                $window = TicketTierCatalog::saleWindow(TicketTierCatalog::withEventSaleWindow($tier, $event));
                 if ($window !== 'open') {
                     throw new OrderPlacementException($window === 'ended'
                         ? "Sales for '{$name}' have ended."
@@ -300,6 +499,13 @@ class OrderPlacementService
                 $maxPerCustomer = TicketTierCatalog::maxPerOrder($tier);
                 if ($maxPerCustomer > 0 && $quantity > $maxPerCustomer) {
                     throw new OrderPlacementException("Maximum {$maxPerCustomer} '{$name}' tickets allowed per order.");
+                }
+                $minPerOrder = TicketTierCatalog::minPerOrder($tier);
+                if ($quantity < $minPerOrder) {
+                    throw new OrderPlacementException("Minimum {$minPerOrder} '{$name}' tickets required per order.");
+                }
+                if (($tier['isActive'] ?? true) === false || ($tier['visibility'] ?? 'public') !== 'public') {
+                    throw new OrderPlacementException("'{$name}' is not available for public purchase.");
                 }
 
                 $availKey = TicketTierCatalog::availabilityKey($tier);
@@ -312,8 +518,9 @@ class OrderPlacementService
                     $ticketTiersModified = true;
                 }
 
-                // Only the host's own price in the order currency; never a guessed or converted one.
-                $unitPriceMinor = TicketTierCatalog::priceMinorFor($tier, $currency);
+                // Only the host's own price in the order currency; never a guessed or converted one. During the
+                // early-bird period that is the tier's early-bird price.
+                $unitPriceMinor = TicketTierCatalog::currentPriceMinor($tier, $currency, $event);
                 if ($unitPriceMinor === null) {
                     throw new OrderPlacementException("'{$name}' has no {$currency} price set by the organizer, so it can't be sold yet.");
                 }
@@ -335,6 +542,7 @@ class OrderPlacementService
                     'collected_quantity' => 0,
                     'special_instructions' => null,
                     'handover_status' => 'pending',
+                    'line_type' => OrderItem::TICKET,
                 ];
             }
         }

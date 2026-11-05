@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\CashPayment;
 use App\Models\Event;
 use App\Models\Order;
+use App\Models\Payment;
 use App\Models\OrganizerUser;
 use App\Models\User;
 use Database\Seeders\DemoAccountsSeeder;
@@ -182,18 +183,18 @@ class CashLedgerApiTest extends TestCase
         $total = (float) $order->total_amount;
         $host = $this->user('host');
 
-        $this->actingAs($this->verifier())->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => 5, 'reason' => 'x'])
+        $this->actingAs($this->verifier())->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => 5, 'reason' => 'x', 'refund_reference' => 'refund-nope'])
             ->assertForbidden();
-        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => $total + 1, 'reason' => 'Too much'])
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => $total + 1, 'reason' => 'Too much', 'refund_reference' => 'refund-2'])
             ->assertStatus(422);
 
-        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => 5, 'reason' => 'One item unavailable'])
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => 5, 'reason' => 'One item unavailable', 'refund_reference' => 'refund-3'])
             ->assertOk()
             ->assertJsonPath('data.status', 'paid')
             ->assertJsonPath('data.refundDetails.amount', 5)
             ->assertJsonPath('data.refundDetails.refundedBy', 'Demo Event Host');
 
-        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => $total - 5, 'reason' => 'Event cancelled'])
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", ['amount' => $total - 5, 'reason' => 'Event cancelled', 'refund_reference' => 'refund-4'])
             ->assertOk()
             ->assertJsonPath('data.status', 'refunded')
             ->assertJsonCount(2, 'data.refunds');
@@ -210,9 +211,46 @@ class CashLedgerApiTest extends TestCase
         $host = $this->user('host');
         $unpaid = Order::withoutGlobalScopes()->where('event_id', 'evt-kingston-harbour-fry')->where('status', 'payment_submitted')->firstOrFail();
 
-        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$unpaid->id}/refund", ['amount' => 100, 'reason' => 'x'])
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$unpaid->id}/refund", ['amount' => 100, 'reason' => 'x', 'refund_reference' => 'refund-unpaid'])
             ->assertStatus(422);
-        $this->actingAs($host)->postJson('/api/v1/operations/orders/not-a-real-order/refund', ['amount' => 100, 'reason' => 'x'])
+        $this->actingAs($host)->postJson('/api/v1/operations/orders/not-a-real-order/refund', ['amount' => 100, 'reason' => 'x', 'refund_reference' => 'refund-missing'])
             ->assertNotFound();
+    }
+
+    public function test_provider_paid_order_is_not_marked_refunded_without_provider_refund_confirmation(): void
+    {
+        $order = $this->paidOrder();
+        Payment::create([
+            'order_id' => $order->id, 'organizer_id' => $order->organizer_id, 'provider' => 'stripe', 'method' => 'card',
+            'status' => Payment::SUCCEEDED, 'amount_minor' => $order->total_minor, 'amount_received_minor' => $order->total_minor,
+            'currency' => $order->currency, 'idempotency_key' => (string) \Illuminate\Support\Str::uuid(),
+            'provider_reference' => 'pi_test_refund_guard',
+        ]);
+
+        $this->actingAs($this->user('host'))->postJson("/api/v1/operations/orders/{$order->id}/refund", [
+            'amount' => 5, 'reason' => 'Customer cancellation', 'refund_reference' => 'manual-refund-attempt',
+        ])->assertStatus(422)->assertJsonPath('error', 'This order was paid through a provider; a verified provider refund integration is required.');
+        $this->assertSame(0, (int) $order->fresh()->refunded_minor);
+        $this->assertDatabaseCount('order_adjustments', 0);
+    }
+
+    public function test_full_only_event_policy_rejects_partial_manual_refunds(): void
+    {
+        $order = $this->paidOrder();
+        Event::withoutGlobalScopes()->whereKey($order->event_id)->update(['refund_policy_mode' => 'manual_full_only']);
+        $host = $this->user('host');
+        $total = (float) $order->amount_paid;
+
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", [
+            'amount' => 5,
+            'reason' => 'Partial request not allowed by event policy',
+            'refund_reference' => 'full-only-reject',
+        ])->assertStatus(422)->assertJsonPath('error', 'This event policy allows full refunds only.');
+
+        $this->actingAs($host)->postJson("/api/v1/operations/orders/{$order->id}/refund", [
+            'amount' => $total,
+            'reason' => 'Full refund under event policy',
+            'refund_reference' => 'full-only-success',
+        ])->assertOk()->assertJsonPath('data.status', 'refunded');
     }
 }

@@ -7,6 +7,9 @@ namespace App\Http\Controllers;
 use App\Enums\AccountType;
 use App\Enums\EventWorkerRole;
 use App\Exceptions\SecurityException;
+use App\Http\Requests\RecordCashPaymentRequest;
+use App\Http\Requests\TicketVerificationRequest;
+use App\Http\Requests\UpdateFulfillmentRequest;
 use App\Models\Event;
 use App\Models\EventWorkerAssignment;
 use App\Models\Order;
@@ -26,22 +29,11 @@ class WorkerTerminalController extends Controller
      */
     public function index(Request $request, Event $event): View
     {
-        $user = $request->user();
+        // Assignment is validated by RequireActiveWorkerAssignment middleware
+        $assignment = $request->attributes->get('worker_assignment');
 
-        // Any active assignment holding one of the terminal's actions may open it; each role then sees only its own panel.
-        // (Ticket checkers and food station workers do not hold 'view_relevant_orders'.)
-        $assignment = null;
-        $denied = null;
-        foreach (['view_relevant_orders', 'scan_qr_tickets', 'mark_quantities_collected', 'record_cash_received', 'oversee_assigned_operations'] as $action) {
-            try {
-                $assignment = EventWorkerService::assertActiveAssignmentValid($user, $event, $action);
-                break;
-            } catch (SecurityException $e) {
-                $denied = $e;
-            }
-        }
-        if ($assignment === null) {
-            abort(403, $denied?->getMessage() ?? 'You are not assigned to this event.');
+        if (!$assignment) {
+            abort(403, 'You are not assigned to this event.');
         }
 
         // Active role defaults to assignment role or event_host
@@ -62,20 +54,11 @@ class WorkerTerminalController extends Controller
      * ticket on its own: only a supervisor (or the event's host or a system administrator) may admit by it,
      * and that admission is audited as a manual check.
      */
-    public function scanTicket(Request $request, Event $event): JsonResponse
+    public function scanTicket(TicketVerificationRequest $request, Event $event): JsonResponse
     {
-        $request->validate([
-            'ticket_code' => ['required', 'string', 'max:80'],
-        ]);
-
         $user = $request->user();
+        $assignment = $request->attributes->get('worker_assignment');
         $code = trim((string) $request->input('ticket_code'));
-
-        try {
-            $assignment = EventWorkerService::assertActiveAssignmentValid($user, $event, 'scan_qr_tickets');
-        } catch (SecurityException $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
-        }
 
         $isToken = str_starts_with($code, 'tok_');
         if (!$isToken && $assignment->worker_role !== EventWorkerRole::EVENT_SUPERVISOR) {
@@ -102,7 +85,8 @@ class WorkerTerminalController extends Controller
         }
 
         try {
-            $scanResult = EventWorkerService::scanAndValidateTicket($user, $order, (string) $event->id, manual: !$isToken);
+            $scanResult = EventWorkerService::scanAndValidateTicket($user, $order, (string) $event->id,
+                manual: !$isToken, requestId: $request->validated('scan_request_id'));
             return response()->json($scanResult);
         } catch (SecurityException $e) {
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
@@ -113,22 +97,10 @@ class WorkerTerminalController extends Controller
      * Record cash received at the event (Payment Clerk). Goes through the cash ledger, which locks the order,
      * caps the amount at the outstanding balance, enforces the order's currency and writes the audit record.
      */
-    public function recordCash(Request $request, Event $event, CashLedgerService $ledger): JsonResponse
+    public function recordCash(RecordCashPaymentRequest $request, Event $event, CashLedgerService $ledger): JsonResponse
     {
-        $request->validate([
-            'order_number' => ['required_without:order_id', 'nullable', 'string', 'max:40'],
-            'order_id' => ['required_without:order_number', 'nullable', 'string'],
-            'amount' => ['required', 'numeric', 'min:0.01'],
-            'notes' => ['nullable', 'string', 'max:255'],
-        ]);
-
         $user = $request->user();
-
-        try {
-            EventWorkerService::assertActiveAssignmentValid($user, $event, 'record_cash_received');
-        } catch (SecurityException $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
-        }
+        $assignment = $request->attributes->get('worker_assignment');
 
         $order = Order::withoutGlobalScopes()
             ->where('event_id', $event->id)
@@ -139,6 +111,11 @@ class WorkerTerminalController extends Controller
 
         if (!$order) {
             return response()->json(['success' => false, 'error' => 'No order with that number for this event.'], 404);
+        }
+
+        // Policy check
+        if (!$user->can('recordCashPayment', $order, $assignment)) {
+            return response()->json(['success' => false, 'error' => 'Permission denied.'], 403);
         }
 
         try {
@@ -178,11 +155,7 @@ class WorkerTerminalController extends Controller
     {
         $request->validate(['code' => ['required', 'string', 'max:80']]);
 
-        try {
-            $assignment = EventWorkerService::assertActiveAssignmentValid($request->user(), $event, 'mark_quantities_collected');
-        } catch (SecurityException $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
-        }
+        $assignment = $request->attributes->get('worker_assignment');
 
         $order = $this->findEventOrder($event, (string) $request->input('code'));
         if (!$order) {
@@ -197,21 +170,10 @@ class WorkerTerminalController extends Controller
      * host screens: the item row is locked, quantities are capped, unpaid orders are refused and every handover
      * is written to the handover audit log.
      */
-    public function collectFood(Request $request, Event $event, OrderOperationsService $operations): JsonResponse
+    public function collectFood(UpdateFulfillmentRequest $request, Event $event, OrderOperationsService $operations): JsonResponse
     {
-        $request->validate([
-            'order_id' => ['required', 'string'],
-            'order_item_id' => ['required', 'string'],
-            'quantity' => ['required', 'integer', 'min:1', 'max:100'],
-        ]);
-
         $user = $request->user();
-
-        try {
-            $assignment = EventWorkerService::assertActiveAssignmentValid($user, $event, 'mark_quantities_collected');
-        } catch (SecurityException $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
-        }
+        $assignment = $request->attributes->get('worker_assignment');
 
         $order = Order::withoutGlobalScopes()->whereNull('deleted_at')
             ->where('event_id', $event->id)
@@ -222,7 +184,7 @@ class WorkerTerminalController extends Controller
         }
 
         $item = OrderItem::where('id', $request->input('order_item_id'))->where('order_id', $order->id)->first();
-        if (!$item || $item->menu_item_id === null) {
+        if (!$item || !$item->isHandoverItem()) {
             return response()->json(['success' => false, 'error' => 'That food item is not on this order.'], 422);
         }
 
@@ -270,11 +232,15 @@ class WorkerTerminalController extends Controller
             'customer_first_name' => strtok((string) $order->customer_name, ' ') ?: 'Guest',
             'payment_verified' => $order->isEligibleForHandover(),
             'items' => $order->items
-                ->filter(fn (OrderItem $item) => $item->menu_item_id !== null)
+                // Package lines are shown through their items, each handed over at its own station.
+                ->filter(fn (OrderItem $item) => $item->isHandoverItem())
                 ->map(fn (OrderItem $item) => [
                     'id' => $item->id,
                     'name' => $item->name,
                     'options' => $item->selected_options_summary,
+                    'part_of' => $item->line_type === OrderItem::COMPONENT ? ($item->selected_options_summary[0] ?? null) : null,
+                    'preparation_status' => $item->preparation_status ?? 'pending',
+                    'payment_status' => $item->payment_status,
                     'quantity' => (int) $item->quantity,
                     'collected' => (int) $item->collected_quantity,
                     'remaining' => max(0, (int) $item->quantity - (int) $item->collected_quantity),
@@ -307,7 +273,7 @@ class WorkerTerminalController extends Controller
 
         $ticketOrders = $orders->filter(fn (Order $o) => $o->items->contains(fn (OrderItem $i) => $i->ticket_tier_id !== null));
         $foodItems = $orders->filter(fn (Order $o) => $o->isEligibleForHandover())
-            ->flatMap(fn (Order $o) => $o->items->filter(fn (OrderItem $i) => $i->menu_item_id !== null));
+            ->flatMap(fn (Order $o) => $o->items->filter(fn (OrderItem $i) => $i->isHandoverItem()));
 
         return [
             'tickets_admitted' => $ticketOrders->whereNotNull('checked_in_at')->count(),

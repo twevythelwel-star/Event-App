@@ -31,6 +31,17 @@
         filter: brightness(0.9);
     }
 
+    .detail-hero-backdrop {
+        position: absolute;
+        inset: -40px;
+        width: calc(100% + 80px);
+        height: calc(100% + 80px);
+        object-fit: cover;
+        filter: blur(28px) saturate(1.3) brightness(0.7);
+        transform: scale(1.1);
+    }
+    .detail-hero-img { position: relative; }
+
     .detail-hero-overlay {
         position: absolute;
         inset: 0;
@@ -237,9 +248,13 @@
         @php
             $heroImg = $event->display_image_url;
         @endphp
-        {{-- A generated flyer is text, so it is shown whole rather than cropped; uploaded artwork fills the banner --}}
-        <img src="{{ $heroImg }}" alt="{{ $event->title }}" class="detail-hero-img"
-             @unless($event->hasFlyer()) style="object-fit: contain; background: #0C1B2D; filter: none;" @endunless>
+        {{-- A generated flyer is text, so it is shown whole rather than cropped; uploaded artwork fills the banner.
+             Behind a whole flyer, a blurred copy of the same artwork fills the full width. --}}
+        @unless($event->hasFlyer())
+            <img src="{{ $heroImg }}" alt="" aria-hidden="true" class="detail-hero-backdrop">
+        @endunless
+           <img src="{{ $heroImg }}" alt="{{ $event->flyer_alt_text ?: $event->title }}" class="detail-hero-img"
+               style="object-position: {{ (int) ($event->flyer_position_x ?? 50) }}% {{ (int) ($event->flyer_position_y ?? 50) }}%; @unless($event->hasFlyer()) object-fit: contain; background: transparent; filter: drop-shadow(0 18px 40px rgba(0,0,0,.5)); @endunless">
         <div class="detail-hero-overlay"></div>
 
         <!-- Floating Top Navigation -->
@@ -454,15 +469,55 @@
 
                         <div id="refund-policy">
                             <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Cancellations and refunds</h3>
-                            @if($policy && trim((string) $policy->refund_policy_notes) !== '')
-                                <p style="font-size: 13px; color: #CBD5E1; margin: 0; white-space: pre-line;">{{ $policy->refund_policy_notes }}</p>
+                            @php $refundPolicyNotes = $event->refund_policy_notes ?: $policy?->refund_policy_notes; @endphp
+                            @php $refundDeadlineHours = $event->refund_policy_deadline_hours ?? $policy?->refund_policy_deadline_hours; @endphp
+                            @php $refundMode = $event->refund_policy_mode ?? $policy?->refund_policy_mode ?? 'manual_full_and_partial'; @endphp
+                            @if(trim((string) $refundPolicyNotes) !== '')
+                                <p style="font-size: 13px; color: #CBD5E1; margin: 0; white-space: pre-line;">{{ $refundPolicyNotes }}</p>
                             @else
                                 <p style="font-size: 13px; color: #CBD5E1; margin: 0;">The organizer has not published a refund policy. Contact them before you buy if you may need a refund.</p>
                             @endif
-                            @if($policy && (int) $policy->refund_policy_deadline_hours > 0 && trim((string) $policy->refund_policy_notes) !== '')
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refund requests close {{ (int) $policy->refund_policy_deadline_hours }} hours before the event starts.</p>
+                            @if($refundDeadlineHours !== null)
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refund requests close {{ (int) $refundDeadlineHours }} hours before the event starts.</p>
                             @endif
-                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refunds are issued by the organizer. If the event is cancelled, contact the organizer using the details on this page.</p>
+                            <p style="font-size: 12px; color: #CBD5E1; margin: 6px 0 0;">
+                                @if($refundMode === 'non_refundable') This event is marked non-refundable.
+                                @elseif($refundMode === 'manual_full_only') Organizers may record full manual refunds for supported payment methods; partial refunds are not offered.
+                                @else Organizers may record full or partial manual refunds for supported payment methods.
+                                @endif
+                            </p>
+                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">EventBite cannot process provider-backed refunds. A cancellation request or approval is not a completed refund; the organizer must complete any supported manual refund and record its reference.</p>
+                            @php $nonRefundableCategories = $event->non_refundable_ticket_categories ?? []; @endphp
+                            @if(count($nonRefundableCategories))
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Non-refundable ticket types: {{ implode(', ', $nonRefundableCategories) }}.</p>
+                            @endif
+                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">
+                                @if(($event->host_cancellation_policy ?? $policy?->host_cancellation_policy) === 'manual_refund_if_supported') If the host cancels, a manual refund may be recorded only for a supported payment method.
+                                @else If the host cancels, contact the organizer; no automatic refund is promised.
+                                @endif
+                            </p>
+                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">
+                                @if(($event->postponement_policy ?? $policy?->postponement_policy ?? 'tickets_valid_for_new_date') === 'tickets_valid_for_new_date') If postponed or rescheduled, existing tickets remain valid for the new date.
+                                @else If postponed or rescheduled, contact the organizer for next steps.
+                                @endif
+                            </p>
+                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">
+                                @if(($event->weather_cancellation_policy ?? $policy?->weather_cancellation_policy ?? 'contact_organizer') === 'reschedule_tickets_valid') For weather cancellation, the event will be rescheduled and existing tickets remain valid.
+                                @elseif(($event->weather_cancellation_policy ?? $policy?->weather_cancellation_policy ?? 'contact_organizer') === 'manual_refund_if_supported') For weather cancellation, a manual refund may be recorded only for a supported payment method.
+                                @else For weather cancellation, contact the organizer; no automatic refund is promised.
+                                @endif
+                            </p>
+                            @php $foodCancelHours = $event->food_order_cancellation_deadline_hours ?? $policy?->food_order_cancellation_deadline_hours; @endphp
+                            @php $foodModifyHours = $event->food_order_modification_deadline_hours ?? $policy?->food_order_modification_deadline_hours; @endphp
+                            @if($foodCancelHours !== null)
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Food cancellation requests close {{ (int) $foodCancelHours }} hours before the event starts.</p>
+                            @endif
+                            @if($foodModifyHours !== null)
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Food orders cannot be modified in EventBite; contact the organizer at least {{ (int) $foodModifyHours }} hours before the event.</p>
+                            @endif
+                            @if($foodCancelHours !== null && $refundDeadlineHours !== null)
+                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">If multiple cancellation cutoffs apply, the earliest deadline controls.</p>
+                            @endif
                         </div>
 
                         @if($eventQr)
@@ -481,7 +536,8 @@
 
             <!-- 4. Photos: this event's own flyer and dish images, never a fixed set -->
             @php
-                $photos = collect([['src' => $event->flyer_path ? $event->display_image_url : null, 'caption' => $event->title]])
+                $photos = collect([['src' => $event->flyer_path ? $event->display_image_url : null, 'caption' => $event->flyer_alt_text ?: $event->title]])
+                    ->merge($event->mediaItems->where('media_type', 'gallery')->map(fn ($media) => ['src' => "/api/v1/media/event-media/{$media->id}?variant=thumbnail", 'caption' => $media->alt_text]))
                     ->merge($event->menuItems->where('is_active', true)->filter(fn ($item) => !empty($item->image_url))
                         ->map(fn ($item) => ['src' => $item->image_url, 'caption' => $item->name]))
                     ->filter(fn ($photo) => !empty($photo['src']))

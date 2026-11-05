@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\TargetMarket;
 use App\Services\LocationAddressNormalizer;
+use App\Services\MarketConfigurationService;
 use Database\Seeders\FishFryEventsSeeder;
 use Database\Seeders\UsLocationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,6 +30,21 @@ class UsLocationCatalogTest extends TestCase
         $response->assertJsonPath('countryCode', 'US')
             ->assertJsonFragment(['city' => 'Lauderhill', 'stateCode' => 'FL'])
             ->assertJsonFragment(['city' => 'Baltimore', 'stateCode' => 'MD']);
+    }
+
+    public function test_legacy_us_address_validation_accepts_territories_and_their_timezones(): void
+    {
+        $address = MarketConfigurationService::validateUSAddress([
+            'street' => '100 Main Street',
+            'city' => 'San Juan',
+            'state' => 'PR',
+            'zip' => '00901',
+        ]);
+
+        $this->assertSame('Puerto Rico', $address['state_name']);
+        $this->assertSame('United States', $address['country_name']);
+        $this->assertTrue(MarketConfigurationService::isSupportedUSTimezone('America/Puerto_Rico'));
+        $this->assertTrue(MarketConfigurationService::isSupportedUSTimezone('Pacific/Guam'));
     }
 
     public function test_reseeding_preserves_administrator_market_edits(): void
@@ -76,7 +92,7 @@ class UsLocationCatalogTest extends TestCase
         $this->assertSame('100 Main Street, Community Hall, Lauderhill, FL, 33311, United States', $normalized['venue_address']);
     }
 
-    public function test_address_normalization_rejects_unpaired_coordinates_and_non_us_timezones(): void
+    public function test_address_normalization_rejects_unpaired_coordinates_and_accepts_configured_international_locations(): void
     {
         $address = [
             'street_address' => '100 Main Street',
@@ -92,9 +108,19 @@ class UsLocationCatalogTest extends TestCase
             $this->assertArrayHasKey('latitude', $exception->errors());
         }
 
+        config(['events.market.allowed_countries' => ['US', 'GB']]);
+        $international = app(LocationAddressNormalizer::class)->normalize($address + [
+            'country_code' => 'GB',
+            'state_code' => 'Greater London',
+            'zip_code' => 'SW1A 1AA',
+            'timezone' => 'Europe/London',
+        ]);
+        $this->assertSame('GB', $international['country_code']);
+        $this->assertSame('Europe/London', $international['timezone']);
+
         try {
-            app(LocationAddressNormalizer::class)->normalize($address + ['timezone' => 'Europe/London']);
-            $this->fail('A non-U.S. event time zone should be rejected.');
+            app(LocationAddressNormalizer::class)->normalize($address + ['timezone' => 'Mars/Olympus_Mons']);
+            $this->fail('An invalid IANA timezone should be rejected.');
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('timezone', $exception->errors());
         }

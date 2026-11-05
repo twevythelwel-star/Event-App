@@ -53,6 +53,7 @@ class AttendeeDashboardController extends Controller
                 'display_estimate' => $estimate['display_formatted_estimate'],
                 'created_at' => $order->created_at,
                 'all_handed_over' => $order->all_handed_over,
+                'cancellation' => app(\App\Services\CancellationService::class)->statusFor($order),
                 'items' => $order->items ?? [],
             ];
         });
@@ -147,5 +148,17 @@ class AttendeeDashboardController extends Controller
                 'all_handed_over' => $order->all_handed_over,
             ],
         ]);
+    }
+
+    public function requestCancellation(Request $request, string $orderId): \Illuminate\Http\RedirectResponse
+    {
+        $data = $request->validate(['reason' => ['nullable', 'string', 'max:500']]);
+        $order = Order::withoutGlobalScopes()->whereKey($orderId)->where('user_id', $request->user()->id)->firstOrFail();
+        try {
+            app(\App\Services\CancellationService::class)->request($request->user(), $order, $data['reason'] ?? null);
+        } catch (\InvalidArgumentException $e) {
+            return back()->withErrors(['cancellation' => $e->getMessage()]);
+        }
+        return back()->with('success', 'Your cancellation request has been sent to the event organizer.');
     }
 }

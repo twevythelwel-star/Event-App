@@ -62,6 +62,14 @@ final class ChargeCalculator
                 'rate_bp' => null, 'basis_minor' => $scopes['food'], 'amount_minor' => $packaging, 'currency' => $currency,
             ];
         }
+        // The event's food service fee, also per food order, when the host set one.
+        $service = (int) ($event->food_service_fee_minor ?? 0);
+        if ($service > 0 && $quantities['food'] > 0 && strtoupper((string) ($event->currency ?: $currency)) === $currency) {
+            $charges[] = [
+                'kind' => 'host_fee', 'label' => 'Food service fee', 'charge_rule_id' => null, 'method' => 'fixed_per_order',
+                'rate_bp' => null, 'basis_minor' => $scopes['food'], 'amount_minor' => $service, 'currency' => $currency,
+            ];
+        }
         foreach ($this->ofKind($rules, ['platform_fee', 'host_fee']) as $rule) {
             $basis = $this->basis($rule->applies_to, $scopes);
             $amount = $this->amountFor($rule, $basis, $this->quantity($rule->applies_to, $quantities), $currency);

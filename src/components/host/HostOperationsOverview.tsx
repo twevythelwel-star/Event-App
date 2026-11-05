@@ -42,6 +42,7 @@ import {
 } from "./financialCalculations";
 import { HostSummaryMetrics } from "./HostSummaryMetrics";
 import { HostUpcomingEventsSection } from "./HostUpcomingEventsSection";
+import { FoodPhoto } from "../FoodPhoto";
 
 type Props = {
   eventDetails: EventDetails;
@@ -869,17 +870,14 @@ export function HostOperationsOverview({
                     >
                       #{idx + 1}
                     </span>
-                    <img
+                    <FoodPhoto
                       src={item.imageUrl}
                       alt={item.name}
-                      onError={(e) => {
-                        e.currentTarget.src = "/images/escovitch_fish.jpg";
-                      }}
+                      showUnavailableText={false}
                       style={{
                         width: "46px",
                         height: "46px",
                         borderRadius: "10px",
-                        objectFit: "cover",
                         border: "1px solid #CBD5E1",
                         flexShrink: 0,
                       }}

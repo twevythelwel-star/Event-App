@@ -230,3 +230,432 @@
 .eb-event-qr-redesign .form-group { margin: 0; }
 .eb-event-qr-redesign p { flex-basis: 100%; margin: 0; }
 .eb-event-qr-flash { margin: var(--space-3, 0.75rem) 0 0; padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem); border-radius: var(--radius-md, 8px); background: var(--color-accent-subtle); border: 1px solid var(--color-accent-border); color: var(--color-text-primary); }
+
+/* --------------------------------------------------------------------------
+   Food ordering: packages, build-your-own and the live summary
+   -------------------------------------------------------------------------- */
+
+.eb-food-order {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .eb-food-order { grid-template-columns: minmax(0, 1fr) 320px; }
+  .eb-food-summary { position: sticky; top: calc(var(--space-6) + 56px); }
+}
+
+.eb-food-summary { margin: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+
+.eb-food-summary-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.eb-food-summary-lines li,
+.eb-food-summary-totals div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-supporting-size);
+}
+
+.eb-food-summary-totals { margin: 0; display: flex; flex-direction: column; gap: var(--space-1); border-top: 1px solid var(--color-border); padding-top: var(--space-3); }
+.eb-food-summary-totals dd { margin: 0; font-variant-numeric: tabular-nums; }
+.eb-food-summary-total { font-weight: 700; color: var(--color-text-primary); font-size: var(--text-body-size) !important; }
+
+.eb-food-options { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.eb-food-options legend { padding: 0; margin-bottom: 4px; }
+
+.eb-package-includes { margin: 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 4px; }
+.eb-package-includes select { width: 100%; }
+
+/* Event form: grouped fields and the venue map confirmation */
+.eb-fieldset { border: 0; margin: 0 0 var(--space-4); padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.eb-fieldset > legend { padding: 0; margin-bottom: var(--space-2); }
+.eb-map-confirm { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3); border: 1px dashed var(--color-border-strong); border-radius: var(--radius-md); margin: var(--space-2) 0 var(--space-3); }
+.eb-map-results { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.eb-map-preview { margin: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.eb-map-preview img { width: 100%; max-width: 640px; aspect-ratio: 2 / 1; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--color-border); }
+
+/* Menu studio: tabs and item rows */
+.eb-tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--color-border); overflow-x: auto; }
+.eb-tab {
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 2px solid transparent;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: var(--text-button-size);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.eb-tab:hover { color: var(--color-text-primary); }
+.eb-tab.is-active { color: var(--color-text-primary); border-bottom-color: var(--color-accent); }
+.eb-tab:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+
+.eb-studio-row { display: flex; flex-direction: column; gap: var(--space-3); }
+.eb-studio-row-head { display: flex; gap: var(--space-3); align-items: center; }
+.eb-studio-thumb { width: 72px; height: 72px; flex: none; border-radius: var(--radius-md); object-fit: cover; border: 1px solid var(--color-border); }
+.eb-studio-thumb-empty { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: var(--color-text-muted); background: var(--color-background-secondary); text-align: center; }
+.eb-studio-row details > summary,
+.eb-panel > summary { cursor: pointer; }
+
+.eb-package-option { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.eb-package-option .eb-choice-label { min-width: 12rem; }
+.eb-input-inline { display: inline-block; width: 6rem; padding-top: 4px; padding-bottom: 4px; }
+
+/* The hidden attribute wins over the flex layouts above (tab panels, map results and previews). */
+[role="tabpanel"][hidden],
+.eb-stack[hidden],
+.eb-map-results[hidden],
+.eb-map-preview[hidden] { display: none !important; }
+
+/* Country picker: regions that expand, flag cards, chosen summary */
+.eb-country-picker { border: 0; margin: var(--space-4) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+.eb-country-summary { display: flex; flex-wrap: wrap; gap: var(--space-2); min-height: 32px; align-items: center; }
+.eb-country-chip {
+  border: 1px solid var(--color-accent-border); background: var(--color-accent-subtle); color: var(--color-text-primary);
+  border-radius: 999px; padding: 4px 10px; font: inherit; font-size: var(--text-label-size); cursor: pointer;
+  animation: eb-fade-in 0.18s ease-out;
+}
+.eb-country-chip:hover { border-color: var(--color-accent); }
+.eb-region { border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-background-secondary); }
+.eb-region > summary {
+  display: flex; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4);
+  cursor: pointer; font-weight: 600; list-style: none;
+}
+.eb-region > summary::-webkit-details-marker { display: none; }
+.eb-region > summary::after { content: '▾'; color: var(--color-text-muted); transition: transform 0.2s ease; }
+.eb-region[open] > summary::after { transform: rotate(180deg); }
+.eb-region-count { margin-left: auto; color: var(--color-text-muted); font-weight: 500; font-size: var(--text-label-size); }
+.eb-region-body { padding: 0 var(--space-4) var(--space-4); }
+.eb-region[open] > .eb-region-body { animation: eb-expand 0.22s ease-out; }
+.eb-region-name { margin: var(--space-3) 0 var(--space-2); font-size: var(--text-label-size); color: var(--color-text-secondary); font-weight: 600; }
+.eb-country-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-2); }
+.eb-country-card {
+  position: relative; display: flex; flex-direction: column; border: 1px solid var(--color-border); border-radius: var(--radius-md);
+  background: var(--color-surface); overflow: hidden; cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.eb-country-card:hover { border-color: var(--color-border-strong); transform: translateY(-1px); }
+.eb-country-card:focus-within { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+.eb-country-card:has(.eb-country-input:checked), .eb-country-card.is-chosen { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent-border); }
+.eb-country-input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.eb-country-media { position: relative; display: flex; align-items: center; justify-content: center; height: 64px; background: linear-gradient(135deg, var(--color-surface-elevated), var(--color-background-secondary)); }
+.eb-country-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.85; }
+.eb-country-flag { position: relative; font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif; font-size: 1.9rem; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35)); }
+.eb-country-text { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2) var(--space-3); }
+.eb-country-name { font-weight: 600; font-size: var(--text-supporting-size); color: var(--color-text-primary); }
+.eb-country-cuisine { font-size: 0.75rem; color: var(--color-text-muted); }
+.eb-country-check {
+  position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--color-accent); color: var(--color-accent-text); font-size: 0.75rem; font-weight: 800;
+  opacity: 0; transform: scale(0.6); transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.eb-country-card:has(.eb-country-input:checked) .eb-country-check { opacity: 1; transform: scale(1); }
+.eb-country-card[hidden], .eb-region[hidden] { display: none !important; }
+
+/* Shared motion: short, and switched off by the reduced-motion rule in 05-navigation-motion.css */
+@keyframes eb-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes eb-expand { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+[role="tabpanel"]:not([hidden]) { animation: eb-fade-in 0.18s ease-out; }
+details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summary) { animation: eb-expand 0.2s ease-out; }
+.flash-alert { animation: eb-expand 0.25s ease-out; }
+
+/* Menu order in the studio */
+.eb-sortable { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.eb-sort-handle { cursor: grab; color: var(--color-text-muted); font-size: 1.2rem; padding: 0 var(--space-1); user-select: none; }
+.eb-sort-handle:active { cursor: grabbing; }
+.eb-sort-buttons { display: flex; flex-direction: column; gap: 2px; }
+.eb-sort-buttons form { margin: 0; }
+.eb-sort-buttons .eb-btn { padding: 0 8px; min-height: 22px; line-height: 1; }
+.eb-studio-row { transition: box-shadow 0.15s ease, opacity 0.15s ease; }
+.eb-studio-row.is-dragging { opacity: 0.55; box-shadow: 0 0 0 2px var(--color-accent-border); }
+
+/* --------------------------------------------------------------------------
+   Ticket designs: the designer's live mockup and the issued ticket share them
+   -------------------------------------------------------------------------- */
+[data-accent="indigo"]  { --ticket-accent: #818cf8; }
+[data-accent="emerald"] { --ticket-accent: #34d399; }
+[data-accent="coral"]   { --ticket-accent: #fb8a74; }
+[data-accent="cyan"]    { --ticket-accent: #22d3ee; }
+[data-accent="violet"]  { --ticket-accent: #a78bfa; }
+[data-accent="gold"]    { --ticket-accent: #f5c04a; }
+
+.eb-ticket-skin {
+  --ticket-bg: #13233a; --ticket-ink: #f8fafc; --ticket-muted: #a8b6c8; --ticket-accent: #818cf8;
+  display: flex; flex-direction: column; width: 260px; max-width: 100%; border-radius: 18px; overflow: hidden;
+  background: var(--ticket-bg); color: var(--ticket-ink); border-top: 4px solid var(--ticket-accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: background 0.25s ease, color 0.25s ease, width 0.25s ease, border-color 0.25s ease, transform 0.25s ease;
+}
+.eb-ticket-skin.is-updating { transform: scale(0.985); }
+.eb-ticket-skin-main { display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; }
+.eb-ticket-skin-kicker { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ticket-accent); font-weight: 800; }
+.eb-ticket-skin-event { font-size: 1.05rem; line-height: 1.25; }
+.eb-ticket-skin-when { font-size: 0.75rem; color: var(--ticket-muted); min-height: 1em; }
+.eb-ticket-skin-tier { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 8px; border-top: 1px dashed color-mix(in srgb, var(--ticket-muted) 40%, transparent); font-size: 0.82rem; font-weight: 700; }
+.eb-ticket-skin-price { color: var(--ticket-accent); }
+.eb-ticket-skin-tear { height: 0; border-top: 2px dashed color-mix(in srgb, var(--ticket-muted) 45%, transparent); margin: 0 14px; position: relative; }
+.eb-ticket-skin-stub { display: flex; gap: 12px; align-items: center; padding: 14px 18px 16px; }
+.eb-ticket-skin-qr {
+  flex: none; width: 54px; height: 54px; border-radius: 6px; background-color: #fff;
+  background-image: repeating-linear-gradient(90deg, rgba(7, 17, 31, 0.18) 0 4px, transparent 4px 8px), repeating-linear-gradient(0deg, rgba(7, 17, 31, 0.18) 0 4px, transparent 4px 8px);
+}
+.eb-ticket-skin-note { font-size: 0.68rem; color: var(--ticket-muted); }
+
+/* Designs */
+.eb-ticket-skin[data-design="premium_minimal"] { --ticket-bg: #f8fafc; --ticket-ink: #0f172a; --ticket-muted: #64748b; }
+.eb-ticket-skin[data-design="vip_dark"] { --ticket-bg: #07070c; --ticket-muted: #9ca3af; border-top-width: 0; box-shadow: 0 0 0 1px var(--ticket-accent), 0 10px 30px rgba(0, 0, 0, 0.5); }
+.eb-ticket-skin[data-design="vip_dark"] .eb-ticket-skin-kicker::after { content: ' · VIP'; }
+.eb-ticket-skin[data-design="festival_color"] { --ticket-bg: color-mix(in srgb, var(--ticket-accent) 70%, #1e1b4b); --ticket-muted: rgba(255, 255, 255, 0.78); --ticket-ink: #fff; border-top-color: #fff; }
+.eb-ticket-skin[data-design="festival_color"] .eb-ticket-skin-kicker, .eb-ticket-skin[data-design="festival_color"] .eb-ticket-skin-price { color: #fff; }
+.eb-ticket-skin[data-design="modern_digital"] { --ticket-bg: #0b1626; font-family: var(--font-mono); border-top: 0; border-left: 4px solid var(--ticket-accent); }
+.eb-ticket-skin[data-design="elegant_gold"] { --ticket-bg: #102018; --ticket-accent: #d6b25e; --ticket-muted: #c9c3a8; border: 1px solid #d6b25e; border-top-width: 4px; }
+.eb-ticket-skin[data-design="elegant_gold"] .eb-ticket-skin-event { font-family: Georgia, 'Times New Roman', serif; font-weight: 600; font-size: 1.15rem; }
+.eb-ticket-skin[data-design="concert_pass"] { border-top: 0; border-radius: 12px; }
+.eb-ticket-skin[data-design="concert_pass"] .eb-ticket-skin-main { border-top: 14px solid var(--ticket-accent); }
+.eb-ticket-skin[data-design="concert_pass"] .eb-ticket-skin-event { text-transform: uppercase; letter-spacing: 0.04em; font-weight: 900; }
+
+/* Backgrounds */
+.eb-ticket-skin[data-bg="gradient"] { background: linear-gradient(150deg, var(--ticket-bg) 40%, color-mix(in srgb, var(--ticket-accent) 35%, var(--ticket-bg))); }
+.eb-ticket-skin[data-bg="glow"] { background: radial-gradient(circle at 85% 0%, color-mix(in srgb, var(--ticket-accent) 40%, transparent), transparent 55%), var(--ticket-bg); }
+
+/* Print view: a wide paper ticket with its stub on the right; dark designs print on white */
+.eb-ticket-skin[data-mode="print"] { width: 460px; flex-direction: row; border-radius: 10px; --ticket-bg: #ffffff; --ticket-ink: #0f172a; --ticket-muted: #475569; background: #fff; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25); }
+.eb-ticket-skin[data-mode="print"] .eb-ticket-skin-main { flex: 1; }
+.eb-ticket-skin[data-mode="print"] .eb-ticket-skin-tear { border-top: 0; border-left: 2px dashed #cbd5e1; margin: 12px 0; height: auto; }
+.eb-ticket-skin[data-mode="print"] .eb-ticket-skin-stub { flex-direction: column; justify-content: center; width: 120px; text-align: center; }
+.eb-ticket-skin[data-mode="print"][data-design="festival_color"] .eb-ticket-skin-kicker,
+.eb-ticket-skin[data-mode="print"][data-design="festival_color"] .eb-ticket-skin-price { color: var(--ticket-accent); }
+
+.eb-ticket-designer { display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: flex-start; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-background-secondary); }
+.eb-ticket-designer-controls { display: flex; flex-direction: column; gap: var(--space-2); }
+.eb-segmented { display: inline-flex; border: 1px solid var(--color-border); border-radius: 999px; overflow: hidden; }
+.eb-segmented button { border: 0; background: transparent; color: var(--color-text-secondary); padding: 4px 12px; font: inherit; font-size: var(--text-label-size); cursor: pointer; }
+.eb-segmented button[aria-pressed="true"] { background: var(--color-accent); color: var(--color-accent-text); font-weight: 700; }
+
+/* The issued ticket wears its ticket type's design as an accent */
+.eb-ticket-card[data-accent] { border-top: 4px solid var(--ticket-accent); }
+.eb-ticket-card[data-design="vip_dark"], .eb-ticket-card[data-design="modern_digital"] { background: #0a1220; }
+.eb-ticket-card[data-design="elegant_gold"] { border-color: #d6b25e; border-top-color: #d6b25e; }
+
+@media print {
+  .app-sidebar, .sidebar, header, nav, .eb-customer-bottom-nav, .flash-alert, [data-no-print], .eb-alert { display: none !important; }
+  body, .content-canvas, .eb-checkout { background: #fff !important; color: #000 !important; }
+  .eb-ticket-card { box-shadow: none !important; border: 1px solid #94a3b8 !important; color: #000 !important; background: #fff !important; break-inside: avoid; }
+  .eb-ticket-card * { color: #000 !important; }
+  .eb-ticket-qr-well { background: #fff !important; }
+}
+
+/* Food photos: placeholder when the host has none, shimmer while a photo loads */
+.eb-food-card-placeholder {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  color: var(--color-text-muted); font-size: 0.72rem;
+  background: repeating-linear-gradient(135deg, var(--color-background-secondary) 0 12px, var(--color-surface) 12px 24px);
+}
+.eb-skeleton { background: linear-gradient(90deg, var(--color-background-secondary) 25%, var(--color-surface-elevated) 50%, var(--color-background-secondary) 75%); background-size: 200% 100%; animation: eb-shimmer 1.2s ease-in-out infinite; }
+.eb-skeleton img { opacity: 0; }
+.eb-food-card-media img { transition: opacity 0.25s ease; }
+@keyframes eb-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.eb-food-card { transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease; }
+.eb-food-card:hover { box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22); }
+
+/* Saving: a submit button shows it is working, and cannot be pressed twice */
+.eb-btn[data-saving] { position: relative; color: transparent !important; pointer-events: none; }
+.eb-btn[data-saving]::after {
+  content: ''; position: absolute; inset: 0; margin: auto; width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid var(--color-text-secondary); border-right-color: transparent; animation: eb-spin 0.7s linear infinite;
+}
+@keyframes eb-spin { to { transform: rotate(360deg); } }
+
+/* Review and publish */
+.eb-review-status { display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin: 0; border-left: 4px solid var(--color-warning); }
+.eb-review-status.is-ready { border-left-color: var(--color-success); }
+.eb-review-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-5); align-items: start; }
+@media (min-width: 960px) { .eb-review-grid { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } }
+.eb-review-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.eb-review-check { display: flex; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); animation: eb-fade-in 0.2s ease-out; }
+.eb-review-mark { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 0.8rem; }
+.eb-review-check.is-done .eb-review-mark { background: var(--color-success-bg); color: var(--color-success-text); }
+.eb-review-check.is-suggested .eb-review-mark { background: var(--color-info-bg); color: var(--color-info-text); }
+.eb-review-check.is-needed { border-color: var(--color-warning-border); }
+.eb-review-check.is-needed .eb-review-mark { background: var(--color-warning-bg); color: var(--color-warning-text); }
+.eb-review-issue { margin: 6px 0 0; font-size: var(--text-supporting-size); color: var(--color-text-secondary); }
+.eb-review-issue a { margin-left: 6px; white-space: nowrap; }
+.eb-review-cover { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--color-border); margin-bottom: var(--space-3); }
+.eb-review-facts { margin: 0 0 var(--space-3); display: flex; flex-direction: column; gap: var(--space-2); }
+.eb-review-facts div { display: grid; grid-template-columns: 5rem 1fr; gap: var(--space-2); font-size: var(--text-supporting-size); }
+.eb-review-facts dt { color: var(--color-text-muted); }
+.eb-review-facts dd { margin: 0; }
+
+/* Keyboard focus on the studio, picker and designer controls */
+.eb-segmented button:focus-visible,
+.eb-country-chip:focus-visible,
+.eb-region > summary:focus-visible,
+.eb-panel > summary:focus-visible,
+.eb-studio-row summary:focus-visible,
+.eb-sort-buttons .eb-btn:focus-visible,
+.eb-food-options input:focus-visible,
+.eb-package-includes select:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 2px;
+}
+
+/* Touch screens: every control in these builders is at least 44px to tap */
+@media (pointer: coarse) {
+  .eb-sort-buttons { flex-direction: row; gap: var(--space-1); }
+  .eb-sort-buttons .eb-btn { min-width: 44px; min-height: 44px; }
+  .eb-panel > summary, .eb-studio-row summary, .eb-region > summary { min-height: 44px; display: flex; align-items: center; }
+  .eb-segmented button { min-height: 44px; padding: 0 16px; }
+  .eb-country-chip { min-height: 40px; padding: 6px 12px; }
+  .eb-choice-label { min-height: 44px; align-items: center; }
+  .eb-review-issue a, .eb-text-supporting > a { display: inline-block; padding: 10px 0; }
+  .eb-tab { min-height: 44px; display: inline-flex; align-items: center; }
+}
+
+/* Studio rows on phones: photo and name first, the order arrows and Remove on their own line below */
+@media (pointer: coarse) { .eb-sort-handle { display: none; } }
+@media (max-width: 600px) {
+  .eb-studio-row-head { flex-wrap: wrap; }
+  .eb-studio-row-head > div:not(.eb-sort-buttons) { flex: 1 1 calc(100% - 90px) !important; }
+  .eb-studio-row-head > .eb-sort-buttons { order: 3; }
+  .eb-studio-row-head > form { order: 4; margin-left: auto; }
+}
+
+/* --------------------------------------------------------------------------
+   Homepage: cinematic hero, step icons, tradition and city cards
+   -------------------------------------------------------------------------- */
+.eb-hero-cinematic { position: relative; overflow: hidden; isolation: isolate; padding: clamp(1.5rem, 4vw, 3rem) !important;
+  background: linear-gradient(135deg, #10243a 0%, #0b192b 55%, #07111f 100%) !important; }
+.eb-hero-backdrop { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.eb-hero-orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.55; }
+.eb-hero-orb-lime { width: 420px; height: 420px; right: -80px; top: -160px; background: radial-gradient(circle, rgba(199, 255, 69, 0.45), transparent 65%); animation: eb-drift 18s ease-in-out infinite alternate; }
+.eb-hero-orb-purple { width: 460px; height: 460px; left: 30%; bottom: -260px; background: radial-gradient(circle, rgba(139, 92, 246, 0.5), transparent 65%); animation: eb-drift 22s ease-in-out infinite alternate-reverse; }
+.eb-hero-shape { position: absolute; border: 2px solid rgba(248, 250, 252, 0.08); }
+.eb-hero-shape-ring { width: 320px; height: 320px; border-radius: 50%; right: 8%; top: 18%; border-color: rgba(199, 255, 69, 0.18); border-style: dashed; animation: eb-spin-slow 60s linear infinite; }
+.eb-hero-shape-pill { width: 140px; height: 44px; border-radius: 999px; left: 46%; top: 10%; background: rgba(139, 92, 246, 0.12); border-color: rgba(196, 181, 253, 0.3); transform: rotate(-18deg); }
+@keyframes eb-drift { from { transform: translate(0, 0); } to { transform: translate(-40px, 30px); } }
+@keyframes eb-spin-slow { to { transform: rotate(360deg); } }
+
+.eb-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); align-items: center; }
+@media (min-width: 1280px) { .eb-hero-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); } }
+.eb-hero-kicker { display: inline-flex; gap: 6px; align-items: center; margin: 0 0 var(--space-3); padding: 4px 12px; border-radius: 999px; background: var(--color-accent-subtle); border: 1px solid var(--color-accent-border); color: var(--color-accent); font-size: var(--text-label-size); font-weight: 700; letter-spacing: 0.02em; }
+.eb-hero-highlight { background: linear-gradient(90deg, var(--color-accent), #e3ff9c 45%, var(--color-purple-text) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; background-size: 200% 100%; animation: eb-shimmer-text 6s ease-in-out infinite alternate; }
+@keyframes eb-shimmer-text { from { background-position: 0% 0; } to { background-position: 100% 0; } }
+
+.eb-hero-stats { display: flex; gap: var(--space-5); flex-wrap: wrap; margin: var(--space-5) 0 0; }
+.eb-hero-stats div { display: flex; flex-direction: column-reverse; }
+.eb-hero-stats dt { color: var(--color-text-muted); font-size: var(--text-label-size); }
+.eb-hero-stats dd { margin: 0; font-family: var(--font-display); font-size: 1.6rem; font-weight: 800; color: var(--color-text-primary); }
+
+.eb-hero-art { position: relative; min-height: 280px; display: none; }
+@media (min-width: 1280px) { .eb-hero-art { display: block; min-height: 340px; } }
+.eb-hero-card { position: absolute; width: 78%; aspect-ratio: 3 / 2; border-radius: 18px; overflow: hidden; border: 1px solid rgba(248, 250, 252, 0.12); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); transition: transform 0.35s ease; }
+.eb-hero-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.eb-hero-card-0 { right: 2%; top: 14%; z-index: 3; transform: rotate(-3deg); }
+.eb-hero-card-1 { right: 18%; top: 2%; z-index: 2; transform: rotate(6deg) scale(0.9); opacity: 0.65; }
+.eb-hero-card-2 { right: -6%; top: 34%; z-index: 1; transform: rotate(11deg) scale(0.82); opacity: 0.45; }
+.eb-hero-card-0:hover, .eb-hero-card-0:focus-visible { transform: rotate(-1deg) translateY(-6px); }
+.eb-hero-card-0::after { content: ''; position: absolute; inset: 0; background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.18) 50%, transparent 65%); background-size: 250% 100%; animation: eb-sheen 5s ease-in-out infinite; }
+@keyframes eb-sheen { 0%, 60% { background-position: 150% 0; } 100% { background-position: -50% 0; } }
+.eb-hero-card-label { position: absolute; left: 12px; bottom: 12px; display: inline-flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 999px; background: rgba(7, 17, 31, 0.8); color: var(--color-text-primary); font-size: 0.75rem; font-weight: 600; z-index: 1; }
+
+.eb-step-icon { display: inline-grid; place-items: center; width: 40px; height: 40px; margin-bottom: var(--space-2); border-radius: 12px; background: linear-gradient(135deg, var(--color-accent-subtle), rgba(139, 92, 246, 0.16)); color: var(--color-accent); border: 1px solid var(--color-accent-border); }
+.eb-home-steps li::before { display: none !important; }
+.eb-home-steps li { transition: transform 0.2s ease, border-color 0.2s ease; }
+.eb-home-steps li:hover { transform: translateY(-2px); border-color: var(--color-border-strong); }
+
+.eb-tradition-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
+.eb-tradition-card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; min-height: 104px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); overflow: hidden; text-decoration: none; color: var(--color-text-primary); background: var(--color-surface); border: 1px solid var(--color-border); transition: transform 0.2s ease, border-color 0.2s ease; }
+.eb-tradition-card:hover, .eb-tradition-card:focus-visible { transform: translateY(-3px); border-color: var(--tint); }
+.eb-tradition-card:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
+.eb-tradition-art { position: absolute; inset: 0; z-index: 0; opacity: 0.55;
+  background:
+    radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--tint) 55%, transparent), transparent 55%),
+    repeating-conic-gradient(from var(--turn) at 90% 10%, color-mix(in srgb, var(--tint) 18%, transparent) 0 8deg, transparent 8deg 22deg); }
+.eb-tradition-name, .eb-tradition-count { position: relative; z-index: 1; }
+.eb-tradition-name { font-weight: 700; }
+.eb-tradition-count { font-size: var(--text-label-size); color: var(--color-text-secondary); }
+
+.eb-city-card { display: flex !important; gap: var(--space-3); align-items: center; transition: border-color 0.2s ease, transform 0.2s ease; }
+.eb-city-card:hover, .eb-city-card:focus-visible { border-color: var(--color-accent-border) !important; transform: translateY(-2px); }
+.eb-city-pin { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(199, 255, 69, 0.3), rgba(139, 92, 246, 0.25)); color: var(--color-accent); }
+
+/* Event cards: the cover eases in on hover, and the place has a pin */
+.eb-event-card-media img { transition: transform 0.4s ease; }
+.eb-event-card:hover .eb-event-card-media img { transform: scale(1.04); }
+
+.eb-badge-icon { display: inline-flex; align-items: center; gap: 3px; }
+.eb-badge-icon .eb-icon-sm { width: 12px; height: 12px; }
+
+/* Checkout progress: finished steps are ticked, and a line fills up to the current step */
+.eb-checkout-steps ol { position: relative; }
+.eb-checkout-steps li { position: relative; transition: border-color 0.2s ease, background-color 0.2s ease; }
+.eb-checkout-steps li.is-done { border-color: var(--color-success-border); color: var(--color-text-primary); }
+.eb-checkout-steps li.is-done .eb-checkout-step-num { background: var(--color-success); color: #052e16; }
+.eb-checkout-steps li + li::before { content: ''; position: absolute; left: calc(-1 * var(--space-2)); top: 50%; width: var(--space-2); height: 2px; background: var(--color-border); }
+.eb-checkout-steps li.is-done + li::before, .eb-checkout-steps li.is-done + li.is-current::before { background: var(--color-success); }
+.eb-checkout-steps li.is-current { box-shadow: 0 0 0 3px var(--color-accent-subtle); }
+.eb-payment-icon { transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease; }
+.eb-payment-option input:checked + .eb-payment-card .eb-payment-icon { transform: scale(1.06); }
+
+/* Status dots: waiting states pulse gently, confirmed states pop once (the text label always says which) */
+.eb-badge.badge-pending .eb-badge-dot { animation: eb-dot-pulse 1.8s ease-in-out infinite; }
+.eb-badge.badge-active .eb-badge-dot { animation: eb-dot-pop 0.45s ease-out 1; }
+@keyframes eb-dot-pulse { 0%, 100% { box-shadow: 0 0 0 0 currentColor; opacity: 1; } 50% { box-shadow: 0 0 0 4px transparent; opacity: 0.55; } }
+@keyframes eb-dot-pop { 0% { transform: scale(0.4); } 70% { transform: scale(1.35); } 100% { transform: scale(1); } }
+
+/* Ticket QR: corner brackets and one slow scan line, framing the code without touching it */
+.eb-ticket-card .eb-ticket-qr-well { position: relative; overflow: hidden; }
+.eb-ticket-card .eb-ticket-qr-well::before {
+  content: ''; position: absolute; inset: 6px; pointer-events: none; border-radius: 10px;
+  background:
+    linear-gradient(var(--ticket-accent, var(--color-accent)), var(--ticket-accent, var(--color-accent))) top left / 22px 3px no-repeat,
+    linear-gradient(var(--ticket-accent, var(--color-accent)), var(--ticket-accent, var(--color-accent))) top left / 3px 22px no-repeat,
+    linear-gradient(var(--ticket-accent, var(--color-accent)), var(--ticket-accent, var(--color-accent))) top right / 22px 3px no-repeat,
+    linear-gradient(var(--ticket-accent, var(--color-accent)), var(--ticket-accent, var(--color-accent))) top right / 3px 22px no-repeat,
+    linear-gradient(var(--ticket-accent, var(--color-accent)), var(--ticket-accent, var(--color-accent))) bottom left / 22px 3px no-repeat,
+    linear-gradient(var(--ticket-accent, var(--color-accent)), var(--ticket-accent, var(--color-accent))) bottom left / 3px 22px no-repeat,
+    linear-gradient(var(--ticket-accent, var(--color-accent)), var(--ticket-accent, var(--color-accent))) bottom right / 22px 3px no-repeat,
+    linear-gradient(var(--ticket-accent, var(--color-accent)), var(--ticket-accent, var(--color-accent))) bottom right / 3px 22px no-repeat;
+}
+.eb-ticket-card .eb-ticket-qr-well::after {
+  content: ''; position: absolute; left: 8%; right: 8%; height: 2px; top: 10%; pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--ticket-accent, #7c3aed), transparent); opacity: 0;
+  animation: eb-scan 3.2s ease-in-out 2;
+}
+@keyframes eb-scan { 0% { top: 10%; opacity: 0; } 10% { opacity: 0.6; } 50% { top: 88%; } 90% { opacity: 0.6; } 100% { top: 10%; opacity: 0; } }
+@media print { .eb-ticket-card .eb-ticket-qr-well::after, .eb-ticket-card .eb-ticket-qr-well::before { display: none; } }
+
+/* The food step needs room for the menu and its live summary; other steps keep the narrow column */
+.eb-checkout:has(.eb-food-order) { max-width: 1080px; }
+/* A missing photo is a compact band, not a large empty block */
+.eb-food-card:not(.eb-food-card-row) .eb-food-card-placeholder,
+.eb-food-order .eb-food-card-placeholder { aspect-ratio: auto; height: 88px; flex-direction: row; }
+@media (max-width: 640px) { .eb-food-card.eb-food-card-row .eb-food-card-placeholder { height: auto; flex-direction: column; } }
+
+/* In the food builder, item cards are horizontal at every width: a 220px photo beside the details */
+@media (min-width: 641px) {
+  .eb-food-order .eb-food-card.eb-food-card-row { flex-direction: row; }
+  .eb-food-order .eb-food-card.eb-food-card-row .eb-food-card-media { width: 220px; flex-shrink: 0; aspect-ratio: auto; min-height: 160px; }
+  .eb-food-order .eb-food-card.eb-food-card-row .eb-food-card-placeholder { height: auto; flex-direction: column; }
+}
+
+/* Below 1280px the hero shows the first featured cover as a banner under the search; the fanned stack is desktop only */
+@media (max-width: 1279px) {
+  .eb-hero-art { display: block !important; min-height: 0; }
+  .eb-hero-card { position: relative; width: 100%; transform: none !important; right: auto; top: auto; }
+  .eb-hero-card-1, .eb-hero-card-2 { display: none; }
+  .eb-hero-shape-pill { display: none; }
+}
+
+/* The headline stays one sentence for screen readers and search; the colour runs from white into the lime accent */
+.eb-hero-title { background: linear-gradient(100deg, var(--color-text-primary) 0%, var(--color-text-primary) 45%, var(--color-accent) 75%, var(--color-purple-text) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; background-size: 160% 100%; animation: eb-shimmer-text 8s ease-in-out infinite alternate; }
+@media (forced-colors: active) { .eb-hero-title { color: CanvasText; background: none; } }

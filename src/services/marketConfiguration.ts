@@ -39,6 +39,84 @@ export const US_STATES: Record<string, string> = {
   WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
 };
 
+export const US_TERRITORIES: Record<string, string> = {
+  PR: "Puerto Rico",
+  VI: "U.S. Virgin Islands",
+  GU: "Guam",
+  AS: "American Samoa",
+  MP: "Northern Mariana Islands",
+};
+
+/**
+ * Combined default location catalog for the United States launch market:
+ * all 50 states, the District of Columbia, and the U.S. territories.
+ */
+export const US_LOCATION_CATALOG = {
+  countryCode: "US",
+  countryName: "United States",
+  states: US_STATES,
+  territories: US_TERRITORIES,
+};
+
+/**
+ * A modular location catalog for a country. Kept in a registry so the
+ * application is not hardcoded to US-only geography and can be extended
+ * to additional countries without breaking the initial US launch.
+ */
+export interface LocationCatalog {
+  countryCode: string;
+  countryName: string;
+  states: Record<string, string>;
+  territories?: Record<string, string>;
+  defaultTimezone?: string;
+  addressFormat?: string[];
+}
+
+const locationCatalogRegistry: Record<string, LocationCatalog> = {
+  US: US_LOCATION_CATALOG,
+};
+
+/**
+ * Register (or override) a location catalog for a country.
+ * Used to add future international markets without touching the US launch config.
+ */
+export function registerLocationCatalog(countryCode: string, catalog: LocationCatalog): void {
+  locationCatalogRegistry[countryCode.toUpperCase().trim()] = {
+    ...catalog,
+    countryCode: countryCode.toUpperCase().trim(),
+  };
+}
+
+/**
+ * Returns the location catalog for a country, falling back to the US catalog
+ * when no catalog is registered for the requested country.
+ */
+export function getLocationCatalog(countryCode: string): LocationCatalog {
+  const code = countryCode.toUpperCase().trim();
+  return locationCatalogRegistry[code] || {
+    countryCode: code,
+    countryName: code,
+    states: {},
+    territories: {},
+    addressFormat: ["street", "city"],
+  };
+}
+
+/**
+ * Returns every country code that has a registered location catalog.
+ */
+export function getRegisteredLocationCatalogs(): string[] {
+  return Object.keys(locationCatalogRegistry);
+}
+
+/**
+ * Returns the full set of state/territory options for a country's location catalog.
+ */
+export function getLocationOptions(countryCode: string): Record<string, string> {
+  const catalog = getLocationCatalog(countryCode);
+  return { ...catalog.states, ...(catalog.territories || {}) };
+}
+
 export const US_TIMEZONES: Record<string, string> = {
   "America/New_York": "Eastern Time (ET)",
   "America/Chicago": "Central Time (CT)",

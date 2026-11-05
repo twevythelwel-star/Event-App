@@ -35,6 +35,11 @@ class MarketConfigurationService
         'WV' => 'West Virginia', 'WI' => 'Wisconsin', 'WY' => 'Wyoming',
     ];
 
+    public const US_TERRITORIES = [
+        'AS' => 'American Samoa', 'GU' => 'Guam', 'MP' => 'Northern Mariana Islands',
+        'PR' => 'Puerto Rico', 'VI' => 'U.S. Virgin Islands',
+    ];
+
     public const US_TIMEZONES = [
         'America/New_York' => 'Eastern Time (ET)',
         'America/Chicago' => 'Central Time (CT)',
@@ -43,6 +48,11 @@ class MarketConfigurationService
         'America/Phoenix' => 'Arizona (MST - No DST)',
         'America/Anchorage' => 'Alaska Time (AKT)',
         'Pacific/Honolulu' => 'Hawaii Time (HST - No DST)',
+        'America/Puerto_Rico' => 'Puerto Rico Time (AST)',
+        'America/St_Thomas' => 'U.S. Virgin Islands Time (AST)',
+        'Pacific/Guam' => 'Guam Time (ChST)',
+        'Pacific/Saipan' => 'Northern Mariana Islands Time (ChST)',
+        'Pacific/Pago_Pago' => 'American Samoa Time (SST)',
     ];
 
     /**
@@ -115,7 +125,8 @@ class MarketConfigurationService
         }
 
         $state = strtoupper(trim((string) ($address['state'] ?? '')));
-        if (!array_key_exists($state, self::US_STATES)) {
+        $jurisdictions = self::US_STATES + self::US_TERRITORIES;
+        if (!array_key_exists($state, $jurisdictions)) {
             throw new InvalidArgumentException("Invalid US state code: {$state}. Must be a valid 2-letter US state or territory code.");
         }
 
@@ -128,7 +139,7 @@ class MarketConfigurationService
             'street' => $street,
             'city' => $city,
             'state' => $state,
-            'state_name' => self::US_STATES[$state],
+            'state_name' => $jurisdictions[$state],
             'zip' => $zip,
             'country' => 'US',
             'country_name' => 'United States',

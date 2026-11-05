@@ -37,14 +37,19 @@ export type Settings = {
 };
 
 export type MenuCategory =
-  | "Food"
-  | "Drinks"
-  | "Desserts"
+  | "Main Dishes"
+  | "Seafood"
+  | "Poultry"
+  | "Meat"
+  | "Vegetarian"
+  | "Vegan"
+  | "Rice and Grains"
   | "Sides"
+  | "Desserts"
+  | "Drinks"
   | "Snacks"
-  | "Mains"
-  | "Sides & Extras"
-  | "Beverages"
+  | "Sauces and Condiments"
+  | "Extras"
   | "Community Donations"
   | (string & {});
 
@@ -82,16 +87,135 @@ export type MenuItem = {
   priceUSD: number;
   priceJMD: number;
   imageUrl: string;
+  imageIsUploaded?: boolean;
+  // Country of origin / cuisine association (e.g. "Jamaica", "Caribbean")
+  countryOfOrigin?: string;
+  cuisineAssociation?: string;
+  // Estimated preparation time in minutes (where relevant)
+  prepTimeMinutes?: number;
+  // Availability window (ISO strings). When set, item is only orderable within this window.
+  availabilityStartIso?: string;
+  availabilityEndIso?: string;
+  // Dietary classification
+  dietaryClassification?:
+    | "none"
+    | "vegetarian"
+    | "vegan"
+    | "pescatarian"
+    | "halal"
+    | "kosher"
+    | "glutenFree"
+    | "dairyFree"
+    | "nutFree";
+  // Allergen information (e.g. ["gluten", "dairy", "nuts", "shellfish"])
+  allergens?: string[];
+  // Ingredient information
+  ingredients?: string;
+  // Maximum quantity a single order may include of this item
+  maxQtyPerOrder?: number;
+  // Featured item status (shown prominently in menus)
+  isFeatured?: boolean;
+  // Whether the item is currently available for ordering
+  isAvailable?: boolean;
+  // Service mode: preorder only, event-day only, or both
+  serviceMode?: "preorder" | "eventDay" | "both";
   customOptionGroups?: CustomOptionGroup[];
   customAmountConfig?: CustomAmountConfig;
   allowSpecialInstructions?: boolean;
   availableStock?: number;
 };
 
+/** Mode of food service offered at the event. */
+export type FoodServiceMode = "disabled" | "preorder" | "eventDay" | "both";
+
+/** A defined pickup window for food orders. */
+export type PickupWindow = {
+  id: string;
+  label: string; // e.g. "12:00 PM – 1:30 PM"
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  maxOrders?: number;
+};
+
+/** Host-configured food service settings (Section 7.1). */
+export type FoodServiceConfig = {
+  enabled: boolean;
+  serviceMode: FoodServiceMode;
+  fulfillmentMode: "pickup" | "pickup_and_delivery";
+  deliveryInstructions?: string;
+  foodServiceStartTime?: string; // HH:MM local
+  foodServiceEndTime?: string; // HH:MM local
+  orderingDeadlineIso?: string; // ISO deadline for preorders
+  pickupWindows?: PickupWindow[];
+  packagingFeeUSD?: number;
+  packagingFeeJMD?: number;
+  serviceFeeUSD?: number;
+  serviceFeeJMD?: number;
+  maxOrdersPerEvent?: number;
+};
+
+/** A single component within a combined meal package (Section 7.4). */
+export type MenuPackageComponent = {
+  menuItemId: string;
+  menuItemName: string;
+  quantity: number;
+  isRequired: boolean;
+  isSubstitutable: boolean;
+  substituteMenuItemIds?: string[];
+  upgradePriceUSD?: number;
+  upgradePriceJMD?: number;
+};
+
+/** An optional add-on item that can be added to a package. */
+export type MenuPackageAddition = {
+  menuItemId: string;
+  menuItemName: string;
+  priceUSD: number;
+  priceJMD: number;
+};
+
+export type MenuPackageChoice = {
+  menuItemId: string;
+  menuItemName: string;
+  upgradePriceUSD: number;
+  upgradePriceJMD: number;
+};
+
+export type MenuPackageChoiceGroup = {
+  id: string;
+  title: string;
+  min: number;
+  max: number;
+  options: MenuPackageChoice[];
+};
+
+/** A combined meal package built from existing menu items (Section 7.4). */
+export type MenuPackage = {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  imageIsUploaded?: boolean;
+  basePriceUSD: number;
+  basePriceJMD: number;
+  components: MenuPackageComponent[];
+  choiceGroups?: MenuPackageChoiceGroup[];
+  optionalAdditions?: MenuPackageAddition[];
+  maxQty?: number; // max packages available total
+  maxQtyPerOrder?: number; // max per attendee order
+  isAvailable?: boolean;
+  isFeatured?: boolean;
+};
+
+/** Attendee-facing mix-and-match order method (Section 7.5). */
+export type OrderMethod = "package" | "buildYourOwn";
+
 export type OrderItem = {
   id?: string; // Server order-item id (present for orders loaded from the API)
   menuItemId: string;
   name: string;
+  packageId?: string; // Reference to the MenuPackage this item belongs to (if any)
+  packageName?: string; // Snapshot of package name
   pricingType: PricingType;
   basePrice: number;
   selectedOptionsSummary: string[];
@@ -101,6 +225,14 @@ export type OrderItem = {
   currency: Currency;
   quantity: number;
   collectedQuantity?: number; // Tracks partial portions collected (e.g. 1 of 2 fish meals)
+  fulfilledQuantity?: number; // Portions handed over to the customer
+  remainingQuantity?: number; // Portions not yet handed over
+  // Per-item statuses so items can be fulfilled independently (Section 7.7)
+  paymentStatus?: PaymentStatus | "unpaid" | "cancelled" | "unknown";
+  preparationStatus?: "pending" | "preparing" | "ready";
+  pickupStatus?: "pending" | "partlyCollected" | "collected";
+  lineType?: "item" | "ticket" | "package" | "component";
+  packageLineId?: string;
   category?: MenuCategory;
   specialInstructions?: string;
   handoverStatus: HandoverStatus;
@@ -219,24 +351,57 @@ export type EventWizardStepId =
 
 export type EventTicketTierCategory =
   | "General"
+  | "General Admission"
   | "VIP"
+  | "Premium VIP"
   | "Early Bird"
   | "Group"
+  | "Family Pass"
+  | "Group Pass"
+  | "Student Ticket"
+  | "Child Ticket"
+  | "Complimentary Ticket"
+  | "Vendor Pass"
+  | "Staff Pass"
+  | "Custom Ticket Type"
   | "Community";
 
 export type EventTicketTier = {
   id: string;
   name: string;
   category: EventTicketTierCategory;
+  currency?: Currency;
   priceUSD: number;
   priceJMD: number;
   availableStock: number;
   maxPerCustomer: number;
+  minPerOrder?: number;
+  admissionCount?: number;
   saleStartIso?: string;
   saleEndIso?: string;
   description?: string;
   benefits?: string[];
+  admissionPrivileges?: string;
+  includedFoodAndDrinks?: string;
+  ageRestriction?: string;
+  refundEligible?: boolean;
+  visibility?: "public" | "hidden";
+  designStyle?: "premium_minimal" | "vip_dark" | "festival_color" | "modern_digital" | "elegant_gold" | "concert_pass";
+  accentColor?: "indigo" | "emerald" | "coral" | "cyan" | "violet" | "gold";
+  backgroundStyle?: "solid" | "gradient" | "glow";
   isActive?: boolean;
+};
+
+export type EventMediaAsset = {
+  id: string;
+  mediaType: "gallery" | "organization_logo" | "sponsor_logo";
+  imageUrl: string;
+  thumbnailUrl?: string | null;
+  altText: string;
+  width: number;
+  height: number;
+  positionX: number;
+  positionY: number;
 };
 
 export type EventDetails = {
@@ -256,6 +421,14 @@ export type EventDetails = {
   stateName?: string;
   zipCode?: string;
   countryCode?: string;
+  venueType?: string; // e.g. "Park", "Concert Hall", "Restaurant", "Community Center", "Outdoor"
+  venueInstructions?: string; // host-provided venue instructions (load-in, entrances, etc.)
+  parkingInformation?: string; // parking / transit details for attendees
+  locationVerified?: boolean; // true only after a configured mapping service confirms the location
+  locationSource?: string; // provider that verified the location
+  locationToken?: string; // short-lived server-signed token from address lookup
+  clearLocationPin?: boolean;
+  locationPreviewUrl?: string;
   latitude?: number | null;
   longitude?: number | null;
   targetMarketId?: string | null;
@@ -274,12 +447,60 @@ export type EventDetails = {
   packagingFeeUSD: number;
   packagingFeeJMD: number;
   category?: string;
+  summary?: string;
+  eventTypes?: string[];
+  eventFormat?: "in_person" | "virtual" | "hybrid";
+  expectedAttendance?: number | null;
+  ageRestriction?: string;
+  dressCode?: string;
+  accessibilityInformation?: string;
+  languages?: string[];
+  visibility?: "public" | "unlisted" | "private";
+  isFeatured?: boolean;
+  virtualUrl?: string;
+  virtualAccessInstructions?: string;
+  culturalCategoryIds?: string[];
+  countryIds?: string[];
+  dishIds?: string[];
+  customDishes?: {
+    name: string;
+    countryId: string;
+    alternativeSpellings?: string[];
+    isFusion?: boolean;
+    dietaryType?: "any" | "vegetarian" | "vegan";
+  }[];
   eventDateIso?: string;
+  endDateIso?: string; // ISO date (YYYY-MM-DD) when the event ends — required for multi-day / past-midnight events
+  endDateStr?: string; // Human-readable end date label
   startTime?: string;
   endTime?: string;
+  doorsOpenTime?: string; // HH:MM when doors/gates open
+  foodServiceStartTime?: string; // HH:MM when food service begins
+  foodServiceEndTime?: string; // HH:MM when food service ends
+  setupTime?: string; // HH:MM when venue setup / load-in begins (where relevant)
+  earlyBirdSaleStartIso?: string; // event-local datetime-local value
+  earlyBirdSaleEndIso?: string; // event-local datetime-local value
+  ticketSalesStartIso?: string; // event-local datetime-local value
+  ticketSalesEndIso?: string; // event-local datetime-local value
   supportsFoodOrdering?: boolean;
+  foodServiceConfig?: FoodServiceConfig;
+  packages?: MenuPackage[];
   ticketTiers?: EventTicketTier[];
+  refundPolicyDeadlineHours?: number;
+  refundPolicyNotes?: string;
+  refundPolicyMode?: "manual_full_only" | "manual_full_and_partial" | "non_refundable";
+  hostCancellationPolicy?: "contact_organizer" | "manual_refund_if_supported";
+  postponementPolicy?: "tickets_valid_for_new_date" | "contact_organizer";
+  weatherCancellationPolicy?: "contact_organizer" | "reschedule_tickets_valid" | "manual_refund_if_supported";
+  foodOrderCancellationDeadlineHours?: number;
+  foodOrderModificationDeadlineHours?: number;
+  nonRefundableTicketCategories?: string[];
+  eventMedia?: EventMediaAsset[];
   flyerUrl?: string;
+  flyerThumbnailUrl?: string;
+  flyerAltText?: string;
+  flyerPositionX?: number;
+  flyerPositionY?: number;
   flyerStoragePath?: string;
   flyerMimeType?: string;
   flyerSizeBytes?: number;
@@ -663,6 +884,12 @@ export type HostPaymentPolicySettings = {
   autoSmsReceipt: boolean;
   refundPolicyDeadlineHours: number;
   refundPolicyNotes: string;
+  refundPolicyMode: "manual_full_only" | "manual_full_and_partial" | "non_refundable";
+  hostCancellationPolicy: "contact_organizer" | "manual_refund_if_supported";
+  postponementPolicy: "tickets_valid_for_new_date" | "contact_organizer";
+  weatherCancellationPolicy: "contact_organizer" | "reschedule_tickets_valid" | "manual_refund_if_supported";
+  foodOrderCancellationDeadlineHours: number;
+  foodOrderModificationDeadlineHours: number;
 };
 
 export type HostCommunicationTemplates = {
@@ -741,5 +968,3 @@ export type USPrivacyPreferences = {
   recordedAt: string;
   jurisdiction: "US_CCPA_CPRA";
 };
-
-

@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { EventDetails, MenuItem } from "../types";
 import { INITIAL_SAVED_STATE } from "../data/defaultData";
 import { computeHostRolePermissions } from "../components/host/financialCalculations";
+import { FoodServiceConfigSection } from "../components/host/FoodServiceConfigSection";
+import { TicketPreview } from "../components/host/TicketPreview";
 import {
   EVENT_WIZARD_STEPS,
   SUPPORTED_EVENT_CATEGORIES,
@@ -150,11 +152,19 @@ describe("25: Guided Event-Creation Wizard & Readiness Gate Suite", () => {
       expect(formatted.localDisplay).toContain("Nov 20, 2026");
     });
 
-    it("flags errors when end time precedes start time, venue is missing, or timezone is invalid", () => {
+    it("allows overnight events and flags conflicting same-day times, missing venues, or invalid timezones", () => {
+      const overnight = validateWizardDateLocation({
+        ...sampleEvent,
+        startTime: "21:00",
+        endTime: "02:00",
+      });
+      expect(overnight.fieldErrors.endTime).toBeUndefined();
+
       const invalid = validateWizardDateLocation({
         ...sampleEvent,
         venueName: "",
         venueAddress: "abc",
+        endDateIso: sampleEvent.eventDateIso,
         startTime: "21:00",
         endTime: "12:00",
         timezone: "Mars/Olympus_Mons",
@@ -162,7 +172,7 @@ describe("25: Guided Event-Creation Wizard & Readiness Gate Suite", () => {
       expect(invalid.isValid).toBe(false);
       expect(invalid.fieldErrors.venueName).toBeDefined();
       expect(invalid.fieldErrors.venueAddress).toBeDefined();
-      expect(invalid.fieldErrors.endTime).toContain("after the start time");
+      expect(invalid.fieldErrors.endTime).toContain("when the end date is the same");
       expect(invalid.fieldErrors.timezone).toContain("Invalid IANA timezone");
     });
   });
@@ -208,6 +218,22 @@ describe("25: Guided Event-Creation Wizard & Readiness Gate Suite", () => {
         "Sale start date must be on or before the sale end date"
       );
     });
+
+    it("validates minimum order size, admissions per ticket, and requires a visible active tier", () => {
+      const baseTier = getDefaultEventTicketTiers()[0];
+      const invalid = validateWizardTickets([
+        { ...baseTier, minPerOrder: baseTier.maxPerCustomer + 1, admissionCount: 0 },
+      ]);
+      expect(invalid.isValid).toBe(false);
+      expect(invalid.tierErrors[baseTier.id].join(" ")).toContain("Minimum per order");
+      expect(invalid.tierErrors[baseTier.id].join(" ")).toContain("Admissions per ticket");
+
+      const hidden = validateWizardTickets([
+        { ...baseTier, visibility: "hidden", isActive: true },
+      ]);
+      expect(hidden.isValid).toBe(false);
+      expect(hidden.activeTiersCount).toBe(0);
+    });
   });
 
   describe("5. Stage 4 — Food Menu Configuration & Meal Customizations", () => {
@@ -239,6 +265,61 @@ describe("25: Guided Event-Creation Wizard & Readiness Gate Suite", () => {
       expect(invalidCustomizable.itemErrors["bad-custom"][0]).toContain(
         "require at least one meal choice / add-on group"
       );
+    });
+
+    it("allows food service to cross midnight only when the event does", () => {
+      const config = {
+        enabled: true,
+        serviceMode: "both" as const,
+        fulfillmentMode: "pickup" as const,
+        foodServiceStartTime: "20:00",
+        foodServiceEndTime: "02:00",
+        orderingDeadlineIso: "2026-11-20T20:00",
+      };
+      const onOvernightEvent = renderToStaticMarkup(
+        React.createElement(FoodServiceConfigSection, { config, currency: "USD", allowOvernight: true, onChange: () => {} })
+      );
+      const onSameDayEvent = renderToStaticMarkup(
+        React.createElement(FoodServiceConfigSection, { config, currency: "USD", onChange: () => {} })
+      );
+
+      expect(onOvernightEvent).not.toContain("End time must be after the start time.");
+      expect(onSameDayEvent).toContain("End time must be after the start time.");
+    });
+  });
+
+  describe("Ticket designer live preview", () => {
+    it("reflects edited event times, date range, admission privileges, and included food", () => {
+      const ticket = {
+        ...getDefaultEventTicketTiers()[0],
+        admissionPrivileges: "VIP lounge access",
+        includedFoodAndDrinks: "Welcome drink",
+        benefits: ["Priority entry"],
+      };
+      const event = {
+        ...sampleEvent,
+        timeStr: "Stale display time",
+        startTime: "15:30",
+        endTime: "22:15",
+        endDateIso: "2026-11-23",
+        endDateStr: "Monday, November 23, 2026",
+      };
+      const markup = renderToStaticMarkup(React.createElement(TicketPreview, {
+        event,
+        ticket,
+        currency: "USD",
+        onDesignChange: () => {},
+        onAccentChange: () => {},
+        onBackgroundChange: () => {},
+      }));
+
+      expect(markup).toContain("15:30 – 22:15");
+      expect(markup).not.toContain("Stale display time");
+      expect(markup).toContain("Monday, November 23, 2026");
+      expect(markup).toContain("VIP lounge access");
+      expect(markup).toContain("Welcome drink");
+      expect(markup).toContain("Priority entry");
+      expect(markup).toContain("Preview-only QR placeholder; not an admission code");
     });
   });
 
@@ -371,6 +452,11 @@ describe("25: Guided Event-Creation Wizard & Readiness Gate Suite", () => {
         expect(html).toContain("event-wizard-contextual-preview");
         expect(html).toContain("wizard-save-draft-btn");
         expect(html).toContain("wizard-preview-btn");
+        if (step.id === "tickets") {
+          expect(html).toContain("Ticket design style");
+          expect(html).toContain("QR PLACEHOLDER");
+          expect(html).toContain("Secure code added at issue");
+        }
       }
     });
   });

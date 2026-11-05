@@ -1,25 +1,125 @@
 @extends('layouts.app')
 
-@section('title', 'Create event — EventBite')
-@section('page-title', 'Create event')
+@section('title', 'Event Creation Studio — EventBite')
+@section('page-title', 'Event Creation Studio')
 
 @section('content')
-<form action="{{ route('events.store') }}" method="POST" enctype="multipart/form-data" class="eb-stack" style="gap: var(--layout-section-gap);">
-    @csrf
-    <x-page-header title="Create event"
-                   description="Save it as a draft to finish later, or publish it now to start selling tickets."
-                   :breadcrumbs="['Host dashboard' => route('host.dashboard'), 'Create event' => null]" />
+@php
+    $studioSections = [
+        ['id' => 'overview', 'label' => 'Overview', 'short' => '01'],
+        ['id' => 'identity', 'label' => 'Identity', 'short' => '02'],
+        ['id' => 'location', 'label' => 'When & where', 'short' => '03'],
+        ['id' => 'contact', 'label' => 'Host contact', 'short' => '04'],
+        ['id' => 'menu', 'label' => 'Food & menu', 'short' => '05'],
+        ['id' => 'tickets', 'label' => 'Tickets', 'short' => '06'],
+        ['id' => 'policy', 'label' => 'Policies', 'short' => '07'],
+        ['id' => 'branding', 'label' => 'Branding', 'short' => '08'],
+        ['id' => 'preview', 'label' => 'Preview', 'short' => '09'],
+        ['id' => 'review', 'label' => 'Review & publish', 'short' => '10'],
+    ];
+@endphp
+<div class="studio-shell" id="event-studio">
+    <header class="studio-hero">
+        <div class="studio-hero-copy">
+            <a class="studio-back-link" href="{{ route('host.dashboard') }}">← Host dashboard</a>
+            <div class="studio-eyebrow"><span class="studio-eyebrow-dot"></span> EVENT PUBLISHING STUDIO</div>
+            <h1>Make it an event<br><span>worth showing up for.</span></h1>
+            <p>Build the complete guest experience: the story, the table, the tickets and the details that make it yours.</p>
+        </div>
+        <div class="studio-hero-art" aria-hidden="true">
+            <div class="studio-orbit studio-orbit-one"></div><div class="studio-orbit studio-orbit-two"></div>
+            <div class="studio-art-card"><span>YOUR NEXT</span><strong>great<br>gathering</strong><i>starts here ↗</i></div>
+            <div class="studio-art-chip studio-chip-date">✦ &nbsp;Your community</div><div class="studio-art-chip studio-chip-food">✳ &nbsp;Made to share</div>
+        </div>
+    </header>
+
+    <div class="studio-savebar">
+        <div class="studio-save-indicator"><span id="studio-save-dot"></span><span id="studio-save-status" role="status" aria-live="polite">Changes are only saved when you choose Save draft.</span></div>
+        <div class="studio-save-actions">
+            <button type="button" class="studio-button studio-button-quiet" id="studio-save-draft">Save draft</button>
+            <button type="button" class="studio-button studio-button-outline" data-studio-jump="preview">Preview event <span>↗</span></button>
+        </div>
+    </div>
 
     @if($errors->any())
-        <x-alert type="error" title="Please check the highlighted fields">{{ $errors->count() === 1 ? $errors->first() : $errors->count() . ' fields need attention.' }}</x-alert>
+        <div class="studio-error-summary" role="alert"><strong>Let’s fix a few details before publishing.</strong><span>{{ $errors->count() }} {{ \Illuminate\Support\Str::plural('field needs', $errors->count()) }} attention: {{ $errors->first() }}</span></div>
     @endif
 
-    @include('events.partials.form', ['event' => null])
+    <div class="studio-layout">
+        <aside class="studio-rail" aria-label="Event setup progress">
+            <div class="studio-rail-heading"><span>YOUR EVENT</span><span id="studio-progress-label">0 / {{ count($studioSections) }}</span></div>
+            <div class="studio-progress-track"><span id="studio-progress-fill"></span></div>
+            <nav class="studio-section-nav">
+                @foreach($studioSections as $index => $section)
+                    <button type="button" class="studio-nav-item {{ $index === 0 ? 'is-active' : '' }}" data-studio-jump="{{ $section['id'] }}">
+                        <span class="studio-nav-number">{{ $section['short'] }}</span><span>{{ $section['label'] }}</span><span class="studio-nav-check">✓</span>
+                    </button>
+                @endforeach
+            </nav>
+            <div class="studio-rail-note"><span>✦</span><p>Your event takes shape as you go. Save a draft anytime and come back when inspiration strikes.</p></div>
+        </aside>
 
-    <div class="eb-cluster" style="justify-content: flex-end;">
-        <x-button variant="ghost" :href="route('host.dashboard')">Cancel</x-button>
-        <button type="submit" name="status" value="draft" class="eb-btn eb-btn-secondary">Save as draft</button>
-        <button type="submit" name="status" value="published" class="eb-btn eb-btn-primary">Publish event</button>
+        <main class="studio-main">
+            <form action="{{ route('events.store') }}" method="POST" enctype="multipart/form-data" id="event-studio-form">
+                @csrf
+                <input type="hidden" name="status" id="studio-submit-status" value="draft">
+                {{-- One key per opening of this form: a refreshed or retried submission returns the same event. --}}
+                <input type="hidden" name="creation_key" value="{{ old('creation_key', (string) \Illuminate\Support\Str::uuid()) }}">
+                @include('events.partials.form', ['event' => $draft ?? null])
+                <section class="studio-section studio-section-card" id="studio-review" data-studio-section="review">
+                    <div class="studio-section-heading"><div><span class="studio-kicker">THE FINAL MOMENT</span><h2>Ready to meet your guests?</h2><p>Give everything one last look. You can keep refining your event after saving it as a draft.</p></div><span class="studio-step-badge">10</span></div>
+                    <div class="studio-review-grid"><div><strong>Event page</strong><span>Your story, location and flyer</span></div><div><strong>Guest experience</strong><span>Tickets and food menu</span></div><div><strong>Guest confidence</strong><span>Contact and refund policy</span></div></div>
+                    <div class="studio-submit-row"><button type="submit" name="status" value="draft" class="studio-button studio-button-quiet">{{ $draft ? 'Save draft changes' : 'Save as draft' }}</button><button type="submit" name="status" value="published" class="studio-button studio-button-primary" id="studio-publish">Publish event <span>↗</span></button></div>
+                    <p class="studio-submit-note">Publishing makes your event page public. You can unpublish it later from your dashboard.</p>
+                </section>
+            </form>
+        </main>
+
+        <section class="studio-preview-rail studio-section-card" id="studio-preview" data-studio-section="preview" aria-label="Live event preview">
+            <div class="studio-preview-heading"><span>GUEST VIEW</span><span class="studio-live-pill"><i></i> LIVE</span></div>
+            <div class="studio-preview-card">
+                <div class="studio-preview-image" id="studio-preview-image"><span class="studio-image-placeholder">✳</span><span class="studio-preview-category" id="preview-category">COMMUNITY</span></div>
+                <div class="studio-preview-body"><div class="studio-preview-eyebrow">EVENTBITE PRESENTS</div><h3 id="preview-title">Your event name</h3><p id="preview-tagline">Your one-line invitation will appear here.</p><div class="studio-preview-meta"><span>◷ <b id="preview-date">Date to be announced</b></span><span>⌖ <b id="preview-place">Your event location</b></span></div><div class="studio-preview-divider"></div><div class="studio-preview-ticket"><span>Tickets from</span><strong id="preview-price">Set your ticket price</strong></div><button type="button" class="studio-preview-cta" data-studio-jump="tickets">Explore tickets <span>↗</span></button></div>
+            </div>
+            <div class="studio-preview-foot"><span>◉</span><p>This preview updates as you fill in your event. Your published page may include additional guest details.</p></div>
+        </section>
     </div>
-</form>
+</div>
+<style>
+    .studio-shell{--studio-ink:#17251f;--studio-muted:#75847c;--studio-line:#e4e9e2;--studio-paper:#f7f8f4;--studio-green:#c9f36a;--studio-deep:#183b2d;color:var(--studio-ink);padding-bottom:3rem}
+    .studio-layout>.studio-preview-rail{grid-column:3;grid-row:1 / span 2;padding:.85rem;border:1px solid var(--studio-line);border-radius:16px;background:#fff}.studio-hero{position:relative;display:flex;align-items:center;justify-content:space-between;min-height:290px;overflow:hidden;padding:2.2rem 3.1rem;margin-bottom:1.15rem;border-radius:25px;background:radial-gradient(ellipse at 78% 35%,rgba(201,243,106,.19),transparent 35%),linear-gradient(115deg,#f0f3eb,#e8eee3 64%,#dfe9d4)}
+    .studio-hero-copy{position:relative;z-index:2;max-width:570px}.studio-back-link{display:inline-block;margin-bottom:1.1rem;color:#56645c;text-decoration:none;font-size:.78rem;font-weight:700}.studio-eyebrow,.studio-kicker{display:flex;align-items:center;gap:.5rem;color:#607063;font-size:.66rem;font-weight:800;letter-spacing:.16em}.studio-eyebrow-dot{width:7px;height:7px;border-radius:50%;background:#88b645;box-shadow:0 0 0 4px rgba(136,182,69,.14)}
+    .studio-hero h1{margin:.9rem 0 .7rem;font-size:clamp(2.35rem,4vw,3.45rem);line-height:.99;letter-spacing:-.065em;font-weight:800;color:#1d3025}.studio-hero h1 span{color:#678444}.studio-hero-copy>p{max-width:470px;margin:0;color:#66736a;font-size:.94rem;line-height:1.65}
+    .studio-hero-art{position:absolute;right:7%;top:50%;width:330px;height:270px;transform:translateY(-50%)}.studio-orbit{position:absolute;border:1px solid rgba(77,104,59,.13);border-radius:50%;transform:rotate(-24deg)}.studio-orbit-one{inset:10px -5px 15px 10px}.studio-orbit-two{inset:35px 18px 35px -18px;transform:rotate(23deg)}.studio-art-card{position:absolute;top:37px;left:78px;width:175px;height:198px;padding:1.25rem;transform:rotate(5deg);border-radius:13px;background:#244b37;color:white;box-shadow:0 22px 45px rgba(34,63,42,.2);display:flex;flex-direction:column;justify-content:space-between}.studio-art-card span{font-size:.55rem;letter-spacing:.16em;color:#d2e7b4}.studio-art-card strong{font-size:2.05rem;line-height:.96;letter-spacing:-.06em}.studio-art-card i{font-size:.68rem;color:#c9f36a;font-style:normal}.studio-art-chip{position:absolute;z-index:2;padding:.6rem .8rem;border:1px solid rgba(40,63,46,.1);border-radius:30px;background:rgba(255,255,255,.84);box-shadow:0 8px 20px rgba(37,55,42,.09);font-size:.65rem;font-weight:700}.studio-chip-date{top:26px;right:3px}.studio-chip-food{bottom:26px;left:4px}
+    .studio-savebar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:.78rem 1.05rem;margin-bottom:1.2rem;border:1px solid rgba(223,230,221,.9);border-radius:15px;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);box-shadow:0 8px 24px rgba(28,45,34,.045)}.studio-save-indicator{display:flex;align-items:center;gap:.6rem;color:#758078;font-size:.72rem}.studio-save-indicator #studio-save-dot{width:8px;height:8px;border-radius:50%;background:#bdc7bb}.studio-save-indicator.is-saving #studio-save-dot{background:#d6a840;animation:studio-pulse 1s infinite}.studio-save-indicator.is-saved #studio-save-dot{background:#76a84a}.studio-save-actions{display:flex;gap:.55rem}.studio-button{display:inline-flex;align-items:center;justify-content:center;gap:.7rem;border:1px solid transparent;border-radius:10px;padding:.67rem 1rem;font:inherit;font-size:.73rem;font-weight:800;text-decoration:none;cursor:pointer;transition:transform .18s ease,box-shadow .18s ease,background .18s ease}.studio-button:hover{transform:translateY(-1px)}.studio-button-quiet{background:#f0f3ed;color:#314638}.studio-button-outline{background:white;border-color:#dfe6dd;color:#304237}.studio-button-primary{background:#244b37;color:white;box-shadow:0 8px 18px rgba(36,75,55,.18)}.studio-button-primary:hover{background:#183b2d}.studio-button span{font-size:1rem}
+    .studio-error-summary{display:grid;gap:.25rem;padding:.9rem 1rem;margin:0 0 1rem;border:1px solid #f0c9bf;border-radius:12px;background:#fff7f4;color:#8c3828;font-size:.79rem}.studio-error-summary span{font-weight:500}.studio-layout{display:grid;grid-template-columns:190px minmax(400px,1fr) 265px;align-items:start;gap:1.15rem}.studio-rail,.studio-preview-rail{position:sticky;top:82px}.studio-rail{padding:.95rem .8rem;border:1px solid var(--studio-line);border-radius:16px;background:#fff}.studio-rail-heading,.studio-preview-heading{display:flex;justify-content:space-between;align-items:center;color:#87938a;font-size:.58rem;font-weight:800;letter-spacing:.12em}.studio-rail-heading span:last-child{color:#71806f;font-size:.64rem;letter-spacing:0}.studio-progress-track{height:4px;margin:.7rem 0 .8rem;border-radius:8px;background:#edf0eb;overflow:hidden}.studio-progress-track span{display:block;width:0;height:100%;border-radius:8px;background:#86a95c;transition:width .25s ease}.studio-section-nav{display:grid;gap:.13rem}.studio-nav-item{width:100%;display:flex;align-items:center;gap:.55rem;padding:.56rem .48rem;border:0;border-radius:9px;background:transparent;color:#778179;text-align:left;font:inherit;font-size:.69rem;font-weight:650;cursor:pointer;transition:background .18s,color .18s}.studio-nav-item:hover{background:#f5f7f2;color:#304237}.studio-nav-item.is-active{background:#eef4e7;color:#2d4935}.studio-nav-number{width:20px;color:#a2aca4;font-size:.57rem;font-weight:800}.studio-nav-item.is-complete .studio-nav-number{color:#678844}.studio-nav-check{margin-left:auto;color:#6b9946;opacity:0;font-size:.72rem}.studio-nav-item.is-complete .studio-nav-check{opacity:1}.studio-rail-note{display:flex;gap:.5rem;margin-top:.9rem;padding:.68rem;border-radius:10px;background:#f5f7f1;color:#849082}.studio-rail-note>span{color:#87a951}.studio-rail-note p{margin:0;font-size:.61rem;line-height:1.5}
+    .studio-main{min-width:0}.studio-main form{display:grid;gap:.9rem}.studio-section{scroll-margin-top:95px}.studio-main .studio-section-card{padding:1.2rem 1.25rem;border:1px solid var(--studio-line);border-radius:17px;background:#fff;box-shadow:0 4px 14px rgba(31,48,36,.025);transition:border-color .2s,box-shadow .2s}.studio-section-card:focus-within{border-color:#cbdcb9;box-shadow:0 8px 25px rgba(31,65,39,.055)}.studio-section-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1rem}.studio-section-heading h2{margin:.32rem 0 .25rem;color:#26382c;font-size:1.12rem;letter-spacing:-.035em}.studio-section-heading p{margin:0;color:#879189;font-size:.72rem;line-height:1.55}.studio-step-badge{display:grid;place-items:center;flex:0 0 29px;height:29px;border-radius:9px;background:#f0f4eb;color:#758a5e;font-size:.64rem;font-weight:800}.studio-main .eb-card-header{margin-bottom:.8rem}.studio-main .eb-card-title{font-size:.98rem}.studio-main .eb-card-subtitle{font-size:.69rem}.studio-main .eb-grid-2,.studio-main .eb-grid-3,.studio-main .eb-grid-4{gap:.75rem}.studio-main .eb-form-group{margin-bottom:.62rem}.studio-main .eb-label{font-size:.7rem}.studio-main .eb-input,.studio-main select,.studio-main textarea{min-height:41px;border-radius:9px;font-size:.77rem}.studio-main textarea.eb-input{min-height:95px}.studio-main .eb-help-text{font-size:.65rem}.studio-main .eb-checkbox{accent-color:#477148}.studio-main [data-studio-section="review"]{padding:1.35rem;background:linear-gradient(140deg,#f0f5e9,#fff 75%)}.studio-review-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin:1.1rem 0}.studio-review-grid div{display:grid;gap:.3rem;padding:.75rem;border:1px solid #e4ebde;border-radius:10px;background:rgba(255,255,255,.74)}.studio-review-grid strong{font-size:.68rem;color:#344737}.studio-review-grid span{font-size:.6rem;line-height:1.4;color:#879189}.studio-submit-row{display:flex;justify-content:flex-end;gap:.55rem}.studio-submit-note{margin:.65rem 0 0;text-align:right;color:#889289;font-size:.62rem}
+    .studio-preview-rail{padding:.85rem;border:1px solid var(--studio-line);border-radius:16px;background:#fff}.studio-preview-heading{margin-bottom:.7rem}.studio-live-pill{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .45rem;border-radius:20px;background:#eff6e9;color:#68834c;font-size:.52rem;letter-spacing:.08em}.studio-live-pill i{width:5px;height:5px;border-radius:50%;background:#87ac55}.studio-preview-card{overflow:hidden;border:1px solid #e8ece6;border-radius:13px;background:#fff;box-shadow:0 9px 23px rgba(29,48,37,.075)}.studio-preview-image{position:relative;display:grid;place-items:center;height:145px;overflow:hidden;background:linear-gradient(145deg,#e6efda,#d4e5c5 55%,#c3d8b3);background-size:cover;background-position:center}.studio-image-placeholder{font-size:2.1rem;color:rgba(49,83,47,.35)}.studio-preview-category{position:absolute;left:.65rem;bottom:.62rem;padding:.3rem .48rem;border:1px solid rgba(255,255,255,.6);border-radius:20px;background:rgba(255,255,255,.86);color:#425d3d;font-size:.49rem;font-weight:850;letter-spacing:.1em}.studio-preview-body{padding:.85rem}.studio-preview-eyebrow{color:#89a66b;font-size:.49rem;font-weight:850;letter-spacing:.13em}.studio-preview-body h3{margin:.4rem 0 .23rem;color:#26392c;font-size:1rem;line-height:1.15;letter-spacing:-.035em}.studio-preview-body>p{min-height:2em;margin:0;color:#859087;font-size:.63rem;line-height:1.5}.studio-preview-meta{display:grid;gap:.45rem;margin:.78rem 0;color:#94a096;font-size:.59rem}.studio-preview-meta b{margin-left:.2rem;color:#55645a;font-weight:650}.studio-preview-divider{height:1px;background:#edf0eb}.studio-preview-ticket{display:flex;justify-content:space-between;align-items:center;padding:.65rem 0;color:#929c93;font-size:.57rem}.studio-preview-ticket strong{color:#344c38;font-size:.67rem}.studio-preview-cta{width:100%;display:flex;justify-content:space-between;align-items:center;padding:.64rem .75rem;border:0;border-radius:8px;background:#244b37;color:white;font:inherit;font-size:.62rem;font-weight:800;cursor:pointer}.studio-preview-foot{display:flex;gap:.5rem;margin-top:.75rem;color:#98a098}.studio-preview-foot span{color:#8ba95f}.studio-preview-foot p{margin:0;font-size:.59rem;line-height:1.5}.studio-menu-row{position:relative;padding:.8rem;margin:.55rem 0;border:1px solid #e4e9e2;border-radius:11px;background:#fbfcfa}.studio-menu-remove{position:absolute;top:.45rem;right:.45rem;border:0;background:transparent;color:#a06a5e;font-size:.65rem;cursor:pointer}.studio-menu-row .eb-form-group{padding-right:1rem}.studio-menu-empty{padding:.6rem 0;color:#889289;font-size:.68rem}.studio-main [data-menu-template]{display:none}
+    @keyframes studio-pulse{50%{opacity:.35}}@media(max-width:1190px){.studio-layout{grid-template-columns:175px minmax(360px,1fr)}.studio-preview-rail{position:static;grid-column:2;display:grid;grid-template-columns:1fr 1.1fr;gap:.65rem;align-items:start}.studio-preview-heading{grid-column:1/-1;margin:0}.studio-preview-card{grid-row:2}.studio-preview-foot{align-self:center;margin:0}}@media(max-width:800px){.studio-hero{min-height:250px;padding:1.5rem}.studio-hero-art{right:-70px;opacity:.35}.studio-hero-copy{max-width:500px}.studio-layout{grid-template-columns:1fr}.studio-rail{position:static;overflow-x:auto}.studio-section-nav{display:flex;min-width:max-content}.studio-nav-item{width:auto;padding:.5rem}.studio-rail-note{display:none}.studio-rail-heading{margin-bottom:.25rem}.studio-preview-rail{grid-column:auto;grid-template-columns:1fr}.studio-preview-heading{grid-column:auto}.studio-preview-card{grid-row:auto}.studio-preview-foot{margin-top:.1rem}}@media(max-width:520px){.studio-hero{padding:1.25rem;min-height:225px;border-radius:17px}.studio-hero h1{font-size:2.2rem}.studio-hero-art{right:-150px}.studio-savebar{align-items:flex-start;gap:.5rem;padding:.65rem;flex-direction:column}.studio-save-indicator{font-size:.64rem}.studio-save-actions{width:100%}.studio-save-actions .studio-button{flex:1;padding:.6rem .45rem;font-size:.65rem}.studio-main .studio-section-card{padding:.95rem}.studio-review-grid{grid-template-columns:1fr}.studio-submit-row{flex-direction:column-reverse}.studio-submit-row .studio-button{width:100%}.studio-preview-rail{padding:.7rem}}
+</style>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+    const form=document.getElementById('event-studio-form');if(!form)return;
+    const draftId=new URLSearchParams(window.location.search).get('draft');
+    if(draftId){form.action=@json(route('events.update','__EVENT_ID__')).replace('__EVENT_ID__',draftId);form.querySelector('[name="_method"]')?.remove();form.insertAdjacentHTML('afterbegin','<input type="hidden" name="_method" value="PUT">');}
+    const status=document.getElementById('studio-save-status'),dot=document.querySelector('.studio-save-indicator'),progress=document.getElementById('studio-progress-fill'),progressLabel=document.getElementById('studio-progress-label');
+    const sections=[...document.querySelectorAll('[data-studio-section]')],nav=[...document.querySelectorAll('.studio-nav-item')];
+    const fields={title:document.getElementById('eb-field-title'),tagline:document.getElementById('eb-field-tagline'),date:document.getElementById('eb-field-date_str'),dateIso:document.getElementById('eb-field-event_date_iso'),time:document.getElementById('eb-field-time_str'),city:document.getElementById('city'),state:document.getElementById('eb-field-state_code'),venue:document.getElementById('eb-field-venue_name'),category:document.getElementById('eb-field-category'),description:document.getElementById('eb-field-description')};
+    const setStatus=(text,mode='')=>{status.textContent=text;dot.className=mode;};
+    const updatePreview=()=>{const val=(el,fallback)=>el&&el.value.trim()?el.value.trim():fallback;document.getElementById('preview-title').textContent=val(fields.title,'Your event name');document.getElementById('preview-tagline').textContent=val(fields.tagline,'Your one-line invitation will appear here.');document.getElementById('preview-date').textContent=val(fields.date,fields.dateIso&&fields.dateIso.value?new Date(fields.dateIso.value+'T12:00:00').toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'Date to be announced');document.getElementById('preview-place').textContent=[fields.city?.value,fields.state?.selectedOptions?.[0]?.value].filter(Boolean).join(', ')||val(fields.venue,'Your event location');document.getElementById('preview-category').textContent=(val(fields.category,'Community')).toUpperCase();const price=form.querySelector('[name$="[price]"]');document.getElementById('preview-price').textContent=price&&price.value!==''?'$'+Number(price.value).toFixed(2):'Set your ticket price';};
+    const completion=()=>{let complete=0;sections.forEach(section=>{const required=[...section.querySelectorAll('[required]')];const done=required.length===0?section.dataset.studioSection==='review':required.every(el=>el.value.trim()!=='');const item=nav.find(n=>n.dataset.studioJump===section.dataset.studioSection);if(done){complete++;item?.classList.add('is-complete')}else item?.classList.remove('is-complete')});progress.style.width=(complete/sections.length*100)+'%';progressLabel.textContent=complete+' / '+sections.length;};
+    document.querySelectorAll('[data-studio-jump]').forEach(button=>button.addEventListener('click',()=>{const target=document.getElementById('studio-'+button.dataset.studioJump);target?.scrollIntoView({behavior:'smooth',block:'start'})}));
+    const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{if(!entry.isIntersecting)return;nav.forEach(n=>n.classList.toggle('is-active',n.dataset.studioJump===entry.target.dataset.studioSection))}),{rootMargin:'-20% 0px -65% 0px'});sections.forEach(s=>observer.observe(s));
+    form.addEventListener('input',()=>{updatePreview();completion();setStatus('Unsaved changes — save draft to keep them on the server.');});form.addEventListener('change',()=>{updatePreview();completion();setStatus('Unsaved changes — save draft to keep them on the server.');});
+    const file=document.getElementById('flyer-input'),image=document.getElementById('studio-preview-image');file?.addEventListener('change',()=>{if(file.files?.[0])image.style.backgroundImage='url("'+URL.createObjectURL(file.files[0])+'")'});
+    const save=async()=>{if(draftId){setStatus('Saving draft changes…','is-saving');form.querySelector('[name="status"]').value='draft';form.requestSubmit();return}const payload={};new FormData(form).forEach((value,key)=>{if(typeof value!=='string'||key==='_token'||key==='status'||key==='traditions_submitted'||key==='ticket_tiers_submitted'||key==='menu_items_submitted'||key==='flyer')return;const match=key.match(/^ticket_tiers\[(\d+)\]\[(\w+)\]$/);if(match){payload.ticket_tiers??=[];payload.ticket_tiers[Number(match[1])]??={};payload.ticket_tiers[Number(match[1])][match[2]]=value;return}if(key==='traditions[]'){payload.traditions??=[];payload.traditions.push(value);return}const menu=key.match(/^menu_items\[(\d+)\]\[(\w+)\]$/);if(menu){payload.menu_items??=[];payload.menu_items[Number(menu[1])]??={};payload.menu_items[Number(menu[1])][menu[2]]=value;return}if(key.includes('['))return;payload[key]=value});
+      setStatus('Saving draft to EventBite…','is-saving');try{const response=await fetch(@json(route('events.create.autosave')),{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json','X-CSRF-TOKEN':form.querySelector('[name="_token"]').value},body:JSON.stringify(payload)});const result=await response.json();if(!response.ok)throw new Error(result.message||'Draft could not be saved.');setStatus('Draft saved on the server at '+new Date(result.saved_at).toLocaleTimeString(),'is-saved');if(result.resume_url){const query=new URLSearchParams(window.location.search);query.set('draft',result.event_id);history.replaceState({},'',window.location.pathname+'?'+query.toString());document.getElementById('studio-save-draft').dataset.editUrl=result.resume_url;}}catch(error){setStatus(error.message||'Draft could not be saved. Please try again.');}};
+    document.getElementById('studio-save-draft').addEventListener('click',save);
+    document.getElementById('studio-publish').addEventListener('click',()=>{if(document.querySelectorAll('#tier-rows [data-tier-row]').length===0){document.getElementById('tier-empty').scrollIntoView({behavior:'smooth',block:'center'});setStatus('Add at least one ticket type before publishing.');}});
+    document.getElementById('studio-publish').addEventListener('click',()=>{if(document.querySelectorAll('#tier-rows [data-tier-row]').length===0){document.getElementById('tier-empty').scrollIntoView({behavior:'smooth',block:'center'});setStatus('Add at least one ticket type before publishing.');}});
+    document.getElementById('studio-publish').addEventListener('click',()=>{if(document.querySelectorAll('#tier-rows [data-tier-row]').length===0){document.getElementById('tier-empty').scrollIntoView({behavior:'smooth',block:'center'});setStatus('Add at least one ticket type before publishing.');}});
+    const saved=new URLSearchParams(window.location.search).get('draft');if(saved)setStatus('Draft saved. Continue editing this draft, then save or publish it.','is-saved');
+    updatePreview();completion();
+});
+</script>
 @endsection

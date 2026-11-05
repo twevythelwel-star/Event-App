@@ -137,12 +137,17 @@ class OrderOperationsApiTest extends TestCase
         $chicken = $order->items->firstWhere('name', 'Jerk Chicken Meal');
         $escovitch = $order->items->firstWhere('menu_item_id', 'kgn-escovitch');
 
-        $this->actingAs($staff)->postJson("/api/v1/operations/orders/{$order->id}/items/{$chicken->id}/handover", ['quantity_delta' => 1, 'station' => 'mains', 'staff_name' => 'Someone Else'])
+        $handover = $this->actingAs($staff)->postJson("/api/v1/operations/orders/{$order->id}/items/{$chicken->id}/handover", ['quantity_delta' => 1, 'station' => 'mains', 'staff_name' => 'Someone Else'])
             ->assertOk()
             ->assertJsonPath('data.allHandedOver', false)
             ->assertJsonPath('audit.quantityCollected', 1)
             ->assertJsonPath('audit.remainingQuantity', 1)
             ->assertJsonPath('audit.staffName', 'Demo Food Station Staff');
+        $chickenLine = collect($handover->json('data.items'))->firstWhere('id', $chicken->id);
+        $this->assertSame(1, $chickenLine['fulfilledQuantity']);
+        $this->assertSame(1, $chickenLine['remainingQuantity']);
+        $this->assertSame('paid', $chickenLine['paymentStatus']);
+        $this->assertSame('partlyCollected', $chickenLine['pickupStatus']);
 
         // Over-collecting and unexplained reversals are refused
         $this->actingAs($staff)->postJson("/api/v1/operations/orders/{$order->id}/items/{$chicken->id}/handover", ['quantity_delta' => 5])

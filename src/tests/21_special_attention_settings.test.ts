@@ -67,7 +67,9 @@ describe("Phase 21: Settings That Need Special Attention", () => {
       expect(policies.autoEmailReceipt).toBe(true);
       expect(policies.autoSmsReceipt).toBe(true);
       expect(policies.refundPolicyDeadlineHours).toBe(48);
-      expect(policies.refundPolicyNotes).toContain("Full refund available up to 48 hours");
+      expect(policies.refundPolicyNotes).toContain("cannot process refunds for provider-backed payments");
+      expect(policies.refundPolicyMode).toBe("manual_full_and_partial");
+      expect(policies.foodOrderCancellationDeadlineHours).toBe(24);
     });
 
     it("strictly gates Zelle and Cash App to eligible US business entities only", () => {

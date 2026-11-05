@@ -36,8 +36,21 @@
 </style>
 
 <div class="eb-home">
-    <section class="eb-home-hero" aria-labelledby="home-heading">
-        <h1 id="home-heading" class="eb-text-display">Events, food and culture across the U.S.</h1>
+    @php
+        $heroArt = $featured->take(3)->values();
+        $upcomingCount = $markets->sum('upcoming_count') ?: $featured->count();
+    @endphp
+    <section class="eb-home-hero eb-hero-cinematic" aria-labelledby="home-heading">
+        <div class="eb-hero-backdrop" aria-hidden="true">
+            <span class="eb-hero-orb eb-hero-orb-lime"></span>
+            <span class="eb-hero-orb eb-hero-orb-purple"></span>
+            <span class="eb-hero-shape eb-hero-shape-ring"></span>
+            <span class="eb-hero-shape eb-hero-shape-pill"></span>
+        </div>
+        <div class="eb-hero-grid">
+        <div class="eb-hero-copy">
+        <p class="eb-hero-kicker"><x-icon name="sparkles" size="sm" /> Food · Music · Culture</p>
+        <h1 id="home-heading" class="eb-text-display eb-hero-title">Events, food and culture across the U.S.</h1>
         <p class="eb-text-supporting" style="margin: 0; max-width: 60ch;">
             Find food festivals, cookouts, live music and community celebrations from many traditions. Buy tickets and order food for pickup in one place.
         </p>
@@ -71,18 +84,38 @@
             </div>
             <noscript><button type="submit" class="eb-btn eb-btn-secondary">Show</button></noscript>
         </form>
+        <dl class="eb-hero-stats">
+            <div><dt>Upcoming events</dt><dd>{{ $upcomingCount }}</dd></div>
+            <div><dt>Cities</dt><dd>{{ $allMarkets->count() }}</dd></div>
+            <div><dt>Traditions</dt><dd>{{ count($traditions) }}</dd></div>
+        </dl>
+        </div>
+        @if($heroArt->isNotEmpty())
+            {{-- The featured events' own artwork: their uploaded flyer, or their generated cover. --}}
+            <div class="eb-hero-art">
+                @foreach($heroArt as $i => $art)
+                    <a href="{{ route('events.show', $art->id) }}" class="eb-hero-card eb-hero-card-{{ $i }}" @if($i > 0) tabindex="-1" aria-hidden="true" @endif>
+                        <img src="{{ $art->display_image_url }}" alt="{{ $i === 0 ? 'Featured: ' . $art->title : '' }}" @if($i > 0) loading="lazy" @endif decoding="async">
+                        @if($i === 0)
+                            <span class="eb-hero-card-label"><span class="eb-badge eb-badge-accent">Featured</span></span>
+                        @endif
+                    </a>
+                @endforeach
+            </div>
+        @endif
+        </div>
     </section>
 
     {{-- What EventBite does, in the order people do it --}}
     <section aria-labelledby="how-heading">
         <h2 id="how-heading" class="sr-only">How EventBite works</h2>
         <ol class="eb-home-steps">
-            <li><strong>Discover</strong><span class="eb-text-supporting">Events from many cultures and communities.</span></li>
-            <li><strong>Find events near you</strong><span class="eb-text-supporting">Search by city, town or tradition.</span></li>
-            <li><strong>Buy tickets</strong><span class="eb-text-supporting">Prices, fees and taxes shown before you pay.</span></li>
-            <li><strong>Order food</strong><span class="eb-text-supporting">Pre-order from the event's menu for pickup.</span></li>
-            <li><strong>Pay your way</strong><span class="eb-text-supporting">Bank transfer, Zelle, Cash App or cash, wherever the host accepts it.</span></li>
-            <li><strong>Get your ticket</strong><span class="eb-text-supporting">Your QR ticket appears once the payment is confirmed, and is checked at the door.</span></li>
+            <li><span class="eb-step-icon"><x-icon name="globe" /></span><strong>Discover</strong><span class="eb-text-supporting">Events from many cultures and communities.</span></li>
+            <li><span class="eb-step-icon"><x-icon name="map-pin" /></span><strong>Find events near you</strong><span class="eb-text-supporting">Search by city, town or tradition.</span></li>
+            <li><span class="eb-step-icon"><x-icon name="ticket" /></span><strong>Buy tickets</strong><span class="eb-text-supporting">Prices, fees and taxes shown before you pay.</span></li>
+            <li><span class="eb-step-icon"><x-icon name="utensils" /></span><strong>Order food</strong><span class="eb-text-supporting">Pre-order from the event's menu for pickup.</span></li>
+            <li><span class="eb-step-icon"><x-icon name="cash" /></span><strong>Pay your way</strong><span class="eb-text-supporting">Bank transfer, Zelle, Cash App or cash, wherever the host accepts it.</span></li>
+            <li><span class="eb-step-icon"><x-icon name="qr-frame" /></span><strong>Get your ticket</strong><span class="eb-text-supporting">Your QR ticket appears once the payment is confirmed, and is checked at the door.</span></li>
         </ol>
     </section>
 
@@ -91,9 +124,15 @@
             <div class="eb-home-section-head">
                 <h2 id="traditions-heading" class="eb-text-section-title" style="margin: 0;">Browse by tradition</h2>
             </div>
-            <ul class="eb-home-chips">
+            <ul class="eb-tradition-cards">
                 @foreach($traditions as $label => $count)
-                    <li><a href="{{ route('events.index', ['q' => $label]) }}">{{ $label }} <span class="eb-text-supporting">{{ $count }}</span></a></li>
+                    <li>
+                        <a href="{{ route('events.index', ['q' => $label]) }}" class="eb-tradition-card" style="--tint: {{ ['#C7FF45', '#C4B5FD', '#7DD3FC', '#FBBF24', '#4ADE80', '#FCA5A5', '#F472B6'][crc32($label) % 7] }}; --turn: {{ crc32($label) % 360 }}deg;">
+                            <span class="eb-tradition-art" aria-hidden="true"></span>
+                            <span class="eb-tradition-name">{{ $label }}</span>
+                            <span class="eb-tradition-count">{{ $count }} {{ \Illuminate\Support\Str::plural('event', $count) }}</span>
+                        </a>
+                    </li>
                 @endforeach
             </ul>
         </section>
@@ -143,9 +182,10 @@
             <ul class="eb-home-markets">
                 @foreach($markets as $m)
                     <li>
-                        <a href="{{ route('events.index', ['city' => $marketValue($m)]) }}">
-                            <strong>{{ $m->city }}, {{ $m->state_code }}</strong><br>
-                            <span class="eb-text-supporting">{{ $m->upcoming_count }} upcoming {{ Str::plural('event', $m->upcoming_count) }}</span>
+                        <a href="{{ route('events.index', ['city' => $marketValue($m)]) }}" class="eb-city-card">
+                            <span class="eb-city-pin" aria-hidden="true"><x-icon name="map-pin" /></span>
+                            <span><strong>{{ $m->city }}, {{ $m->state_code }}</strong><br>
+                            <span class="eb-text-supporting">{{ $m->upcoming_count }} upcoming {{ Str::plural('event', $m->upcoming_count) }}</span></span>
                         </a>
                     </li>
                 @endforeach

@@ -73,6 +73,10 @@ class AuthController extends Controller
         );
 
         if (!$result['success']) {
+            \Illuminate\Support\Facades\Log::notice('auth.login_failed', [
+                'email_hash' => hash('sha256', strtolower(trim((string) $credentials['email']))),
+                'ip' => $request->ip(),
+            ]);
             return back()
                 ->withInput($request->only('email'))
                 ->withErrors(['email' => $result['error']]);

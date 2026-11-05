@@ -71,9 +71,30 @@ class TicketCheckInTest extends TestCase
         ]);
     }
 
-    private function scan(string $code, ?User $as = null)
+    private function scan(string $code, ?User $as = null, ?string $requestId = null)
     {
-        return $this->actingAs($as ?? $this->checker)->postJson("/worker/events/{$this->event->id}/scan", ['ticket_code' => $code]);
+        return $this->actingAs($as ?? $this->checker)->postJson("/worker/events/{$this->event->id}/scan", array_filter([
+            'ticket_code' => $code, 'scan_request_id' => $requestId,
+        ], fn ($value) => $value !== null));
+    }
+
+    public function test_retry_after_lost_checkin_response_returns_original_success_idempotently(): void
+    {
+        $order = $this->order('paid', 'GATE-RETRY');
+        $requestId = (string) \Illuminate\Support\Str::uuid();
+
+        $first = \App\Services\EventWorkerService::scanAndValidateTicket($this->checker, $order, (string) $this->event->id,
+            requestId: $requestId);
+        $this->assertTrue($first['success']);
+        $this->assertFalse($first['replayed']);
+        $firstTimestamp = $order->fresh()->checked_in_at->toDateTimeString();
+
+        $retry = \App\Services\EventWorkerService::scanAndValidateTicket($this->checker, $order->fresh(), (string) $this->event->id,
+            requestId: $requestId);
+        $this->assertTrue($retry['success']);
+        $this->assertTrue($retry['replayed']);
+        $this->assertSame($firstTimestamp, $order->fresh()->checked_in_at->toDateTimeString());
+        $this->assertDatabaseCount('security_audit_logs', 1);
     }
 
     public function test_paid_ticket_is_admitted_once_and_check_in_is_stored(): void

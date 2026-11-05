@@ -29,6 +29,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // A currency code determines the precision used to convert legacy decimals to minor units.
+        // Never substitute the current default for an unknown historical code: that would relabel
+        // a legacy amount without an explicit, auditable conversion.
+        $this->assertCurrenciesAreKnown();
+
         Schema::table('orders', function (Blueprint $table) {
             $table->bigInteger('subtotal_minor')->default(0);
             $table->bigInteger('discount_minor')->default(0);
@@ -239,11 +244,46 @@ return new class extends Migration
         });
     }
 
-    /** Rows with a currency this installation doesn't define are converted at the default precision. */
+    /** Rows with a currency this installation doesn't define must be reviewed before conversion. */
     private function currency(?string $code): string
     {
         $code = strtoupper(trim((string) $code));
 
-        return Currency::isSupported($code) ? $code : Currency::defaultCode();
+        if (!Currency::isSupported($code)) {
+            throw new RuntimeException(
+                "Cannot backfill financial values with unknown currency '{$code}'. Review and explicitly convert or configure the historical currency before retrying this migration."
+            );
+        }
+
+        return $code;
+    }
+
+    /** Reject ambiguous source currencies before adding columns or backfilling any financial data. */
+    private function assertCurrenciesAreKnown(): void
+    {
+        $sources = [
+            ['events', 'currency'],
+            ['orders', 'currency'],
+            ['order_items', 'currency'],
+            ['cash_payments', 'currency'],
+            ['ticket_disputes', 'currency'],
+        ];
+        $problems = [];
+
+        foreach ($sources as [$table, $column]) {
+            foreach (DB::table($table)->select($column)->distinct()->pluck($column) as $code) {
+                $normalized = strtoupper(trim((string) $code));
+                if (!Currency::isSupported($normalized)) {
+                    $problems[] = "{$table}.{$column} contains " . ($normalized === '' ? 'an empty currency' : "unsupported currency '{$normalized}'");
+                }
+            }
+        }
+
+        if ($problems !== []) {
+            throw new RuntimeException(
+                'Cannot backfill minor units until historical currencies are reviewed; no schema or data was changed: '
+                . implode('; ', $problems) . '.'
+            );
+        }
     }
 };

@@ -20,4 +20,5 @@
         <strong id="scan_verdict" style="font-size: 1.1rem; display: block;"></strong>
         <div id="scan_details" style="font-size: 0.85rem; margin-top: 0.35rem; color: var(--text-secondary);"></div>
     </div>
+<p id="scanner_connection" role="status" aria-live="polite" style="margin-top:.75rem;color:var(--text-secondary)"></p>
 </div>

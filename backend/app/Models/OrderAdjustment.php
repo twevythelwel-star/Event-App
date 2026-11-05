@@ -17,11 +17,18 @@ class OrderAdjustment extends Model
 {
     use HasUuids;
 
+    protected static function booted(): void
+    {
+        static::updating(fn () => throw new \LogicException('Financial adjustment history is append-only.'));
+        static::deleting(fn () => throw new \LogicException('Financial adjustment history cannot be deleted.'));
+    }
+
     public const TYPE_REFUND = 'refund';
     public const TYPE_CORRECTION = 'correction';
 
     protected $fillable = [
         'order_id',
+        'payment_id',
         'organizer_id',
         'type',
         'amount_minor',
@@ -42,6 +49,11 @@ class OrderAdjustment extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class)->withoutGlobalScopes();
+    }
+
+    public function payment(): BelongsTo
+    {
+        return $this->belongsTo(Payment::class);
     }
 
     public function amount(): Money

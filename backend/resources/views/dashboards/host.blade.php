@@ -103,6 +103,53 @@
         </x-data-table>
     </section>
 
+    {{-- Cancellation decisions and manual refund completion --}}
+    <section id="cancellations" class="eb-stack">
+        <div class="eb-section-header">
+            <div>
+                <h2 class="eb-text-section-title" style="margin: 0;">Cancellations and refunds</h2>
+                <p class="eb-text-supporting" style="margin: 0;">Review event-policy requests. A paid cancellation stays open until its refund is recorded.</p>
+            </div>
+        </div>
+        @forelse($cancellation_requests ?? [] as $cancellation)
+            @php $cancelOrder = $cancellation->order; @endphp
+            @if($cancelOrder)
+                <article class="eb-card eb-stack" style="gap: 10px;">
+                    <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                        <strong>#{{ $cancelOrder->order_number }} · {{ $cancelOrder->event?->title ?? 'Event' }} · {{ $cancelOrder->customer_name }}</strong>
+                        <span>Request: {{ str_replace('_', ' ', $cancellation->status) }} · Order: {{ str_replace('_', ' ', $cancelOrder->status) }}</span>
+                    </div>
+                    <p class="eb-text-supporting" style="margin:0;">Customer reason: {{ $cancellation->customer_reason ?: 'No reason supplied' }}</p>
+                    @if($cancellation->status === 'pending')
+                        <form method="POST" action="{{ route('host.cancellations.review', $cancellation->id) }}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                            @csrf
+                            <select name="decision" required aria-label="Cancellation decision"><option value="approved">Approve</option><option value="rejected">Reject</option></select>
+                            <input name="reason" required maxlength="500" placeholder="Decision reason" aria-label="Decision reason">
+                            <button class="eb-btn eb-btn-primary eb-btn-sm" type="submit">Save decision</button>
+                        </form>
+                    @endif
+                    @if(in_array($cancellation->status, ['approved', 'partially_refunded'], true) && (int) $cancelOrder->refunded_minor < (int) $cancelOrder->amount_paid_minor)
+                        @php $providerPaymentExists = \App\Models\Payment::where('order_id', $cancelOrder->id)->where('status', \App\Models\Payment::SUCCEEDED)->exists(); @endphp
+                        @if($providerPaymentExists)
+                            <p role="status" class="eb-help-text">A provider refund must be processed and confirmed by its provider integration. Manual refund recording is disabled for this order.</p>
+                        @else
+                        <form method="POST" action="{{ route('host.cancellations.refund', $cancellation->id) }}" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                            @csrf
+                            <input name="amount" required type="number" min="0.01" step="0.01" max="{{ \App\Support\Money::ofMinor((int) $cancelOrder->amount_paid_minor - (int) $cancelOrder->refunded_minor, $cancelOrder->currency)->toMajorNumber() }}" placeholder="Refund amount" aria-label="Refund amount">
+                            <input name="reason" required maxlength="500" placeholder="Refund reason" aria-label="Refund reason">
+                            <input name="refund_reference" required maxlength="128" placeholder="Completed receipt / transfer reference" aria-label="Completed refund reference">
+                            <button class="eb-btn eb-btn-secondary eb-btn-sm" type="submit">Record completed refund</button>
+                        </form>
+                        @endif
+                    @endif
+                    @if($cancellation->review_reason)<p class="eb-text-supporting" style="margin:0;">Review: {{ $cancellation->review_reason }}</p>@endif
+                </article>
+            @endif
+        @empty
+            <x-empty-state icon="receipt" title="No cancellation requests" description="Customer requests for your events will appear here." />
+        @endforelse
+    </section>
+
     {{-- Recent orders --}}
     <section id="orders" class="eb-stack">
         <div class="eb-section-header">

@@ -206,7 +206,7 @@ export type LocationCatalog = {
 };
 
 export async function fetchLocationCatalog(): Promise<LocationCatalog> {
-  return request<LocationCatalog>("/api/v1/locations");
+  return request<LocationCatalog>("/locations");
 }
 
 export async function placeOrder(eventSlug: string, order: OrderRequest): Promise<TicketOrder> {
@@ -322,7 +322,7 @@ export async function reverseCashReceipt(
   });
 }
 
-export async function refundOrder(orderId: string, payload: { amount: number; reason: string }): Promise<TicketOrder> {
+export async function refundOrder(orderId: string, payload: { amount: number; reason: string; refund_reference: string }): Promise<TicketOrder> {
   const body = await request<{ data: TicketOrder }>(`/operations/orders/${encodeURIComponent(orderId)}/refund`, {
     method: "POST",
     body: JSON.stringify(payload),
@@ -447,8 +447,47 @@ export async function updateDisputeStatus(
 
 /** snake_case event fields accepted by PATCH /host/events/{id} */
 export type EventPatch = Partial<{
+  organizer_id: string;
+  organizer_name: string | null;
+  organizer_phone: string;
+  advance_order_deadline: string;
   title: string;
+  slug: string | null;
   tagline: string | null;
+  summary: string | null;
+  event_types: string[];
+  event_format: "in_person" | "virtual" | "hybrid";
+  expected_attendance: number | null;
+  age_restriction: string | null;
+  dress_code: string | null;
+  accessibility_information: string | null;
+  languages: string[];
+  visibility: "public" | "unlisted" | "private";
+  is_featured: boolean;
+  flyer_alt_text: string | null;
+  flyer_position_x: number;
+  flyer_position_y: number;
+  refund_policy_deadline_hours: number | null;
+  refund_policy_notes: string | null;
+  refund_policy_mode: "manual_full_only" | "manual_full_and_partial" | "non_refundable";
+  host_cancellation_policy: "contact_organizer" | "manual_refund_if_supported";
+  postponement_policy: "tickets_valid_for_new_date" | "contact_organizer";
+  weather_cancellation_policy: "contact_organizer" | "reschedule_tickets_valid" | "manual_refund_if_supported";
+  food_order_cancellation_deadline_hours: number | null;
+  food_order_modification_deadline_hours: number | null;
+  non_refundable_ticket_categories: string[];
+  virtual_url: string | null;
+  virtual_access_instructions: string | null;
+  cultural_category_ids: string[];
+  country_ids: string[];
+  dish_ids: string[];
+  custom_dishes: {
+    name: string;
+    country_id: string;
+    alternative_spellings?: string[];
+    is_fusion?: boolean;
+    dietary_type?: "any" | "vegetarian" | "vegan";
+  }[];
   date_str: string;
   time_str: string;
   venue_name: string;
@@ -465,23 +504,118 @@ export type EventPatch = Partial<{
   coordinates: string | null;
   description: string | null;
   pickup_instructions: string | null;
-  organizer_phone: string;
   organizer_whatsapp: string | null;
   organizer_email: string | null;
   packaging_fee_usd: number;
   packaging_fee_jmd: number;
-  advance_order_deadline: string;
   is_ordering_open: boolean;
   category: string | null;
   event_date_iso: string | null;
+  end_date_iso: string | null;
   start_time: string | null;
   end_time: string | null;
+  doors_open_time: string | null;
+  setup_time: string | null;
+  food_service_start_time: string | null;
+  food_service_end_time: string | null;
+  ticket_sales_start_at: string | null;
+  ticket_sales_end_at: string | null;
+  early_bird_starts_at: string | null;
+  early_bird_ends_at: string | null;
+  venue_type: string | null;
+  venue_instructions: string | null;
+  parking_information: string | null;
+  location_token: string | null;
+  clear_location_pin: boolean;
   timezone: string | null;
   currency: "JMD" | "USD";
-  organizer_name: string | null;
   supports_food_ordering: boolean;
   ticket_tiers: unknown[] | null;
+  food_ordering_mode: "preorder" | "event_day" | "both";
+  food_fulfillment: "pickup" | "pickup_and_delivery";
+  food_delivery_instructions: string | null;
+  food_service_fee: number;
+  food_max_orders: number | null;
+  food_pickup_windows: { start: string; end: string; max_orders?: number | null }[] | null;
 }>;
+
+export type HostLocationLookup = {
+  enabled: boolean;
+  message: string | null;
+  results: {
+    label: string;
+    latitude: number;
+    longitude: number;
+    token: string;
+    preview: string | null;
+  }[];
+};
+
+export async function lookupHostEventLocation(address: string, countryCode: string): Promise<HostLocationLookup> {
+  return request<HostLocationLookup>("/host/location-lookup", {
+    method: "POST",
+    body: JSON.stringify({ address, country_code: countryCode }),
+  });
+}
+
+export type CulturalCatalogDish = {
+  id: string;
+  name: string;
+  alternativeSpellings: string[];
+  isFusion: boolean;
+  dietaryType: "any" | "vegetarian" | "vegan";
+};
+
+export type CulturalCatalogCuisine = {
+  id: string;
+  name: string;
+  dishes: CulturalCatalogDish[];
+};
+
+export type CulturalCatalogCountry = {
+  id: string;
+  name: string;
+  flag: string | null;
+  imageUrl: string | null;
+  cuisines: CulturalCatalogCuisine[];
+};
+
+export type CulturalCatalogRegion = {
+  id: string;
+  name: string;
+  countries: CulturalCatalogCountry[];
+};
+
+export type CulturalCatalogCategory = {
+  id: string;
+  name: string;
+  regions: CulturalCatalogRegion[];
+};
+
+export async function fetchCulturalCatalog(): Promise<CulturalCatalogCategory[]> {
+  const body = await request<{ data: CulturalCatalogCategory[] }>("/cultural-catalog");
+  return body.data;
+}
+
+export type CulturalCatalogAdminType = "categories" | "regions" | "countries" | "cuisines" | "dishes";
+
+export async function saveCulturalCatalogItem(
+  type: CulturalCatalogAdminType,
+  id: string | null,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const path = id
+    ? `/admin/cultural-catalog/${type}/${encodeURIComponent(id)}`
+    : `/admin/cultural-catalog/${type}`;
+  await request(path, {
+    method: id ? "PUT" : "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deactivateCulturalCatalogItem(type: CulturalCatalogAdminType, id: string): Promise<void> {
+  await request(`/admin/cultural-catalog/${type}/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
 
 /** snake_case menu item fields accepted by the host menu endpoints */
 export type MenuItemPayload = {
@@ -496,6 +630,20 @@ export type MenuItemPayload = {
   custom_amount_config?: Record<string, unknown> | null;
   allow_special_instructions?: boolean;
   available_stock?: number | null;
+  item_type?: "item" | "package";
+  package_config?: Record<string, unknown> | null;
+  country_of_origin?: string | null;
+  ingredients?: string | null;
+  dietary_tags?: string[] | null;
+  allergens?: string[] | null;
+  guest_instructions?: string | null;
+  prep_minutes?: number | null;
+  available_from?: string | null;
+  available_until?: string | null;
+  max_per_order?: number | null;
+  is_featured?: boolean;
+  is_active?: boolean;
+  image_is_illustrative?: boolean;
 };
 
 export async function createHostEvent(payload: EventPatch): Promise<FishFryEventItem> {
@@ -572,10 +720,21 @@ function imageForm(field: string, image: Blob, filename: string): FormData {
   return form;
 }
 
-export async function uploadHostFlyer(eventId: string, image: Blob, filename = "flyer"): Promise<FishFryEventItem> {
+export async function uploadHostFlyer(
+  eventId: string,
+  image: Blob,
+  filename = "flyer",
+  altText?: string,
+  positionX = 50,
+  positionY = 50,
+): Promise<FishFryEventItem> {
+  const form = imageForm("flyer", image, filename);
+  if (altText) form.append("alt_text", altText);
+  form.append("position_x", String(positionX));
+  form.append("position_y", String(positionY));
   const body = await request<{ data: FishFryEventItem }>(`/host/events/${encodeURIComponent(eventId)}/flyer`, {
     method: "POST",
-    body: imageForm("flyer", image, filename),
+    body: form,
   });
   return body.data;
 }
@@ -584,6 +743,35 @@ export async function removeHostFlyer(eventId: string): Promise<FishFryEventItem
   const body = await request<{ data: FishFryEventItem }>(`/host/events/${encodeURIComponent(eventId)}/flyer`, {
     method: "DELETE",
   });
+  return body.data;
+}
+
+export async function uploadHostEventMedia(
+  eventId: string,
+  image: Blob,
+  mediaType: "gallery" | "organization_logo" | "sponsor_logo",
+  altText: string,
+  positionX = 50,
+  positionY = 50,
+  filename = "event-media",
+): Promise<FishFryEventItem> {
+  const form = imageForm("photo", image, filename);
+  form.append("media_type", mediaType);
+  form.append("alt_text", altText);
+  form.append("position_x", String(positionX));
+  form.append("position_y", String(positionY));
+  const body = await request<{ data: FishFryEventItem }>(`/host/events/${encodeURIComponent(eventId)}/media`, {
+    method: "POST",
+    body: form,
+  });
+  return body.data;
+}
+
+export async function removeHostEventMedia(eventId: string, mediaId: string): Promise<FishFryEventItem> {
+  const body = await request<{ data: FishFryEventItem }>(
+    `/host/events/${encodeURIComponent(eventId)}/media/${encodeURIComponent(mediaId)}`,
+    { method: "DELETE" },
+  );
   return body.data;
 }
 

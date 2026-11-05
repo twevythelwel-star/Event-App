@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { FoodPhoto } from "./FoodPhoto";
+import { refundPolicyPreviewLines } from "../lib/refundPolicy";
 import {
   ArrowLeft,
   Heart,
@@ -245,34 +247,17 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
     }, 900);
   };
 
-  // Authentic Gallery Media for this Event
-  const galleryMedia: { url: string; caption: string; category: string }[] = [
-    {
-      url: event.flyerUrl || "/images/escovitch_fish.jpg",
-      caption: "Culinary Highlights & Signature Dish",
-      category: "Food",
-    },
-    {
-      url: "/images/island_music_reggae_concert.jpg",
-      caption: "Live Musical Performance Stage",
-      category: "Concert",
-    },
-    {
-      url: "/images/island_festival_sunset.jpg",
-      caption: "Atmosphere & Sunset Waterfront Venue",
-      category: "Venue",
-    },
-    {
-      url: "/images/jerk_chicken.jpg",
-      caption: "Authentic Pimento Wood Smoked Jerk Special",
-      category: "Food",
-    },
-    {
-      url: "/images/rum_punch.jpg",
-      caption: "Complimentary Artisanal Island Refreshments",
-      category: "Beverage",
-    },
-  ];
+  const eventMedia = Array.isArray(event?.eventMedia) ? event.eventMedia : [];
+  const galleryMedia: { url: string; caption: string; category: string; thumbnailUrl?: string | null; positionX: number; positionY: number }[] = eventMedia.filter((media: any) => media.mediaType === "gallery").map((media: any) => ({
+    url: media.imageUrl,
+    caption: media.altText,
+    category: "Event gallery",
+    thumbnailUrl: media.thumbnailUrl,
+    positionX: media.positionX,
+    positionY: media.positionY,
+  }));
+  const organizerLogo = eventMedia.find((media: any) => media.mediaType === "organization_logo");
+  const sponsorLogos = eventMedia.filter((media: any) => media.mediaType === "sponsor_logo");
 
   return (
     <div
@@ -327,13 +312,13 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
       >
         {/* Background Event Photo */}
         <img
-          src={event.flyerUrl || "/images/island_festival_sunset.jpg"}
+          src={event.flyerUrl || event.flyerThumbnailUrl || "/images/event-placeholder.svg"}
           alt={event.title}
           style={{
             width: "100%",
             height: "100%",
             objectFit: "cover",
-            objectPosition: "center 30%",
+            objectPosition: `${event.flyerPositionX ?? 50}% ${event.flyerPositionY ?? 50}%`,
             filter: "brightness(0.9)",
           }}
         />
@@ -976,11 +961,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
                         }}
                       >
                         <div style={{ height: "130px", position: "relative" }}>
-                          <img
-                            src={item.imageUrl || "/images/escovitch_fish.jpg"}
-                            alt={item.name}
-                            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                          />
+                          <FoodPhoto src={item.imageUrl} alt={item.name} />
                           <div
                             style={{
                               position: "absolute",
@@ -1088,6 +1069,18 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
                     </p>
                   </div>
 
+                  <section id="refund-policy" aria-labelledby="refund-policy-heading" style={{
+                    backgroundColor: "var(--att-surface-1)",
+                    borderRadius: 12,
+                    padding: 20,
+                    border: "1px solid rgba(255,255,255,.08)",
+                  }}>
+                    <h3 id="refund-policy-heading" style={{ fontSize: 17, fontWeight: 800, color: "#FFFFFF", margin: "0 0 10px" }}>Cancellations and Refunds</h3>
+                    <div style={{ display: "grid", gap: 7, color: "var(--att-text-body)", fontSize: 13, lineHeight: 1.55 }}>
+                      {refundPolicyPreviewLines(event).map((line, index) => <p key={index} style={{ margin: 0 }}>{line}</p>)}
+                    </div>
+                  </section>
+
                   {/* Pickup & Food Protocol */}
                   {event.pickupInstructions && (
                     <div
@@ -1158,8 +1151,10 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
                 <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
                   Event & Atmosphere Gallery
                 </h3>
-                <span style={{ fontSize: "12px", color: "var(--att-text-2)" }}>5 verified event photos</span>
+                <span style={{ fontSize: "12px", color: "var(--att-text-2)" }}>{galleryMedia.length} host-uploaded photos</span>
               </div>
+
+              {galleryMedia.length === 0 && <p style={{ color: "var(--att-text-2)", fontSize: 13 }}>No additional event photos have been provided.</p>}
 
               <div
                 style={{
@@ -1194,9 +1189,9 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
                     aria-label={`View photo: ${media.caption}`}
                   >
                     <img
-                      src={media.url}
+                      src={media.thumbnailUrl || media.url}
                       alt={media.caption}
-                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: `${media.positionX ?? 50}% ${media.positionY ?? 50}%`, display: "block" }}
                     />
                     <div
                       style={{
@@ -1238,7 +1233,10 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
               aria-label="Organizer information"
             >
               <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "16px" }}>
-                <div
+                {organizerLogo ? (
+                  <img src={organizerLogo.thumbnailUrl || organizerLogo.imageUrl} alt={organizerLogo.altText}
+                    style={{ width: 54, height: 54, borderRadius: 12, objectFit: "contain", background: "#FFFFFF", padding: 4, flexShrink: 0 }} />
+                ) : <div
                   style={{
                     width: "54px",
                     height: "54px",
@@ -1254,7 +1252,7 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
                   }}
                 >
                   {event.organizerName ? event.organizerName.charAt(0) : "🌴"}
-                </div>
+                </div>}
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                     <h3 style={{ fontSize: "17px", fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
@@ -1267,6 +1265,12 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
                   </div>
                 </div>
               </div>
+              {sponsorLogos.length > 0 && (
+                <div aria-label="Event sponsors" style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", marginTop: 16, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,.08)" }}>
+                  <span style={{ width: "100%", fontSize: 10, color: "var(--att-text-2)", textTransform: "uppercase", fontWeight: 700 }}>Event sponsors</span>
+                  {sponsorLogos.map((sponsor: any) => <img key={sponsor.id} src={sponsor.thumbnailUrl || sponsor.imageUrl} alt={sponsor.altText} title={sponsor.altText} style={{ maxWidth: 120, maxHeight: 48, objectFit: "contain", background: "#FFFFFF", borderRadius: 6, padding: 5 }} />)}
+                </div>
+              )}
 
               <p style={{ fontSize: "13px", color: "var(--att-text-2)", lineHeight: "1.6", margin: "0 0 18px" }}>
                 Committed to delivering authentic Caribbean culinary and entertainment experiences with direct community proceeds.

@@ -51,7 +51,18 @@ class StoreMenuItemRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'min:2', 'max:150'],
             'category' => ['required', 'string', 'max:80'],
+            // One of the traditions in config/traditions.php (the same list hosts pick for their events)
+            'cuisine' => ['nullable', 'string', \Illuminate\Validation\Rule::in(array_keys((array) config('traditions', [])))],
             'description' => ['nullable', 'string', 'max:1000'],
+            'dietary_tags' => ['nullable', 'array'],
+            'dietary_tags.*' => ['string', 'max:50'],
+            'allergens' => ['nullable', 'array'],
+            'allergens.*' => ['string', 'max:100'],
+            'spice_level' => ['nullable', 'in:mild,medium,hot,extra_hot'],
+            'portion_sizes' => ['nullable', 'array'],
+            'portion_sizes.*.name' => ['required_with:portion_sizes', 'string', 'max:50'],
+            'portion_sizes.*.label' => ['required_with:portion_sizes', 'string', 'max:50'],
+            'portion_sizes.*.price_minor' => ['required_with:portion_sizes', 'integer', 'min:0'],
             'pricing_type' => ['required', 'in:fixed,customizable,custom_amount'],
             'price_usd' => ['required', 'numeric', 'min:0'],
             'price_jmd' => ['required', 'numeric', 'min:0'],
@@ -65,6 +76,8 @@ class StoreMenuItemRequest extends FormRequest
             'allow_special_instructions' => ['nullable', 'boolean'],
             'available_stock' => ['nullable', 'integer', 'min:0'],
             'sort_order' => ['nullable', 'integer'],
+            'vendor_assignment' => ['nullable', 'string', 'max:100'],
+            'preparation_notes' => ['nullable', 'string', 'max:1000'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

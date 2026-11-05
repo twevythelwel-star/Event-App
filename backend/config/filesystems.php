@@ -32,8 +32,7 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
-            'serve' => true,
+            'root' => env('PRIVATE_MEDIA_ROOT', storage_path('app/private')),
             'throw' => false,
             'report' => false,
         ],
@@ -53,7 +52,7 @@ return [
         // (and installing league/flysystem-aws-s3-v3).
         's3_flyers' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            'root' => env('PRIVATE_MEDIA_ROOT', storage_path('app/private')),
             'throw' => false,
             'report' => false,
         ],

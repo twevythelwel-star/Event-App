@@ -25,6 +25,15 @@ return [
         'status_callback_base' => env('TWILIO_STATUS_CALLBACK_BASE'),
     ],
 
+    // Address lookup and map previews for event venues. Leave the provider empty to run without maps: hosts still
+    // enter and confirm the address, and no map pin is shown. mapbox_token is used server-side for lookups;
+    // mapbox_public_token (a URL-restricted "pk." token) is the one placed in map image URLs, when set.
+    'maps' => [
+        'provider' => env('MAPS_PROVIDER'),
+        'mapbox_token' => env('MAPBOX_TOKEN'),
+        'mapbox_public_token' => env('MAPBOX_PUBLIC_TOKEN'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

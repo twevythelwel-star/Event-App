@@ -29,8 +29,14 @@ final class HomeSections
     /** @return Collection<int, Event> published events that have not yet happened, soonest first */
     public static function upcoming(): Collection
     {
-        return Event::allTenants()->with('menuItems')->where('status', 'published')
-            ->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')->get()
+        // Homepage sections only display four events apiece. Bound the source set so a growing event
+        // catalog cannot turn each homepage request into a full-table load.
+        return Event::allTenants()->with(['menuItems' => fn ($query) => $query->where('is_active', true)])
+            ->where('status', 'published')
+            ->where('visibility', 'public')
+            ->orderByDesc('is_featured')
+            ->where(fn ($query) => $query->whereNull('event_date_iso')->orWhereDate('event_date_iso', '>=', now()->toDateString()))
+            ->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')->limit(500)->get()
             ->reject(fn (Event $e) => EventListing::hasEnded($e))->values();
     }
 

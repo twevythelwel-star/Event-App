@@ -157,6 +157,71 @@
             <rect width="20" height="14" x="2" y="5" rx="2" />
             <line x1="2" x2="22" y1="10" y2="10" />
             @break
+        @case('map-pin')
+            <path d="M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="3" />
+            @break
+        @case('music')
+            <path d="M9 18V5l12-2v13" />
+            <circle cx="6" cy="18" r="3" />
+            <circle cx="18" cy="16" r="3" />
+            @break
+        @case('sparkles')
+            <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8Z" />
+            <path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7Z" />
+            @break
+        @case('globe')
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18" />
+            <path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18Z" />
+            @break
+        @case('heart')
+            <path d="M19.5 12.6 12 20l-7.5-7.4A4.7 4.7 0 1 1 12 6.4a4.7 4.7 0 1 1 7.5 6.2Z" />
+            @break
+        @case('star')
+            <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z" />
+            @break
+        @case('clock')
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 7v5l3 2" />
+            @break
+        @case('flame')
+            <path d="M12 22c4 0 7-2.8 7-7 0-4.6-4-7.4-5-11-2 2.4-3 4.3-3 6.5-1.3-.7-2-2-2-3.5C7 9 5 11.6 5 15c0 4.2 3 7 7 7Z" />
+            @break
+        @case('leaf')
+            <path d="M5 21c0-9 5-15 15-16-1 10-7 15-15 16Z" />
+            <path d="M5 21 13 13" />
+            @break
+        @case('wheat')
+            <path d="M12 22V8" />
+            <path d="M12 8c-2-1-3-3-3-5 2 0 3 2 3 5Zm0 0c2-1 3-3 3-5-2 0-3 2-3 5Z" />
+            <path d="M12 14c-2.5-.5-4-2.5-4-4.5 2.5 0 4 2 4 4.5Zm0 0c2.5-.5 4-2.5 4-4.5-2.5 0-4 2-4 4.5Z" />
+            @break
+        @case('fish')
+            <path d="M2 12c3-4 7-6 11-6 4 0 7 3 8 6-1 3-4 6-8 6-4 0-8-2-11-6Z" />
+            <path d="M2 12 0.5 8.5M2 12 .5 15.5" />
+            <circle cx="16" cy="11" r="1" />
+            @break
+        @case('bank')
+            <path d="M3 10 12 4l9 6" />
+            <path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8" />
+            <path d="M3 21h18" />
+            @break
+        @case('phone')
+            <rect width="12" height="20" x="6" y="2" rx="2.5" />
+            <path d="M11 18h2" />
+            @break
+        @case('cash')
+            <rect width="20" height="12" x="2" y="6" rx="2" />
+            <circle cx="12" cy="12" r="2.5" />
+            <path d="M6 12h.01M18 12h.01" />
+            @break
+        @case('qr-frame')
+            <path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" />
+            <rect width="4" height="4" x="7" y="7" rx="0.5" />
+            <rect width="4" height="4" x="13" y="13" rx="0.5" />
+            <path d="M13 7h4v2M7 15v2h2" />
+            @break
         @default
             <circle cx="12" cy="12" r="9" />
     @endswitch

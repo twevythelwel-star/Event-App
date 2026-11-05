@@ -12,6 +12,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { Currency, MenuItem } from "../../types";
+import { FoodPhoto } from "../FoodPhoto";
 import { HostRolePermissions } from "./types";
 
 export type MenuStatItem = MenuItem & {
@@ -408,18 +409,11 @@ export function HostFoodOrdersPrepView({
                   >
                     <td style={{ padding: "12px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <img
+                        <FoodPhoto
                           src={item.imageUrl}
                           alt={item.name}
-                          onError={(e) => {
-                            e.currentTarget.src = "/images/escovitch_fish.jpg";
-                          }}
-                          style={{
-                            width: "40px",
-                            height: "40px",
-                            borderRadius: "8px",
-                            objectFit: "cover",
-                          }}
+                          showUnavailableText={false}
+                          style={{ width: "40px", height: "40px", borderRadius: "8px" }}
                         />
                         <div>
                           <strong style={{ fontSize: "12px", color: "#F8FAFC", display: "block" }}>
@@ -630,18 +624,11 @@ export function HostFoodOrdersPrepView({
                     >
                       <td style={{ padding: "12px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                          <img
+                          <FoodPhoto
                             src={item.imageUrl}
                             alt={item.name}
-                            onError={(e) => {
-                              e.currentTarget.src = "/images/escovitch_fish.jpg";
-                            }}
-                            style={{
-                              width: "42px",
-                              height: "42px",
-                              borderRadius: "8px",
-                              objectFit: "cover",
-                            }}
+                            showUnavailableText={false}
+                            style={{ width: "42px", height: "42px", borderRadius: "8px" }}
                           />
                           <div>
                             <strong style={{ fontSize: "12px", color: "#F8FAFC", display: "block" }}>

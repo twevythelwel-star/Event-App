@@ -33,6 +33,12 @@ class UpdateHostSettingsRequest extends FormRequest
             'deposit_percentage' => ['nullable', 'integer', 'min:10', 'max:90'],
             'refund_policy_deadline_hours' => ['nullable', 'integer', 'min:0', 'max:168'],
             'refund_policy_notes' => ['nullable', 'string', 'max:1000'],
+            'refund_policy_mode' => ['nullable', 'in:manual_full_only,manual_full_and_partial,non_refundable'],
+            'host_cancellation_policy' => ['nullable', 'in:contact_organizer,manual_refund_if_supported'],
+            'postponement_policy' => ['nullable', 'in:tickets_valid_for_new_date,contact_organizer'],
+            'weather_cancellation_policy' => ['nullable', 'in:contact_organizer,reschedule_tickets_valid,manual_refund_if_supported'],
+            'food_order_cancellation_deadline_hours' => ['nullable', 'integer', 'min:0', 'max:720'],
+            'food_order_modification_deadline_hours' => ['nullable', 'integer', 'min:0', 'max:720'],
             'food_prep_buffer_percent' => ['nullable', 'integer', 'min:0', 'max:50'],
         ];
     }

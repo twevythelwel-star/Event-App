@@ -5,6 +5,7 @@ import {
   Clock,
   DollarSign,
   Filter,
+  Globe2,
   HardDrive,
   Layers,
   Lock,
@@ -32,6 +33,7 @@ import {
   TenantUserMember,
 } from "../types";
 import { maskSecretKey } from "../tests/testUtils";
+import { CulturalCatalogAdminSection } from "./CulturalCatalogAdminSection";
 
 type Props = {
   stats: PlatformOverviewStats;
@@ -61,7 +63,7 @@ export const SystemAdminDashboard: React.FC<Props> = ({
   formatMoney,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    "overview" | "users" | "scopes" | "health" | "providers" | "fees" | "audits" | "settings"
+    "overview" | "users" | "scopes" | "health" | "providers" | "fees" | "audits" | "culture" | "settings"
   >("overview");
 
   const [userSearch, setUserSearch] = useState("");
@@ -195,6 +197,14 @@ export const SystemAdminDashboard: React.FC<Props> = ({
           id="tab-sys-audits"
         >
           <ShieldAlert size={15} /> Audit Logs & Security Events ({auditLogs.length})
+        </button>
+        <button
+          type="button"
+          className={`sys-tab ${activeTab === "culture" ? "active" : ""}`}
+          onClick={() => setActiveTab("culture")}
+          id="tab-sys-culture"
+        >
+          <Globe2 size={15} /> Cultural & Cuisine Catalog
         </button>
         <button
           type="button"
@@ -738,6 +748,9 @@ export const SystemAdminDashboard: React.FC<Props> = ({
       )}
 
       {/* TAB 8: DEDICATED SETTINGS & POLICIES (17) */}
+      {activeTab === "culture" && <CulturalCatalogAdminSection />}
+
+      {/* TAB 9: DEDICATED SETTINGS & POLICIES (17) */}
       {activeTab === "settings" && (
         <div className="sys-panel settings-panel">
           <AccountSettingsView

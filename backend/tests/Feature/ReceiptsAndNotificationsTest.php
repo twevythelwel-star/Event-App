@@ -144,7 +144,7 @@ class ReceiptsAndNotificationsTest extends TestCase
         $this->assertNotNull($requested);
         $this->assertStringContainsString('no money has been returned yet', $requested->message);
 
-        $this->actingAs($this->user('host'))->postJson("/api/v1/operations/orders/{$paid->id}/refund", ['amount' => '5.00', 'reason' => 'Customer cannot attend'])->assertOk();
+        $this->actingAs($this->user('host'))->postJson("/api/v1/operations/orders/{$paid->id}/refund", ['amount' => '5.00', 'reason' => 'Customer cannot attend', 'refund_reference' => 'cash-refund-5'])->assertOk();
         $done = $this->sms($paid)->firstWhere('trigger', 'refund_completed');
         $this->assertNotNull($done);
         $this->assertStringContainsString('$5.00', $done->message);
