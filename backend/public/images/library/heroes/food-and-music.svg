@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Food and music artwork: a lit food truck beside a small stage with speakers, music notes and rising steam">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <radialGradient id="warm" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#FBBF24" stop-opacity="0.4"/><stop offset="1" stop-color="#FBBF24" stop-opacity="0"/></radialGradient>
+    <radialGradient id="violet" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.45"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="truck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C7FF45"/><stop offset="1" stop-color="#65A30D"/></linearGradient>
+    <linearGradient id="window" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#F59E0B"/></linearGradient>
+    <linearGradient id="cab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26384D"/><stop offset="1" stop-color="#10243A"/></linearGradient>
+    <pattern id="awning" width="60" height="10" patternUnits="userSpaceOnUse"><rect width="30" height="10" fill="#8B5CF6"/><rect x="30" width="30" height="10" fill="#F8FAFC"/></pattern>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="480" cy="520" r="440" fill="url(#warm)"/>
+  <circle cx="1220" cy="420" r="420" fill="url(#violet)"/>
+  <path d="M-20 130 Q 400 250 800 150 T 1620 150" fill="none" stroke="#F8FAFC" stroke-opacity="0.3" stroke-width="3"/>
+  <g fill="#FDE68A"><circle cx="90" cy="168" r="8"/><circle cx="250" cy="206" r="8"/><circle cx="410" cy="220" r="8"/><circle cx="570" cy="204" r="8"/><circle cx="730" cy="170" r="8"/><circle cx="890" cy="150" r="8"/><circle cx="1050" cy="160" r="8"/><circle cx="1210" cy="176" r="8"/><circle cx="1370" cy="168" r="8"/><circle cx="1530" cy="152" r="8"/></g>
+  <path d="M0 720 H1600 V900 H0Z" fill="#0B192B"/>
+  <g>
+    <ellipse cx="480" cy="740" rx="380" ry="26" fill="#000" fill-opacity="0.4"/>
+    <rect x="120" y="380" width="600" height="320" rx="30" fill="url(#truck)"/>
+    <rect x="720" y="470" width="120" height="230" rx="20" fill="#84CC16"/>
+    <rect x="740" y="490" width="80" height="80" rx="10" fill="#0B192B"/>
+    <rect x="200" y="440" width="400" height="150" rx="12" fill="url(#window)"/>
+    <path d="M180 440 H620 L640 400 H160Z" fill="url(#awning)"/>
+    <path d="M160 440 q22 26 44 0 q22 26 44 0 q22 26 44 0 q22 26 44 0 q22 26 44 0 q22 26 44 0 q22 26 44 0 q22 26 44 0 q22 26 44 0 q22 26 44 0 h0" fill="#8B5CF6"/>
+    <rect x="190" y="586" width="420" height="22" rx="6" fill="#365314"/>
+    <g><ellipse cx="290" cy="580" rx="40" ry="10" fill="#F8FAFC"/><path d="M250 580 q40 26 80 0z" fill="#E2E8F0"/>
+      <ellipse cx="420" cy="580" rx="36" ry="9" fill="#F8FAFC"/><rect x="398" y="556" width="44" height="24" rx="4" fill="#B45309"/>
+      <rect x="500" y="540" width="30" height="40" rx="6" fill="#38BDF8"/><rect x="540" y="550" width="30" height="30" rx="6" fill="#FCA5A5"/></g>
+    <circle cx="260" cy="710" r="46" fill="#07111F"/><circle cx="260" cy="710" r="20" fill="#364F6B"/>
+    <circle cx="700" cy="710" r="46" fill="#07111F"/><circle cx="700" cy="710" r="20" fill="#364F6B"/>
+    <rect x="320" y="330" width="200" height="50" rx="10" fill="#07111F"/>
+    <g fill="#C7FF45"><rect x="340" y="348" width="30" height="14" rx="4"/><rect x="380" y="348" width="60" height="14" rx="4" fill="#F8FAFC"/><rect x="450" y="348" width="50" height="14" rx="4" fill="#FBBF24"/></g>
+  </g>
+  <g fill="none" stroke="#F8FAFC" stroke-opacity="0.3" stroke-width="10" stroke-linecap="round">
+    <path d="M300 300 C 280 260, 320 240, 300 200"/><path d="M420 300 C 400 260, 440 240, 420 200"/>
+  </g>
+  <g>
+    <rect x="980" y="600" width="520" height="120" rx="8" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/>
+    <rect x="1010" y="420" width="110" height="180" rx="8" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/>
+    <circle cx="1065" cy="470" r="22" fill="#07111F" stroke="#364F6B" stroke-width="3"/><circle cx="1065" cy="545" r="36" fill="#07111F" stroke="#364F6B" stroke-width="3"/>
+    <rect x="1360" y="420" width="110" height="180" rx="8" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/>
+    <circle cx="1415" cy="470" r="22" fill="#07111F" stroke="#364F6B" stroke-width="3"/><circle cx="1415" cy="545" r="36" fill="#07111F" stroke="#364F6B" stroke-width="3"/>
+    <rect x="1236" y="440" width="8" height="160" fill="#A8B6C8"/><rect x="1222" y="420" width="36" height="40" rx="18" fill="#26384D" stroke="#F8FAFC" stroke-width="3"/>
+  </g>
+  <g fill="#C7FF45">
+    <path d="M1150 320 v-70 l50 -14 v64" fill="none" stroke="#C7FF45" stroke-width="7"/><circle cx="1140" cy="322" r="14"/><circle cx="1190" cy="306" r="14"/>
+    <path d="M1310 260 v-60" stroke="#FBBF24" stroke-width="7"/><circle cx="1300" cy="262" r="13" fill="#FBBF24"/><path d="M1310 200 q20 10 18 34" fill="none" stroke="#FBBF24" stroke-width="7"/>
+    <path d="M1420 340 v-56" stroke="#C4B5FD" stroke-width="7"/><circle cx="1410" cy="342" r="12" fill="#C4B5FD"/>
+  </g>
+  <rect y="800" width="1600" height="100" fill="#07111F" fill-opacity="0.7"/>
+</svg>

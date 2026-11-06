@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Cultural celebration artwork: layers of colourful paper garlands and glowing lanterns over a plaza, with drums and ribbons">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <radialGradient id="glowV" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.4"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <radialGradient id="glowW" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#FBBF24" stop-opacity="0.35"/><stop offset="1" stop-color="#FBBF24" stop-opacity="0"/></radialGradient>
+    <linearGradient id="lan" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#F59E0B"/></linearGradient>
+    <linearGradient id="lanV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <linearGradient id="lanG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ECFCCB"/><stop offset="1" stop-color="#84CC16"/></linearGradient>
+    <linearGradient id="drum" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7C2D12"/><stop offset="0.5" stop-color="#B45309"/><stop offset="1" stop-color="#7C2D12"/></linearGradient>
+    <g id="lantern"><path d="M0 -6 V0" stroke="#A8B6C8" stroke-width="3"/><rect x="-14" y="0" width="28" height="8" rx="2" fill="#364F6B"/><path d="M-30 8 Q -40 60 -30 100 H30 Q 40 60 30 8Z"/><rect x="-14" y="100" width="28" height="8" rx="2" fill="#364F6B"/><path d="M0 108 V140" stroke="#FCA5A5" stroke-width="4"/></g>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="380" cy="320" r="380" fill="url(#glowV)"/>
+  <circle cx="1200" cy="380" r="420" fill="url(#glowW)"/>
+  <path d="M-20 60 Q 400 200 800 90 T 1620 100" fill="none" stroke="#F8FAFC" stroke-opacity="0.3" stroke-width="3"/>
+  <g>
+    <path d="M40 92 l40 70 l40 -50z" fill="#C7FF45"/><path d="M160 118 l40 70 l40 -50z" fill="#8B5CF6"/><path d="M290 134 l40 70 l40 -50z" fill="#FCA5A5"/><path d="M420 136 l40 70 l40 -50z" fill="#FBBF24"/>
+    <path d="M550 122 l40 70 l40 -50z" fill="#38BDF8"/><path d="M680 100 l40 70 l40 -50z" fill="#C7FF45"/><path d="M810 82 l40 70 l40 -50z" fill="#8B5CF6"/><path d="M940 76 l40 70 l40 -50z" fill="#FCA5A5"/>
+    <path d="M1070 84 l40 70 l40 -50z" fill="#FBBF24"/><path d="M1200 96 l40 70 l40 -50z" fill="#38BDF8"/><path d="M1330 104 l40 70 l40 -50z" fill="#C7FF45"/><path d="M1460 104 l40 70 l40 -50z" fill="#8B5CF6"/>
+  </g>
+  <path d="M-20 230 Q 500 330 900 250 T 1620 270" fill="none" stroke="#F8FAFC" stroke-opacity="0.22" stroke-width="3"/>
+  <g fill-opacity="0.85">
+    <path d="M80 254 q30 40 60 0" fill="none" stroke="#FCA5A5" stroke-width="10" stroke-linecap="round"/>
+    <path d="M200 276 q30 40 60 0" fill="none" stroke="#FBBF24" stroke-width="10" stroke-linecap="round"/>
+    <path d="M320 292 q30 40 60 0" fill="none" stroke="#C7FF45" stroke-width="10" stroke-linecap="round"/>
+    <path d="M1080 270 q30 40 60 0" fill="none" stroke="#38BDF8" stroke-width="10" stroke-linecap="round"/>
+    <path d="M1220 268 q30 40 60 0" fill="none" stroke="#FCA5A5" stroke-width="10" stroke-linecap="round"/>
+    <path d="M1360 262 q30 40 60 0" fill="none" stroke="#8B5CF6" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <g>
+    <use href="#lantern" x="520" y="280" fill="url(#lan)"/>
+    <use href="#lantern" x="680" y="250" fill="url(#lanV)"/>
+    <use href="#lantern" x="840" y="236" fill="url(#lanG)"/>
+    <use href="#lantern" x="1000" y="250" fill="url(#lan)"/>
+  </g>
+  <g fill="#FBBF24" fill-opacity="0.18"><circle cx="520" cy="340" r="70"/><circle cx="840" cy="296" r="70"/><circle cx="1000" cy="310" r="70"/></g>
+  <path d="M0 700 L1600 700 L1600 900 L0 900Z" fill="#10243A"/>
+  <g stroke="#26384D" stroke-width="3"><path d="M0 760 H1600"/><path d="M0 830 H1600"/><path d="M200 700 L120 900"/><path d="M500 700 L460 900"/><path d="M800 700 V900"/><path d="M1100 700 L1140 900"/><path d="M1400 700 L1480 900"/></g>
+  <g>
+    <ellipse cx="420" cy="720" rx="80" ry="14" fill="#000" fill-opacity="0.35"/>
+    <path d="M360 560 h120 l-14 150 h-92z" fill="url(#drum)"/>
+    <ellipse cx="420" cy="560" rx="60" ry="16" fill="#FDE68A" stroke="#7C2D12" stroke-width="5"/>
+    <g stroke="#FDE68A" stroke-opacity="0.7" stroke-width="3"><path d="M366 590 l100 100"/><path d="M474 590 l-100 100"/></g>
+    <ellipse cx="560" cy="726" rx="60" ry="12" fill="#000" fill-opacity="0.35"/>
+    <path d="M515 610 h90 l-10 110 h-70z" fill="url(#drum)"/>
+    <ellipse cx="560" cy="610" rx="45" ry="12" fill="#FDE68A" stroke="#7C2D12" stroke-width="4"/>
+  </g>
+  <g fill="none" stroke-linecap="round" stroke-width="10">
+    <path d="M1060 720 C 1120 600, 1200 760, 1260 620 S 1360 700, 1420 600" stroke="#8B5CF6"/>
+    <path d="M1040 740 C 1110 640, 1190 790, 1270 660 S 1380 740, 1450 650" stroke="#C7FF45" stroke-opacity="0.8"/>
+  </g>
+  <g><circle cx="140" cy="420" r="6" fill="#C7FF45"/><rect x="1480" y="420" width="12" height="12" fill="#FCA5A5" transform="rotate(30 1486 426)"/><circle cx="1360" cy="460" r="5" fill="#FBBF24"/><rect x="260" y="470" width="10" height="10" fill="#8B5CF6" transform="rotate(20 265 475)"/></g>
+  <rect y="790" width="1600" height="110" fill="#07111F" fill-opacity="0.75"/>
+</svg>

@@ -126,9 +126,11 @@
             </div>
             <ul class="eb-tradition-cards">
                 @foreach($traditions as $label => $count)
+                    @php $cuisineArt = \App\Support\VisualAssets::cuisineForTradition($label); @endphp
                     <li>
-                        <a href="{{ route('events.index', ['q' => $label]) }}" class="eb-tradition-card" style="--tint: {{ ['#C7FF45', '#C4B5FD', '#7DD3FC', '#FBBF24', '#4ADE80', '#FCA5A5', '#F472B6'][crc32($label) % 7] }}; --turn: {{ crc32($label) % 360 }}deg;">
-                            <span class="eb-tradition-art" aria-hidden="true"></span>
+                        <a href="{{ route('events.index', ['q' => $label]) }}" class="eb-tradition-card{{ $cuisineArt ? ' has-art' : '' }}" style="--tint: {{ ['#C7FF45', '#C4B5FD', '#7DD3FC', '#FBBF24', '#4ADE80', '#FCA5A5', '#F472B6'][crc32($label) % 7] }}; --turn: {{ crc32($label) % 360 }}deg;">
+                            {{-- Illustrated cuisine artwork where one fits the tradition; decorative, the name says what it is. --}}
+                            <span class="eb-tradition-art" aria-hidden="true">@if($cuisineArt)<img src="{{ $cuisineArt['url'] }}" alt="" width="800" height="600" loading="lazy" decoding="async">@endif</span>
                             <span class="eb-tradition-name">{{ $label }}</span>
                             <span class="eb-tradition-count">{{ $count }} {{ \Illuminate\Support\Str::plural('event', $count) }}</span>
                         </a>

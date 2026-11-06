@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Vegetarian and vegan food artwork: a grain bowl with greens, avocado, chickpeas, roasted vegetables and seeds">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#22C55E" stop-opacity="0.35"/><stop offset="1" stop-color="#22C55E" stop-opacity="0"/></radialGradient>
+    <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E2E8F0"/><stop offset="1" stop-color="#64748B"/></linearGradient>
+    <radialGradient id="avo" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ECFCCB"/><stop offset="0.7" stop-color="#A3E635"/><stop offset="1" stop-color="#3F6212"/></radialGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <circle cx="400" cy="320" r="330" fill="url(#glow)"/>
+  <ellipse cx="400" cy="500" rx="300" ry="34" fill="#000" fill-opacity="0.4"/>
+  <path d="M130 300 H670 Q 650 490 400 500 Q 150 490 130 300Z" fill="url(#bowl)"/>
+  <ellipse cx="400" cy="300" rx="270" ry="70" fill="#CBD5E1"/>
+  <ellipse cx="400" cy="304" rx="250" ry="58" fill="#F5F5DC"/>
+  <g fill="#D6C7A1"><circle cx="300" cy="300" r="5"/><circle cx="320" cy="314" r="5"/><circle cx="340" cy="296" r="5"/><circle cx="360" cy="320" r="5"/><circle cx="280" cy="318" r="5"/></g>
+  <g>
+    <path d="M190 300 q20 -50 70 -40 q10 30 -20 50z" fill="#16A34A"/><path d="M220 310 q10 -60 60 -60 q20 30 -10 60z" fill="#22C55E"/><path d="M180 316 q40 -30 80 -10 q-20 30 -80 10z" fill="#15803D"/>
+    <g stroke="#14532D" stroke-width="2" fill="none"><path d="M200 296 q20 -20 50 -30"/><path d="M234 300 q14 -24 40 -40"/></g>
+  </g>
+  <g>
+    <path d="M420 290 c -10 -60, 100 -70, 110 -10 c 6 40, -30 60, -60 56 c -30 -4, -46 -20, -50 -46z" fill="#3F6212"/>
+    <path d="M428 290 c -8 -48, 86 -56, 94 -8 c 4 32, -26 48, -52 44 c -24 -4, -38 -16, -42 -36z" fill="url(#avo)"/>
+    <circle cx="474" cy="290" r="18" fill="#92400E"/><circle cx="468" cy="284" r="5" fill="#F8FAFC" fill-opacity="0.35"/>
+  </g>
+  <g fill="#FCD34D"><circle cx="560" cy="300" r="12"/><circle cx="584" cy="312" r="12"/><circle cx="572" cy="286" r="11"/><circle cx="600" cy="294" r="11"/><circle cx="548" cy="318" r="11"/></g>
+  <g fill="#B45309" fill-opacity="0.35"><circle cx="556" cy="296" r="3"/><circle cx="580" cy="308" r="3"/></g>
+  <g><path d="M300 330 l40 -20 l24 30 l-40 20z" fill="#F97316"/><path d="M360 340 l36 -24 l24 26 l-36 24z" fill="#EA580C"/><path d="M340 300 l30 -16 l18 24 l-30 16z" fill="#7C3AED"/></g>
+  <g fill="#DC2626"><circle cx="520" cy="336" r="14"/><circle cx="548" cy="344" r="12"/></g><g fill="#F8FAFC" fill-opacity="0.45"><circle cx="516" cy="332" r="4"/></g>
+  <g fill="#F8FAFC"><ellipse cx="410" cy="320" rx="4" ry="2"/><ellipse cx="430" cy="330" rx="4" ry="2"/><ellipse cx="450" cy="322" rx="4" ry="2"/><ellipse cx="470" cy="334" rx="4" ry="2"/></g>
+  <g fill="#1E293B"><ellipse cx="420" cy="326" rx="3" ry="2"/><ellipse cx="460" cy="328" rx="3" ry="2"/></g>
+  <path d="M260 360 H540" stroke="#22C55E" stroke-width="8" stroke-opacity="0.8" stroke-linecap="round"/>
+  <g transform="translate(640 150)">
+    <path d="M0 60 C 0 10, 40 -10, 80 0 C 80 40, 50 70, 0 60Z" fill="#22C55E"/>
+    <path d="M0 60 C 20 40, 40 20, 70 6" fill="none" stroke="#14532D" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <g fill="#F8FAFC" fill-opacity="0.75"><path d="M130 140 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/></g>
+</svg>

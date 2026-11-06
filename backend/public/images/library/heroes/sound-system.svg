@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-label="Sound system artwork: a towering wall of speakers sending sound waves into crossing green, gold and violet light beams">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#07111F"/><stop offset="1" stop-color="#0B192B"/></linearGradient>
+    <linearGradient id="beamG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C7FF45" stop-opacity="0"/><stop offset="1" stop-color="#C7FF45" stop-opacity="0.35"/></linearGradient>
+    <linearGradient id="beamY" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBBF24" stop-opacity="0"/><stop offset="1" stop-color="#FBBF24" stop-opacity="0.3"/></linearGradient>
+    <linearGradient id="beamV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0.4"/></linearGradient>
+    <linearGradient id="cab" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#26384D"/><stop offset="1" stop-color="#10243A"/></linearGradient>
+    <radialGradient id="cone" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#364F6B"/><stop offset="0.6" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></radialGradient>
+    <radialGradient id="floor" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.35"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <g id="woofer"><circle r="58" fill="#07111F"/><circle r="52" fill="url(#cone)" stroke="#364F6B" stroke-width="4"/><circle r="18" fill="#26384D"/><circle r="8" fill="#0B192B"/></g>
+    <g id="tweet"><circle r="22" fill="#07111F"/><circle r="18" fill="url(#cone)" stroke="#364F6B" stroke-width="3"/><circle r="6" fill="#26384D"/></g>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <path d="M120 0 L260 0 L560 760 L420 760Z" fill="url(#beamG)" transform="rotate(8 200 0)"/>
+  <path d="M1340 0 L1480 0 L1180 760 L1040 760Z" fill="url(#beamV)" transform="rotate(-8 1400 0)"/>
+  <path d="M740 0 L860 0 L960 760 L640 760Z" fill="url(#beamY)"/>
+  <path d="M420 0 L520 0 L1100 760 L960 760Z" fill="url(#beamV)" opacity="0.6"/>
+  <path d="M1080 0 L1180 0 L640 760 L500 760Z" fill="url(#beamG)" opacity="0.5"/>
+  <ellipse cx="800" cy="780" rx="760" ry="120" fill="url(#floor)"/>
+  <g fill="none" stroke="#C7FF45" stroke-linecap="round">
+    <path d="M330 300 a140 140 0 0 0 0 260" stroke-opacity="0.35" stroke-width="6"/>
+    <path d="M290 270 a190 190 0 0 0 0 320" stroke-opacity="0.22" stroke-width="6"/>
+    <path d="M250 240 a240 240 0 0 0 0 380" stroke-opacity="0.12" stroke-width="6"/>
+    <path d="M1270 300 a140 140 0 0 1 0 260" stroke-opacity="0.35" stroke-width="6"/>
+    <path d="M1310 270 a190 190 0 0 1 0 320" stroke-opacity="0.22" stroke-width="6"/>
+    <path d="M1350 240 a240 240 0 0 1 0 380" stroke-opacity="0.12" stroke-width="6"/>
+  </g>
+  <g>
+    <rect x="380" y="560" width="200" height="200" rx="10" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/><use href="#woofer" x="480" y="660"/>
+    <rect x="380" y="400" width="200" height="160" rx="10" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/><use href="#tweet" x="440" y="480"/><use href="#tweet" x="520" y="480"/>
+    <rect x="1020" y="560" width="200" height="200" rx="10" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/><use href="#woofer" x="1120" y="660"/>
+    <rect x="1020" y="400" width="200" height="160" rx="10" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/><use href="#tweet" x="1080" y="480"/><use href="#tweet" x="1160" y="480"/>
+    <rect x="590" y="500" width="420" height="260" rx="12" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/>
+    <use href="#woofer" x="700" y="630"/><use href="#woofer" x="900" y="630"/>
+    <rect x="590" y="300" width="420" height="200" rx="12" fill="url(#cab)" stroke="#364F6B" stroke-width="3"/>
+    <use href="#tweet" x="660" y="400"/><use href="#tweet" x="740" y="400"/><use href="#tweet" x="860" y="400"/><use href="#tweet" x="940" y="400"/>
+    <rect x="770" y="340" width="60" height="120" rx="8" fill="#07111F"/>
+    <g fill="#C7FF45"><rect x="782" y="430" width="10" height="20" rx="2"/><rect x="796" y="410" width="10" height="40" rx="2"/><rect x="810" y="390" width="10" height="60" rx="2" fill="#FBBF24"/></g>
+  </g>
+  <g fill="#F8FAFC"><path d="M200 140 l6 -16 l6 16 l16 6 l-16 6 l-6 16 l-6 -16 l-16 -6z" fill-opacity="0.7"/><path d="M1400 180 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z" fill-opacity="0.6"/></g>
+  <rect y="790" width="1600" height="110" fill="#07111F" fill-opacity="0.75"/>
+</svg>

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Caribbean food artwork: grilled chicken with rice and peas, fried plantain and a fresh fruit drink">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#F59E0B" stop-opacity="0.4"/><stop offset="1" stop-color="#F59E0B" stop-opacity="0"/></radialGradient>
+    <radialGradient id="plate" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#F8FAFC"/><stop offset="1" stop-color="#CBD5E1"/></radialGradient>
+    <linearGradient id="char" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B45309"/><stop offset="1" stop-color="#451A03"/></linearGradient>
+    <linearGradient id="drink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#F97316"/></linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <circle cx="380" cy="320" r="330" fill="url(#glow)"/>
+  <ellipse cx="370" cy="470" rx="290" ry="40" fill="#000" fill-opacity="0.4"/>
+  <ellipse cx="360" cy="380" rx="290" ry="130" fill="#94A3B8"/>
+  <ellipse cx="360" cy="370" rx="290" ry="130" fill="url(#plate)"/>
+  <ellipse cx="360" cy="370" rx="230" ry="98" fill="none" stroke="#E2E8F0" stroke-width="4"/>
+  <g>
+    <ellipse cx="250" cy="360" rx="120" ry="62" fill="#F8FAFC"/>
+    <g fill="#7C2D12"><circle cx="200" cy="350" r="7"/><circle cx="232" cy="336" r="7"/><circle cx="262" cy="356" r="7"/><circle cx="292" cy="340" r="7"/><circle cx="214" cy="378" r="7"/><circle cx="250" cy="384" r="7"/><circle cx="286" cy="374" r="7"/><circle cx="320" cy="360" r="7"/><circle cx="182" cy="370" r="6"/></g>
+    <g fill="#E2E8F0"><ellipse cx="230" cy="346" rx="10" ry="5"/><ellipse cx="276" cy="366" rx="10" ry="5"/><ellipse cx="300" cy="384" rx="8" ry="4"/></g>
+  </g>
+  <g>
+    <path d="M360 310 c 50 -40, 140 -40, 170 10 c 20 40, -20 80, -90 80 c -70 0, -110 -50, -80 -90z" fill="url(#char)"/>
+    <g stroke="#1C0A00" stroke-width="7" stroke-linecap="round" stroke-opacity="0.8"><path d="M390 330 l40 -26"/><path d="M420 350 l46 -30"/><path d="M450 370 l46 -30"/></g>
+    <g fill="#C7FF45"><circle cx="400" cy="300" r="5"/><circle cx="470" cy="290" r="4"/><circle cx="500" cy="340" r="5"/></g>
+    <path d="M520 360 q30 -20 40 10" fill="none" stroke="#DC2626" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <g>
+    <ellipse cx="420" cy="430" rx="40" ry="18" fill="#F59E0B" transform="rotate(-14 420 430)"/><ellipse cx="420" cy="428" rx="30" ry="11" fill="#FDE68A" transform="rotate(-14 420 428)"/>
+    <ellipse cx="490" cy="420" rx="40" ry="18" fill="#F59E0B" transform="rotate(10 490 420)"/><ellipse cx="490" cy="418" rx="30" ry="11" fill="#FDE68A" transform="rotate(10 490 418)"/>
+    <ellipse cx="350" cy="438" rx="36" ry="16" fill="#D97706" transform="rotate(-4 350 438)"/><ellipse cx="350" cy="436" rx="26" ry="10" fill="#FCD34D" transform="rotate(-4 350 436)"/>
+  </g>
+  <g>
+    <path d="M610 220 h100 l-14 220 h-72z" fill="url(#drink)"/>
+    <path d="M610 220 h100" stroke="#F8FAFC" stroke-opacity="0.6" stroke-width="4"/>
+    <rect x="618" y="236" width="10" height="190" rx="5" fill="#F8FAFC" fill-opacity="0.35"/>
+    <path d="M680 220 L720 120" stroke="#C7FF45" stroke-width="10" stroke-linecap="round"/>
+    <path d="M630 222 a34 34 0 0 1 68 0z" fill="#FDE68A" stroke="#F59E0B" stroke-width="4"/>
+    <path d="M640 210 q24 -60 70 -70 q-20 40 -70 70z" fill="#4D7C0F"/>
+  </g>
+  <g fill="#F8FAFC" fill-opacity="0.75"><path d="M130 130 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/></g>
+</svg>

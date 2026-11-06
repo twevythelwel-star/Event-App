@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="A dashboard panel with rising bars, a trend line and a summary card">
+  <defs>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26384D"/><stop offset="1" stop-color="#10243A"/></linearGradient>
+    <linearGradient id="barL" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C7FF45"/><stop offset="1" stop-color="#65A30D"/></linearGradient>
+    <linearGradient id="barV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.32"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="300" cy="220" r="220" fill="url(#glow)"/>
+  <ellipse cx="300" cy="400" rx="230" ry="26" fill="url(#shadow)"/>
+  <rect x="80" y="80" width="380" height="290" rx="24" fill="#07111F" transform="translate(10 12)"/>
+  <rect x="80" y="80" width="380" height="290" rx="24" fill="url(#panel)" stroke="#364F6B" stroke-width="3"/>
+  <g fill="#F8FAFC" fill-opacity="0.7"><rect x="108" y="104" width="120" height="12" rx="6"/></g>
+  <g fill="#A8B6C8" fill-opacity="0.5"><rect x="108" y="124" width="70" height="8" rx="4"/></g>
+  <g stroke="#364F6B" stroke-width="2"><path d="M108 330 H432"/><path d="M108 280 H432" stroke-dasharray="4 8"/><path d="M108 230 H432" stroke-dasharray="4 8"/><path d="M108 180 H432" stroke-dasharray="4 8"/></g>
+  <g>
+    <rect x="128" y="270" width="36" height="60" rx="8" fill="url(#barV)"/>
+    <rect x="180" y="240" width="36" height="90" rx="8" fill="url(#barV)"/>
+    <rect x="232" y="250" width="36" height="80" rx="8" fill="url(#barV)"/>
+    <rect x="284" y="210" width="36" height="120" rx="8" fill="url(#barL)"/>
+    <rect x="336" y="190" width="36" height="140" rx="8" fill="url(#barL)"/>
+    <rect x="388" y="160" width="36" height="170" rx="8" fill="url(#barL)"/>
+  </g>
+  <path d="M146 250 L198 220 L250 230 L302 186 L354 170 L406 136" fill="none" stroke="#FBBF24" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g fill="#07111F" stroke="#FBBF24" stroke-width="4"><circle cx="146" cy="250" r="7"/><circle cx="250" cy="230" r="7"/><circle cx="354" cy="170" r="7"/><circle cx="406" cy="136" r="9" fill="#FBBF24"/></g>
+  <g transform="rotate(8 470 270)">
+    <rect x="400" y="230" width="150" height="100" rx="16" fill="#3B0764" transform="translate(6 10)"/>
+    <rect x="400" y="230" width="150" height="100" rx="16" fill="url(#card)"/>
+    <rect x="418" y="250" width="60" height="8" rx="4" fill="#F8FAFC" fill-opacity="0.75"/>
+    <rect x="418" y="268" width="96" height="20" rx="6" fill="#F8FAFC"/>
+    <path d="M418 310 l16 -10 l14 6 l20 -16" fill="none" stroke="#C7FF45" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M500 304 l16 -16 m0 0 h-12 m12 0 v12" fill="none" stroke="#C7FF45" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g fill="#F8FAFC"><path d="M520 120 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/><path d="M60 300 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z" fill-opacity="0.7"/></g>
+</svg>

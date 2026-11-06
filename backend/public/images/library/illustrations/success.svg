@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="A large confirmed check mark with a ticket and confetti">
+  <defs>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#22C55E" stop-opacity="0.35"/><stop offset="1" stop-color="#22C55E" stop-opacity="0"/></radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <linearGradient id="disc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#D9F99D"/><stop offset="1" stop-color="#65A30D"/></linearGradient>
+    <linearGradient id="discSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3F6212"/><stop offset="1" stop-color="#1A2E05"/></linearGradient>
+    <linearGradient id="ticket" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#7C3AED"/></linearGradient>
+  </defs>
+  <circle cx="300" cy="210" r="220" fill="url(#glow)"/>
+  <ellipse cx="300" cy="392" rx="190" ry="24" fill="url(#shadow)"/>
+  <g transform="rotate(-14 410 300)">
+    <path d="M330 250 H500 V280 a14 14 0 0 0 0 28 V350 H330 V308 a14 14 0 0 0 0 -28Z" fill="#3B0764" transform="translate(6 10)"/>
+    <path d="M330 250 H500 V280 a14 14 0 0 0 0 28 V350 H330 V308 a14 14 0 0 0 0 -28Z" fill="url(#ticket)"/>
+    <path d="M450 262 V340" stroke="#F5F3FF" stroke-opacity="0.6" stroke-width="3" stroke-dasharray="6 8"/>
+    <rect x="352" y="276" width="76" height="10" rx="5" fill="#F8FAFC" fill-opacity="0.85"/><rect x="352" y="296" width="54" height="8" rx="4" fill="#F8FAFC" fill-opacity="0.55"/><rect x="352" y="314" width="64" height="8" rx="4" fill="#F8FAFC" fill-opacity="0.55"/>
+  </g>
+  <circle cx="270" cy="216" r="120" fill="url(#discSide)"/>
+  <circle cx="270" cy="200" r="120" fill="url(#disc)"/>
+  <circle cx="270" cy="200" r="96" fill="none" stroke="#F8FAFC" stroke-opacity="0.35" stroke-width="4"/>
+  <path d="M220 200 l34 36 l70 -76" fill="none" stroke="#07111F" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M190 150 a96 96 0 0 1 60 -44" fill="none" stroke="#F8FAFC" stroke-opacity="0.6" stroke-width="10" stroke-linecap="round"/>
+  <g>
+    <rect x="90" y="90" width="14" height="14" fill="#8B5CF6" transform="rotate(20 97 97)"/><rect x="460" y="80" width="14" height="14" fill="#FBBF24" transform="rotate(40 467 87)"/>
+    <rect x="120" y="300" width="12" height="12" fill="#FCA5A5" transform="rotate(10 126 306)"/><circle cx="480" cy="190" r="7" fill="#C7FF45"/><circle cx="110" cy="200" r="6" fill="#38BDF8"/>
+    <path d="M420 120 q10 -16 24 -8" fill="none" stroke="#FCA5A5" stroke-width="5" stroke-linecap="round"/><path d="M140 360 q10 -16 24 -8" fill="none" stroke="#C4B5FD" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <g fill="#F8FAFC"><path d="M410 40 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/><path d="M70 140 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z" fill-opacity="0.7"/></g>
+</svg>

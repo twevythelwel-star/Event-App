@@ -578,6 +578,12 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
   background:
     radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--tint) 55%, transparent), transparent 55%),
     repeating-conic-gradient(from var(--turn) at 90% 10%, color-mix(in srgb, var(--tint) 18%, transparent) 0 8deg, transparent 8deg 22deg); }
+/* A tradition with cuisine artwork: the illustration fills the card, with a scrim under the name */
+.eb-tradition-card.has-art { min-height: 150px; }
+.eb-tradition-card.has-art .eb-tradition-art { opacity: 1; background: var(--color-background-secondary); }
+.eb-tradition-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; transition: transform 0.4s ease; }
+.eb-tradition-card.has-art .eb-tradition-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(7, 17, 31, 0.92) 88%); }
+.eb-tradition-card.has-art:hover .eb-tradition-art img, .eb-tradition-card.has-art:focus-visible .eb-tradition-art img { transform: scale(1.05); }
 .eb-tradition-name, .eb-tradition-count { position: relative; z-index: 1; }
 .eb-tradition-name { font-weight: 700; }
 .eb-tradition-count { font-size: var(--text-label-size); color: var(--color-text-secondary); }

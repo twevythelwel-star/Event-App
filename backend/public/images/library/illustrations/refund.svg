@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="A payment card with a circular return arrow and coins coming back">
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26384D"/><stop offset="1" stop-color="#10243A"/></linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#D97706"/></linearGradient>
+    <linearGradient id="coinSide" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B45309"/><stop offset="1" stop-color="#78350F"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#38BDF8" stop-opacity="0.28"/><stop offset="1" stop-color="#38BDF8" stop-opacity="0"/></radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <marker id="head" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#C7FF45"/></marker>
+  </defs>
+  <circle cx="300" cy="220" r="220" fill="url(#glow)"/>
+  <ellipse cx="300" cy="396" rx="220" ry="24" fill="url(#shadow)"/>
+  <path d="M150 140 A170 120 0 0 1 470 150" fill="none" stroke="#C7FF45" stroke-width="12" stroke-linecap="round" marker-start="url(#head)"/>
+  <path d="M470 330 A170 120 0 0 1 150 320" fill="none" stroke="#C7FF45" stroke-opacity="0.45" stroke-width="12" stroke-linecap="round" stroke-dasharray="2 22"/>
+  <g transform="rotate(-8 260 260)">
+    <rect x="150" y="190" width="230" height="146" rx="18" fill="#07111F" transform="translate(8 12)"/>
+    <rect x="150" y="190" width="230" height="146" rx="18" fill="url(#card)" stroke="#364F6B" stroke-width="3"/>
+    <rect x="150" y="220" width="230" height="26" fill="#07111F" fill-opacity="0.6"/>
+    <rect x="172" y="266" width="44" height="32" rx="6" fill="#FDE68A"/>
+    <rect x="232" y="272" width="110" height="10" rx="5" fill="#F8FAFC" fill-opacity="0.8"/><rect x="232" y="290" width="70" height="8" rx="4" fill="#A8B6C8" fill-opacity="0.55"/>
+  </g>
+  <g>
+    <ellipse cx="440" cy="300" rx="52" ry="14" fill="url(#coinSide)" transform="translate(0 20)"/>
+    <rect x="388" y="290" width="104" height="30" fill="url(#coinSide)"/>
+    <ellipse cx="440" cy="290" rx="52" ry="14" fill="url(#coin)"/>
+    <ellipse cx="440" cy="268" rx="52" ry="14" fill="url(#coinSide)" transform="translate(0 0)"/>
+    <rect x="388" y="258" width="104" height="10" fill="url(#coinSide)"/>
+    <ellipse cx="440" cy="258" rx="52" ry="14" fill="url(#coin)"/>
+    <circle cx="470" cy="190" r="40" fill="url(#coinSide)" transform="translate(4 6)"/>
+    <circle cx="470" cy="190" r="40" fill="url(#coin)"/>
+    <circle cx="470" cy="190" r="30" fill="none" stroke="#B45309" stroke-opacity="0.5" stroke-width="4"/>
+    <path d="M482 176 a16 14 0 1 0 -6 26 M462 172 v36" fill="none" stroke="#78350F" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g fill="#F8FAFC"><path d="M90 300 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/><path d="M520 90 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z" fill-opacity="0.7"/></g>
+</svg>

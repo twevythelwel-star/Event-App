@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="A bell with an unread badge beside stacked message cards">
+  <defs>
+    <linearGradient id="bell" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C4B5FD"/><stop offset="1" stop-color="#6D28D9"/></linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26384D"/><stop offset="1" stop-color="#10243A"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.32"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="300" cy="220" r="220" fill="url(#glow)"/>
+  <ellipse cx="300" cy="400" rx="220" ry="24" fill="url(#shadow)"/>
+  <g>
+    <rect x="300" y="250" width="240" height="70" rx="16" fill="#07111F" transform="translate(6 8)"/>
+    <rect x="300" y="250" width="240" height="70" rx="16" fill="url(#card)" stroke="#364F6B" stroke-width="3"/>
+    <circle cx="334" cy="285" r="16" fill="#22C55E"/><path d="M326 285 l6 6 l12 -12" fill="none" stroke="#07111F" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="360" y="270" width="120" height="10" rx="5" fill="#F8FAFC" fill-opacity="0.8"/><rect x="360" y="290" width="150" height="8" rx="4" fill="#A8B6C8" fill-opacity="0.5"/>
+    <rect x="320" y="150" width="240" height="70" rx="16" fill="#07111F" transform="translate(6 8)"/>
+    <rect x="320" y="150" width="240" height="70" rx="16" fill="url(#card)" stroke="#364F6B" stroke-width="3"/>
+    <circle cx="354" cy="185" r="16" fill="#FBBF24"/><path d="M354 176 v10 M354 192 v2" stroke="#07111F" stroke-width="4" stroke-linecap="round"/>
+    <rect x="380" y="170" width="110" height="10" rx="5" fill="#F8FAFC" fill-opacity="0.8"/><rect x="380" y="190" width="150" height="8" rx="4" fill="#A8B6C8" fill-opacity="0.5"/>
+  </g>
+  <g transform="rotate(-12 190 230)">
+    <ellipse cx="190" cy="360" rx="90" ry="12" fill="url(#shadow)"/>
+    <path d="M110 320 c 10 -20, 10 -60, 14 -100 c 6 -50, 40 -80, 66 -80 c 26 0, 60 30, 66 80 c 4 40, 4 80, 14 100z" fill="url(#bell)"/>
+    <rect x="100" y="316" width="180" height="20" rx="10" fill="#5B21B6"/>
+    <circle cx="190" cy="350" r="18" fill="#FBBF24"/>
+    <circle cx="190" cy="134" r="12" fill="#5B21B6"/>
+    <path d="M140 260 c 2 -40, 10 -80, 36 -100" fill="none" stroke="#F5F3FF" stroke-opacity="0.6" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <g>
+    <circle cx="262" cy="130" r="30" fill="#07111F" fill-opacity="0.4" transform="translate(3 4)"/>
+    <circle cx="262" cy="130" r="30" fill="#C7FF45"/>
+    <rect x="257" y="114" width="10" height="32" rx="3" fill="#07111F"/>
+  </g>
+  <g fill="none" stroke="#C4B5FD" stroke-width="5" stroke-linecap="round" stroke-opacity="0.7"><path d="M80 170 q-20 40 0 80"/><path d="M58 150 q-30 60 0 120"/></g>
+  <g fill="#F8FAFC"><path d="M520 90 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/></g>
+</svg>

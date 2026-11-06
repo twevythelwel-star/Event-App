@@ -57,6 +57,9 @@
                 @endif
             </div>
 
+            @if($status === 'refunded')
+                <img src="{{ \App\Support\VisualAssets::illustration('refund')['url'] }}" alt="" width="180" height="135" style="display: block; margin: 0 auto; max-width: 60%; height: auto;">
+            @endif
             @unless($void)
                 <div class="eb-ticket-card-tear" style="margin: 0;"></div>
                 <div style="text-align: center;">

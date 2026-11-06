@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Desserts and drinks artwork: a layered cake slice with berries, an ice cream cone and an iced fruit drink">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#F472B6" stop-opacity="0.3"/><stop offset="1" stop-color="#F472B6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sponge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#E5B85C"/></linearGradient>
+    <linearGradient id="choc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#78350F"/><stop offset="1" stop-color="#451A03"/></linearGradient>
+    <linearGradient id="drink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F9A8D4"/><stop offset="1" stop-color="#BE185D"/></linearGradient>
+    <linearGradient id="waffle" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#D4A24C"/><stop offset="1" stop-color="#92400E"/></linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <circle cx="400" cy="320" r="330" fill="url(#glow)"/>
+  <ellipse cx="400" cy="500" rx="320" ry="34" fill="#000" fill-opacity="0.4"/>
+  <ellipse cx="280" cy="470" rx="170" ry="30" fill="#CBD5E1"/><ellipse cx="280" cy="464" rx="170" ry="30" fill="#F8FAFC"/>
+  <g>
+    <path d="M140 300 L380 250 L420 300 L420 450 L140 450Z" fill="url(#sponge)"/>
+    <path d="M380 250 L420 300 L420 450 L380 400Z" fill="#E5B85C"/>
+    <path d="M140 340 H420 V362 H140Z" fill="url(#choc)"/><path d="M140 400 H420 V422 H140Z" fill="url(#choc)"/>
+    <path d="M140 300 L380 250 L420 300Z" fill="#F8FAFC"/>
+    <path d="M140 300 q20 20 40 0 q20 20 40 0 q20 20 40 0 q20 20 40 0 q20 20 40 0 q20 20 40 0 q20 20 40 0" fill="none" stroke="#F8FAFC" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="300" cy="258" r="20" fill="#DC2626"/><circle cx="294" cy="252" r="5" fill="#F8FAFC" fill-opacity="0.5"/><path d="M300 238 q6 -16 18 -18" fill="none" stroke="#4D7C0F" stroke-width="4"/>
+    <circle cx="340" cy="270" r="12" fill="#4338CA"/><circle cx="262" cy="272" r="12" fill="#4338CA"/>
+  </g>
+  <g>
+    <path d="M480 300 L520 460 L560 300Z" fill="url(#waffle)"/>
+    <g stroke="#78350F" stroke-opacity="0.6" stroke-width="3"><path d="M490 320 l50 60"/><path d="M500 300 l50 60"/><path d="M550 320 l-50 60"/><path d="M540 300 l-40 50"/></g>
+    <circle cx="520" cy="280" r="46" fill="#FBCFE8"/><circle cx="500" cy="248" r="34" fill="#FDE68A"/><circle cx="542" cy="244" r="32" fill="#A7F3D0"/>
+    <g fill="#F8FAFC" fill-opacity="0.5"><circle cx="490" cy="240" r="8"/><circle cx="530" cy="236" r="7"/></g>
+    <g><rect x="510" y="270" width="10" height="4" rx="2" fill="#8B5CF6" transform="rotate(30 515 272)"/><rect x="540" y="276" width="10" height="4" rx="2" fill="#C7FF45"/><rect x="500" y="290" width="10" height="4" rx="2" fill="#38BDF8" transform="rotate(-30 505 292)"/></g>
+  </g>
+  <g>
+    <path d="M610 240 h110 l-14 230 h-82z" fill="url(#drink)" fill-opacity="0.9"/>
+    <path d="M610 240 h110" stroke="#F8FAFC" stroke-opacity="0.7" stroke-width="4"/>
+    <g fill="#F8FAFC" fill-opacity="0.6"><rect x="630" y="270" width="26" height="26" rx="5" transform="rotate(14 643 283)"/><rect x="668" y="300" width="26" height="26" rx="5" transform="rotate(-10 681 313)"/><rect x="640" y="330" width="24" height="24" rx="5" transform="rotate(20 652 342)"/></g>
+    <rect x="618" y="254" width="10" height="200" rx="5" fill="#F8FAFC" fill-opacity="0.3"/>
+    <path d="M690 240 L730 130" stroke="#C7FF45" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="616" cy="240" r="26" fill="#FDE047" stroke="#CA8A04" stroke-width="4"/><path d="M616 218 v44 M594 240 h44" stroke="#CA8A04" stroke-width="2"/>
+    <path d="M660 236 q10 -30 34 -30 q-4 24 -34 30z" fill="#22C55E"/>
+  </g>
+  <g fill="#F8FAFC" fill-opacity="0.75"><path d="M120 140 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/><path d="M440 160 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z"/></g>
+</svg>

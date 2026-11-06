@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Asian food artwork: a steaming noodle bowl with chopsticks, dumplings in a bamboo steamer and a cup of tea">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8B5CF6" stop-opacity="0.38"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="bowl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F8FAFC"/><stop offset="1" stop-color="#94A3B8"/></linearGradient>
+    <radialGradient id="broth" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#FBBF24"/><stop offset="1" stop-color="#B45309"/></radialGradient>
+    <linearGradient id="bamboo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D4A24C"/><stop offset="1" stop-color="#92400E"/></linearGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <circle cx="360" cy="320" r="330" fill="url(#glow)"/>
+  <ellipse cx="380" cy="490" rx="320" ry="36" fill="#000" fill-opacity="0.4"/>
+  <g fill="none" stroke="#F8FAFC" stroke-opacity="0.3" stroke-width="10" stroke-linecap="round">
+    <path d="M250 230 C 230 190, 270 170, 250 130"/><path d="M310 220 C 290 180, 330 160, 310 110"/><path d="M370 230 C 350 190, 390 170, 370 130"/>
+  </g>
+  <path d="M130 300 H490 Q 480 470 310 480 Q 140 470 130 300Z" fill="url(#bowl)"/>
+  <path d="M170 380 H450" stroke="#8B5CF6" stroke-width="10" stroke-opacity="0.8"/>
+  <g stroke="#8B5CF6" stroke-width="5" stroke-opacity="0.8" fill="none"><path d="M200 400 l10 10 l10 -10 l10 10 l10 -10"/><path d="M380 400 l10 10 l10 -10 l10 10 l10 -10"/></g>
+  <ellipse cx="310" cy="300" rx="180" ry="44" fill="#E2E8F0"/>
+  <ellipse cx="310" cy="302" rx="164" ry="36" fill="url(#broth)"/>
+  <g fill="none" stroke="#FDE68A" stroke-width="7" stroke-linecap="round"><path d="M180 300 q30 -20 60 0 t60 0 t60 0 t60 0"/><path d="M200 314 q30 -16 60 0 t60 0 t60 0"/></g>
+  <ellipse cx="250" cy="292" rx="30" ry="18" fill="#F8FAFC"/><ellipse cx="250" cy="292" rx="12" ry="9" fill="#FBBF24"/>
+  <g fill="#4D7C0F"><circle cx="330" cy="286" r="6"/><circle cx="350" cy="296" r="6"/><circle cx="370" cy="284" r="6"/></g>
+  <path d="M380 300 q20 -20 46 -4 q-4 18 -46 4z" fill="#FCA5A5"/>
+  <g stroke="#7C2D12" stroke-width="10" stroke-linecap="round"><path d="M360 300 L540 140"/><path d="M380 306 L568 160"/></g>
+  <g>
+    <path d="M520 360 H730 V440 Q 625 470 520 440Z" fill="url(#bamboo)"/>
+    <g stroke="#78350F" stroke-opacity="0.5" stroke-width="4"><path d="M520 380 H730"/><path d="M520 410 H730"/></g>
+    <ellipse cx="625" cy="360" rx="105" ry="30" fill="#FDE68A"/>
+    <g><path d="M560 360 q20 -40 40 0z" fill="#F8FAFC"/><path d="M604 354 q22 -42 44 0z" fill="#F8FAFC"/><path d="M650 360 q20 -40 40 0z" fill="#F8FAFC"/>
+      <g stroke="#CBD5E1" stroke-width="2" fill="none"><path d="M570 340 l10 -8"/><path d="M616 334 l10 -8"/><path d="M660 340 l10 -8"/></g></g>
+  </g>
+  <g>
+    <path d="M600 240 h80 v40 q-40 24 -80 0z" fill="#F8FAFC"/><ellipse cx="640" cy="240" rx="40" ry="10" fill="#4D7C0F"/>
+    <path d="M630 220 C 620 200, 650 190, 640 170" fill="none" stroke="#F8FAFC" stroke-opacity="0.3" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <g fill="#F8FAFC" fill-opacity="0.75"><path d="M120 140 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/></g>
+</svg>

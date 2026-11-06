@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Decorative tiling pattern: faint ticket outlines and dots on navy">
+  <rect width="240" height="240" fill="#07111F"/>
+  <g fill="none" stroke="#26384D" stroke-width="2">
+    <path d="M20 30 H100 V48 a8 8 0 0 0 0 16 V82 H20 V64 a8 8 0 0 0 0 -16Z"/>
+    <path d="M140 150 H220 V168 a8 8 0 0 0 0 16 V202 H140 V184 a8 8 0 0 0 0 -16Z"/>
+    <path d="M76 36 V76 M196 156 V196" stroke-dasharray="3 5"/>
+  </g>
+  <g fill="#26384D"><circle cx="170" cy="56" r="3"/><circle cx="60" cy="176" r="3"/><circle cx="120" cy="120" r="2"/><circle cx="220" cy="100" r="2"/><circle cx="20" cy="130" r="2"/></g>
+  <g fill="#C7FF45" fill-opacity="0.18"><circle cx="170" cy="56" r="1.5"/><circle cx="60" cy="176" r="1.5"/></g>
+</svg>

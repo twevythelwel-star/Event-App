@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" role="img" aria-label="Mediterranean food artwork: a mezze board with hummus, olives, tomatoes, flatbread and grilled skewers">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="1" stop-color="#07111F"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#38BDF8" stop-opacity="0.3"/><stop offset="1" stop-color="#38BDF8" stop-opacity="0"/></radialGradient>
+    <linearGradient id="board" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D6B98C"/><stop offset="1" stop-color="#A47E4E"/></linearGradient>
+    <radialGradient id="hummus" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#FEF3C7"/><stop offset="1" stop-color="#E7C98F"/></radialGradient>
+    <radialGradient id="bread" cx="0.5" cy="0.4" r="0.6"><stop offset="0" stop-color="#FDE68A"/><stop offset="1" stop-color="#C8902E"/></radialGradient>
+  </defs>
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <circle cx="400" cy="320" r="330" fill="url(#glow)"/>
+  <ellipse cx="400" cy="490" rx="330" ry="36" fill="#000" fill-opacity="0.4"/>
+  <rect x="80" y="260" width="640" height="210" rx="40" fill="#7C5A2E"/>
+  <rect x="80" y="250" width="640" height="200" rx="40" fill="url(#board)"/>
+  <g stroke="#A47E4E" stroke-opacity="0.5" stroke-width="3"><path d="M120 300 H680"/><path d="M120 400 H680"/></g>
+  <g>
+    <ellipse cx="240" cy="350" rx="100" ry="52" fill="#F8FAFC"/>
+    <ellipse cx="240" cy="346" rx="84" ry="42" fill="url(#hummus)"/>
+    <path d="M190 346 q50 -30 100 0 q-50 24 -100 0z" fill="none" stroke="#D4A24C" stroke-width="5"/>
+    <ellipse cx="240" cy="346" rx="24" ry="10" fill="#CA8A04" fill-opacity="0.7"/>
+    <g fill="#DC2626"><circle cx="220" cy="336" r="3"/><circle cx="262" cy="352" r="3"/><circle cx="250" cy="332" r="2.5"/></g>
+    <g fill="#65A30D"><circle cx="232" cy="356" r="3"/><circle cx="270" cy="340" r="3"/></g>
+  </g>
+  <g>
+    <ellipse cx="420" cy="320" rx="56" ry="28" fill="#F8FAFC"/>
+    <g fill="#3F6212"><ellipse cx="400" cy="314" rx="12" ry="9"/><ellipse cx="426" cy="308" rx="12" ry="9"/><ellipse cx="440" cy="322" rx="12" ry="9"/><ellipse cx="412" cy="328" rx="12" ry="9"/></g>
+    <g fill="#1E1B4B"><ellipse cx="452" cy="312" rx="11" ry="8"/><ellipse cx="390" cy="326" rx="11" ry="8"/></g>
+    <g fill="#F8FAFC" fill-opacity="0.4"><circle cx="404" cy="311" r="3"/><circle cx="430" cy="305" r="3"/></g>
+  </g>
+  <g>
+    <circle cx="440" cy="400" r="22" fill="#DC2626"/><circle cx="476" cy="410" r="20" fill="#EF4444"/><circle cx="410" cy="414" r="18" fill="#DC2626"/>
+    <g fill="#F8FAFC" fill-opacity="0.45"><circle cx="434" cy="394" r="5"/><circle cx="470" cy="404" r="4"/></g>
+    <g fill="#4D7C0F"><path d="M440 380 l-6 -8 l12 0z"/><path d="M476 392 l-6 -8 l12 0z"/></g>
+  </g>
+  <g>
+    <path d="M520 400 a70 70 0 0 1 140 -40 a70 70 0 0 1 -60 90 z" fill="url(#bread)"/>
+    <path d="M560 420 a60 60 0 0 1 120 -50 a60 60 0 0 1 -50 80 z" fill="url(#bread)"/>
+    <g fill="#B45309" fill-opacity="0.45"><circle cx="590" cy="400" r="4"/><circle cx="620" cy="380" r="4"/><circle cx="640" cy="410" r="4"/></g>
+  </g>
+  <g transform="rotate(-10 450 220)">
+    <rect x="270" y="216" width="360" height="8" rx="4" fill="#A8B6C8"/>
+    <rect x="300" y="196" width="40" height="46" rx="10" fill="#92400E"/><rect x="346" y="200" width="34" height="38" rx="8" fill="#DC2626"/><rect x="386" y="196" width="40" height="46" rx="10" fill="#92400E"/><rect x="432" y="200" width="34" height="38" rx="8" fill="#65A30D"/><rect x="472" y="196" width="40" height="46" rx="10" fill="#92400E"/><rect x="518" y="200" width="34" height="38" rx="8" fill="#FBBF24"/>
+  </g>
+  <g transform="translate(140 180) rotate(-30)"><path d="M0 0 q20 -14 40 0 q-20 14 -40 0z" fill="#65A30D"/><path d="M0 0 h40" stroke="#3F6212" stroke-width="2"/></g>
+  <g fill="#F8FAFC" fill-opacity="0.75"><path d="M660 140 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/></g>
+</svg>

@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" role="img" aria-label="A folded map with event pins under a magnifying glass">
+  <defs>
+    <linearGradient id="map" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#26384D"/><stop offset="1" stop-color="#10243A"/></linearGradient>
+    <linearGradient id="mapB" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1C3350"/><stop offset="1" stop-color="#0B192B"/></linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#C7FF45" stop-opacity="0.3"/><stop offset="1" stop-color="#C7FF45" stop-opacity="0"/></radialGradient>
+    <radialGradient id="shadow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#000" stop-opacity="0.45"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <radialGradient id="lens" cx="0.4" cy="0.35" r="0.7"><stop offset="0" stop-color="#F8FAFC" stop-opacity="0.35"/><stop offset="1" stop-color="#C4B5FD" stop-opacity="0.08"/></radialGradient>
+    <g id="pin"><path d="M0 0 c-18 0 -30 -14 -30 -30 a30 30 0 0 1 60 0 c0 16 -12 30 -30 30z M0 0 l-10 -10 h20z"/><circle cx="0" cy="-30" r="11" fill="#07111F"/></g>
+  </defs>
+  <circle cx="300" cy="220" r="220" fill="url(#glow)"/>
+  <ellipse cx="300" cy="398" rx="230" ry="26" fill="url(#shadow)"/>
+  <g>
+    <path d="M90 140 L220 110 L350 140 L480 110 L510 360 L380 390 L250 360 L120 390Z" fill="#07111F" transform="translate(8 10)"/>
+    <path d="M90 140 L220 110 L250 360 L120 390Z" fill="url(#map)"/>
+    <path d="M220 110 L350 140 L380 390 L250 360Z" fill="url(#mapB)"/>
+    <path d="M350 140 L480 110 L510 360 L380 390Z" fill="url(#map)"/>
+    <path d="M110 300 C 180 260, 230 320, 300 270 S 420 220, 490 250" fill="none" stroke="#C7FF45" stroke-opacity="0.55" stroke-width="5" stroke-dasharray="2 12" stroke-linecap="round"/>
+    <path d="M100 200 C 200 220, 300 180, 500 190" fill="none" stroke="#364F6B" stroke-width="10"/>
+    <path d="M300 130 C 290 230, 320 300, 310 380" fill="none" stroke="#364F6B" stroke-width="8"/>
+    <g fill="#22C55E" fill-opacity="0.35"><ellipse cx="180" cy="320" rx="40" ry="20"/><ellipse cx="440" cy="300" rx="34" ry="18"/></g>
+  </g>
+  <use href="#pin" x="160" y="270" fill="#8B5CF6"/>
+  <use href="#pin" x="440" y="240" fill="#FBBF24"/>
+  <use href="#pin" x="300" y="200" fill="#C7FF45"/>
+  <g>
+    <rect x="410" y="300" width="26" height="110" rx="12" fill="#26384D" transform="rotate(-42 423 355)"/>
+    <circle cx="350" cy="250" r="86" fill="#07111F" fill-opacity="0.25"/>
+    <circle cx="350" cy="250" r="78" fill="url(#lens)" stroke="#C4B5FD" stroke-width="14"/>
+    <path d="M305 215 a56 56 0 0 1 50 -26" fill="none" stroke="#F8FAFC" stroke-opacity="0.7" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g fill="#F8FAFC"><path d="M110 80 l5 -13 l5 13 l13 5 l-13 5 l-5 13 l-5 -13 l-13 -5z"/><path d="M520 70 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4z" fill-opacity="0.7"/></g>
+</svg>
