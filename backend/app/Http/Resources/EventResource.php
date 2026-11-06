@@ -20,6 +20,10 @@ class EventResource extends JsonResource
         $eventMedia = $this->resource->relationLoaded('mediaItems')
             ? collect($this->resource->mediaItems)
             : $this->resource->mediaItems()->get();
+        // Images an administrator hid are listed only to the host's own event management, which can see them.
+        if (!$request->routeIs('api.host.*')) {
+            $eventMedia = $eventMedia->reject(fn ($media) => $media->isHidden())->values();
+        }
         $currency = strtoupper((string) ($this->currency ?: 'USD'));
         $foodServiceFee = \App\Support\Money::ofMinor((int) $this->food_service_fee_minor, $currency)->toMajorNumber();
         $packagePrice = fn (int $minor) => \App\Support\Money::ofMinor($minor, $currency)->toMajorNumber();
@@ -213,15 +217,10 @@ class EventResource extends JsonResource
             'flyerThumbnailUrl' => MediaStorageService::isStoredPath($this->flyer_thumbnail_path)
                 ? "/api/v1/media/events/{$this->id}/flyer?variant=thumbnail&v=" . substr(sha1($this->flyer_thumbnail_path), 0, 10)
                 : ($this->flyer_path ?? null),
-            'flyerSmallUrl' => MediaStorageService::isStoredPath($this->flyer_thumbnail_path)
-                ? "/api/v1/media/events/{$this->id}/flyer?variant=small&v=" . substr(sha1($this->flyer_thumbnail_path), 0, 10)
-                : null,
-            'flyerMediumUrl' => MediaStorageService::isStoredPath($this->flyer_thumbnail_path)
-                ? "/api/v1/media/events/{$this->id}/flyer?variant=medium&v=" . substr(sha1($this->flyer_thumbnail_path), 0, 10)
-                : null,
-            'flyerLargeUrl' => MediaStorageService::isStoredPath($this->flyer_thumbnail_path)
-                ? "/api/v1/media/events/{$this->id}/flyer?variant=large&v=" . substr(sha1($this->flyer_thumbnail_path), 0, 10)
-                : null,
+            'flyerSmallUrl' => $this->variantUrl("/api/v1/media/events/{$this->id}/flyer", $this->flyer_variants, 'small'),
+            'flyerMediumUrl' => $this->variantUrl("/api/v1/media/events/{$this->id}/flyer", $this->flyer_variants, 'medium'),
+            'flyerLargeUrl' => $this->variantUrl("/api/v1/media/events/{$this->id}/flyer", $this->flyer_variants, 'large'),
+            'flyerAvifUrl' => $this->variantUrl("/api/v1/media/events/{$this->id}/flyer", $this->flyer_variants, 'large', 'avif'),
             'flyerAltText' => $this->flyer_alt_text ?? ($this->title ? $this->title . ' event flyer' : 'Event flyer'),
             'flyerPositionX' => (int) ($this->flyer_position_x ?? 50),
             'flyerPositionY' => (int) ($this->flyer_position_y ?? 50),
@@ -233,6 +232,8 @@ class EventResource extends JsonResource
                 'smallThumbnailUrl' => $media->small_thumbnail_path ? "/api/v1/media/event-media/{$media->id}?variant=small&v=" . substr(sha1($media->small_thumbnail_path), 0, 10) : null,
                 'mediumThumbnailUrl' => $media->medium_thumbnail_path ? "/api/v1/media/event-media/{$media->id}?variant=medium&v=" . substr(sha1($media->medium_thumbnail_path), 0, 10) : null,
                 'largeThumbnailUrl' => $media->large_thumbnail_path ? "/api/v1/media/event-media/{$media->id}?variant=large&v=" . substr(sha1($media->large_thumbnail_path), 0, 10) : null,
+                'avifUrl' => $this->variantUrl("/api/v1/media/event-media/{$media->id}", $media->variants, 'large', 'avif'),
+                'moderationStatus' => $media->moderation_status ?? 'approved',
                 'altText' => $media->alt_text,
                 'width' => (int) $media->width,
                 'height' => (int) $media->height,
@@ -251,5 +252,13 @@ class EventResource extends JsonResource
             'isFlyerPublic' => $this->is_flyer_public,
             'menu' => MenuItemResource::collection($menuItems->reject(fn ($item) => $item->isPackage())->values()),
         ];
+    }
+
+    /** A versioned link to one stored variant (size and format) of an image, or null when it was not made. */
+    private function variantUrl(string $base, ?array $variants, string $size, string $format = 'webp'): ?string
+    {
+        $path = $variants[$size][$format] ?? null;
+
+        return $path ? "{$base}?variant={$size}&format={$format}&v=" . substr(sha1($path), 0, 10) : null;
     }
 }

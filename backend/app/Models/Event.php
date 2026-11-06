@@ -82,6 +82,8 @@ class Event extends Model
         'traditions',
         'flyer_path',
         'flyer_thumbnail_path',
+        'flyer_variants',
+        'flyer_moderation_status',
         'flyer_alt_text',
         'flyer_position_x',
         'flyer_position_y',
@@ -151,6 +153,11 @@ class Event extends Model
         'expected_attendance' => 'integer',
         'payment_methods' => 'array',
         'flyer_size_bytes' => 'integer',
+        'flyer_variants' => 'array',
+        'vendor_applications_open' => 'boolean',
+        'allow_ticket_transfers' => 'boolean',
+        'waitlist_enabled' => 'boolean',
+        'vendor_applications_close_at' => 'datetime',
         'flyer_width' => 'integer',
         'flyer_height' => 'integer',
         'flyer_position_x' => 'integer',
@@ -304,10 +311,13 @@ class Event extends Model
     public function getDisplayImageUrlAttribute(): string
     {
         $path = (string) ($this->flyer_path ?? '');
-        if (\App\Services\MediaStorageService::isStoredPath($path)) {
-            return route('api.media.flyer', $this->id);
+        if (\App\Services\MediaStorageService::isStoredPath($path) && !$this->flyerIsHidden()) {
+            // Versioned by the stored file, so a replaced flyer is fetched afresh.
+            return route('api.media.flyer', ['eventId' => $this->id, 'v' => substr(sha1($path), 0, 10)]);
         }
-        if (str_starts_with($path, '/images/') || str_starts_with($path, 'https://')) {
+        // A host's linked artwork is theirs; a bundled stock photo is never an event's cover (ImageSubjects), so an
+        // event without its own flyer is shown by artwork made from its own details instead.
+        if (str_starts_with($path, 'https://')) {
             return $path;
         }
 
@@ -327,8 +337,54 @@ class Event extends Model
     public function hasFlyer(): bool
     {
         $path = (string) ($this->flyer_path ?? '');
+        if (\App\Services\MediaStorageService::isStoredPath($path)) {
+            return !$this->flyerIsHidden();
+        }
 
-        return $path !== '' && (\App\Services\MediaStorageService::isStoredPath($path) || str_starts_with($path, '/images/') || str_starts_with($path, 'https://'));
+        // Only the host's own artwork counts as a flyer; a bundled photo of some other event never does.
+        return str_starts_with($path, 'https://');
+    }
+
+    /** Whether an administrator hid the uploaded flyer (moderation); the generated flyer shows in its place. */
+    public function flyerIsHidden(): bool
+    {
+        return ($this->flyer_moderation_status ?? 'approved') === 'hidden';
+    }
+
+    /** The event's cover (its flyer, or the generated artwork) as a responsive image. */
+    public function coverImage(): \App\Support\ResponsiveImage
+    {
+        return \App\Support\ResponsiveImage::forEventCover($this);
+    }
+
+    /**
+     * The event's gallery photos people may see: approved ones, in the host's order.
+     *
+     * @return \Illuminate\Support\Collection<int, EventMedia>
+     */
+    public function visibleGallery(): \Illuminate\Support\Collection
+    {
+        $media = $this->relationLoaded('mediaItems') ? $this->mediaItems : $this->mediaItems()->get();
+
+        return $media->where('media_type', 'gallery')->where('moderation_status', '!=', 'hidden')->values();
+    }
+
+    /** The schedule: activities in time order. */
+    public function activities(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EventActivity::class)->orderBy('starts_at');
+    }
+
+    /** The stages and places activities happen at. */
+    public function stages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EventStage::class)->orderBy('sort_order');
+    }
+
+    /** The DJs, performers, bands, speakers and hosts on the bill. */
+    public function performers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(EventPerformer::class)->orderBy('sort_order');
     }
 
     public function mediaItems(): \Illuminate\Database\Eloquent\Relations\HasMany

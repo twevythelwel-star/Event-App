@@ -77,6 +77,47 @@
         </div>
     </form>
 
+    @include('events.partials.photo-gallery-manager', ['event' => $event])
+
+    @php $scheduleCount = $event->activities()->count(); $lineupCount = $event->performers()->count(); @endphp
+    <section class="eb-panel card" style="margin: 0;" id="event-schedule" aria-labelledby="event-schedule-heading">
+        <div class="eb-card-header card-header"><div>
+            <h2 id="event-schedule-heading" class="eb-card-title card-title">Schedule & line-up</h2>
+            <p class="eb-card-subtitle card-subtitle">{{ $scheduleCount }} {{ \Illuminate\Support\Str::plural('activity', $scheduleCount) }} · {{ $lineupCount }} on the line-up. Plan performances, DJ sets, speakers, food service and stages; attendees see the public schedule on the event page.</p>
+        </div></div>
+        <p style="margin: 0;"><a class="eb-btn eb-btn-secondary eb-btn-sm" href="{{ route('events.schedule-studio', $event->id) }}">Open schedule studio</a></p>
+    </section>
+
+    @php $seating = app(\App\Services\Events\SeatingService::class); $planAreas = $seating->areas($event)->count(); @endphp
+    <section class="eb-panel card" style="margin: 0;" id="event-venue" aria-labelledby="event-venue-heading">
+        <div class="eb-card-header card-header"><div>
+            <h2 id="event-venue-heading" class="eb-card-title card-title">Venue & seating</h2>
+            <p class="eb-card-subtitle card-subtitle">{{ $planAreas }} {{ \Illuminate\Support\Str::plural('area', $planAreas) }} on the plan · seat selection {{ $seating->seatSelectionOpen($event) ? 'on' : 'off' }}. Lay out admission areas, VIP sections, tables, seats, food stations, vendor booths and restricted areas.</p>
+        </div></div>
+        <p style="margin: 0;"><a class="eb-btn eb-btn-secondary eb-btn-sm" href="{{ route('events.venue-designer', $event->id) }}">Open venue designer</a></p>
+    </section>
+
+    @php
+        $codeCount = \App\Models\DiscountCode::where('event_id', $event->id)->count();
+        $waiting = \App\Models\WaitlistEntry::where('event_id', $event->id)->where('status', 'waiting')->count();
+    @endphp
+    <section class="eb-panel card" style="margin: 0;" id="event-ticketing" aria-labelledby="event-ticketing-heading">
+        <div class="eb-card-header card-header"><div>
+            <h2 id="event-ticketing-heading" class="eb-card-title card-title">Smarter ticketing</h2>
+            <p class="eb-card-subtitle card-subtitle">{{ $codeCount }} discount {{ \Illuminate\Support\Str::plural('code', $codeCount) }} · {{ $waiting }} on the waitlist. Price steps, early-bird and group prices, limited releases, bundles, codes, promoters, complimentary tickets, transfers and waitlists.</p>
+        </div></div>
+        <p style="margin: 0;"><a class="eb-btn eb-btn-secondary eb-btn-sm" href="{{ route('events.ticketing', $event->id) }}">Open ticketing</a></p>
+    </section>
+
+    @php $pendingApps = \App\Models\VendorApplication::where('event_id', $event->id)->where('status', 'pending')->count(); $sponsorCount = \App\Models\EventSponsor::where('event_id', $event->id)->count(); @endphp
+    <section class="eb-panel card" style="margin: 0;" id="event-partners" aria-labelledby="event-partners-heading">
+        <div class="eb-card-header card-header"><div>
+            <h2 id="event-partners-heading" class="eb-card-title card-title">Vendors & sponsors</h2>
+            <p class="eb-card-subtitle card-subtitle">Applications {{ $event->vendor_applications_open ? 'open' : 'closed' }} · {{ $pendingApps }} waiting for a decision · {{ $sponsorCount }} {{ \Illuminate\Support\Str::plural('sponsor', $sponsorCount) }}. Invite vendors and exhibitors, sell booths, and credit sponsors.</p>
+        </div></div>
+        <p style="margin: 0;"><a class="eb-btn eb-btn-secondary eb-btn-sm" href="{{ route('events.partners', $event->id) }}">Open vendors & sponsors</a></p>
+    </section>
+
     <section class="eb-panel card" style="margin: 0;" id="menu">
         <div class="eb-card-header card-header"><div>
             <h2 class="eb-card-title card-title">Menu ({{ $menu->count() }} items)</h2>
@@ -86,7 +127,10 @@
                       :empty="$menu->isEmpty()" empty-title="No menu items" empty-text="This event does not sell food yet.">
             @foreach($menu as $item)
                 <tr>
-                    <td><div style="font-weight: 600;">{{ $item->name }}</div>@if($item->description)<div class="eb-help-text">{{ \Illuminate\Support\Str::limit($item->description, 90) }}</div>@endif</td>
+                    <td><div class="eb-cluster" style="flex-wrap: nowrap; align-items: flex-start;">
+                        @if($photo = $item->responsiveImage())<x-responsive-image :image="$photo" alt="" sizes="40px" class="eb-option-thumb" width="40" height="40" />@endif
+                        <div><div style="font-weight: 600;">{{ $item->name }}</div>@if($item->description)<div class="eb-help-text">{{ \Illuminate\Support\Str::limit($item->description, 90) }}</div>@endif</div>
+                    </div></td>
                     <td>{{ ucfirst((string) $item->category) }}</td>
                     <td class="eb-table-num">{{ $item->price_usd !== null ? '$' . number_format((float) $item->price_usd, 2) : '—' }}</td>
                     <td><span class="eb-badge {{ $item->is_active ? 'eb-badge-success' : '' }}">{{ $item->is_active ? 'On sale' : 'Hidden' }}</span></td>

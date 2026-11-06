@@ -58,17 +58,19 @@ class BladeComponentsTest extends TestCase
 
     public function test_event_card_links_the_whole_card_and_uses_safe_image_urls(): void
     {
+        // A bundled dish photo is never an event's cover: the event is shown by artwork made from its own details.
         $event = $this->event(['flyer_path' => '/images/escovitch_fish.jpg']);
         $this->blade('<x-event-card :event="$event" price="From J$2,000.00" />', ['event' => $event])
             ->assertSee('Component Night')
             ->assertSee(route('events.show', $event->id), false)
-            ->assertSee('/images/escovitch_fish.jpg', false)
+            ->assertDontSee('/images/escovitch_fish.jpg', false)
+            ->assertSee(route('events.generated-flyer', $event->id), false)
             ->assertSee('From J$2,000.00')
             ->assertDontSee('Ordering closed');
 
         $uploaded = $this->event(['flyer_path' => 'tenants/abc/flyers/x.jpg', 'is_ordering_open' => false]);
         $this->blade('<x-event-card :event="$event" />', ['event' => $uploaded])
-            ->assertSee(route('api.media.flyer', $uploaded->id), false)
+            ->assertSee('/api/v1/media/events/' . $uploaded->id . '/flyer', false)
             ->assertDontSee('tenants/abc/flyers/x.jpg', false)
             ->assertSee('Ordering closed');
     }

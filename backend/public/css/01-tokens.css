@@ -121,6 +121,12 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+
+  /* Image ratios: one shape per kind of image, everywhere it appears */
+  --ratio-banner: 21 / 9;   /* wide headers: event page banner, ticket header */
+  --ratio-event: 16 / 10;   /* event covers: cards, the homepage feature, review */
+  --ratio-photo: 4 / 3;     /* food and gallery photos */
+  --ratio-square: 1 / 1;    /* thumbnails */
   --radius-xl: 22px;
   --radius-pill: 9999px;
 

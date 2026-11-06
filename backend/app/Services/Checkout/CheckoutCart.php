@@ -47,6 +47,25 @@ final class CheckoutCart
         $this->session->put($this->sessionKey($event), $cart);
     }
 
+    /**
+     * The seats chosen for seated ticket types (held only when the order is placed).
+     *
+     * @param list<string> $seatIds
+     */
+    public function setSeats(Event $event, array $seatIds): void
+    {
+        $cart = $this->get($event);
+        $cart['seats'] = array_values(array_unique(array_map('strval', $seatIds)));
+        $this->session->put($this->sessionKey($event), $cart);
+    }
+
+    public function setDiscountCode(Event $event, ?string $code): void
+    {
+        $cart = $this->get($event);
+        $cart['discount_code'] = $code;
+        $this->session->put($this->sessionKey($event), $cart);
+    }
+
     /** @param array<string, array> $items */
     public function setItems(Event $event, array $items): void
     {

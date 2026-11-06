@@ -37,17 +37,52 @@ class CheckoutController extends Controller
         if ($blocked = $this->blocked($event)) {
             return $blocked;
         }
-        $tiers = TicketTierCatalog::sellable($event);
+        $tiers = TicketTierCatalog::sellable($event, $request->user()->id);
         if ($tiers === []) {
             return redirect()->route('checkout.food', $event);
         }
+        // Tickets held for this buyer (while checking out, or offered from the waitlist) and their waitlist places.
+        $holds = \App\Services\Checkout\TicketInventory::holdsOf($event, $request->user()->id);
+        $waitlist = \App\Models\WaitlistEntry::where('event_id', $event->id)->where('user_id', $request->user()->id)
+            ->whereIn('status', ['waiting', 'offered'])->get()->keyBy('ticket_tier_id');
+
+        $seating = app(\App\Services\Events\SeatingService::class);
+        $seatSelection = $seating->seatSelectionOpen($event);
 
         return view('checkout.tickets', [
             'event' => $event,
             'tiers' => $tiers,
+            'seatSelection' => $seatSelection,
+            'seatMap' => $seatSelection ? $seating->seatMap($event) : collect(),
+            'seatedTiers' => $seatSelection ? $seating->seatedTierIds($event) : [],
+            'venue' => $seatSelection ? $seating->layout($event) : null,
+            'venueAreas' => $seatSelection ? $seating->areas($event) : collect(),
             'cart' => $this->cart($request)->get($event),
             'steps' => $this->steps($event),
+            'holds' => $holds,
+            'waitlist' => $waitlist,
+            'holdMinutes' => \App\Services\Checkout\TicketInventory::holdMinutes(),
         ]);
+    }
+
+    /** Joins the waitlist for a sold-out ticket type. */
+    public function joinWaitlist(Request $request, Event $event): RedirectResponse
+    {
+        $data = $request->validate(['tier_id' => ['required', 'string', 'max:64'], 'quantity' => ['required', 'integer', 'min:1', 'max:20']]);
+        try {
+            app(\App\Services\Checkout\WaitlistService::class)->join($request->user(), $event, $data['tier_id'], (int) $data['quantity']);
+        } catch (OrderPlacementException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('status', "You're on the waitlist. If tickets come free, they are held for you and you get a notice in EventBite.");
+    }
+
+    public function leaveWaitlist(Request $request, Event $event, string $entryId): RedirectResponse
+    {
+        app(\App\Services\Checkout\WaitlistService::class)->leave($request->user(), $entryId);
+
+        return back()->with('status', 'You left the waitlist.');
     }
 
     public function saveTickets(Request $request, Event $event): RedirectResponse
@@ -58,16 +93,35 @@ class CheckoutController extends Controller
         $data = $request->validate([
             'tiers' => ['nullable', 'array'],
             'tiers.*' => ['integer', 'min:0', 'max:100'],
+            'seats' => ['nullable', 'array', 'max:100'],
+            'seats.*' => ['string', 'max:64'],
         ]);
 
-        $sellable = collect(TicketTierCatalog::sellable($event))->keyBy('id');
+        $sellable = collect(TicketTierCatalog::sellable($event, $request->user()->id))->keyBy('id');
         $chosen = [];
         foreach ($data['tiers'] ?? [] as $tierId => $quantity) {
             if ((int) $quantity > 0 && $sellable->has((string) $tierId)) {
                 $chosen[(string) $tierId] = (int) $quantity;
             }
         }
+        // Seated ticket types need one free seat per ticket; checked now, and again under a lock when the order is placed.
+        $seating = app(\App\Services\Events\SeatingService::class);
+        $seats = [];
+        if ($seating->seatSelectionOpen($event)) {
+            try {
+                $seats = array_merge(...array_values($seating->validateChoice($event, $chosen, (array) ($data['seats'] ?? [])))) ?: [];
+            } catch (OrderPlacementException $e) {
+                return back()->withInput()->withErrors(['seats' => $e->getMessage()]);
+            }
+        }
+        // Hold the chosen tickets for a few minutes so they are not sold to someone else while the buyer finishes.
+        try {
+            \App\Services\Checkout\TicketInventory::hold($event, $request->user()->id, $chosen);
+        } catch (OrderPlacementException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
         $this->cart($request)->setTiers($event, $chosen);
+        $this->cart($request)->setSeats($event, $seats);
 
         return redirect()->route($this->hasFood($event) ? 'checkout.food' : 'checkout.review', $event);
     }
@@ -179,11 +233,36 @@ class CheckoutController extends Controller
 
         return view('checkout.review', [
             'event' => $event,
-            'quote' => $this->quotes->quote($event, $cart->get($event)),
+            'quote' => $this->quotes->quote($event, $cart->get($event), $request->user()->id),
+            'holds' => \App\Services\Checkout\TicketInventory::holdsOf($event, $request->user()->id),
             'methods' => PaymentOptions::forEvent($event),
             'steps' => $this->steps($event),
             'backRoute' => $this->hasFood($event) ? 'checkout.food' : 'checkout.tickets',
         ]);
+    }
+
+    /** Applies a discount code to the buyer's order (checked now, and again when the order is placed). */
+    public function applyCode(Request $request, Event $event): RedirectResponse
+    {
+        $data = $request->validate(['discount_code' => ['required', 'string', 'max:40']]);
+        $cart = $this->cart($request);
+        $contents = $cart->get($event);
+        $lines = $this->quotes->quote($event, array_diff_key($contents, ['discount_code' => true]), $request->user()->id)['lines'];
+        try {
+            $discount = \App\Services\Checkout\DiscountService::find($event, $data['discount_code'], $lines, $request->user()->id);
+        } catch (OrderPlacementException $e) {
+            return back()->withErrors(['discount_code' => $e->getMessage()]);
+        }
+        $cart->setDiscountCode($event, $discount->code);
+
+        return back()->with('status', "Code {$discount->code} applied: " . $discount->summary($event->currency ?: 'USD') . '.');
+    }
+
+    public function removeCode(Request $request, Event $event): RedirectResponse
+    {
+        $this->cart($request)->setDiscountCode($event, null);
+
+        return back()->with('status', 'Code removed.');
     }
 
     public function place(Request $request, Event $event): RedirectResponse
@@ -210,7 +289,7 @@ class CheckoutController extends Controller
                 ->with('error', 'Your order expired before it was placed. Choose your tickets or food again.');
         }
         $contents = $cart->get($event);
-        $quote = $this->quotes->quote($event, $contents);
+        $quote = $this->quotes->quote($event, $contents, $request->user()->id);
 
         if ($quote['problems'] !== []) {
             return back()->withInput()->with('error', implode(' ', $quote['problems']));
@@ -230,6 +309,10 @@ class CheckoutController extends Controller
             'items' => $this->quotes->toOrderItems($contents),
             'food' => (array) ($contents['food'] ?? []),
             'idempotency_key' => $contents['key'],
+            'seats' => (array) ($contents['seats'] ?? []),
+            'discount_code' => $contents['discount_code'] ?? null,
+            // The promoter whose link brought the buyer to this event (remembered for this session).
+            'affiliate_id' => $request->session()->get("affiliate.{$event->id}"),
         ], $request->user());
 
         if (!$result['success']) {

@@ -52,6 +52,57 @@
         </section>
     </div>
 
+    @php
+        // Every image the host uploaded for this event, for review. Bundled sample images are not host content.
+        $images = collect();
+        if (\App\Services\MediaStorageService::isStoredPath($event->flyer_path)) {
+            $images->push(['kind' => 'flyer', 'id' => null, 'label' => 'Flyer', 'alt' => $event->flyer_alt_text,
+                'url' => route('api.media.flyer', ['eventId' => $event->id, 'variant' => 'small']), 'hidden' => $event->flyerIsHidden()]);
+        }
+        foreach ($event->mediaItems()->where('media_type', 'gallery')->orderBy('sort_order')->get() as $media) {
+            $images->push(['kind' => 'gallery', 'id' => $media->id, 'label' => 'Gallery photo', 'alt' => $media->alt_text,
+                'url' => route('api.media.event-media', ['mediaId' => $media->id, 'variant' => 'small']), 'hidden' => $media->isHidden()]);
+        }
+        foreach (\App\Models\MenuItem::withoutGlobalScopes()->where('event_id', $event->id)->whereNull('deleted_at')->whereNotNull('image_path')->get() as $item) {
+            if (\App\Services\MediaStorageService::isStoredPath($item->image_path)) {
+                $images->push(['kind' => 'menu', 'id' => $item->id, 'label' => 'Menu: ' . $item->name, 'alt' => $item->image_alt_text,
+                    'url' => route('api.media.menu-photo', ['itemId' => $item->id, 'variant' => 'small']), 'hidden' => $item->imageIsHidden()]);
+            }
+        }
+    @endphp
+    <section class="ac-card ac-section" aria-labelledby="images-heading" style="margin-top:16px">
+        <div class="ac-card-head"><h2 id="images-heading">Uploaded images ({{ $images->count() }})</h2></div>
+        <div class="ac-card-body">
+            @if($images->isEmpty())
+                <p style="margin:0;color:var(--ac-text-2)">The host has not uploaded any images for this event.</p>
+            @else
+                <p style="margin:0 0 12px;color:var(--ac-text-2)">Hiding an image takes it off public pages without deleting it; the host still sees it, marked, with your reason. Restoring shows it again.</p>
+                <ul class="ac-image-review">
+                    @foreach($images as $image)
+                        <li>
+                            <img src="{{ $image['url'] }}" alt="{{ $image['alt'] ?: $image['label'] }}" loading="lazy" width="160" height="120">
+                            <div><strong>{{ $image['label'] }}</strong>
+                                @if($image['hidden'])<span class="ac-badge danger" style="margin-left:6px">Hidden</span>@endif
+                                <div style="color:var(--ac-text-2);font-size:.85rem">{{ $image['alt'] ?: 'No alt text' }}</div>
+                            </div>
+                            @if($canModerate)
+                                <form method="POST" action="{{ route('admin.console.events.images.moderate', $event->id) }}" class="ac-image-review-form">
+                                    @csrf
+                                    <input type="hidden" name="kind" value="{{ $image['kind'] }}">
+                                    <input type="hidden" name="target_id" value="{{ $image['id'] }}">
+                                    <input type="hidden" name="decision" value="{{ $image['hidden'] ? 'restore' : 'hide' }}">
+                                    <label class="sr-only" for="img-reason-{{ $loop->index }}">Reason</label>
+                                    <input class="ac-input" id="img-reason-{{ $loop->index }}" name="reason" required minlength="5" maxlength="500" placeholder="Reason (audit log)">
+                                    <button class="ac-btn {{ $image['hidden'] ? 'ac-btn-dark' : 'ac-btn-danger' }}" type="submit">{{ $image['hidden'] ? 'Restore' : 'Hide' }}</button>
+                                </form>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </div>
+    </section>
+
     <section class="ac-card ac-section" aria-labelledby="moderation-heading" style="margin-top:16px">
         <div class="ac-card-head"><h2 id="moderation-heading">Moderation</h2></div>
         <div class="ac-card-body">

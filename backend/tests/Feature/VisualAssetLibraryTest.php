@@ -85,7 +85,7 @@ class VisualAssetLibraryTest extends TestCase
         $html = view('components.food-card', ['item' => $item, 'currency' => 'USD', 'layout' => 'card',
             'slot' => new \Illuminate\Support\HtmlString(''), 'attributes' => new \Illuminate\View\ComponentAttributeBag()])->render();
 
-        $this->assertStringContainsString('Photo coming soon', $html);
+        $this->assertStringContainsString('No photo yet', $html);
         $this->assertStringNotContainsString('images/library/cuisines', $html);
     }
 

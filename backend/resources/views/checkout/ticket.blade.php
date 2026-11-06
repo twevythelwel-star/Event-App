@@ -41,7 +41,7 @@
     <article class="eb-ticket-card" aria-labelledby="ticket-title" @if($tickets->isNotEmpty()) data-design="{{ $tierDesign['designStyle'] ?? 'premium_minimal' }}" data-accent="{{ $tierDesign['accentColor'] ?? 'indigo' }}" @endif>
         @if($event)
             <div class="eb-ticket-card-head">
-                <img src="{{ $event->display_image_url }}" alt="">
+                <x-responsive-image :image="$event->coverImage()" alt="" sizes="(min-width: 640px) 560px, 100vw" :eager="true" />
                 <div class="eb-event-card-scrim"></div>
                 <div class="eb-card-chip">@include('components.status-indicator', ['status' => $status])</div>
             </div>
@@ -79,6 +79,13 @@
                 </div>
             @endunless
 
+            @php $orderSeats = app(\App\Services\Events\SeatingService::class)->seatsFor($order); @endphp
+            @if($orderSeats->isNotEmpty())
+                <div class="eb-stack" style="gap: 2px;">
+                    <span class="eb-text-label">{{ \Illuminate\Support\Str::plural('Seat', $orderSeats->count()) }}</span>
+                    <span class="eb-text-ticket-code" style="font-size: 1rem;">{{ $orderSeats->map(fn ($s) => $s->spokenName())->join(' · ') }}</span>
+                </div>
+            @endif
             <div class="eb-ticket-card-tear" style="margin: 0;"></div>
             <x-price-summary
                 :lines="$order->items->map(fn ($item) => ['label' => $item->quantity . ' × ' . $item->name, 'amount_minor' => (int) $item->line_total_minor])->all()"
@@ -102,11 +109,54 @@
             @if(!$void && !$settled && $order->reservation_expires_at)
                 <p class="eb-help-text" style="margin: 0;">Inventory held until {{ $local($order->reservation_expires_at) }}. Complete payment confirmation before this time to keep this reservation.</p>
             @endif
+            @php $ticketSponsors = $event ? app(\App\Services\Events\PartnersService::class)->sponsorsFor($event, 'ticket') : collect(); @endphp
+            @if($ticketSponsors->isNotEmpty())
+                <p class="eb-ticket-sponsors"><span class="eb-text-label">With thanks to</span> {{ $ticketSponsors->pluck('name')->join(' · ') }}</p>
+            @endif
             <div class="eb-ticket-card-brand">
                 <span class="brand-band"><x-brand-logo variant="compact" alt="EventBite ticket" style="width: 112px;" /></span>
             </div>
         </div>
     </article>
+
+    {{-- Transfer: pass paid tickets to someone else (their account, their QR; this QR then stops working). --}}
+    @php
+        $transferable = false;
+        try { app(\App\Services\Checkout\TicketTransferService::class)->assertTransferable($order); $transferable = (int) $order->user_id === (int) auth()->id(); } catch (\App\Services\OrderPlacementException) {}
+        $pendingTransfer = \App\Models\TicketTransfer::where('order_id', $order->id)->where('status', 'pending')->where('expires_at', '>', now())->first();
+    @endphp
+    @if($order->is_complimentary)
+        <p class="eb-help-text" style="text-align: center;">Complimentary ticket from {{ $event?->organizer_name ?: 'the host' }}.</p>
+    @endif
+    @if($transferable || $pendingTransfer)
+        <section class="eb-card eb-checkout-body" aria-labelledby="transfer-heading">
+            <h2 id="transfer-heading" class="eb-text-section-title" style="margin: 0 0 var(--space-2);">Transfer these tickets</h2>
+            @if(session('transfer_link'))
+                <x-alert type="success" title="Send this link to the new holder">
+                    <p style="margin: 0 0 4px;">They open it and sign in with the email you entered. Only you see this link.</p>
+                    <input class="eb-input" readonly value="{{ session('transfer_link') }}" onclick="this.select()" aria-label="Transfer link">
+                </x-alert>
+            @endif
+            @if($pendingTransfer)
+                <form method="POST" action="{{ route('tickets.transfer.cancel', $pendingTransfer->id) }}" class="eb-cluster">
+                    @csrf
+                    <span>Waiting for {{ $pendingTransfer->to_email }} to accept (until {{ $pendingTransfer->expires_at->copy()->setTimezone($tz)->format('M j, g:i A') }}).</span>
+                    <button class="eb-btn eb-btn-ghost eb-btn-sm" type="submit">Cancel transfer</button>
+                </form>
+            @else
+                <p class="eb-text-supporting" style="margin: 0 0 var(--space-3);">The new holder gets a new QR code; this one stops working once they accept.</p>
+                <form method="POST" action="{{ route('tickets.transfer.start', $order) }}" class="eb-cluster" style="align-items: flex-end;">
+                    @csrf
+                    <div class="eb-form-group" style="flex: 1 1 240px; margin: 0;">
+                        <label class="eb-label" for="transfer-email">Their EventBite email</label>
+                        <input class="eb-input" type="email" id="transfer-email" name="email" required maxlength="190">
+                    </div>
+                    <button class="eb-btn eb-btn-secondary" type="submit" onclick="return confirm('Transfer these tickets? Your QR code will stop working once they accept.');">Transfer</button>
+                </form>
+                @error('transfer')<div class="eb-field-error" role="alert"><span>{{ $message }}</span></div>@enderror
+            @endif
+        </section>
+    @endif
 
     @if($awaitingDetails)
         <section class="eb-card eb-checkout-body" aria-labelledby="pay-heading">

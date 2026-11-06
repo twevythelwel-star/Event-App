@@ -30,13 +30,16 @@ final class OrderQuoteService
      * @param array{tiers?: array<string, int>, items?: array<string, array{quantity: int, choices?: array, amount?: string|float|null}>} $cart
      * @return array{currency: string, lines: list<array>, totals: OrderTotals, subtotal: float, fee: float, tax: float, discount: float, total: float, total_minor: int, problems: list<string>, has_food: bool, empty: bool}
      */
-    public function quote(Event $event, array $cart): array
+    public function quote(Event $event, array $cart, ?int $userId = null): array
     {
         $currency = PriceCalculationService::lockAuthoritativeCurrency((string) $event->currency);
         $lines = [];
         $problems = [];
 
-        $tiers = collect(TicketTierCatalog::sellable($event))->keyBy('id');
+        // Availability counts the buyer's own holds as theirs; prices follow steps, early-bird and group prices.
+        $tiers = collect(TicketTierCatalog::sellable($event, $userId))->keyBy('id');
+        $rawTiers = collect(is_array($event->ticket_tiers) ? $event->ticket_tiers : [])->keyBy(fn ($t) => (string) ($t['id'] ?? ''));
+        $menuNames = null;
         foreach ($cart['tiers'] ?? [] as $tierId => $quantity) {
             $quantity = (int) $quantity;
             if ($quantity <= 0) {
@@ -58,7 +61,19 @@ final class OrderQuoteService
             } elseif ($quantity < $tier['min']) {
                 $problems[] = "{$tier['name']}: at least {$tier['min']} per order.";
             }
-            $lines[] = $this->line('ticket', $tier['id'], $tier['name'], null, $quantity, (int) $tier['price_minor'], 'Tickets', $currency);
+            // What a bundle includes, by name.
+            $bundleDetail = null;
+            if ($tier['bundle_items'] !== []) {
+                $menuNames ??= MenuItem::withoutGlobalScopes()->where('event_id', $event->id)->pluck('name', 'id');
+                $bundleDetail = 'Includes ' . collect($tier['bundle_items'])->map(fn ($b) => ($b['quantity'] > 1 ? $b['quantity'] . ' × ' : '') . ($menuNames[$b['menu_item_id']] ?? 'food'))->join(', ') . ' per ticket';
+            }
+            // A purchase crossing a price step is priced ticket by ticket (one line per price).
+            $priced = TicketPricing::lines((array) $rawTiers->get($tier['id'], []), $currency, $event, $quantity, (int) $tier['sold']);
+            foreach ($priced ?: [['quantity' => $quantity, 'unit_price_minor' => (int) $tier['price_minor'], 'label' => null]] as $part) {
+                $detail = implode(' · ', array_filter([$part['label'] ? ucfirst($part['label']) : null, $bundleDetail]));
+                $lines[] = $this->line('ticket', $tier['id'], $tier['name'], $detail ?: null, $part['quantity'], $part['unit_price_minor'], 'Tickets', $currency)
+                    + ['tier_id' => $tier['id']];
+            }
         }
 
         $hasFoodInCart = ($cart['items'] ?? []) !== [] || ($cart['packages'] ?? []) !== [];
@@ -174,7 +189,20 @@ final class OrderQuoteService
             }
         }
 
-        $totals = OrderTotals::from($currency, $lines, $this->charges->charges($event, $lines, $currency));
+        // A discount code the buyer entered: checked again here, so an expired or used-up code drops out with a reason.
+        $extra = [];
+        $codeApplied = null;
+        if (filled($cart['discount_code'] ?? null)) {
+            try {
+                $discount = DiscountService::find($event, (string) $cart['discount_code'], $lines, $userId);
+                $extra[] = DiscountService::chargeLine($discount, $lines, $currency);
+                $codeApplied = $discount->code;
+            } catch (OrderPlacementException $e) {
+                $problems[] = $e->getMessage() . ' Remove it to continue.';
+            }
+        }
+
+        $totals = OrderTotals::from($currency, $lines, $this->charges->charges($event, $lines, $currency, $extra));
         $major = fn (int $minor) => Money::ofMinor($minor, $currency)->toMajorNumber();
 
         return [
@@ -191,6 +219,7 @@ final class OrderQuoteService
             'problems' => array_values(array_unique($problems)),
             'has_food' => collect($lines)->contains(fn ($line) => $line['kind'] === 'food'),
             'empty' => $lines === [],
+            'discount_code' => $codeApplied,
         ];
     }
 

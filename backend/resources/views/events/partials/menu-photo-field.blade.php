@@ -11,6 +11,8 @@
             <p class="eb-help-text" data-photo-note role="status" aria-live="polite">JPG, PNG or WebP, up to 5 MB, at least 200 × 200 pixels. Use a photo of the food you are selling.</p>
             <x-form-field name="image_position" :id="($formId ?? 'p') . '-position'" type="select" label="Keep in view when cropped" :value="$subject?->image_position ?? '50% 50%'"
                           :options="['50% 50%' => 'Centre', '50% 20%' => 'Top', '50% 80%' => 'Bottom', '20% 50%' => 'Left', '80% 50%' => 'Right']" />
+            <x-form-field name="image_alt_text" :id="($formId ?? 'p') . '-alt'" label="Describe the photo (alt text)" :value="$subject?->image_alt_text"
+                          placeholder="e.g. Fried snapper with pickled peppers on a paper plate" help="Read aloud to guests who cannot see the photo. Leave empty to use the dish name." />
             <label class="eb-choice-label"><input type="checkbox" class="eb-checkbox" name="image_is_illustrative" value="1" @checked($subject?->image_is_illustrative)>
                 <span>This is a sample photo, not the actual dish (guests see "Illustrative photo")</span></label>
             @if($current)

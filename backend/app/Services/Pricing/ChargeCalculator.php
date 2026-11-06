@@ -28,7 +28,7 @@ final class ChargeCalculator
      * @param list<array{kind: string, line_total_minor: int, quantity: int}> $lines kind is 'ticket' or 'food'
      * @return list<array{kind: string, label: string, charge_rule_id: ?string, method: string, rate_bp: ?int, basis_minor: int, amount_minor: int, currency: string}>
      */
-    public function charges(Event $event, array $lines, string $currency): array
+    public function charges(Event $event, array $lines, string $currency, array $extraDiscounts = []): array
     {
         $scopes = [
             'tickets' => $this->sum($lines, 'ticket'),
@@ -52,6 +52,18 @@ final class ChargeCalculator
             $amount = min($amount, $basis);
             $charges[] = $this->line($rule, $basis, $amount, $currency);
             $this->reduce($scopes, $rule->applies_to, $amount);
+        }
+        // A buyer's discount code (DiscountService::chargeLine), after the host's automatic discounts and never more
+        // than what is left of the amount it applies to.
+        foreach ($extraDiscounts as $discount) {
+            $appliesTo = (string) ($discount['applies_to'] ?? 'tickets');
+            $amount = min((int) $discount['amount_minor'], $this->basis($appliesTo, $scopes));
+            if ($amount <= 0) {
+                continue;
+            }
+            unset($discount['applies_to']);
+            $charges[] = ['basis_minor' => $discount['basis_minor'], 'amount_minor' => $amount] + $discount;
+            $this->reduce($scopes, $appliesTo, $amount);
         }
 
         // 2. Fees: the event's packaging fee first (host fee on food), then configured rules.

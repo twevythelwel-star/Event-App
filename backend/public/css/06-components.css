@@ -578,13 +578,37 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
   background:
     radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--tint) 55%, transparent), transparent 55%),
     repeating-conic-gradient(from var(--turn) at 90% 10%, color-mix(in srgb, var(--tint) 18%, transparent) 0 8deg, transparent 8deg 22deg); }
+/* <x-responsive-image>: the <picture> wrapper adds no box, so card and hero styles apply to the <img> directly */
+.eb-picture { display: contents; }
+/* Host image tools: focal-point previews of how each place on the site crops the image */
+.eb-focal-tools { display: grid; gap: var(--space-3); margin-top: var(--space-3); }
+.eb-focal-tools[hidden] { display: none; }
+.eb-focal-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: var(--space-3); }
+.eb-focal-previews figure { margin: 0; }
+.eb-focal-previews figcaption { margin-top: 4px; font-size: var(--text-label-size); color: var(--color-text-secondary); }
+.eb-focal-frame { overflow: hidden; border-radius: var(--radius-sm); border: 1px solid var(--color-border); background: var(--color-background-secondary); }
+.eb-focal-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+#flyer-preview:not([hidden]) { cursor: crosshair; }
+/* Host gallery manager on the edit page */
+.eb-photo-manager { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: var(--space-4); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+.eb-photo-manager-item { display: grid; gap: var(--space-2); align-content: start; padding: var(--space-3); border-radius: var(--radius-md); background: var(--color-background-secondary); border: 1px solid var(--color-border); }
+.eb-photo-manager-frame { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: var(--radius-sm); background: var(--color-surface); }
+.eb-photo-manager-frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.eb-photo-manager-flag { position: absolute; left: 8px; top: 8px; }
+.eb-photo-upload { padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+/* A small photo beside a package's dish, choice or extra */
+.eb-option-thumb { width: 40px; height: 40px; flex-shrink: 0; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-background-secondary); vertical-align: middle; }
+.eb-package-includes li, .eb-choice-label { align-items: center; }
+.eb-package-includes li { display: flex; gap: var(--space-2); }
+
 /* A tradition with cuisine artwork: the illustration fills the card, with a scrim under the name */
 .eb-tradition-card.has-art { min-height: 150px; }
 .eb-tradition-card.has-art .eb-tradition-art { opacity: 1; background: var(--color-background-secondary); }
 .eb-tradition-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; transition: transform 0.4s ease; }
 .eb-tradition-card.has-art .eb-tradition-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 30%, rgba(7, 17, 31, 0.92) 88%); }
 .eb-tradition-card.has-art:hover .eb-tradition-art img, .eb-tradition-card.has-art:focus-visible .eb-tradition-art img { transform: scale(1.05); }
-.eb-tradition-name, .eb-tradition-count { position: relative; z-index: 1; }
+.eb-tradition-name, .eb-tradition-count, .eb-tradition-credit { position: relative; z-index: 1; }
+.eb-tradition-credit { font-size: 0.7rem; color: var(--color-text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .eb-tradition-name { font-weight: 700; }
 .eb-tradition-count { font-size: var(--text-label-size); color: var(--color-text-secondary); }
 
@@ -652,7 +676,7 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
   .eb-food-order .eb-food-card.eb-food-card-row .eb-food-card-placeholder { height: auto; flex-direction: column; }
 }
 
-/* Below 1280px the hero shows the first featured cover as a banner under the search; the fanned stack is desktop only */
+/* Below 1280px the featured cover sits under the search; from 1280px it sits beside it (see "Visual consistency") */
 @media (max-width: 1279px) {
   .eb-hero-art { display: block !important; min-height: 0; }
   .eb-hero-card { position: relative; width: 100%; transform: none !important; right: auto; top: auto; }
@@ -675,3 +699,110 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
 /* The logo at the foot of a ticket, and kept (with its dark band) when the ticket is printed */
 .eb-ticket-card-brand { display: flex; justify-content: center; padding-top: var(--space-2); }
 @media print { .eb-ticket-card-brand .brand-band { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+
+/* --------------------------------------------------------------------------
+   Visual consistency: photography carries the richness. One ratio per kind of image (tokens in 01-tokens.css),
+   still lighting in place of looping decoration, and only short transitions in response to the user.
+   -------------------------------------------------------------------------- */
+.eb-event-card-media, .eb-aspect-event-card { aspect-ratio: var(--ratio-event); }
+.eb-food-card-media, .food-card-media, .eb-aspect-food-card { aspect-ratio: var(--ratio-photo); }
+.eb-aspect-event-hero { aspect-ratio: var(--ratio-banner); }
+.eb-ticket-card-head { aspect-ratio: var(--ratio-banner); }
+.eb-review-cover { aspect-ratio: var(--ratio-event); }
+.eb-photo-manager-frame { aspect-ratio: var(--ratio-photo); }
+
+/* Homepage hero: the featured event's own photo, large and straight, on a still background. */
+.eb-hero-orb { animation: none !important; opacity: 0.35; }
+.eb-hero-shape { display: none; }
+.eb-hero-highlight { animation: none; background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--color-accent); }
+.eb-hero-art { min-height: 0; }
+.eb-hero-card { display: block; position: relative; width: 100%; aspect-ratio: var(--ratio-event); border-radius: var(--radius-lg); box-shadow: 0 18px 48px rgba(0, 0, 0, 0.4); }
+.eb-hero-card-0 { inset: auto; transform: none; }
+.eb-hero-card-0:hover, .eb-hero-card-0:focus-visible { transform: translateY(-3px); }
+.eb-hero-card-0::after { display: none; }
+.eb-hero-card-1, .eb-hero-card-2 { display: none; }
+
+/* Tradition cards without artwork: a quiet tint, not decorative rays. */
+.eb-tradition-art { background: radial-gradient(circle at 85% 15%, color-mix(in srgb, var(--tint) 35%, transparent), transparent 60%); opacity: 0.6; }
+.eb-tradition-card.has-art .eb-tradition-art { opacity: 1; }
+/* The feature label sits at the top, clear of the cover's own text along the bottom */
+.eb-hero-card-label { top: 12px; bottom: auto; }
+
+/* Photo lightbox (event page): a native <dialog>, so focus moves into it, Escape closes it and focus returns */
+.eb-lightbox { width: min(96vw, 1100px); max-height: 92vh; padding: 0; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-background); color: var(--color-text-primary); }
+.eb-lightbox::backdrop { background: rgba(7, 17, 31, 0.86); }
+.eb-lightbox figure { margin: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; max-height: 92vh; }
+.eb-lightbox img { width: 100%; max-height: calc(92vh - 72px); object-fit: contain; background: #000; display: block; }
+.eb-lightbox figcaption { display: flex; gap: var(--space-3); align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); }
+.eb-lightbox-nav { display: flex; gap: var(--space-2); }
+.eb-lightbox button { min-width: 44px; min-height: 44px; }
+
+/* Event schedule and line-up (attendee view and the schedule studio) */
+.eb-schedule { display: grid; gap: var(--space-3); }
+.eb-schedule-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.eb-schedule-filter { display: flex; gap: var(--space-2); align-items: center; }
+.eb-schedule-filter .eb-select { min-width: 160px; }
+.eb-schedule-day { margin: var(--space-3) 0 0; font-size: 0.95rem; font-weight: 700; color: var(--color-text-primary); }
+.eb-schedule-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; border-left: 2px solid var(--color-border); }
+.eb-schedule-item { display: grid; grid-template-columns: 9.5rem minmax(0, 1fr); gap: var(--space-3); padding: var(--space-3) 0 var(--space-3) var(--space-4); position: relative; }
+.eb-schedule-item::before { content: ""; position: absolute; left: -6px; top: 1.15rem; width: 10px; height: 10px; border-radius: 50%; background: var(--color-purple, #8B5CF6); }
+.eb-schedule-item[data-kind="food_service"]::before { background: var(--color-warning, #F59E0B); }
+.eb-schedule-item[data-kind="dj_set"]::before, .eb-schedule-item[data-kind="performance"]::before { background: var(--color-accent); }
+.eb-schedule-item[hidden] { display: none; }
+.eb-schedule-time { margin: 0; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--color-accent); white-space: nowrap; }
+.eb-schedule-title { margin: 0; font-weight: 700; color: var(--color-text-primary); }
+.eb-schedule-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; margin: 4px 0; font-size: var(--text-label-size); color: var(--color-text-secondary); }
+.eb-schedule-people { margin: 0; font-size: 0.9rem; color: var(--color-text-secondary); }
+@media (max-width: 560px) { .eb-schedule-item { grid-template-columns: minmax(0, 1fr); gap: 2px; } }
+.eb-lineup { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: var(--space-3); }
+.eb-lineup-card { display: flex; gap: var(--space-3); align-items: flex-start; padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-background-secondary); }
+.eb-lineup-photo { width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; object-fit: cover; }
+.eb-lineup-initials { display: inline-grid; place-items: center; background: var(--color-accent-subtle); color: var(--color-accent); font-weight: 800; font-size: 1.1rem; border: 1px solid var(--color-accent-border); }
+.eb-lineup-links { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: 6px 0 0; font-size: var(--text-label-size); }
+.eb-schedule-studio-row { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-3); align-items: center; cursor: pointer; }
+
+/* Venue designer (host) and seat picker (buyer) */
+.eb-venue-canvas-scroll, .eb-seat-plan-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: var(--color-background-secondary); }
+.eb-venue-canvas { display: block; width: 100%; min-width: 640px; height: auto; color: var(--color-text-secondary); touch-action: none; }
+.eb-plan-shape { cursor: move; }
+.eb-plan-area { fill: color-mix(in srgb, var(--color-purple, #8B5CF6) 22%, transparent); stroke: var(--color-purple-text, #C4B5FD); stroke-width: 2; }
+[data-kind="vip"] .eb-plan-area, .eb-plan-area[data-kind="vip"] { fill: color-mix(in srgb, #FBBF24 22%, transparent); stroke: #FBBF24; }
+[data-kind="general_admission"] .eb-plan-area, .eb-plan-area[data-kind="general_admission"] { fill: color-mix(in srgb, var(--color-accent) 16%, transparent); stroke: var(--color-accent); }
+[data-kind="food_station"] .eb-plan-area, .eb-plan-area[data-kind="food_station"] { fill: color-mix(in srgb, #F59E0B 18%, transparent); stroke: #F59E0B; stroke-dasharray: 6 4; }
+[data-kind="vendor_booth"] .eb-plan-area, .eb-plan-area[data-kind="vendor_booth"] { fill: color-mix(in srgb, #38BDF8 18%, transparent); stroke: #38BDF8; stroke-dasharray: 6 4; }
+[data-kind="stage"] .eb-plan-area, .eb-plan-area[data-kind="stage"] { fill: color-mix(in srgb, #F8FAFC 12%, transparent); stroke: #F8FAFC; }
+[data-kind="restricted"] .eb-plan-area, .eb-plan-area[data-kind="restricted"] { fill: color-mix(in srgb, #EF4444 16%, transparent); stroke: #EF4444; stroke-dasharray: 3 5; }
+.eb-plan-label { fill: var(--color-text-primary); font-size: 14px; font-weight: 700; pointer-events: none; }
+.eb-plan-handle { fill: var(--color-accent); cursor: nwse-resize; }
+.eb-venue-row-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: var(--space-3); border: 0; padding: 0; margin: 0 0 var(--space-3); min-width: 0; }
+.eb-venue-row-grid [hidden] { display: none; }
+.eb-venue-geometry legend { margin-bottom: var(--space-2); }
+.eb-seat-plan { position: relative; width: 100%; min-width: 600px; }
+.eb-seat-plan-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.eb-seat { position: absolute; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: var(--color-surface-elevated); border: 2px solid var(--color-accent); cursor: pointer; display: block; }
+.eb-seat.is-accessible { border-color: #38BDF8; }
+.eb-seat.is-picked { background: var(--color-accent); }
+.eb-seat.is-taken { background: var(--color-border); border-color: var(--color-border); cursor: not-allowed; }
+.eb-seat:focus-within { outline: 3px solid var(--color-border-focus, #C4B5FD); outline-offset: 2px; }
+.eb-seat-legend { display: flex; flex-wrap: wrap; gap: var(--space-4); margin: 0; padding: 0; list-style: none; font-size: var(--text-label-size); color: var(--color-text-secondary); }
+.eb-seat-legend li { display: inline-flex; gap: 6px; align-items: center; }
+.eb-seat-swatch { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--color-accent); background: var(--color-surface-elevated); }
+.eb-seat-swatch.is-picked { background: var(--color-accent); }
+.eb-seat-swatch.is-taken { background: var(--color-border); border-color: var(--color-border); }
+.eb-seat-swatch.is-accessible { border-color: #38BDF8; }
+.eb-seat-counts { margin: 0; font-weight: 700; color: var(--color-text-primary); }
+@media (pointer: coarse) { .eb-seat { width: 28px; height: 28px; margin: -14px 0 0 -14px; } }
+
+/* Sponsors (by level) and vendors on the event page; sponsor credit on tickets */
+.eb-sponsors, .eb-vendors { display: grid; gap: var(--space-3); }
+.eb-sponsor-level { margin: var(--space-2) 0 0; font-size: var(--text-label-size); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-secondary); }
+.eb-sponsor-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); }
+.eb-sponsor-grid.is-gold { grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); }
+.eb-sponsor-card { padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-background-secondary); }
+.eb-sponsor-grid.is-gold .eb-sponsor-card { border-color: color-mix(in srgb, #FBBF24 45%, var(--color-border)); }
+.eb-sponsor-link { display: block; color: inherit; text-decoration: none; }
+.eb-sponsor-logo-frame { display: flex; align-items: center; justify-content: center; aspect-ratio: 3 / 1; padding: var(--space-2); border-radius: var(--radius-sm); background: #F8FAFC; }
+.eb-sponsor-logo-frame img { width: 100%; height: 100%; }
+.eb-sponsor-name { display: flex; align-items: center; justify-content: center; aspect-ratio: 3 / 1; font-weight: 800; color: var(--color-text-primary); text-align: center; }
+.eb-vendor-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.eb-ticket-sponsors { margin: 0; font-size: 0.85rem; color: var(--color-text-secondary); text-align: center; }

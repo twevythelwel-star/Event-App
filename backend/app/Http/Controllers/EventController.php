@@ -130,7 +130,15 @@ class EventController extends Controller
             return redirect()->guest(route('login'))->with('error', 'Please sign in to view this event.');
         }
 
-        $event = Event::with('menuItems')->findOrFail($id);
+        $event = Event::with(['menuItems', 'mediaItems'])->findOrFail($id);
+        // A promoter's link (?ref=CODE): remember them for this buyer's session, so their sale is credited.
+        if ($request->filled('ref')) {
+            $affiliate = \App\Models\Affiliate::where('event_id', $event->id)->where('is_active', true)
+                ->where('code', \App\Services\Checkout\DiscountService::normalize((string) $request->query('ref')))->first();
+            if ($affiliate) {
+                $request->session()->put("affiliate.{$event->id}", $affiliate->id);
+            }
+        }
 
         // Only published events are public. Draft, unpublished and cancelled events are visible to the people
         // who manage them, and behave as not found for everyone else (including via an event QR short link).
@@ -427,6 +435,10 @@ class EventController extends Controller
             return redirect()->route('events.edit', $existing->id)->with('status', "'{$existing->title}' was already saved. You're editing it now.");
         }
 
+        // The flyer first, so the readiness check below sees it. A flyer that cannot be used never loses the event.
+        $flyerProblem = $this->storeFlyerUpload($request, $event);
+        $event->refresh();
+
         // Publishing runs the readiness check. If something is missing the event stays a saved draft and the host
         // sees the review screen: the form is not sent back, so trying again cannot create a second event.
         $publishProblem = null;
@@ -437,21 +449,9 @@ class EventController extends Controller
                 $publishProblem = $exception->getMessage();
             }
         }
-
-        if ($request->hasFile('flyer')) {
-            $file = $request->file('flyer');
-            $tenantId = $event->organizer_id;
-            $ext = $file->getClientOriginalExtension() ?: 'jpg';
-            $filename = time() . '_' . Str::random(16) . '.' . strtolower($ext);
-            $storagePath = "tenants/{$tenantId}/flyers/{$filename}";
-
-            Storage::disk('s3_flyers')->put($storagePath, file_get_contents($file));
-
-            $event->flyer_path = $storagePath;
-            $event->flyer_mime_type = $file->getClientMimeType() ?: 'image/jpeg';
-            $event->flyer_size_bytes = $file->getSize() ?: 0;
-            $event->is_flyer_public = ($event->status === 'published');
-            $event->save();
+        if ($flyerProblem !== null && $publishProblem === null && !$request->wantsJson()) {
+            return redirect()->route('events.edit', $event->id)
+                ->with('error', "'{$event->title}' is saved, but the flyer was not: {$flyerProblem}");
         }
 
         // Every new event gets its promotional QR identity and artwork. Failure here never fails the event:
@@ -576,25 +576,10 @@ class EventController extends Controller
         // Ticket holders hear when the date, time or place changes.
         \App\Services\Notifications\NotificationService::afterEventSaved($event, $before);
 
-        if ($request->hasFile('flyer')) {
-            $file = $request->file('flyer');
-            $tenantId = TenantContext::id() ?? $event->organizer_id;
-            $ext = $file->getClientOriginalExtension() ?: 'jpg';
-            $filename = time() . '_' . Str::random(16) . '.' . strtolower($ext);
-            $storagePath = "tenants/{$tenantId}/flyers/{$filename}";
-
-            $oldPath = $event->flyer_path;
-            Storage::disk('s3_flyers')->put($storagePath, file_get_contents($file));
-
-            if ($oldPath && $oldPath !== $storagePath && Storage::disk('s3_flyers')->exists($oldPath)) {
-                Storage::disk('s3_flyers')->delete($oldPath);
-            }
-
-            $event->flyer_path = $storagePath;
-            $event->flyer_mime_type = $file->getClientMimeType() ?: 'image/jpeg';
-            $event->flyer_size_bytes = $file->getSize() ?: 0;
-            $event->is_flyer_public = ($event->status === 'published');
-            $event->save();
+        $flyerProblem = $this->storeFlyerUpload($request, $event);
+        $event->refresh();
+        if ($flyerProblem !== null && !$request->wantsJson()) {
+            return redirect()->route('events.edit', $event->id)->with('error', "Your changes are saved, but the flyer was not: {$flyerProblem}");
         }
 
         if ($request->wantsJson()) {
@@ -654,40 +639,58 @@ class EventController extends Controller
     public function uploadFlyer(UploadFlyerRequest $request, string $id): mixed
     {
         $event = $this->managedEvent($request, $id);
-        $file = $request->file('flyer');
-
-        $tenantId = TenantContext::id() ?? $event->organizer_id;
-        $ext = $file->getClientOriginalExtension() ?: 'jpg';
-        $filename = time() . '_' . Str::random(16) . '.' . strtolower($ext);
-        $storagePath = "tenants/{$tenantId}/flyers/{$filename}";
-
-        $oldPath = $event->flyer_path;
-
-        // Store file via Laravel filesystem abstraction (local disk or S3/Cloudflare R2)
-        Storage::disk('s3_flyers')->put($storagePath, file_get_contents($file));
-
-        // Safely remove superseded previous flyer file if present
-        if ($oldPath && $oldPath !== $storagePath && Storage::disk('s3_flyers')->exists($oldPath)) {
-            Storage::disk('s3_flyers')->delete($oldPath);
-        }
-
-        $event->flyer_path = $storagePath;
-        $event->flyer_mime_type = $file->getClientMimeType() ?: 'image/jpeg';
-        $event->flyer_size_bytes = $file->getSize() ?: 0;
-        $event->is_flyer_public = $event->status === 'published';
-        $event->save();
+        $problem = $this->storeFlyerUpload($request, $event);
+        $event->refresh();
 
         if ($request->wantsJson()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Flyer uploaded successfully',
-                'flyer_path' => $storagePath,
-                'flyer_url' => Storage::disk('s3_flyers')->url($storagePath),
-                'event' => $event,
-            ]);
+            return $problem !== null
+                ? response()->json(['success' => false, 'error' => $problem], 422)
+                : response()->json([
+                    'success' => true,
+                    'message' => 'Flyer uploaded successfully',
+                    'flyer_path' => $event->flyer_path,
+                    'flyer_url' => $event->display_image_url,
+                    'event' => $event,
+                ]);
         }
 
-        return back()->with('status', 'Flyer uploaded successfully.');
+        return $problem !== null ? back()->with('error', $problem) : back()->with('status', 'Flyer uploaded successfully.');
+    }
+
+    /**
+     * Stores the request's flyer through the media service: checked, re-encoded (dropping EXIF and anything
+     * appended), kept as the untouched original plus responsive variants, on the private disk under the event's
+     * organizer. The host's alt text, focal point and optional crop (percent) come from the same form.
+     *
+     * @return string|null why the flyer could not be used, or null when it was stored (or none was sent)
+     */
+    private function storeFlyerUpload(Request $request, Event $event): ?string
+    {
+        if (!$request->hasFile('flyer')) {
+            return null;
+        }
+        $crop = null;
+        $cropFields = ['x' => 'flyer_crop_x', 'y' => 'flyer_crop_y', 'width' => 'flyer_crop_width', 'height' => 'flyer_crop_height'];
+        if (collect($cropFields)->every(fn ($field) => is_numeric($request->input($field)))) {
+            $crop = array_map(fn ($field) => max(0, min(100, (int) $request->input($field))), $cropFields);
+            if ($crop['width'] < 10 || $crop['height'] < 10 || ($crop['x'] === 0 && $crop['y'] === 0 && $crop['width'] === 100 && $crop['height'] === 100)) {
+                $crop = null;
+            }
+        }
+
+        try {
+            app(\App\Services\EventManagementService::class)->uploadFlyer(
+                $request->user(), $event->id, $request->file('flyer'),
+                $request->input('flyer_alt_text') ?: $event->flyer_alt_text,
+                (int) ($request->input('flyer_position_x', $event->flyer_position_x ?? 50)),
+                (int) ($request->input('flyer_position_y', $event->flyer_position_y ?? 50)),
+                $crop,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return $e->getMessage();
+        }
+
+        return null;
     }
 
     /**
@@ -696,19 +699,8 @@ class EventController extends Controller
     public function removeFlyer(Request $request, string $id): mixed
     {
         $event = $this->managedEvent($request, $id);
-
-        if ($event->flyer_path && Storage::disk('s3_flyers')->exists($event->flyer_path)) {
-            Storage::disk('s3_flyers')->delete($event->flyer_path);
-        }
-
-        $event->flyer_path = null;
-        $event->flyer_thumbnail_path = null;
-        $event->flyer_mime_type = null;
-        $event->flyer_size_bytes = null;
-        $event->flyer_width = null;
-        $event->flyer_height = null;
-        $event->is_flyer_public = false;
-        $event->save();
+        // The same removal as the API: the original and every variant are deleted, and the change is audited.
+        $event = app(\App\Services\EventManagementService::class)->removeFlyer($request->user(), $event->id);
 
         if ($request->wantsJson()) {
             return response()->json([

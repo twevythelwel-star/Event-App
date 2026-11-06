@@ -67,7 +67,7 @@
 
         <section class="eb-panel" aria-labelledby="summary-heading" style="margin: 0;">
             <h2 id="summary-heading" class="eb-text-card-title" style="margin: 0 0 var(--space-3);">What guests will see</h2>
-            <img src="{{ $event->display_image_url }}" alt="" class="eb-review-cover">
+            <x-responsive-image :image="$event->coverImage()" alt="" class="eb-review-cover" sizes="(min-width: 1024px) 420px, 100vw" />
             <dl class="eb-review-facts">
                 <div><dt>When</dt><dd>{{ $event->starts_at ? $event->starts_at->copy()->setTimezone($tz)->format('l, F j, Y · g:i A T') : ($event->date_str ?: 'Not set') }}</dd></div>
                 <div><dt>Where</dt><dd>{{ $event->venue_name ?: 'Not set' }}{{ $event->venue_address ? ' · ' . $event->venue_address : '' }}</dd></div>

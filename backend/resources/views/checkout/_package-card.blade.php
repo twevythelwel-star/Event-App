@@ -8,6 +8,8 @@
     $selection = (array) ($entry['selection'] ?? []);
     $field = fn (string $key) => "packages[{$index}][{$key}]";
     $name = fn ($id) => $menuById->get($id)?->name ?? 'Item';
+    // A small photo of each included dish, choice and extra, so guests see what they are picking (none if no photo).
+    $thumb = fn ($id) => $menuById->get($id)?->responsiveImage();
     $fmt = fn (int $m) => \App\Support\Money::formatMinor($m, $currency);
     $soldOut = $package->available_stock !== null && (int) $package->available_stock <= 0;
     $cap = $package->max_per_order ? min(20, (int) $package->max_per_order) : 20;
@@ -35,6 +37,8 @@
                                         @endforeach
                                     </select>
                                 @else
+                                    @php $includedThumb = $thumb($component['menu_item_id']); @endphp{{-- named apart from Blade's own $component --}}
+                                    @if($includedThumb)<x-responsive-image :image="$includedThumb" alt="" sizes="40px" class="eb-option-thumb" width="40" height="40" />@endif
                                     <span>{{ ($component['quantity'] ?? 1) > 1 ? $component['quantity'] . ' × ' : '' }}{{ $name($component['menu_item_id']) }}</span>
                                 @endif
                             </li>
@@ -54,6 +58,7 @@
                             <input type="{{ $single ? 'radio' : 'checkbox' }}" name="packages[{{ $index }}][choices][{{ $group['id'] }}][]" value="{{ $option['menu_item_id'] }}"
                                    data-priced data-extra-minor="{{ (int) $option['extra_minor'] }}" @checked(in_array($option['menu_item_id'], $picked, true)) @disabled($soldOut)
                                    @if($single && $group['min'] > 0) required @endif>
+                            @if($thumb($option['menu_item_id']))<x-responsive-image :image="$thumb($option['menu_item_id'])" alt="" sizes="40px" class="eb-option-thumb" width="40" height="40" />@endif
                             <span>{{ $name($option['menu_item_id']) }}{{ $option['extra_minor'] > 0 ? ' (+' . $fmt((int) $option['extra_minor']) . ')' : '' }}</span>
                         </label>
                     @endforeach
@@ -65,6 +70,7 @@
                     <legend class="eb-text-label">Add extras</legend>
                     @foreach($config['add_ons'] as $addOn)
                         <label class="eb-choice-label" style="justify-content: space-between; width: 100%;">
+                            @if($thumb($addOn['menu_item_id']))<x-responsive-image :image="$thumb($addOn['menu_item_id'])" alt="" sizes="40px" class="eb-option-thumb" width="40" height="40" />@endif
                             <span>{{ $name($addOn['menu_item_id']) }} (+{{ $fmt((int) $addOn['price_minor']) }} each)</span>
                             <input type="number" class="eb-input" style="width: 5rem;" min="0" max="{{ (int) $addOn['max'] }}" step="1" inputmode="numeric"
                                    name="packages[{{ $index }}][add_ons][{{ $addOn['menu_item_id'] }}]" value="{{ (int) ($selection['add_ons'][$addOn['menu_item_id']] ?? 0) }}"

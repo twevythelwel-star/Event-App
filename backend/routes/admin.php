@@ -39,6 +39,7 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
         Route::get('/events', [EventOversightController::class, 'index'])->name('events.index');
         Route::get('/events/{event}', [EventOversightController::class, 'show'])->name('events.show');
         Route::post('/events/{event}/moderate', [EventOversightController::class, 'moderate'])->name('events.moderate')->middleware('throttle:20,1');
+        Route::post('/events/{event}/images', [EventOversightController::class, 'moderateImage'])->name('events.images.moderate')->middleware('throttle:30,1');
 
         Route::get('/orders', [OrderOversightController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderOversightController::class, 'show'])->name('orders.show');

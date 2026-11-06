@@ -567,7 +567,9 @@ class EventManagementService
         // Replacing an uploaded photo with a link (or nothing) removes the stored file
         if (array_key_exists('image_url', $data) && $data['image_url'] !== $item->image_url && $item->image_path) {
             $this->media->delete($item->image_path);
+            $this->media->deleteVariants($item->image_variants);
             $data['image_path'] = null;
+            $data['image_variants'] = null;
         }
 
         $item->fill($data)->save();
@@ -621,16 +623,24 @@ class EventManagementService
     {
         $event = $this->findEvent($user, $eventId);
         $stored = $this->media->storeImage($file, $event->organizer_id, 'flyers');
-
-        // Generate responsive derivatives for flyer (with optional crop)
-        $derivatives = $this->media->createResponsiveDerivatives($stored['path'], $event->organizer_id, 'flyers', $crop);
+        try {
+            // Small, medium and large, in WebP (and AVIF where supported); the original is kept untouched.
+            $variants = $this->media->createVariants($stored['path'], $event->organizer_id, 'flyers', $crop);
+        } catch (\Throwable $e) {
+            $this->media->delete($stored['path']);
+            throw $e;
+        }
 
         $previous = $event->flyer_path;
         $previousThumbnail = $event->flyer_thumbnail_path;
+        $previousVariants = $event->flyer_variants;
 
         $event->fill([
             'flyer_path' => $stored['path'],
-            'flyer_thumbnail_path' => $derivatives['large']['path'],
+            'flyer_thumbnail_path' => $variants['medium']['webp'],
+            'flyer_variants' => $variants,
+            // A new upload is reviewed afresh; an administrator who hid the old one does not hide this one.
+            'flyer_moderation_status' => 'approved',
             'flyer_mime_type' => $stored['mime'],
             'flyer_size_bytes' => $stored['size'],
             'flyer_width' => $stored['width'],
@@ -644,6 +654,7 @@ class EventManagementService
         // Clean up previous files
         $this->media->delete($previous);
         $this->media->delete($previousThumbnail);
+        $this->media->deleteVariants($previousVariants);
 
         $this->audit($user, 'event_flyer_uploaded', 'events', $event->id, "Flyer uploaded for '{$event->title}' ({$stored['width']}x{$stored['height']}, {$stored['size']} bytes).");
 
@@ -655,10 +666,12 @@ class EventManagementService
         $event = $this->findEvent($user, $eventId);
         $previous = $event->flyer_path;
         $previousThumbnail = $event->flyer_thumbnail_path;
+        $previousVariants = $event->flyer_variants;
 
         $event->fill([
             'flyer_path' => null,
             'flyer_thumbnail_path' => null,
+            'flyer_variants' => null,
             'flyer_mime_type' => null,
             'flyer_size_bytes' => null,
             'flyer_width' => null,
@@ -667,6 +680,7 @@ class EventManagementService
         ])->save();
         $this->media->delete($previous);
         $this->media->delete($previousThumbnail);
+        $this->media->deleteVariants($previousVariants);
 
         $this->audit($user, 'event_flyer_removed', 'events', $event->id, "Flyer removed from '{$event->title}'.");
 
@@ -690,25 +704,35 @@ class EventManagementService
         if ($event->mediaItems()->where('media_type', $mediaType)->count() >= ($mediaType === 'gallery' ? 12 : 8)) {
             throw new \InvalidArgumentException('This event has reached its image limit for that category.');
         }
+        $altText = trim($altText);
+        if (mb_strlen($altText) < 2) {
+            throw new \InvalidArgumentException('Describe the photo for people who cannot see it (alt text).');
+        }
         $stored = $this->media->storeImage($file, $event->organizer_id, 'event-media');
-
-        // Generate responsive derivatives
-        $derivatives = $this->media->createResponsiveDerivatives($stored['path'], $event->organizer_id, 'event-media', $crop);
+        try {
+            $variants = $this->media->createVariants($stored['path'], $event->organizer_id, 'event-media', $crop);
+        } catch (\Throwable $e) {
+            $this->media->delete($stored['path']);
+            throw $e;
+        }
 
         $media = $event->mediaItems()->create([
             'media_type' => $mediaType,
             'original_path' => $stored['path'],
-            'thumbnail_path' => $derivatives['large']['path'],
-            'small_thumbnail_path' => $derivatives['small']['path'],
-            'medium_thumbnail_path' => $derivatives['medium']['path'],
-            'large_thumbnail_path' => $derivatives['large']['path'],
+            // The older single-path columns point at the WebP variants; `variants` holds every size and format.
+            'thumbnail_path' => $variants['medium']['webp'],
+            'small_thumbnail_path' => $variants['small']['webp'],
+            'medium_thumbnail_path' => $variants['medium']['webp'],
+            'large_thumbnail_path' => $variants['large']['webp'],
+            'variants' => $variants,
+            'uploaded_by' => $user->id,
             'mime_type' => $stored['mime'],
             'size_bytes' => $stored['size'],
             'width' => $stored['width'],
             'height' => $stored['height'],
-            'alt_text' => trim($altText),
-            'position_x' => $positionX,
-            'position_y' => $positionY,
+            'alt_text' => $altText,
+            'position_x' => max(0, min(100, $positionX)),
+            'position_y' => max(0, min(100, $positionY)),
             'sort_order' => (int) $event->mediaItems()->where('media_type', $mediaType)->max('sort_order') + 1,
             'crop_x' => $crop['x'] ?? null,
             'crop_y' => $crop['y'] ?? null,
@@ -716,6 +740,25 @@ class EventManagementService
             'crop_height' => $crop['height'] ?? null,
         ]);
         $this->audit($user, 'event_media_uploaded', 'event_media', $media->id, "{$mediaType} image uploaded for '{$event->title}' ({$stored['width']}x{$stored['height']}).");
+
+        return $this->findEvent($user, $eventId);
+    }
+
+    /** Changes a photo's alt text and focal point; the stored files are untouched. */
+    public function updateEventMedia(User $user, string $eventId, string $mediaId, string $altText, int $positionX, int $positionY): Event
+    {
+        $event = $this->findEvent($user, $eventId);
+        $media = $event->mediaItems()->whereKey($mediaId)->firstOrFail();
+        $altText = trim($altText);
+        if (mb_strlen($altText) < 2) {
+            throw new \InvalidArgumentException('Describe the photo for people who cannot see it (alt text).');
+        }
+        $media->fill([
+            'alt_text' => mb_substr($altText, 0, 250),
+            'position_x' => max(0, min(100, $positionX)),
+            'position_y' => max(0, min(100, $positionY)),
+        ])->save();
+        $this->audit($user, 'event_media_updated', 'event_media', $media->id, "Photo details changed on '{$event->title}'.");
 
         return $this->findEvent($user, $eventId);
     }
@@ -729,24 +772,40 @@ class EventManagementService
         $this->media->delete($media->small_thumbnail_path);
         $this->media->delete($media->medium_thumbnail_path);
         $this->media->delete($media->large_thumbnail_path);
+        $this->media->deleteVariants($media->variants);
         $media->delete();
         $this->audit($user, 'event_media_removed', 'event_media', $mediaId, "{$media->media_type} image removed from '{$event->title}'.");
 
         return $this->findEvent($user, $eventId);
     }
 
-    public function uploadMenuPhoto(User $user, string $eventId, string $itemId, UploadedFile $file): Event
+    public function uploadMenuPhoto(User $user, string $eventId, string $itemId, UploadedFile $file, ?string $altText = null): Event
     {
         $event = $this->findEvent($user, $eventId);
         $item = $this->findMenuItem($event, $itemId);
         $stored = $this->media->storeImage($file, $event->organizer_id, 'menu');
+        try {
+            $variants = $this->media->createVariants($stored['path'], $event->organizer_id, 'menu');
+        } catch (\Throwable $e) {
+            $this->media->delete($stored['path']);
+            throw $e;
+        }
         $previous = $item->image_path;
+        $previousVariants = $item->image_variants;
 
         $item->image_path = $stored['path'];
         // Version the URL so browsers fetch the new photo instead of a cached one
         $item->image_url = "/api/v1/media/menu/{$item->id}/photo?v=" . substr(sha1($stored['path']), 0, 10);
+        $item->image_variants = $variants;
+        $item->image_width = min(65535, $stored['width']);
+        $item->image_height = min(65535, $stored['height']);
+        $item->image_moderation_status = 'approved';
+        if ($altText !== null && trim($altText) !== '') {
+            $item->image_alt_text = mb_substr(trim($altText), 0, 250);
+        }
         $item->save();
         $this->media->delete($previous);
+        $this->media->deleteVariants($previousVariants);
 
         $this->audit($user, 'menu_photo_uploaded', 'menu_items', $item->id, "Photo uploaded for '{$item->name}' on '{$event->title}'.");
 
@@ -783,8 +842,11 @@ class EventManagementService
         $event = $this->findEvent($user, $eventId);
         $item = $this->findMenuItem($event, $itemId);
         $previous = $item->image_path;
-        $item->fill(['image_path' => null, 'image_url' => null, 'image_is_illustrative' => false, 'image_position' => null])->save();
+        $previousVariants = $item->image_variants;
+        $item->fill(['image_path' => null, 'image_url' => null, 'image_variants' => null, 'image_width' => null, 'image_height' => null,
+            'image_is_illustrative' => false, 'image_position' => null])->save();
         $this->media->delete($previous);
+        $this->media->deleteVariants($previousVariants);
         $this->audit($user, 'menu_photo_removed', 'menu_items', $item->id, "Photo removed from '{$item->name}' on '{$event->title}'.");
 
         return $this->findEvent($user, $eventId);

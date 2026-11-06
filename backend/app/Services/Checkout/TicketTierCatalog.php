@@ -153,22 +153,29 @@ final class TicketTierCatalog
      *
      * @return list<array{id: string, name: string, description: ?string, price: float, available: ?int, max: int, sold_out: bool, sale_window: string, on_sale: bool}>
      */
-    public static function sellable(Event $event): array
+    public static function sellable(Event $event, ?int $userId = null): array
     {
         $currency = (string) ($event->currency ?: \App\Support\Currency::defaultCode());
         $tiers = [];
+        // Smarter pricing and inventory (TicketPricing, TicketInventory) need what is sold; read it once.
+        $sold = $event->exists ? TicketPricing::soldByTier($event) : [];
         foreach (is_array($event->ticket_tiers) ? $event->ticket_tiers : [] as $tier) {
             if (!is_array($tier) || !isset($tier['id']) || ($tier['isActive'] ?? true) === false
                 || ($tier['visibility'] ?? 'public') !== 'public') {
                 continue;
             }
-            $priceMinor = self::currentPriceMinor($tier, $currency, $event);
+            $tierSold = (int) ($sold[(string) $tier['id']] ?? 0);
+            // The price of the next ticket: early-bird, the current price step, or the regular price.
+            $priceMinor = $event->exists ? TicketPricing::nextPriceMinor($tier, $currency, $event, $tierSold) : self::currentPriceMinor($tier, $currency, $event);
             if ($priceMinor === null) {
                 continue;
             }
             $regularMinor = self::priceMinorFor($tier, $currency);
             $price = \App\Support\Money::ofMinor($priceMinor, $currency)->toMajorNumber();
-            $available = self::available($tier);
+            // Stock, limited by the release schedule, less what other buyers hold right now.
+            $available = $event->exists ? TicketInventory::availableFor($event, $tier, $userId, $sold) : self::available($tier);
+            $steps = TicketPricing::steps($tier, $currency);
+            $nextStep = collect($steps)->first(fn ($s) => $tierSold < $s['up_to']);
             $window = self::saleWindow(self::withEventSaleWindow($tier, $event));
             $soldOut = $available !== null && $available <= 0;
             $max = $available === null ? self::maxPerOrder($tier) : min(self::maxPerOrder($tier), $available);
@@ -188,13 +195,22 @@ final class TicketTierCatalog
                 'price' => $price,
                 'price_minor' => $priceMinor,
                 'regular_price_minor' => $regularMinor,
-                'early_bird' => $priceMinor < $regularMinor,
+                // Only a real early-bird price is called one; a lower first price step is not.
+                'early_bird' => $priceMinor < $regularMinor && (self::isEarlyBird($event)
+                    || (($tier['early_bird_ends_iso'] ?? null) && strtotime((string) $tier['early_bird_ends_iso']) > now()->getTimestamp())),
                 'currency' => $currency,
                 'available' => $available,
                 'max' => $window === 'open' ? $max : 0,
                 'sold_out' => $soldOut,
                 'sale_window' => $window,
                 'on_sale' => $window === 'open' && !$soldOut && $max > 0,
+                // Smarter ticketing, for display: the price step now selling and how many remain at it, the next
+                // limited release, group prices and what a bundle includes.
+                'price_step' => $nextStep && count($steps) > 1 ? ['left_at_price' => max(0, $nextStep['up_to'] - $tierSold), 'is_last' => $nextStep === end($steps)] : null,
+                'next_release' => TicketPricing::nextRelease($tier),
+                'group_discounts' => TicketPricing::groupDiscounts($tier),
+                'bundle_items' => TicketPricing::bundleItems($tier),
+                'sold' => $tierSold,
             ];
         }
 

@@ -42,7 +42,7 @@
                         <div class="eb-cluster" style="flex-wrap: nowrap;">
                             <div style="width: 44px; height: 44px; border-radius: var(--radius-sm); overflow: hidden; background: var(--color-background-secondary); border: 1px solid var(--color-border); flex-shrink: 0;">
                                 @if($event->display_image_url)
-                                    <img src="{{ $event->display_image_url }}" alt="" style="width: 100%; height: 100%; object-fit: cover;">
+                                    <x-responsive-image :image="$event->coverImage()" alt="" sizes="44px" style="width: 100%; height: 100%;" />
                                 @endif
                             </div>
                             <a href="{{ route('events.show', $event->id) }}" style="font-weight: 600; color: var(--color-text-primary);">{{ $event->title }}</a>

@@ -120,14 +120,19 @@ class OrderPlacementService
                         ->first();
 
                     if (!$menuItem && $this->isTicketTierItemId($menuItemId, $ticketTiers)) {
-                        $orderItemsToCreate[] = $this->resolveAndReserveTicketTier(
+                        // One line per price (a purchase crossing a price step is priced ticket by ticket), plus
+                        // any food a bundle includes, reserved from stock like any other dish.
+                        $soldByTier ??= \App\Services\Checkout\TicketPricing::soldByTier($event);
+                        array_push($orderItemsToCreate, ...$this->resolveAndReserveTicketTier(
                             $menuItemId,
                             $quantity,
                             $currency,
                             $ticketTiers,
                             $ticketTiersModified,
-                            $event
-                        );
+                            $event,
+                            $authUser?->id,
+                            $soldByTier,
+                        ));
                         continue;
                     }
 
@@ -215,13 +220,21 @@ class OrderPlacementService
                 // Package components are priced inside their package line, so they are not counted again.
                 $pricedLines = array_values(array_map(fn (array $it) => [
                     'kind' => !empty($it['ticket_tier_id']) ? 'ticket' : 'food',
+                    'tier_id' => $it['ticket_tier_id'] ?? null,
                     'quantity' => (int) $it['quantity'],
                     'line_total_minor' => (int) $it['unit_price_minor'] * (int) $it['quantity'],
                 ], array_filter($orderItemsToCreate, fn (array $it) => ($it['line_type'] ?? OrderItem::ITEM) !== OrderItem::COMPONENT)));
+                // A discount code, checked again with its row locked so a limited code is never over-used.
+                $discountCode = null;
+                $extraDiscounts = [];
+                if (filled($payload['discount_code'] ?? null)) {
+                    $discountCode = \App\Services\Checkout\DiscountService::find($event, (string) $payload['discount_code'], $pricedLines, $authUser?->id, lock: true);
+                    $extraDiscounts[] = \App\Services\Checkout\DiscountService::chargeLine($discountCode, $pricedLines, $currency);
+                }
                 $totals = \App\Services\Pricing\OrderTotals::from(
                     $currency,
                     $pricedLines,
-                    (new \App\Services\Pricing\ChargeCalculator())->charges($event, $pricedLines, $currency),
+                    (new \App\Services\Pricing\ChargeCalculator())->charges($event, $pricedLines, $currency, $extraDiscounts),
                 );
 
                 // Determine safe initial payment status
@@ -273,6 +286,10 @@ class OrderPlacementService
                     'all_handed_over' => false,
                     'idempotency_key' => $idempotencyKey !== '' ? $idempotencyKey : null,
                     'notes' => trim((string) ($payload['notes'] ?? '')) ?: null,
+                    // The promoter whose link brought the buyer (only one of this event's active promoters), or the
+                    // promoter a code belongs to; and the code used.
+                    'affiliate_id' => $this->affiliateFor($event, $payload['affiliate_id'] ?? null, $discountCode),
+                    'discount_code_id' => $discountCode?->id,
                     ...$food,
                 ]);
 
@@ -287,6 +304,30 @@ class OrderPlacementService
                 // Each fee, tax and discount line is frozen with the order; later rule changes never alter it.
                 foreach ($totals->charges as $charge) {
                     \App\Models\OrderCharge::create($charge + ['order_id' => $order->id]);
+                }
+
+                if ($discountCode) {
+                    $saving = (int) collect($totals->charges)->where('kind', 'discount')->where('label', "Code {$discountCode->code}")->sum('amount_minor');
+                    \App\Services\Checkout\DiscountService::redeem($discountCode, $order, $saving);
+                }
+                // The buyer's holds have become this order; waitlist places it fills are done.
+                if ($authUser) {
+                    $boughtTiers = array_values(array_unique(array_filter(array_map(fn ($it) => $it['ticket_tier_id'] ?? null, $orderItemsToCreate))));
+                    \App\Services\Checkout\TicketInventory::release($event, (int) $authUser->id);
+                    app(\App\Services\Checkout\WaitlistService::class)->markPurchased($event, (int) $authUser->id, $boughtTiers);
+                }
+
+                // Chosen seats: locked and checked again here, inside the order's transaction, so a seat can never
+                // go to two orders. A seat that was taken meanwhile fails the whole order (nothing is reserved).
+                $seating = app(\App\Services\Events\SeatingService::class);
+                if ($seating->seatSelectionOpen($event)) {
+                    $ticketQuantities = [];
+                    foreach ($orderItemsToCreate as $itemData) {
+                        if (!empty($itemData['ticket_tier_id'])) {
+                            $ticketQuantities[(string) $itemData['ticket_tier_id']] = ($ticketQuantities[(string) $itemData['ticket_tier_id']] ?? 0) + (int) $itemData['quantity'];
+                        }
+                    }
+                    $seating->claim($event, $order, $ticketQuantities, array_values((array) ($payload['seats'] ?? [])));
                 }
 
                 NotificationService::notifyOrder($order, 'order_received');
@@ -477,13 +518,34 @@ class OrderPlacementService
         return ['food_fulfillment_method' => 'pickup', 'pickup_window' => $key, 'delivery_location' => null];
     }
 
+    /** The order's promoter: the link's promoter if active for this event, else the promoter a code belongs to. */
+    private function affiliateFor(Event $event, mixed $affiliateId, ?\App\Models\DiscountCode $code): ?string
+    {
+        if (filled($affiliateId) && \App\Models\Affiliate::where('event_id', $event->id)->where('is_active', true)->whereKey((string) $affiliateId)->exists()) {
+            return (string) $affiliateId;
+        }
+
+        return $code?->affiliate_id;
+    }
+
+    /**
+     * Reserves tickets of one type and prices them: price steps by tickets sold (ticket by ticket across a step),
+     * early-bird and group prices (TicketPricing), within the type's stock and release schedule and never into
+     * tickets other buyers hold (TicketInventory). Food a bundle includes is reserved as zero-priced parts of the
+     * ticket line, prepared and handed over like any dish. Called with the event row locked.
+     *
+     * @param array<string, int> $soldByTier
+     * @return list<array> order lines
+     */
     private function resolveAndReserveTicketTier(
         string $itemId,
         int $quantity,
         string $currency,
         array &$ticketTiers,
         bool &$ticketTiersModified,
-        ?Event $event = null
+        ?Event $event = null,
+        ?int $userId = null,
+        array &$soldByTier = [],
     ): array {
         // Match against host-configured ticket_tiers first
         foreach ($ticketTiers as $idx => $tier) {
@@ -508,42 +570,81 @@ class OrderPlacementService
                     throw new OrderPlacementException("'{$name}' is not available for public purchase.");
                 }
 
+                // Stock first, then the release schedule and other buyers' holds (the buyer's own holds are theirs).
+                $sold = (int) ($soldByTier[$itemId] ?? 0);
                 $availKey = TicketTierCatalog::availabilityKey($tier);
-                if ($availKey !== null) {
-                    $avail = (int) $tier[$availKey];
-                    if ($avail < $quantity) {
-                        throw new OrderPlacementException("Insufficient ticket inventory for '{$name}'. Available: {$avail}, Requested: {$quantity}.");
+                if ($availKey !== null && (int) $tier[$availKey] < $quantity) {
+                    throw new OrderPlacementException("Insufficient ticket inventory for '{$name}'. Available: {$tier[$availKey]}, Requested: {$quantity}.");
+                }
+                if ($event) {
+                    $free = \App\Services\Checkout\TicketInventory::availableFor($event, $tier, $userId, $soldByTier);
+                    if ($free !== null && $free < $quantity) {
+                        throw new OrderPlacementException($free === 0
+                            ? "'{$name}' is sold out right now." . (\App\Services\Checkout\TicketPricing::nextRelease($tier) ? ' More are released later.' : '')
+                            : "Only {$free} '{$name}' can be bought right now.");
                     }
-                    $ticketTiers[$idx][$availKey] = $avail - $quantity;
+                }
+                if ($availKey !== null) {
+                    $ticketTiers[$idx][$availKey] = (int) $tier[$availKey] - $quantity;
                     $ticketTiersModified = true;
                 }
 
-                // Only the host's own price in the order currency; never a guessed or converted one. During the
-                // early-bird period that is the tier's early-bird price.
-                $unitPriceMinor = TicketTierCatalog::currentPriceMinor($tier, $currency, $event);
-                if ($unitPriceMinor === null) {
+                // Only the host's own prices in the order currency; never a guessed or converted one.
+                $priced = \App\Services\Checkout\TicketPricing::lines($tier, $currency, $event, $quantity, $sold);
+                if ($priced === []) {
                     throw new OrderPlacementException("'{$name}' has no {$currency} price set by the organizer, so it can't be sold yet.");
                 }
+                $soldByTier[$itemId] = $sold + $quantity;
 
-                return [
-                    'id' => (string) Str::uuid(),
-                    'menu_item_id' => null,
-                    'ticket_tier_id' => $itemId,
-                    'name' => $name,
-                    'category' => 'Tickets',
-                    'pricing_type' => 'fixed',
-                    'base_price' => \App\Support\Money::ofMinor($unitPriceMinor, $currency)->toDecimalString(),
-                    'selected_options_summary' => ['Digital Admission Pass'],
-                    'options_minor' => 0,
-                    'custom_donation_amount' => null,
-                    'unit_price_minor' => $unitPriceMinor,
-                    'currency' => $currency,
-                    'quantity' => $quantity,
-                    'collected_quantity' => 0,
-                    'special_instructions' => null,
-                    'handover_status' => 'pending',
-                    'line_type' => OrderItem::TICKET,
-                ];
+                $lines = [];
+                foreach ($priced as $part) {
+                    $lines[] = [
+                        'id' => (string) Str::uuid(),
+                        'menu_item_id' => null,
+                        'ticket_tier_id' => $itemId,
+                        'name' => $name,
+                        'category' => 'Tickets',
+                        'pricing_type' => 'fixed',
+                        'base_price' => \App\Support\Money::ofMinor($part['unit_price_minor'], $currency)->toDecimalString(),
+                        'selected_options_summary' => array_values(array_filter(['Digital Admission Pass', $part['label'] ? ucfirst($part['label']) : null])),
+                        'options_minor' => 0,
+                        'custom_donation_amount' => null,
+                        'unit_price_minor' => $part['unit_price_minor'],
+                        'currency' => $currency,
+                        'quantity' => $part['quantity'],
+                        'collected_quantity' => 0,
+                        'special_instructions' => null,
+                        'handover_status' => 'pending',
+                        'line_type' => OrderItem::TICKET,
+                    ];
+                }
+
+                // A bundle: the food it includes, per ticket, reserved now and priced inside the ticket.
+                foreach (\App\Services\Checkout\TicketPricing::bundleItems($tier) as $included) {
+                    $dish = MenuItem::withoutGlobalScopes()->where('id', $included['menu_item_id'])->where('event_id', $event?->id)
+                        ->whereNull('deleted_at')->lockForUpdate()->first();
+                    if (!$dish) {
+                        throw new OrderPlacementException("Food included with '{$name}' is no longer available. Contact the host.");
+                    }
+                    $units = $included['quantity'] * $quantity;
+                    if ($dish->available_stock !== null) {
+                        if ((int) $dish->available_stock < $units) {
+                            throw new OrderPlacementException("'{$name}' includes {$dish->name}, and only {$dish->available_stock} are left.");
+                        }
+                        $dish->available_stock = (int) $dish->available_stock - $units;
+                        $dish->save();
+                    }
+                    $lines[] = [
+                        'id' => (string) Str::uuid(), 'menu_item_id' => $dish->id, 'ticket_tier_id' => null, 'name' => $dish->name,
+                        'category' => (string) ($dish->category ?: 'Food'), 'pricing_type' => 'fixed', 'base_price' => '0.00',
+                        'selected_options_summary' => ["Included with {$name}"], 'options_minor' => 0, 'custom_donation_amount' => null,
+                        'unit_price_minor' => 0, 'currency' => $currency, 'quantity' => $units, 'collected_quantity' => 0,
+                        'special_instructions' => null, 'handover_status' => 'pending', 'line_type' => OrderItem::COMPONENT,
+                        'package_line_id' => $lines[0]['id'],
+                    ];
+                }
+
+                return $lines;
             }
         }
 

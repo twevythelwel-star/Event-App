@@ -189,3 +189,11 @@ form[data-submitting="true"] button[type="submit"] { opacity: 0.6; pointer-event
 /* A table never widens the page: it scrolls inside its card. */
 .ac-card { min-width: 0; max-width: 100%; }
 .ac-card > .ac-table, .ac-card-body > .ac-table { display: block; overflow-x: auto; }
+
+/* Uploaded-image review on an event: thumbnail, what it is, and the hide/restore form */
+.ac-image-review { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.ac-image-review li { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: center; padding: 10px; border: 1px solid var(--ac-line); border-radius: 10px; }
+.ac-image-review img { width: 120px; height: 90px; object-fit: cover; border-radius: 8px; background: var(--ac-surface-muted); }
+.ac-image-review-form { grid-column: 1 / -1; display: flex; gap: 8px; flex-wrap: wrap; }
+.ac-image-review-form .ac-input { flex: 1 1 220px; width: auto; }
+@media (min-width: 900px) { .ac-image-review li { grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1.2fr); } .ac-image-review-form { grid-column: auto; } }

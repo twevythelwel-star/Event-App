@@ -31,6 +31,8 @@
     <link rel="stylesheet" href="/css/05-navigation-motion.css">
     <link rel="stylesheet" href="/css/06-components.css">
     <link rel="stylesheet" href="{{ asset('css/brand.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/animations.css') }}">
+    <script src="{{ asset('js/animations.js') }}" defer></script>
 
     <style>
         :focus-visible {
@@ -191,6 +193,8 @@
     </style>
 
     @livewireStyles
+    {{-- Page-specific head tags, such as a preload for the page's main (LCP) image --}}
+    @stack('head')
 </head>
 <body>
     <div class="eb-app-shell app-shell">

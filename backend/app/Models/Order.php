@@ -54,6 +54,11 @@ class Order extends Model
         'closed_at',
         'reservation_expires_at',
         'inventory_released_at',
+        'affiliate_id',
+        'discount_code_id',
+        'is_complimentary',
+        'issued_by',
+        'complimentary_reason',
         'check_in_request_id',
         'notes',
         'food_fulfillment_method',
@@ -82,6 +87,7 @@ class Order extends Model
         'checked_in_at' => 'datetime',
         'reservation_expires_at' => 'datetime',
         'inventory_released_at' => 'datetime',
+        'is_complimentary' => 'boolean',
     ];
 
     public function user(): BelongsTo
@@ -119,6 +125,16 @@ class Order extends Model
         }
 
         return $this->status === 'paid' || $this->authorized_unpaid === true;
+    }
+
+    public function getPickupNumberAttribute(): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) ($this->ticket_code ?: $this->order_number ?: $this->id));
+        if (strlen($digits) >= 3) {
+            return 'PU-' . substr($digits, -3);
+        }
+
+        return 'PU-' . (100 + (abs(crc32((string) $this->id)) % 900));
     }
 
 

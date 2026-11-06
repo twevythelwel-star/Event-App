@@ -4,6 +4,9 @@
 @section('page-title', $event->title ?? 'Event Details')
 
 @section('content')
+@push('head')
+    <x-preload-image :image="$event->coverImage()" sizes="100vw" />
+@endpush
 <style>
     /* Premium Midnight-Navy Theme for Event Detail Screen */
     .event-detail-root {
@@ -16,12 +19,16 @@
         overflow-wrap: anywhere;
     }
 
+    /* The banner keeps the site's banner shape (21:9), and the event-cover shape (16:10) on phones, within limits */
     .detail-hero {
         position: relative;
         width: 100%;
-        height: 380px;
+        aspect-ratio: var(--ratio-banner, 21 / 9);
+        min-height: 240px;
+        max-height: 480px;
         overflow: hidden;
     }
+    @media (max-width: 639px) { .detail-hero { aspect-ratio: var(--ratio-event, 16 / 10); } }
 
     .detail-hero-img {
         width: 100%;
@@ -181,9 +188,8 @@
     }
 
     .gallery-item {
-        min-width: 190px;
-        max-width: 210px;
-        height: 135px;
+        width: 200px;
+        aspect-ratio: var(--ratio-photo, 4 / 3);
         border-radius: 14px;
         overflow: hidden;
         border: 1px solid rgba(255, 255, 255, 0.12);
@@ -197,6 +203,9 @@
         height: 100%;
         object-fit: cover;
     }
+    .gallery-open { all: unset; display: block; width: 100%; height: 100%; cursor: zoom-in; }
+    .gallery-open:focus-visible { outline: 2px solid #C7FF45; outline-offset: -2px; }
+    .gallery-tag { display: block; font-size: 10px; font-weight: 600; color: #CBD5E1; }
 
     .gallery-caption {
         position: absolute;
@@ -246,15 +255,18 @@
     <!-- 1. Cinematic Hero Section -->
     <div class="detail-hero">
         @php
-            $heroImg = $event->display_image_url;
+            $cover = $event->coverImage();
+            $heroImg = $cover->src;
         @endphp
-        {{-- A generated flyer is text, so it is shown whole rather than cropped; uploaded artwork fills the banner.
-             Behind a whole flyer, a blurred copy of the same artwork fills the full width. --}}
+        {{-- A generated flyer is text, so it is shown whole rather than cropped; uploaded artwork fills the banner,
+             at the size the screen needs and cropped around the host's focal point. Behind a whole flyer, a blurred
+             copy of the same artwork fills the full width. --}}
         @unless($event->hasFlyer())
             <img src="{{ $heroImg }}" alt="" aria-hidden="true" class="detail-hero-backdrop">
         @endunless
-           <img src="{{ $heroImg }}" alt="{{ $event->flyer_alt_text ?: $event->title }}" class="detail-hero-img"
-               style="object-position: {{ (int) ($event->flyer_position_x ?? 50) }}% {{ (int) ($event->flyer_position_y ?? 50) }}%; @unless($event->hasFlyer()) object-fit: contain; background: transparent; filter: drop-shadow(0 18px 40px rgba(0,0,0,.5)); @endunless">
+        <x-responsive-image :image="$cover" :alt="$event->hasFlyer() ? ($event->flyer_alt_text ?: $event->title) : $cover->alt" class="detail-hero-img" sizes="100vw" :eager="true"
+            :fit="$event->hasFlyer() ? 'cover' : 'contain'"
+            :style="$event->hasFlyer() ? '' : 'background: transparent; filter: drop-shadow(0 18px 40px rgba(0,0,0,.5));'" />
         <div class="detail-hero-overlay"></div>
 
         <!-- Floating Top Navigation -->
@@ -534,31 +546,76 @@
                 </div>
             </div>
 
-            <!-- 4. Photos: this event's own flyer and dish images, never a fixed set -->
+            <!-- Schedule and line-up, as the host published them -->
+            @php $publicSchedule = app(\App\Services\Events\ScheduleService::class)->publicSchedule($event); @endphp
+            @if($publicSchedule->isNotEmpty())
+                <div class="card-navy">
+                    @include('events.partials.schedule', ['schedule' => $publicSchedule, 'performers' => $event->performers()->with('activities')->get(), 'headingLevel' => 3])
+                </div>
+            @endif
+
+            <!-- Sponsors and vendors, as the host credited and approved them -->
             @php
-                $photos = collect([['src' => $event->flyer_path ? $event->display_image_url : null, 'caption' => $event->flyer_alt_text ?: $event->title]])
-                    ->merge($event->mediaItems->where('media_type', 'gallery')->map(fn ($media) => ['src' => "/api/v1/media/event-media/{$media->id}?variant=thumbnail", 'caption' => $media->alt_text]))
-                    ->merge($event->menuItems->where('is_active', true)->filter(fn ($item) => !empty($item->image_url))
-                        ->map(fn ($item) => ['src' => $item->image_url, 'caption' => $item->name]))
-                    ->filter(fn ($photo) => !empty($photo['src']))
-                    ->unique('src')->take(6)->values();
+                $partnersService = app(\App\Services\Events\PartnersService::class);
+                $pageSponsors = $partnersService->sponsorsFor($event, 'page');
+                $pageVendors = $partnersService->publicVendors($event);
+                $vendorState = $partnersService->applicationsState($event);
+            @endphp
+            @if($pageSponsors->isNotEmpty() || $pageVendors->isNotEmpty() || $vendorState['open'])
+                <div class="card-navy eb-stack" style="gap: var(--space-4);">
+                    @include('events.partials.partners', ['sponsors' => $pageSponsors, 'vendors' => $pageVendors, 'vendorState' => $vendorState])
+                </div>
+            @endif
+
+            <!-- 4. Photos: this event's own gallery, flyer and dish photos, never a fixed set -->
+            @php
+                // The host's gallery first (approved photos, in their order), then the flyer, then dishes with photos.
+                // Each photo says what it is: the event's own, or a sample image labelled as illustrative.
+                $photos = $event->visibleGallery()->toBase()->map(fn ($media) => ['image' => $media->responsiveImage(), 'caption' => $media->alt_text, 'kind' => 'event'])
+                    ->when($event->hasFlyer(), fn ($c) => $c->push(['image' => $event->coverImage(), 'caption' => $event->flyer_alt_text ?: $event->title . ' flyer', 'kind' => 'flyer']))
+                    ->merge($event->menuItems->where('is_active', true)->map(fn ($item) => ['item' => $item, 'image' => $item->responsiveImage()])
+                        ->filter(fn ($row) => $row['image'] !== null)
+                        ->map(fn ($row) => ['image' => $row['image'], 'caption' => $row['item']->name, 'kind' => $row['image']->illustrative ? 'illustrative' : 'dish']))
+                    ->unique(fn ($photo) => $photo['image']->src)->take(9)->values();
             @endphp
             @if($photos->isNotEmpty())
-            <div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">Photos</h3>
-                    <span style="font-size: 11px; color: #94A3B8;">Illustrative images from this listing</span>
+            <section aria-labelledby="photos-heading">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px;">
+                    <h3 id="photos-heading" style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">Photos</h3>
+                    <span style="font-size: 11px; color: #94A3B8;">From this listing</span>
                 </div>
 
-                <div class="gallery-scroll">
+                <ul class="gallery-scroll" style="list-style: none; margin: 0; padding: 0;">
                     @foreach($photos as $photo)
-                        <div class="gallery-item" onclick="openLightbox(@js($photo['src']), @js($photo['caption']))">
-                            <img src="{{ $photo['src'] }}" alt="{{ $photo['caption'] }}">
-                            <div class="gallery-caption">{{ $photo['caption'] }}</div>
-                        </div>
+                        <li class="gallery-item">
+                            <button type="button" class="gallery-open" data-lightbox-src="{{ $photo['image']->src }}" data-lightbox-caption="{{ $photo['caption'] }}{{ $photo['kind'] === 'illustrative' ? ' (illustrative photo)' : '' }}"
+                                aria-label="Open photo {{ $loop->iteration }} of {{ $loop->count }}: {{ $photo['caption'] }}" aria-haspopup="dialog">
+                                {{-- A photo that cannot be loaded is left out rather than shown as a broken tile. --}}
+                                <x-responsive-image :image="$photo['image']" alt="" sizes="220px" onerror="this.closest('.gallery-item').remove()" />
+                            </button>
+                            <div class="gallery-caption">
+                                {{ $photo['caption'] }}
+                                @if($photo['kind'] === 'illustrative')<span class="gallery-tag">Illustrative photo</span>@endif
+                            </div>
+                        </li>
                     @endforeach
-                </div>
-            </div>
+                </ul>
+                {{-- The photo viewer: a native dialog (focus moves in, Escape closes, focus returns to the photo opened),
+                     with previous/next buttons and the arrow keys, and the caption read out with each photo. --}}
+                <dialog class="eb-lightbox" id="photo-lightbox" aria-labelledby="photo-lightbox-caption">
+                    <figure>
+                        <img id="photo-lightbox-image" alt="" decoding="async">
+                        <figcaption>
+                            <span id="photo-lightbox-caption" aria-live="polite"></span>
+                            <span class="eb-lightbox-nav">
+                                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-lightbox-step="-1" aria-label="Previous photo">‹</button>
+                                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-lightbox-step="1" aria-label="Next photo">›</button>
+                                <button type="button" class="eb-btn eb-btn-primary eb-btn-sm" data-lightbox-close>Close</button>
+                            </span>
+                        </figcaption>
+                    </figure>
+                </dialog>
+            </section>
             @endif
 
             <!-- 5. Host / Organizer Information -->
@@ -705,8 +762,42 @@
         }
     }
 
-    function openLightbox(url, caption) {
-        showDetailToast('Viewing: ' + caption);
-    }
+    // Photo viewer for the gallery strip (see #photo-lightbox).
+    (function () {
+        const dialog = document.getElementById('photo-lightbox');
+        if (!dialog || typeof dialog.showModal !== 'function') return;
+        const image = document.getElementById('photo-lightbox-image');
+        const caption = document.getElementById('photo-lightbox-caption');
+        let index = 0, opener = null;
+        const items = () => Array.from(document.querySelectorAll('[data-lightbox-src]'));
+        function show(i) {
+            const list = items();
+            if (!list.length) return;
+            index = (i + list.length) % list.length;
+            const item = list[index];
+            image.src = item.dataset.lightboxSrc;
+            image.alt = item.dataset.lightboxCaption;
+            caption.textContent = item.dataset.lightboxCaption + ' (' + (index + 1) + ' of ' + list.length + ')';
+            dialog.querySelectorAll('[data-lightbox-step]').forEach(b => { b.hidden = list.length < 2; });
+        }
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('[data-lightbox-src]');
+            if (!trigger) return;
+            opener = trigger;
+            show(items().indexOf(trigger));
+            dialog.showModal();
+            dialog.querySelector('[data-lightbox-close]').focus();
+        });
+        dialog.addEventListener('click', function (event) {
+            const step = event.target.closest('[data-lightbox-step]');
+            if (step) { show(index + Number(step.dataset.lightboxStep)); return; }
+            if (event.target.closest('[data-lightbox-close]') || event.target === dialog) dialog.close();
+        });
+        dialog.addEventListener('keydown', function (event) {
+            if (event.key === 'ArrowRight') { show(index + 1); event.preventDefault(); }
+            if (event.key === 'ArrowLeft') { show(index - 1); event.preventDefault(); }
+        });
+        dialog.addEventListener('close', function () { image.removeAttribute('src'); if (opener) opener.focus(); });
+    })();
 </script>
 @endsection

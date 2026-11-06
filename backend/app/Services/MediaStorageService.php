@@ -15,7 +15,13 @@ use Illuminate\Support\Str;
  */
 class MediaStorageService
 {
+    /** The default disk; config/media.php (MEDIA_DISK) can point uploads at an S3-compatible private disk instead. */
     public const DISK = 'local';
+
+    public static function diskName(): string
+    {
+        return (string) config('media.disk', self::DISK);
+    }
 
     public const MAX_BYTES = 5 * 1024 * 1024;
 
@@ -31,6 +37,8 @@ class MediaStorageService
         'flyers' => ['min' => [300, 200], 'max' => [4500, 4500]],
         'menu' => ['min' => [200, 200], 'max' => [4500, 4500]],
         'event-media' => ['min' => [200, 200], 'max' => [4500, 4500]],
+        'performers' => ['min' => [120, 120], 'max' => [4500, 4500]],
+        'sponsors' => ['min' => [80, 40], 'max' => [4500, 4500]],
     ];
 
     /**
@@ -67,7 +75,7 @@ class MediaStorageService
         $bytes = $this->reencode($file->getRealPath(), $info[2]);
 
         $path = "tenants/{$organizerId}/{$kind}/" . Str::uuid() . '.' . $format['ext'];
-        Storage::disk(self::DISK)->put($path, $bytes);
+        Storage::disk(self::diskName())->put($path, $bytes);
 
         return ['path' => $path, 'mime' => $format['mime'], 'size' => strlen($bytes), 'width' => $width, 'height' => $height];
     }
@@ -75,90 +83,131 @@ class MediaStorageService
     public function delete(?string $path): void
     {
         if ($path && self::isStoredPath($path)) {
-            Storage::disk(self::DISK)->delete($path);
+            Storage::disk(self::diskName())->delete($path);
         }
     }
 
+    /** Responsive sizes: the longest edge of each variant, in pixels. */
+    public const SIZES = ['small' => 400, 'medium' => 800, 'large' => 1600];
+
     /**
-     * Create a separate responsive WebP derivative; the sanitized original is never modified.
+     * The formats variants are written in: WebP always, plus AVIF where this server's GD can encode it.
      *
-     * @return array{path: string, mime: string, size: int, width: int, height: int}
+     * @return list<'webp'|'avif'>
      */
-    public function createThumbnail(string $originalPath, string $organizerId, string $kind, int $maxEdge = 1600): array
+    public static function variantFormats(): array
     {
-        return $this->createDerivative($originalPath, $organizerId, $kind, $maxEdge, null);
+        return function_exists('imageavif') && (gd_info()['AVIF Support'] ?? false) ? ['webp', 'avif'] : ['webp'];
     }
 
     /**
-     * Create a WebP derivative with optional cropping. The sanitized original is never modified.
+     * Writes the responsive variants of a stored original: every size in every supported format, optionally cropped
+     * first. The sanitized original is never modified. Variants are stored next to each other under
+     * "{kind}-derivatives/", and the returned map is what the database keeps (storage references only).
      *
-     * @param array|null $crop ['x' => int, 'y' => int, 'width' => int, 'height' => int]
-     * @return array{path: string, mime: string, size: int, width: int, height: int}
+     * @param array{x: int, y: int, width: int, height: int}|null $crop the area to keep, in percent of the image
+     * @return array<string, array{width: int, height: int, webp: string, avif?: string}>
      */
-    public function createDerivative(string $originalPath, string $organizerId, string $kind, int $maxEdge, ?array $crop): array
+    public function createVariants(string $originalPath, string $organizerId, string $kind, ?array $crop = null): array
     {
-        $disk = Storage::disk(self::DISK);
+        $disk = Storage::disk(self::diskName());
         if (!$disk->exists($originalPath)) {
             throw new \InvalidArgumentException('The original image is no longer available.');
         }
-        $source = @imagecreatefromstring($disk->get($originalPath));
-        if ($source === false) {
-            throw new \InvalidArgumentException('The image could not be decoded for thumbnail generation.');
-        }
+        $previousLimit = ini_get('memory_limit');
+        ini_set('memory_limit', '256M');
+        $written = [];
 
-        $sourceWidth = imagesx($source);
-        $sourceHeight = imagesy($source);
+        try {
+            $source = @imagecreatefromstring($disk->get($originalPath));
+            if ($source === false) {
+                throw new \InvalidArgumentException('The image could not be decoded to make its smaller sizes.');
+            }
+            $source = $this->cropByPercent($source, $crop);
+            $sourceWidth = imagesx($source);
+            $sourceHeight = imagesy($source);
+            $base = "tenants/{$organizerId}/{$kind}-derivatives/" . Str::uuid();
 
-        // Apply crop if specified
-        if ($crop && isset($crop['x'], $crop['y'], $crop['width'], $crop['height'])) {
-            $cropX = max(0, min($crop['x'], $sourceWidth - 1));
-            $cropY = max(0, min($crop['y'], $sourceHeight - 1));
-            $cropW = max(1, min($crop['width'], $sourceWidth - $cropX));
-            $cropH = max(1, min($crop['height'], $sourceHeight - $cropY));
+            $variants = [];
+            foreach (self::SIZES as $size => $maxEdge) {
+                $scale = min(1, $maxEdge / max($sourceWidth, $sourceHeight));
+                $width = max(1, (int) round($sourceWidth * $scale));
+                $height = max(1, (int) round($sourceHeight * $scale));
+                $resized = imagecreatetruecolor($width, $height);
+                imagealphablending($resized, false);
+                imagesavealpha($resized, true);
+                imagecopyresampled($resized, $source, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
 
-            $cropped = imagecreatetruecolor($cropW, $cropH);
-            imagealphablending($cropped, false);
-            imagesavealpha($cropped, true);
-            imagecopy($cropped, $source, 0, 0, $cropX, $cropY, $cropW, $cropH);
+                $variants[$size] = ['width' => $width, 'height' => $height];
+                foreach (self::variantFormats() as $format) {
+                    ob_start();
+                    // AVIF at a quick encoder speed: these are re-made on every upload, not once at build time.
+                    $format === 'avif' ? imageavif($resized, null, 55, 8) : imagewebp($resized, null, 82);
+                    $bytes = (string) ob_get_clean();
+                    $path = "{$base}-{$size}.{$format}";
+                    $disk->put($path, $bytes);
+                    $written[] = $path;
+                    $variants[$size][$format] = $path;
+                }
+                imagedestroy($resized);
+            }
             imagedestroy($source);
-            $source = $cropped;
-            $sourceWidth = $cropW;
-            $sourceHeight = $cropH;
+
+            return $variants;
+        } catch (\Throwable $e) {
+            // A half-made set is worse than none: remove whatever was written before failing.
+            foreach ($written as $path) {
+                $disk->delete($path);
+            }
+            throw $e;
+        } finally {
+            ini_set('memory_limit', $previousLimit);
         }
+    }
 
-        $scale = min(1, $maxEdge / max($sourceWidth, $sourceHeight));
-        $width = max(1, (int) round($sourceWidth * $scale));
-        $height = max(1, (int) round($sourceHeight * $scale));
-        $derivative = imagecreatetruecolor($width, $height);
-        imagealphablending($derivative, false);
-        imagesavealpha($derivative, true);
-        imagecopyresampled($derivative, $source, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
-        ob_start();
-        imagewebp($derivative, null, 82);
-        $bytes = (string) ob_get_clean();
-        imagedestroy($source);
-        imagedestroy($derivative);
-
-        $path = "tenants/{$organizerId}/{$kind}-derivatives/" . Str::uuid() . '.webp';
-        $disk->put($path, $bytes);
-
-        return ['path' => $path, 'mime' => 'image/webp', 'size' => strlen($bytes), 'width' => $width, 'height' => $height];
+    /** Deletes every file in a variant map made by createVariants(). */
+    public function deleteVariants(?array $variants): void
+    {
+        foreach ((array) $variants as $variant) {
+            foreach (['webp', 'avif'] as $format) {
+                $this->delete($variant[$format] ?? null);
+            }
+        }
     }
 
     /**
-     * Create multiple responsive derivatives for different contexts.
-     * Returns an array of derivative paths keyed by size name.
+     * The three WebP variants in the shape older callers expect ({small, medium, large} → {path, width, height}).
      *
-     * @param array|null $crop Optional crop parameters
-     * @return array{small: ?array, medium: ?array, large: ?array}
+     * @return array<string, array{path: string, width: int, height: int}>
      */
-    public function createResponsiveDerivatives(string $originalPath, string $organizerId, string $kind, ?array $crop = null): array
+    public static function webpPaths(array $variants): array
     {
-        return [
-            'small' => $this->createDerivative($originalPath, $organizerId, $kind, 400, $crop),
-            'medium' => $this->createDerivative($originalPath, $organizerId, $kind, 800, $crop),
-            'large' => $this->createDerivative($originalPath, $organizerId, $kind, 1600, $crop),
-        ];
+        return array_map(fn (array $v) => ['path' => $v['webp'], 'width' => $v['width'], 'height' => $v['height']], $variants);
+    }
+
+    /** Keeps the given area of the image; the crop is in percent of the width and height, clamped to the image. */
+    private function cropByPercent(\GdImage $source, ?array $crop): \GdImage
+    {
+        if (!$crop || !isset($crop['x'], $crop['y'], $crop['width'], $crop['height'])) {
+            return $source;
+        }
+        $w = imagesx($source);
+        $h = imagesy($source);
+        $x = (int) round($w * max(0, min(99, (int) $crop['x'])) / 100);
+        $y = (int) round($h * max(0, min(99, (int) $crop['y'])) / 100);
+        $cropW = max(1, min($w - $x, (int) round($w * max(1, min(100, (int) $crop['width'])) / 100)));
+        $cropH = max(1, min($h - $y, (int) round($h * max(1, min(100, (int) $crop['height'])) / 100)));
+        if ($x === 0 && $y === 0 && $cropW === $w && $cropH === $h) {
+            return $source;
+        }
+
+        $cropped = imagecreatetruecolor($cropW, $cropH);
+        imagealphablending($cropped, false);
+        imagesavealpha($cropped, true);
+        imagecopy($cropped, $source, 0, 0, $x, $y, $cropW, $cropH);
+        imagedestroy($source);
+
+        return $cropped;
     }
 
     /**

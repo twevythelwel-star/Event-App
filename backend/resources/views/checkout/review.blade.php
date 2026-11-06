@@ -36,6 +36,31 @@
                 :total-minor="$totals->totalMinor()" :currency="$currency"
                 note="This is the full price you will pay. Prices come from the organizer and are checked again when you place the order." />
             <a href="{{ route($backRoute, $event) }}" class="eb-text-label" style="display: inline-block; margin-top: var(--space-3);">Change order</a>
+
+            {{-- Discount code: checked when applied, and again when the order is placed. --}}
+            <div class="eb-discount-code">
+                @if($quote['discount_code'] ?? null)
+                    <form method="POST" action="{{ route('checkout.code.remove', $event) }}" class="eb-cluster">
+                        @csrf @method('DELETE')
+                        <span>Code <strong>{{ $quote['discount_code'] }}</strong> applied.</span>
+                        <button type="submit" class="eb-btn eb-btn-ghost eb-btn-sm">Remove</button>
+                    </form>
+                @else
+                    <form method="POST" action="{{ route('checkout.code.apply', $event) }}" class="eb-cluster" style="align-items: flex-end;">
+                        @csrf
+                        <div class="eb-form-group" style="flex: 1 1 200px; margin: 0;">
+                            <label class="eb-label" for="discount-code">Discount code</label>
+                            <input class="eb-input" id="discount-code" name="discount_code" maxlength="40" autocomplete="off" value="{{ old('discount_code') }}"
+                                   @error('discount_code') aria-invalid="true" aria-describedby="discount-code-error" @enderror>
+                        </div>
+                        <button type="submit" class="eb-btn eb-btn-secondary">Apply</button>
+                    </form>
+                    @error('discount_code')<div class="eb-field-error" id="discount-code-error" role="alert"><span>{{ $message }}</span></div>@enderror
+                @endif
+            </div>
+            @if(!empty($holds))
+                <p class="eb-help-text" style="margin: var(--space-2) 0 0;">Your tickets are held until {{ collect($holds)->min('expires_at')?->copy()->setTimezone($event->timezone ?: config('app.timezone'))->format('g:i A') }}.</p>
+            @endif
         @endif
     </section>
 

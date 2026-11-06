@@ -185,6 +185,7 @@ class MenuStudioController extends Controller
             'remove_photo' => ['nullable', 'boolean'],
             'image_position' => ['nullable', Rule::in(['50% 50%', '50% 20%', '50% 80%', '20% 50%', '80% 50%'])],
             'image_is_illustrative' => ['nullable', 'boolean'],
+            'image_alt_text' => ['nullable', 'string', 'max:250'],
             'components' => ['nullable', 'array', 'max:20'],
             'components.*.menu_item_id' => ['nullable', 'string', 'max:64'],
             'components.*.quantity' => ['nullable', 'integer', 'min:1', 'max:20'],
@@ -230,6 +231,7 @@ class MenuStudioController extends Controller
             'is_active' => $request->has('is_active') ? $request->boolean('is_active') : true,
             'image_position' => $v['image_position'] ?? null,
             'image_is_illustrative' => $request->boolean('image_is_illustrative'),
+            'image_alt_text' => filled($v['image_alt_text'] ?? null) ? trim((string) $v['image_alt_text']) : null,
         ];
 
         if ($type === 'package') {

@@ -118,6 +118,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::put('/events/{id}', [EventController::class, 'update'])->name('events.update');
     Route::post('/events/{id}/flyer', [EventController::class, 'uploadFlyer'])->name('events.flyer.upload');
     Route::delete('/events/{id}/flyer', [EventController::class, 'removeFlyer'])->name('events.flyer.remove');
+    Route::post('/events/{id}/photos', [\App\Http\Controllers\EventPhotosController::class, 'store'])->name('events.photos.store')->middleware('throttle:30,1');
+    Route::patch('/events/{id}/photos/{mediaId}', [\App\Http\Controllers\EventPhotosController::class, 'update'])->name('events.photos.update');
+    Route::delete('/events/{id}/photos/{mediaId}', [\App\Http\Controllers\EventPhotosController::class, 'destroy'])->name('events.photos.destroy');
     Route::get('/events/{id}/review', [EventController::class, 'review'])->name('events.review');
     Route::post('/events/{id}/publish', [EventController::class, 'publish'])->name('events.publish');
     Route::post('/events/{id}/unpublish', [EventController::class, 'unpublish'])->name('events.unpublish');
@@ -130,6 +133,46 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/events/{id}/qr/retry', [EventQrController::class, 'retry'])->name('events.qr.retry')->middleware('throttle:20,1');
 
     // Menu studio: Menu Builder, Package Builder and Attendee Preview (events the user manages)
+    Route::get('/events/{id}/ticketing', [\App\Http\Controllers\TicketingStudioController::class, 'show'])->name('events.ticketing');
+    Route::post('/events/{id}/ticketing/pricing/{tierId}', [\App\Http\Controllers\TicketingStudioController::class, 'savePricing'])->name('events.ticketing.pricing')->middleware('throttle:60,1');
+    Route::post('/events/{id}/ticketing/codes', [\App\Http\Controllers\TicketingStudioController::class, 'saveCode'])->name('events.ticketing.codes.store')->middleware('throttle:60,1');
+    Route::put('/events/{id}/ticketing/codes/{codeId}', [\App\Http\Controllers\TicketingStudioController::class, 'saveCode'])->name('events.ticketing.codes.update')->middleware('throttle:60,1');
+    Route::delete('/events/{id}/ticketing/codes/{codeId}', [\App\Http\Controllers\TicketingStudioController::class, 'deleteCode'])->name('events.ticketing.codes.destroy');
+    Route::post('/events/{id}/ticketing/promoters', [\App\Http\Controllers\TicketingStudioController::class, 'saveAffiliate'])->name('events.ticketing.promoters.store')->middleware('throttle:60,1');
+    Route::put('/events/{id}/ticketing/promoters/{affiliateId}', [\App\Http\Controllers\TicketingStudioController::class, 'saveAffiliate'])->name('events.ticketing.promoters.update')->middleware('throttle:60,1');
+    Route::post('/events/{id}/ticketing/complimentary', [\App\Http\Controllers\TicketingStudioController::class, 'issueComplimentary'])->name('events.ticketing.complimentary')->middleware('throttle:30,1');
+    Route::post('/events/{id}/ticketing/waitlist/offer', [\App\Http\Controllers\TicketingStudioController::class, 'offerWaitlist'])->name('events.ticketing.waitlist.offer')->middleware('throttle:30,1');
+    Route::post('/events/{id}/ticketing/settings', [\App\Http\Controllers\TicketingStudioController::class, 'saveSettings'])->name('events.ticketing.settings');
+    Route::get('/events/{id}/partners', [\App\Http\Controllers\PartnersStudioController::class, 'show'])->name('events.partners');
+    Route::post('/events/{id}/partners/settings', [\App\Http\Controllers\PartnersStudioController::class, 'saveSettings'])->name('events.partners.settings');
+    Route::post('/events/{id}/partners/offers', [\App\Http\Controllers\PartnersStudioController::class, 'saveOffer'])->name('events.partners.offers.store')->middleware('throttle:60,1');
+    Route::put('/events/{id}/partners/offers/{offerId}', [\App\Http\Controllers\PartnersStudioController::class, 'saveOffer'])->name('events.partners.offers.update')->middleware('throttle:60,1');
+    Route::delete('/events/{id}/partners/offers/{offerId}', [\App\Http\Controllers\PartnersStudioController::class, 'deleteOffer'])->name('events.partners.offers.destroy');
+    Route::post('/events/{id}/partners/applications/{applicationId}/decision', [\App\Http\Controllers\PartnersStudioController::class, 'decide'])->name('events.partners.applications.decide')->middleware('throttle:60,1');
+    Route::post('/events/{id}/partners/applications/{applicationId}/fee', [\App\Http\Controllers\PartnersStudioController::class, 'feeStatus'])->name('events.partners.applications.fee')->middleware('throttle:60,1');
+    Route::post('/events/{id}/partners/applications/{applicationId}/sponsor', [\App\Http\Controllers\PartnersStudioController::class, 'sponsorFromApplication'])->name('events.partners.applications.sponsor');
+    Route::post('/events/{id}/partners/packages', [\App\Http\Controllers\PartnersStudioController::class, 'savePackage'])->name('events.partners.packages.store');
+    Route::put('/events/{id}/partners/packages/{packageId}', [\App\Http\Controllers\PartnersStudioController::class, 'savePackage'])->name('events.partners.packages.update');
+    Route::delete('/events/{id}/partners/packages/{packageId}', [\App\Http\Controllers\PartnersStudioController::class, 'deletePackage'])->name('events.partners.packages.destroy');
+    Route::post('/events/{id}/partners/sponsors', [\App\Http\Controllers\PartnersStudioController::class, 'saveSponsor'])->name('events.partners.sponsors.store')->middleware('throttle:30,1');
+    Route::put('/events/{id}/partners/sponsors/{sponsorId}', [\App\Http\Controllers\PartnersStudioController::class, 'saveSponsor'])->name('events.partners.sponsors.update')->middleware('throttle:30,1');
+    Route::delete('/events/{id}/partners/sponsors/{sponsorId}', [\App\Http\Controllers\PartnersStudioController::class, 'deleteSponsor'])->name('events.partners.sponsors.destroy');
+    Route::get('/events/{id}/vendors/apply', [\App\Http\Controllers\VendorApplicationController::class, 'create'])->name('vendors.apply');
+    Route::post('/events/{id}/vendors/apply', [\App\Http\Controllers\VendorApplicationController::class, 'store'])->name('vendors.apply.store')->middleware('throttle:10,1');
+    Route::get('/vendor-applications', [\App\Http\Controllers\VendorApplicationController::class, 'mine'])->name('vendors.mine');
+    Route::post('/vendor-applications/{applicationId}/withdraw', [\App\Http\Controllers\VendorApplicationController::class, 'withdraw'])->name('vendors.withdraw');
+    Route::get('/events/{id}/venue-designer', [\App\Http\Controllers\VenueDesignerController::class, 'show'])->name('events.venue-designer');
+    Route::post('/events/{id}/venue-designer', [\App\Http\Controllers\VenueDesignerController::class, 'save'])->name('events.venue-designer.save')->middleware('throttle:30,1');
+    Route::get('/events/{id}/schedule-studio', [\App\Http\Controllers\ScheduleStudioController::class, 'show'])->name('events.schedule-studio');
+    Route::post('/events/{id}/schedule-studio/activities', [\App\Http\Controllers\ScheduleStudioController::class, 'saveActivity'])->name('events.schedule-studio.activities.store')->middleware('throttle:60,1');
+    Route::put('/events/{id}/schedule-studio/activities/{activityId}', [\App\Http\Controllers\ScheduleStudioController::class, 'saveActivity'])->name('events.schedule-studio.activities.update')->middleware('throttle:60,1');
+    Route::delete('/events/{id}/schedule-studio/activities/{activityId}', [\App\Http\Controllers\ScheduleStudioController::class, 'deleteActivity'])->name('events.schedule-studio.activities.destroy');
+    Route::post('/events/{id}/schedule-studio/performers', [\App\Http\Controllers\ScheduleStudioController::class, 'savePerformer'])->name('events.schedule-studio.performers.store')->middleware('throttle:30,1');
+    Route::put('/events/{id}/schedule-studio/performers/{performerId}', [\App\Http\Controllers\ScheduleStudioController::class, 'savePerformer'])->name('events.schedule-studio.performers.update')->middleware('throttle:30,1');
+    Route::delete('/events/{id}/schedule-studio/performers/{performerId}', [\App\Http\Controllers\ScheduleStudioController::class, 'deletePerformer'])->name('events.schedule-studio.performers.destroy');
+    Route::post('/events/{id}/schedule-studio/stages', [\App\Http\Controllers\ScheduleStudioController::class, 'saveStage'])->name('events.schedule-studio.stages.store')->middleware('throttle:60,1');
+    Route::put('/events/{id}/schedule-studio/stages/{stageId}', [\App\Http\Controllers\ScheduleStudioController::class, 'saveStage'])->name('events.schedule-studio.stages.update')->middleware('throttle:60,1');
+    Route::delete('/events/{id}/schedule-studio/stages/{stageId}', [\App\Http\Controllers\ScheduleStudioController::class, 'deleteStage'])->name('events.schedule-studio.stages.destroy');
     Route::get('/events/{id}/menu-studio', [\App\Http\Controllers\MenuStudioController::class, 'show'])->name('events.menu-studio');
     Route::post('/events/{id}/menu-studio/items', [\App\Http\Controllers\MenuStudioController::class, 'storeItem'])->name('events.menu-studio.items.store')->middleware('throttle:60,1');
     Route::post('/events/{id}/menu-studio/packages', [\App\Http\Controllers\MenuStudioController::class, 'storePackage'])->name('events.menu-studio.packages.store')->middleware('throttle:60,1');
@@ -213,6 +256,9 @@ Route::prefix('api/v1')->group(function () {
     // Uploaded images: public for published events, otherwise only for accounts that manage the event
     Route::get('/media/events/{eventId}/flyer', [MediaController::class, 'flyer'])->name('api.media.flyer');
     Route::get('/media/menu/{itemId}/photo', [MediaController::class, 'menuPhoto'])->name('api.media.menu-photo');
+    Route::get('/media/event-media/{mediaId}', [MediaController::class, 'eventMedia'])->name('api.media.event-media');
+    Route::get('/media/performers/{performerId}/photo', [MediaController::class, 'performerPhoto'])->name('api.media.performer-photo');
+    Route::get('/media/sponsors/{sponsorId}/logo', [MediaController::class, 'sponsorLogo'])->name('api.media.sponsor-logo');
 
     Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/admin/cultural-catalog/{type}', [AdminCulturalCatalogController::class, 'store'])->name('api.admin.cultural-catalog.store');
@@ -259,7 +305,6 @@ Route::prefix('api/v1')->group(function () {
         Route::delete('/host/events/{eventId}/flyer', [HostEventsController::class, 'removeFlyer'])->name('api.host.flyer.destroy');
         Route::post('/host/events/{eventId}/media', [HostEventsController::class, 'uploadEventMedia'])->name('api.host.event-media.store')->middleware('throttle:30,1');
         Route::delete('/host/events/{eventId}/media/{mediaId}', [HostEventsController::class, 'removeEventMedia'])->name('api.host.event-media.destroy');
-        Route::get('/media/event-media/{mediaId}', [MediaController::class, 'eventMedia'])->name('api.media.event-media');
         Route::post('/host/events/{eventId}/menu/{itemId}/photo', [HostEventsController::class, 'uploadMenuPhoto'])->name('api.host.menu.photo')->middleware('throttle:30,1');
 
         // Event reports and analytics

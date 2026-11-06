@@ -37,9 +37,26 @@
 
 <div class="eb-home">
     @php
-        $heroArt = $featured->take(3)->values();
+        // Featured events with the host's own flyer lead the hero (still soonest first within each group); events
+        // without one follow with their generated cover.
+        $heroArt = $featured->sortByDesc(fn ($event) => $event->hasFlyer())->take(3)->values();
+        // A real photograph for each tradition: the flyer of an upcoming event that celebrates it.
+        $traditionPhotos = [];
+        foreach (collect($sections)->pluck('events')->map(fn ($events) => collect($events))->flatten(1)->unique('id') as $listed) {
+            if (!$listed->hasFlyer() || !method_exists($listed, 'traditionLabels')) {
+                continue;
+            }
+            foreach ($listed->traditionLabels() as $label) {
+                $traditionPhotos[$label] ??= $listed;
+            }
+        }
         $upcomingCount = $markets->sum('upcoming_count') ?: $featured->count();
     @endphp
+    @if($heroArt->isNotEmpty())
+        @push('head')
+            <x-preload-image :image="$heroArt->first()->coverImage()" sizes="(min-width: 1280px) 520px, 90vw" />
+        @endpush
+    @endif
     <section class="eb-home-hero eb-hero-cinematic" aria-labelledby="home-heading">
         <div class="eb-hero-backdrop" aria-hidden="true">
             <span class="eb-hero-orb eb-hero-orb-lime"></span>
@@ -95,7 +112,7 @@
             <div class="eb-hero-art">
                 @foreach($heroArt as $i => $art)
                     <a href="{{ route('events.show', $art->id) }}" class="eb-hero-card eb-hero-card-{{ $i }}" @if($i > 0) tabindex="-1" aria-hidden="true" @endif>
-                        <img src="{{ $art->display_image_url }}" alt="{{ $i === 0 ? 'Featured: ' . $art->title : '' }}" @if($i > 0) loading="lazy" @endif decoding="async">
+                        <x-responsive-image :image="$art->coverImage()" :alt="$i === 0 ? 'Featured: ' . $art->title : ''" :eager="$i === 0" sizes="(min-width: 1280px) 520px, 90vw" />
                         @if($i === 0)
                             <span class="eb-hero-card-label"><span class="eb-badge eb-badge-accent">Featured</span></span>
                         @endif
@@ -126,13 +143,14 @@
             </div>
             <ul class="eb-tradition-cards">
                 @foreach($traditions as $label => $count)
-                    @php $cuisineArt = \App\Support\VisualAssets::cuisineForTradition($label); @endphp
+                    @php $photoEvent = $traditionPhotos[$label] ?? null; $cuisineArt = $photoEvent ? null : \App\Support\VisualAssets::cuisineForTradition($label); @endphp
                     <li>
-                        <a href="{{ route('events.index', ['q' => $label]) }}" class="eb-tradition-card{{ $cuisineArt ? ' has-art' : '' }}" style="--tint: {{ ['#C7FF45', '#C4B5FD', '#7DD3FC', '#FBBF24', '#4ADE80', '#FCA5A5', '#F472B6'][crc32($label) % 7] }}; --turn: {{ crc32($label) % 360 }}deg;">
+                        <a href="{{ route('events.index', ['q' => $label]) }}" class="eb-tradition-card{{ ($cuisineArt || $photoEvent) ? ' has-art' : '' }}" style="--tint: {{ ['#C7FF45', '#C4B5FD', '#7DD3FC', '#FBBF24', '#4ADE80', '#FCA5A5', '#F472B6'][crc32($label) % 7] }}; --turn: {{ crc32($label) % 360 }}deg;">
                             {{-- Illustrated cuisine artwork where one fits the tradition; decorative, the name says what it is. --}}
-                            <span class="eb-tradition-art" aria-hidden="true">@if($cuisineArt)<img src="{{ $cuisineArt['url'] }}" alt="" width="800" height="600" loading="lazy" decoding="async">@endif</span>
+                            <span class="eb-tradition-art" aria-hidden="true">@if($photoEvent)<x-responsive-image :image="$photoEvent->coverImage()" alt="" sizes="240px" />@elseif($cuisineArt)<img src="{{ $cuisineArt['url'] }}" alt="" width="800" height="600" loading="lazy" decoding="async">@endif</span>
                             <span class="eb-tradition-name">{{ $label }}</span>
                             <span class="eb-tradition-count">{{ $count }} {{ \Illuminate\Support\Str::plural('event', $count) }}</span>
+                            @if($photoEvent)<span class="eb-tradition-credit">Photo: {{ $photoEvent->title }}</span>@endif
                         </a>
                     </li>
                 @endforeach

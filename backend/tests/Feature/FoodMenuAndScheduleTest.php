@@ -491,6 +491,6 @@ class FoodMenuAndScheduleTest extends TestCase
             ->assertSee('data-design="elegant_gold"', false)->assertSee('data-accent="gold"', false)->assertSee('Print ticket');
 
         $this->actingAs($this->buyer)->get(route('checkout.food', $this->event))->assertOk()
-            ->assertSee('Photo coming soon')->assertDontSee('placeholder-flyer.jpg');
+            ->assertSee('No photo yet')->assertDontSee('placeholder-flyer.jpg');
     }
 }

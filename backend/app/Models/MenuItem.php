@@ -33,6 +33,11 @@ class MenuItem extends Model
         'currency',
         'image_url',
         'image_path',
+        'image_variants',
+        'image_alt_text',
+        'image_width',
+        'image_height',
+        'image_moderation_status',
         'custom_option_groups',
         'custom_amount_config',
         'allow_special_instructions',
@@ -66,6 +71,9 @@ class MenuItem extends Model
         'peanuts' => 'Peanuts', 'wheat' => 'Wheat', 'soy' => 'Soy', 'sesame' => 'Sesame'];
 
     protected $casts = [
+        'image_variants' => 'array',
+        'image_width' => 'integer',
+        'image_height' => 'integer',
         'price_usd' => 'decimal:2',
         'price_jmd' => 'integer',
         'price_minor' => 'integer',
@@ -90,6 +98,18 @@ class MenuItem extends Model
      * Whether the photo shown is a sample rather than this dish: the host said so, or it is one of the images
      * bundled with the app (public /images), which are never a host's own food.
      */
+    /** Whether an administrator hid this item's uploaded photo (moderation). */
+    public function imageIsHidden(): bool
+    {
+        return ($this->image_moderation_status ?? 'approved') === 'hidden';
+    }
+
+    /** The photo as a responsive image (sizes, formats, focal point, alt text), or null when there is none to show. */
+    public function responsiveImage(): ?\App\Support\ResponsiveImage
+    {
+        return \App\Support\ResponsiveImage::forMenuItem($this);
+    }
+
     public function photoIsIllustrative(): bool
     {
         return (bool) $this->image_is_illustrative
@@ -134,10 +154,24 @@ class MenuItem extends Model
      */
     public function getDisplayImageUrlAttribute(): ?string
     {
+        // A photo an administrator has hidden is not shown; the card falls back to its plain placeholder.
+        if ($this->imageIsHidden()) {
+            return null;
+        }
         if (\App\Services\MediaStorageService::isStoredPath($this->image_path ?? null)) {
-            return route('api.media.menu-photo', $this->id);
+            // The versioned link written at upload, so a replaced photo is never served from a stale cache.
+            $versioned = (string) ($this->image_url ?? '');
+
+            return str_starts_with($versioned, '/api/v1/media/menu/' . $this->id . '/photo')
+                ? $versioned
+                : route('api.media.menu-photo', $this->id, false);
         }
         $url = (string) ($this->image_url ?? '');
+        // A bundled sample photo only where it shows this very dish (ImageSubjects); otherwise the labelled
+        // fallback shows, never a picture of some other food.
+        if (\App\Support\ImageSubjects::isBundled($url)) {
+            return \App\Support\ImageSubjects::sampleFitsMenuItem($url, $this) ? $url : null;
+        }
 
         return (str_starts_with($url, '/') || str_starts_with($url, 'https://')) ? $url : null;
     }

@@ -104,21 +104,24 @@ return [
         'notifications' => ['file' => 'images/library/empty/no-notifications.svg', 'source' => 'original'],
     ],
 
-    // Bundled sample photography, catalogued by cuisine. Samples only: always labelled illustrative.
+    // Bundled sample photography, catalogued by cuisine. Samples only: always labelled illustrative. Each photo shows
+    // one dish, and `matches` lists the dish names it may stand for: App\Support\ImageSubjects shows it only on a
+    // menu item whose name contains one of them, so a photo never illustrates a different food. Files not listed
+    // here are never shown.
     'sample_photos' => [
         'jamaican' => [
-            ['file' => 'images/jerk_chicken.jpg', 'dish' => 'Jerk chicken'],
-            ['file' => 'images/escovitch_fish.jpg', 'dish' => 'Escovitch fish'],
-            ['file' => 'images/oxtail.jpg', 'dish' => 'Oxtail'],
-            ['file' => 'images/bammy.jpg', 'dish' => 'Bammy'],
-            ['file' => 'images/caribbean_curry_goat.jpg', 'dish' => 'Curry goat'],
+            ['file' => 'images/jerk_chicken.jpg', 'dish' => 'Jerk chicken', 'matches' => ['jerk chicken']],
+            ['file' => 'images/escovitch_fish.jpg', 'dish' => 'Escovitch fish', 'matches' => ['escovitch fish', 'escovitch snapper', 'fried escovitch']],
+            ['file' => 'images/oxtail.jpg', 'dish' => 'Oxtail', 'matches' => ['oxtail']],
+            ['file' => 'images/bammy.jpg', 'dish' => 'Bammy', 'matches' => ['bammy']],
+            ['file' => 'images/caribbean_curry_goat.jpg', 'dish' => 'Curry goat', 'matches' => ['curry goat', 'curried goat']],
         ],
         'caribbean' => [
-            ['file' => 'images/fried_plantains_sides.jpg', 'dish' => 'Fried plantains'],
-            ['file' => 'images/crispy_island_wings.jpg', 'dish' => 'Wings'],
-            ['file' => 'images/fried_chicken.jpg', 'dish' => 'Fried chicken'],
-            ['file' => 'images/rum_punch.jpg', 'dish' => 'Punch'],
-            ['file' => 'images/tropical_island_smoothie.jpg', 'dish' => 'Fruit smoothie'],
+            ['file' => 'images/fried_plantains_sides.jpg', 'dish' => 'Fried plantains', 'matches' => ['fried plantain', 'fried plantains', 'fried sweet plantains', 'sweet plantains']],
+            ['file' => 'images/crispy_island_wings.jpg', 'dish' => 'Chicken wings', 'matches' => ['wings', 'chicken wings']],
+            ['file' => 'images/fried_chicken.jpg', 'dish' => 'Fried chicken', 'matches' => ['fried chicken']],
+            ['file' => 'images/rum_punch.jpg', 'dish' => 'Rum punch', 'matches' => ['rum punch', 'fruit punch']],
+            ['file' => 'images/tropical_island_smoothie.jpg', 'dish' => 'Fruit smoothie', 'matches' => ['smoothie']],
         ],
     ],
 ];

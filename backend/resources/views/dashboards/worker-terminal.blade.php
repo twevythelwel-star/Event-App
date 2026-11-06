@@ -8,14 +8,20 @@
     <!-- Terminal Header Bar -->
     <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95)); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow-md);">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: gap; gap: 1rem;">
-            <div>
-                <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; margin-bottom: 0.5rem;">
-                    {{ $workerRole->label() }}
-                </span>
-                <h1 style="font-size: 1.5rem; font-weight: 800; margin: 0.25rem 0;">{{ $event->title }}</h1>
-                <p style="color: var(--text-secondary); font-size: 0.85rem;">
-                    Venue: {{ $event->venue_name ?? 'On-Site' }} &bull; Station: <strong style="color: var(--accent-emerald);">{{ strtoupper($station) }}</strong>
-                </p>
+            {{-- A small cover so staff can confirm at a glance which event this terminal is for; nothing decorative
+                 sits near the scanner, cash or handover controls below. --}}
+            <div style="display: flex; gap: 1rem; align-items: center; min-width: 0;">
+                <x-responsive-image :image="$event->coverImage()" alt="" sizes="56px" width="56" height="56" :eager="true"
+                    style="width: 56px; height: 56px; border-radius: 12px; flex-shrink: 0; border: 1px solid var(--border-color);" />
+                <div style="min-width: 0;">
+                    <span class="badge" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; margin-bottom: 0.5rem;">
+                        {{ $workerRole->label() }}
+                    </span>
+                    <h1 style="font-size: 1.5rem; font-weight: 800; margin: 0.25rem 0;">{{ $event->title }}</h1>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">
+                        Venue: {{ $event->venue_name ?? 'On-Site' }} &bull; Station: <strong style="color: var(--accent-emerald);">{{ strtoupper($station) }}</strong>
+                    </p>
+                </div>
             </div>
             <div style="text-align: right;">
                 <span style="font-size: 0.75rem; color: var(--text-secondary); display: block;">Session Worker:</span>

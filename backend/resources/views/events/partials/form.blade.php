@@ -345,6 +345,7 @@
     <div class="eb-card-header card-header"><div>
         <h2 class="eb-card-title card-title">Event Branding</h2>
         <p class="eb-card-subtitle card-subtitle">Upload flyers, cover images, gallery photos, and logos.</p>
+        <span id="branding-status" class="section-status incomplete" style="margin-left: auto;">In progress</span>
     </div></div>
 
     <!-- Main Flyer -->
@@ -375,6 +376,27 @@
                     <input type="range" name="flyer_position_y" id="flyer-position-y" aria-label="Flyer focus, top to bottom (percent)" min="0" max="100" value="{{ $e?->flyer_position_y ?? 50 }}" style="width: 100%;">
                 </div>
                 <p class="eb-help-text">Horizontal: {{ $e?->flyer_position_x ?? 50 }}%, Vertical: {{ $e?->flyer_position_y ?? 50 }}%</p>
+            </div>
+        </div>
+        {{-- Focal point and crop: what each place on the site will show. The original upload is always kept whole. --}}
+        <div class="eb-focal-tools" data-focal-tools @unless($e?->flyer_path) hidden @endunless>
+            <p class="eb-help-text" style="margin: 0;">Click the flyer above to choose its focal point (or use the sliders). Every place the flyer is cropped keeps that point in view:</p>
+            <div class="eb-focal-previews">
+                <figure><div class="eb-focal-frame" style="aspect-ratio: 4 / 3;"><img data-focal-preview alt="" src="{{ $e?->flyer_path ? $e->display_image_url : '' }}"></div><figcaption>Event card</figcaption></figure>
+                <figure><div class="eb-focal-frame" style="aspect-ratio: 16 / 9;"><img data-focal-preview alt="" src="{{ $e?->flyer_path ? $e->display_image_url : '' }}"></div><figcaption>Event page banner</figcaption></figure>
+                <figure><div class="eb-focal-frame" style="aspect-ratio: 1 / 1;"><img data-focal-preview alt="" src="{{ $e?->flyer_path ? $e->display_image_url : '' }}"></div><figcaption>Ticket and lists</figcaption></figure>
+            </div>
+            <div class="eb-form-group" style="max-width: 360px;">
+                <label for="flyer-crop" class="eb-label">Crop a new upload (optional)</label>
+                <select id="flyer-crop" class="eb-select eb-input" disabled>
+                    <option value="">Keep the whole image</option>
+                    <option value="1.7778">Banner, 16:9</option>
+                    <option value="1.3333">Card, 4:3</option>
+                    <option value="1">Square, 1:1</option>
+                </select>
+                <input type="hidden" name="flyer_crop_x" id="flyer-crop-x"><input type="hidden" name="flyer_crop_y" id="flyer-crop-y">
+                <input type="hidden" name="flyer_crop_width" id="flyer-crop-width"><input type="hidden" name="flyer_crop_height" id="flyer-crop-height">
+                <p class="eb-help-text">Choose a new flyer first. The crop is centred on the focal point and shapes only the sizes shown on the site; your original file is kept unchanged.</p>
             </div>
         </div>
     </fieldset>
@@ -620,6 +642,16 @@
             check.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB) will be uploaded when you save.';
             preview.src = URL.createObjectURL(file);
             preview.hidden = false;
+            // The pixel-size check, the focal previews and the crop choice need the new image's own dimensions.
+            preview.onload = function () {
+                const w = preview.naturalWidth, h = preview.naturalHeight;
+                if (w < 300 || h < 200 || w > 4500 || h > 4500) {
+                    check.textContent = 'This image is ' + w + ' × ' + h + ' pixels; it must be between 300 × 200 and 4500 × 4500.';
+                }
+                if (focalTools) focalTools.hidden = false;
+                focalImages.forEach(img => { img.src = preview.src; });
+                if (cropSelect) { cropSelect.disabled = false; applyCrop(); }
+            };
 
             // Update all preview images
             const previewImages = ['preview-flyer-desktop', 'preview-flyer-tablet', 'preview-flyer-mobile'];
@@ -629,18 +661,50 @@
             });
         });
 
-        // Position adjustment display
+        // Focal point: the sliders (keyboard) or a click on the flyer set it; the card, banner and square previews
+        // show live what each place on the site will keep in view.
         const posX = document.getElementById('flyer-position-x');
         const posY = document.getElementById('flyer-position-y');
+        const focalTools = document.querySelector('[data-focal-tools]');
+        const focalImages = document.querySelectorAll('[data-focal-preview]');
+        const cropSelect = document.getElementById('flyer-crop');
+        function applyCrop() {
+            const ids = ['flyer-crop-x', 'flyer-crop-y', 'flyer-crop-width', 'flyer-crop-height'].map(id => document.getElementById(id));
+            const ratio = parseFloat(cropSelect && cropSelect.value);
+            const w = preview.naturalWidth, h = preview.naturalHeight;
+            if (!ratio || !w || !h || !input.files.length) { ids.forEach(f => { f.value = ''; }); return; }
+            // The largest area of that shape, centred on the focal point and kept inside the image (in percent).
+            let cw = 100, ch = 100;
+            if (w / h > ratio) { cw = Math.round((h * ratio) / w * 100); } else { ch = Math.round((w / ratio) / h * 100); }
+            const cx = Math.max(0, Math.min(100 - cw, Math.round(Number(posX.value) - cw / 2)));
+            const cy = Math.max(0, Math.min(100 - ch, Math.round(Number(posY.value) - ch / 2)));
+            [cx, cy, cw, ch].forEach((value, i) => { ids[i].value = String(value); });
+        }
         if (posX && posY) {
             const updatePositionDisplay = () => {
                 const helpText = posX.parentElement.nextElementSibling;
                 if (helpText) {
                     helpText.textContent = 'Horizontal: ' + posX.value + '%, Vertical: ' + posY.value + '%';
                 }
+                focalImages.forEach(img => { img.style.objectPosition = posX.value + '% ' + posY.value + '%'; });
+                preview.style.setProperty('--focal-x', posX.value + '%');
+                preview.style.setProperty('--focal-y', posY.value + '%');
+                applyCrop();
             };
             posX.addEventListener('input', updatePositionDisplay);
             posY.addEventListener('input', updatePositionDisplay);
+            preview.addEventListener('click', function (event) {
+                // The preview shows the whole image (contain): map the click to the picture inside its letterbox.
+                const rect = preview.getBoundingClientRect();
+                const scale = Math.min(rect.width / preview.naturalWidth, rect.height / preview.naturalHeight);
+                const shownW = preview.naturalWidth * scale, shownH = preview.naturalHeight * scale;
+                const left = rect.left + (rect.width - shownW) / 2, top = rect.top + (rect.height - shownH) / 2;
+                posX.value = String(Math.round(Math.max(0, Math.min(1, (event.clientX - left) / shownW)) * 100));
+                posY.value = String(Math.round(Math.max(0, Math.min(1, (event.clientY - top) / shownH)) * 100));
+                updatePositionDisplay();
+            });
+            if (cropSelect) cropSelect.addEventListener('change', applyCrop);
+            updatePositionDisplay();
         }
 
         // Device preview switching with smooth transitions

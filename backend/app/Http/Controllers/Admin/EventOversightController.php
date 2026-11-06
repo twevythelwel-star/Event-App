@@ -131,6 +131,30 @@ class EventOversightController extends Controller
         return back()->with('success', self::ACTIONS[$action]['label'] . ' done for "' . $record->title . '".');
     }
 
+    /** Hides or restores one image a host uploaded for this event (flyer, gallery photo or menu photo). */
+    public function moderateImage(Request $request, string $event, \App\Services\ImageModerationService $moderation): RedirectResponse
+    {
+        $record = $this->findEvent($event);
+        Gate::authorize(Admin::EVENT_MODERATE, $record);
+
+        $data = $request->validate([
+            'kind' => ['required', Rule::in(\App\Services\ImageModerationService::KINDS)],
+            'target_id' => ['nullable', 'string', 'max:64'],
+            'decision' => ['required', Rule::in(['hide', 'restore'])],
+            'reason' => ['required', 'string', 'min:5', 'max:500'],
+        ], [
+            'reason.required' => 'Give a reason. The host and the audit log will see it.',
+        ]);
+
+        try {
+            $message = $moderation->decide($request->user(), $record, $data['kind'], $data['target_id'] ?? null, $data['decision'], $data['reason']);
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return redirect()->to(route('admin.console.events.show', $record->id) . '#images-heading')->with('success', "{$message} on \"{$record->title}\".");
+    }
+
     /** @return array<string, string> */
     private function availableActions(Event $event): array
     {

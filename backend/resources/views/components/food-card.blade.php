@@ -14,8 +14,9 @@
     $price = $currency === 'USD' ? $item->price_usd : $item->price_jmd;
     $soldOut = $item->available_stock !== null && (int) $item->available_stock <= 0;
     $lowStock = !$soldOut && $item->available_stock !== null && (int) $item->available_stock <= 10;
-    $image = $item->display_image_url;
-    $position = preg_match('/^\d{1,3}% \d{1,3}%$/', (string) $item->image_position) ? $item->image_position : '50% 50%';
+    // The host's photo at the size the card needs (AVIF/WebP), cropped around its focal point; null when there is none.
+    $photo = $item->responsiveImage();
+    $image = $photo?->src;
     // Each dietary tag with its icon (the text label is always shown too; the icon only helps scanning).
     $dietIcons = ['vegetarian' => 'leaf', 'vegan' => 'leaf', 'gluten_free' => 'wheat', 'pescatarian' => 'fish'];
     $dietary = collect((array) ($item->dietary_tags ?? []))->map(fn ($tag) => [
@@ -30,8 +31,9 @@
     @if($image)
         {{-- A soft shimmer shows while the photo loads; a photo that fails to load leaves the plain placeholder. --}}
         <div class="eb-food-card-media eb-skeleton">
-            <img src="{{ $image }}" alt="{{ $item->photoIsIllustrative() ? 'Illustrative photo' : 'Photo of ' . $item->name }}" loading="lazy" decoding="async" style="object-position: {{ $position }};"
-                 onload="this.parentElement.classList.remove('eb-skeleton')" onerror="this.parentElement.classList.remove('eb-skeleton'); this.parentElement.classList.add('eb-food-card-placeholder'); this.remove();">
+            <x-responsive-image :image="$photo" sizes="(min-width: 641px) 220px, 100vw"
+                onload="this.closest('.eb-food-card-media').classList.remove('eb-skeleton')"
+                onerror="const m = this.closest('.eb-food-card-media'); m.classList.remove('eb-skeleton'); m.classList.add('eb-food-card-placeholder'); this.remove();" />
             @if($item->photoIsIllustrative())
                 <span class="eb-food-card-illustrative">Illustrative photo</span>
             @endif
@@ -42,10 +44,12 @@
             @endif
         </div>
     @else
-        {{-- No photo from the host: a plain, clearly generic placeholder, never a stock photo of food. --}}
-        <div class="eb-food-card-media eb-food-card-placeholder">
-            <x-icon name="utensils" size="lg" />
-            <span>Photo coming soon</span>
+        {{-- No usable photo: a clearly labelled placeholder for this kind of food (e.g. "Seafood · No photo yet"),
+             never a stock photo of some other dish. --}}
+        @php $fallback = \App\Support\ImageSubjects::menuFallback($item); @endphp
+        <div class="eb-food-card-media eb-food-card-placeholder" data-fallback="{{ $fallback['icon'] }}">
+            <x-icon :name="$fallback['icon']" size="lg" />
+            <span><strong>{{ $fallback['label'] }}</strong> · No photo yet</span>
         </div>
     @endif
     <div class="eb-food-card-body">

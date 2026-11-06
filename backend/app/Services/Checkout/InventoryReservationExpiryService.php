@@ -91,6 +91,11 @@ final class InventoryReservationExpiryService
             if ($result === 'expired') {
                 $totals['expired']++;
                 $totals['inventory_released']++;
+                // Tickets came free: offer them to the event's waitlist, first come first served.
+                $freedEvent = Event::withoutGlobalScopes()->find(Order::withoutGlobalScopes()->whereKey($id)->value('event_id'));
+                if ($freedEvent) {
+                    app(WaitlistService::class)->offerFreedTickets($freedEvent);
+                }
             } elseif ($result === 'provider') {
                 $totals['held_for_provider']++;
             }

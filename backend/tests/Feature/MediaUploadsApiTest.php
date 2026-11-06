@@ -37,6 +37,12 @@ class MediaUploadsApiTest extends TestCase
         return $this->actingAs($user)->post('/api/v1/host/events/' . self::KINGSTON . '/flyer', ['flyer' => $file, ...$metadata], ['Accept' => 'application/json']);
     }
 
+    /** Each upload writes small, medium and large variants in every format this server can encode (WebP, plus AVIF). */
+    private function variantFileCount(): int
+    {
+        return count(\App\Services\MediaStorageService::SIZES) * count(\App\Services\MediaStorageService::variantFormats());
+    }
+
     private function storedFiles(string $kind): array
     {
         return Storage::disk('local')->files("tenants/org-kingston-youth/{$kind}");
@@ -60,7 +66,7 @@ class MediaUploadsApiTest extends TestCase
         $this->assertSame(64, $response->json('data.flyerPositionX'));
         $this->assertSame(28, $response->json('data.flyerPositionY'));
         $this->assertStringContainsString('variant=thumbnail', $response->json('data.flyerThumbnailUrl'));
-        $this->assertCount(1, $this->storedFiles('flyers-derivatives'));
+        $this->assertCount($this->variantFileCount(), $this->storedFiles('flyers-derivatives'), 'Three sizes in every supported format.');
         $this->get($response->json('data.flyerThumbnailUrl'))->assertOk()->assertHeader('Content-Type', 'image/webp');
 
         // A replacement deletes the previous file
@@ -116,7 +122,7 @@ class MediaUploadsApiTest extends TestCase
         $this->assertSame(40, $media['positionX']);
         $this->assertSame(60, $media['positionY']);
         $this->assertCount(1, $this->storedFiles('event-media'));
-        $this->assertCount(1, $this->storedFiles('event-media-derivatives'));
+        $this->assertCount($this->variantFileCount(), $this->storedFiles('event-media-derivatives'), 'Three sizes in every supported format.');
         $this->get($media['thumbnailUrl'])->assertOk()->assertHeader('Content-Type', 'image/webp');
 
         $this->actingAs($host)->deleteJson("{$base}/{$media['id']}")->assertOk()->assertJsonCount(0, 'data.eventMedia');
@@ -302,7 +308,7 @@ class MediaUploadsApiTest extends TestCase
 
         $media = $response->json('data.eventMedia.0');
         $this->assertCount(1, $this->storedFiles('event-media'));
-        $this->assertCount(3, $this->storedFiles('event-media-derivatives'));
+        $this->assertCount($this->variantFileCount(), $this->storedFiles('event-media-derivatives'));
 
         $this->actingAs($host)->deleteJson("{$base}/{$media['id']}")->assertOk();
         $this->assertCount(0, $this->storedFiles('event-media'));

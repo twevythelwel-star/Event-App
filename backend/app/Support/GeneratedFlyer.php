@@ -32,12 +32,16 @@ final class GeneratedFlyer
         $title = self::lines((string) $event->title, 20, 3);
         $date = (string) (ReceiptService::eventDate($event) ?? '');
         $place = trim(implode(', ', array_filter([$event->city, $event->state_code])));
-        $traditions = implode(' · ', array_slice($event->traditionLabels(), 0, 3));
+        // The kind of event and its traditions, so the artwork is specific to this event's category.
+        $traditions = implode(' · ', array_filter(array_merge([(string) $event->category], array_slice($event->traditionLabels(), 0, 2))));
+        // Sponsors the host chose to credit on the flyer, by name and level order.
+        $sponsorLine = $event->id ? app(\App\Services\Events\PartnersService::class)->sponsorsFor($event, 'flyer')->take(4)->pluck('name')->join(' · ') : '';
 
         $e = fn (string $text) => htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+        $sponsorSvg = $sponsorLine === '' ? '' : '<text x="1120" y="738" font-size="20" font-weight="600" fill="#8494A8" text-anchor="end">With support from ' . $e($sponsorLine) . '</text>';
         // The title starts below the top quarter, where listing cards place their category and availability badges.
         $titleSize = count($title) >= 3 ? 66 : 80;
-        $y = 330;
+        $y = 300;
         $titleText = '';
         foreach ($title as $i => $line) {
             $titleText .= '<text x="80" y="' . ($y + $i * ($titleSize + 8)) . '" font-size="' . $titleSize . '" font-weight="800" fill="#F8FAFC">' . $e($line) . '</text>';
@@ -45,7 +49,7 @@ final class GeneratedFlyer
         $below = $y + count($title) * ($titleSize + 8) + 30;
 
         return <<<SVG
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" role="img" aria-label="{$e((string) $event->title)}">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 750" role="img" aria-label="{$e((string) $event->title)}">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#152C45"/><stop offset="0.55" stop-color="#0B192B"/><stop offset="1" stop-color="#07111F"/></linearGradient>
     <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="{$accent}" stop-opacity="0.38"/><stop offset="1" stop-color="{$accent}" stop-opacity="0"/></radialGradient>
@@ -53,7 +57,7 @@ final class GeneratedFlyer
     <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0"/><stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0.07"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></linearGradient>
     <linearGradient id="fade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#07111F" stop-opacity="0.85"/><stop offset="0.6" stop-color="#07111F" stop-opacity="0.2"/><stop offset="1" stop-color="#07111F" stop-opacity="0"/></linearGradient>
   </defs>
-  <rect width="1200" height="800" fill="url(#bg)"/>
+  <rect width="1200" height="750" fill="url(#bg)"/>
   <circle cx="{$orbX}" cy="{$orbY}" r="520" fill="url(#glow)"/>
   <circle cx="{$e((string) (1200 - $orbX + 420))}" cy="760" r="460" fill="url(#glow2)"/>
   <g fill="none" stroke-linecap="round" transform="rotate({$turn} 940 400)">
@@ -67,16 +71,18 @@ final class GeneratedFlyer
     <path d="M46 26v30M64 26v30M82 26v30M46 56c0 12 8 18 18 18s18-6 18-18M64 74v62" stroke="#F8FAFC" stroke-opacity="0.75" stroke-width="7"/>
     <circle cx="112" cy="96" r="9" fill="#07111F" stroke="none"/><circle cx="104" cy="108" r="8" fill="#07111F" stroke="none"/>
   </g>
-  <rect x="-200" y="0" width="420" height="800" fill="url(#sheen)" transform="rotate(18 600 400) translate(520 0)"/>
-  <rect width="1200" height="800" fill="url(#fade)"/>
+  <rect x="-200" y="0" width="420" height="750" fill="url(#sheen)" transform="rotate(18 600 375) translate(520 0)"/>
+  <rect width="1200" height="750" fill="url(#fade)"/>
   <rect x="80" y="240" width="96" height="10" rx="5" fill="{$accent}"/>
   <rect x="188" y="240" width="28" height="10" rx="5" fill="{$second}"/>
   <g font-family="'Plus Jakarta Sans', Inter, 'Segoe UI', Arial, sans-serif">
     {$titleText}
     <text x="80" y="{$below}" font-size="40" font-weight="700" fill="{$accent}">{$e($date)}</text>
     <text x="80" y="{$e((string) ($below + 56))}" font-size="34" font-weight="600" fill="#A8B6C8">{$e($place)}</text>
-    <text x="80" y="720" font-size="28" font-weight="600" fill="#8494A8">{$e($traditions)}</text>
-    <text x="1120" y="720" font-size="30" font-weight="800" fill="#F8FAFC" text-anchor="end">EventBite</text>
+    <text x="80" y="668" font-size="28" font-weight="600" fill="#8494A8">{$e($traditions)}</text>
+    <text x="80" y="712" font-size="22" font-weight="600" fill="#6B7C90">Event artwork · no flyer uploaded yet</text>
+    {$sponsorSvg}
+    <text x="1120" y="700" font-size="30" font-weight="800" fill="#F8FAFC" text-anchor="end">EventBite</text>
   </g>
 </svg>
 SVG;

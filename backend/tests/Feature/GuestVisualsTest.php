@@ -72,7 +72,7 @@ class GuestVisualsTest extends TestCase
         $noPhoto = MenuItem::allTenants()->where('event_id', self::KINGSTON)->firstOrFail()->replicate(['id']);
         $noPhoto->forceFill(['image_url' => null, 'image_path' => null]);
         $placeholder = view('components.food-card', ['item' => $noPhoto, 'currency' => 'USD', 'slot' => new \Illuminate\Support\HtmlString('')])->render();
-        $this->assertStringContainsString('Photo coming soon', $placeholder);
+        $this->assertStringContainsString('No photo yet', $placeholder);
         $this->assertStringNotContainsString('<img', $placeholder);
     }
 
