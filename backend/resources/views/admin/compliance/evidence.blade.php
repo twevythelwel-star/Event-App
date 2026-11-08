@@ -1,11 +1,12 @@
 @extends('layouts.admin')
 
-@section('title', 'Event evidence to verify')
-@section('heading', 'Event Evidence to Verify')
+@section('title', 'Permits and licences to verify')
+@section('heading', 'Permits and Licences to Verify')
 @section('subheading', 'Permits and licences hosts submitted for their events\' requirements checklists.')
 @section('breadcrumbs')<span> / <a href="{{ route('admin.console.compliance.index') }}">Compliance database</a></span><span> / Evidence</span>@endsection
 
 @section('content')
+    @include('admin.compliance-centre._tabs', ['current' => $kind === 'alcohol' ? 'licences' : 'permits'])
     <div class="ac-alert warning" role="note"><div>Verify only what you have checked against the issuing authority's own records or the document. A host's submission alone never verifies an item, and you cannot review your own submission.</div></div>
 
     <form method="GET" class="ac-filters" style="margin-bottom:12px">
@@ -13,6 +14,15 @@
             <select id="evidence-status" class="ac-select" name="status" onchange="this.form.submit()">
                 <option value="open" @selected($status === 'open')>Waiting for review</option>
                 @foreach(\App\Models\EventComplianceEvidence::STATUSES as $value => $label)<option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>@endforeach
+            </select></div>
+        <div class="ac-field"><label for="evidence-kind">Type</label>
+            <select id="evidence-kind" class="ac-select" name="kind" onchange="this.form.submit()">
+                @foreach(['all' => 'All permits and licences', 'food' => 'Food permits', 'alcohol' => 'Alcohol licences'] as $value => $label)<option value="{{ $value }}" @selected($kind === $value)>{{ $label }}</option>@endforeach
+            </select></div>
+        <div class="ac-field"><label for="evidence-state">Jurisdiction (state)</label>
+            <select id="evidence-state" class="ac-select" name="state" onchange="this.form.submit()">
+                <option value="">All states</option>
+                @foreach($states as $s)<option value="{{ $s->code }}" @selected($state === $s->code)>{{ $s->name }}</option>@endforeach
             </select></div>
         <noscript><button class="ac-btn ac-btn-sm" type="submit">Show</button></noscript>
     </form>

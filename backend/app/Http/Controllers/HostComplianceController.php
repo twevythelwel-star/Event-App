@@ -54,7 +54,7 @@ class HostComplianceController extends Controller
         $user = $request->user();
         abort_unless($this->isHost($user), 403);
 
-        $specs = collect(LegalComplianceService::registrationPolicies())->merge(LegalComplianceService::hostResponsibilityPolicies())->keyBy('policy_name');
+        $specs = collect(app(\App\Services\Compliance\PolicyCatalog::class)->all());
         $data = $request->validate(['policies' => ['required', 'array', 'min:1'], 'policies.*' => ['string']], [
             'policies.required' => 'Tick each policy you have read and accept.',
         ]);

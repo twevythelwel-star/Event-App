@@ -396,7 +396,13 @@ class LegalComplianceAndPolicyAcceptanceTest extends TestCase
             ->postJson("/api/v1/host/events/{$draftEventId}/status", ['status' => 'published'])
             ->assertStatus(422);
 
-        // 4. Compliance administrator transitions status: under_review -> additional_information_required
+        // 4. Compliance administrator transitions status: under_review -> additional_information_required.
+        // An administrator role alone is not enough: identity documents need a specific grant.
+        $this->actingAs($admin)
+            ->postJson("/api/v1/admin/host-verifications/{$verification->id}/status", ['status' => 'under_review'])
+            ->assertForbidden();
+        \App\Models\AdminPermission::where('user_id', $admin->id)->update(['can_access_identity_documents' => true]);
+        $admin = $admin->fresh();
         $this->actingAs($admin)
             ->postJson("/api/v1/admin/host-verifications/{$verification->id}/status", [
                 'status' => 'under_review',
@@ -500,8 +506,13 @@ class LegalComplianceAndPolicyAcceptanceTest extends TestCase
         $this->assertSame('7740', $verification->document_last4);
         \Illuminate\Support\Facades\Storage::disk('local')->assertMissing($secondStoragePath);
 
-        // 9. Emergency breach response lockdown transitions targeted record to reverification_required
-        $lockdownResponse = $this->actingAs($admin)
+        // 9. Emergency breach response lockdown transitions targeted record to reverification_required.
+        // It needs a system administrator who also holds identity document access; a delegated administrator is refused.
+        $this->actingAs($admin)->postJson('/api/v1/admin/host-verifications/breach-lockdown', ['incident_reference' => 'INC-2027-0901-TEST'])->assertForbidden();
+        $root = User::create(['name' => 'Root', 'email' => 'root-lockdown@example.test', 'password' => bcrypt('password'), 'status' => 'active', 'is_system_admin' => true]);
+        \App\Models\UserRole::create(['user_id' => $root->id, 'role' => 'system_admin', 'is_active' => true, 'assigned_at' => now()]);
+        \App\Models\AdminPermission::create(['user_id' => $root->id, 'scope' => 'all', 'assigned_organizer_ids' => [], 'can_access_identity_documents' => true]);
+        $lockdownResponse = $this->actingAs($root->fresh())
             ->postJson('/api/v1/admin/host-verifications/breach-lockdown', [
                 'incident_reference' => 'INC-2027-0901-TEST',
                 'target_user_id' => $host->id,

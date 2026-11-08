@@ -215,7 +215,7 @@ class HostIdentityVerificationController extends Controller
      */
     public function breachLockdown(Request $request): JsonResponse
     {
-        $this->authorizeComplianceAdmin($request->user());
+        \Illuminate\Support\Facades\Gate::authorize('lockdown', HostIdentityVerification::class);
 
         $data = $request->validate([
             'incident_reference' => ['required', 'string', 'min:3', 'max:120'],
@@ -231,10 +231,11 @@ class HostIdentityVerificationController extends Controller
         return response()->json(['data' => $summary]);
     }
 
+    /** Identity verifications are only for administrators specifically granted identity document access. */
     private function authorizeComplianceAdmin(?object $user): void
     {
-        if (!$user || (!$user->hasRole(AccountType::ADMINISTRATOR) && !$user->hasRole(AccountType::SYSTEM_ADMIN))) {
-            abort(403, 'Unauthorized: Compliance administrator privileges required.');
+        if (!$user || !\Illuminate\Support\Facades\Gate::forUser($user)->allows('viewAny', HostIdentityVerification::class)) {
+            abort(403, 'Unauthorized: only administrators granted access to host identity documents may do this.');
         }
     }
 

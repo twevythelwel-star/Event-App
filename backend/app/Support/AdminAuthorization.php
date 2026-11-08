@@ -46,8 +46,20 @@ final class AdminAuthorization
     public const REPORTS_EXPORT = 'admin.reports.export';
     public const AUDIT_VIEW = 'admin.audit.view';
     public const SETTINGS_MANAGE = 'admin.settings.manage';
-    // The US state and local compliance database: any active administrator researches and submits records;
-    // only a system administrator approves them (and never one they submitted, ComplianceReviewWorkflow).
+    // Compliance management (the compliance dashboard, review queues, suspensions, safety reports, policy drafts and
+    // the US state and local compliance database): system administrators, and delegated administrators granted
+    // "Compliance management". Approving database records and publishing policies stays with system administrators.
+    public const COMPLIANCE_MANAGE = 'admin.compliance.manage';
+    // Host identity documents: only administrators specifically granted access (admin_permissions
+    // can_access_identity_documents), whatever their role. A system administrator grants it, never to themselves.
+    public const IDENTITY_DOCUMENTS = 'admin.compliance.identity-documents';
+    public const IDENTITY_ACCESS_GRANT = 'admin.compliance.identity-access-grant';
+    // Consent records (policy acceptances with IP and browser) and the compliance audit trail.
+    public const COMPLIANCE_RECORDS = 'admin.compliance.records';
+    public const COMPLIANCE_EXPORT = 'admin.compliance.export';
+    public const COMPLIANCE_SUSPEND_HOST = 'admin.compliance.suspend-host';
+    public const COMPLIANCE_SUSPEND_EVENT = 'admin.compliance.suspend-event';
+    public const POLICY_PUBLISH = 'admin.compliance.policy-publish';
     public const COMPLIANCE_VIEW = 'admin.compliance.view';
     public const COMPLIANCE_EDIT = 'admin.compliance.edit';
     public const COMPLIANCE_APPROVE = 'admin.compliance.approve';
@@ -103,8 +115,25 @@ final class AdminAuthorization
         Gate::define(self::AUDIT_VIEW, fn (User $user) => self::isSystemAdmin($user)
             || (self::isActiveAdmin($user) && self::flag($user, 'can_access_audit_logs')));
 
-        Gate::define(self::COMPLIANCE_VIEW, fn (User $user) => self::isActiveAdmin($user));
-        Gate::define(self::COMPLIANCE_EDIT, fn (User $user) => self::isActiveAdmin($user));
+        Gate::define(self::COMPLIANCE_MANAGE, fn (User $user) => self::isComplianceManager($user));
+        Gate::define(self::COMPLIANCE_VIEW, fn (User $user) => self::isComplianceManager($user));
+        Gate::define(self::COMPLIANCE_EDIT, fn (User $user) => self::isComplianceManager($user));
+        Gate::define(self::IDENTITY_DOCUMENTS, fn (User $user) => self::canAccessIdentityDocuments($user));
+        Gate::define(self::IDENTITY_ACCESS_GRANT, fn (User $user, User $target) => self::isSystemAdmin($user)
+            && $user->id !== $target->id && self::isActiveAdmin($target));
+        Gate::define(self::COMPLIANCE_RECORDS, fn (User $user) => self::isComplianceManager($user)
+            && (self::isSystemAdmin($user) || self::flag($user, 'can_access_audit_logs')));
+        Gate::define(self::COMPLIANCE_EXPORT, fn (User $user) => self::isComplianceManager($user));
+        Gate::define(self::COMPLIANCE_SUSPEND_HOST, fn (User $user, User $host) => self::isComplianceManager($user)
+            && $user->id !== $host->id && self::hostInScope($user, $host));
+        Gate::define(self::COMPLIANCE_SUSPEND_EVENT, fn (User $user, Event $event) => self::isComplianceManager($user)
+            && self::organizerInScope($user, $event->organizer_id));
+        Gate::define(self::POLICY_PUBLISH, fn (User $user) => self::isSystemAdmin($user));
+
+        Gate::policy(\App\Models\HostIdentityVerification::class, \App\Policies\HostIdentityVerificationPolicy::class);
+        Gate::policy(\App\Models\EventComplianceEvidence::class, \App\Policies\EventComplianceEvidencePolicy::class);
+        Gate::policy(\App\Models\Compliance\ComplianceSafetyReport::class, \App\Policies\ComplianceSafetyReportPolicy::class);
+        Gate::policy(\App\Models\Compliance\CompliancePolicyVersion::class, \App\Policies\CompliancePolicyVersionPolicy::class);
         Gate::define(self::COMPLIANCE_APPROVE, fn (User $user) => self::isSystemAdmin($user));
         Gate::define(self::COMPLIANCE_OVERRIDE, fn (User $user) => self::isSystemAdmin($user));
 
@@ -115,6 +144,29 @@ final class AdminAuthorization
     public static function isSystemAdmin(User $user): bool
     {
         return $user->isActive() && $user->hasRole(AccountType::SYSTEM_ADMIN);
+    }
+
+    /** A system administrator, or a delegated administrator granted "Compliance management". */
+    public static function isComplianceManager(User $user): bool
+    {
+        return self::isSystemAdmin($user) || (self::isActiveAdmin($user) && self::flag($user, 'can_manage_compliance'));
+    }
+
+    /** Explicitly granted, for every role: being a system administrator alone does not open identity documents. */
+    public static function canAccessIdentityDocuments(User $user): bool
+    {
+        return self::isActiveAdmin($user) && self::flag($user, 'can_access_identity_documents');
+    }
+
+    /** A host is in an administrator's scope when one of the host's organizers is. */
+    public static function hostInScope(User $admin, User $host): bool
+    {
+        $scope = self::organizerScope($admin);
+        if ($scope === null) {
+            return true;
+        }
+
+        return \App\Models\OrganizerUser::where('user_id', $host->id)->whereIn('organizer_id', $scope)->exists();
     }
 
     public static function isActiveAdmin(User $user): bool

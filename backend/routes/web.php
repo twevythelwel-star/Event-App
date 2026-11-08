@@ -215,6 +215,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     // 2. Event Host Command Center
     Route::get('/host/dashboard', [HostDashboardController::class, 'index'])->name('host.dashboard');
     Route::get('/host/compliance', [\App\Http\Controllers\HostComplianceController::class, 'index'])->name('host.compliance');
+    Route::post('/events/{event}/safety-report', [\App\Http\Controllers\SafetyReportController::class, 'store'])->name('events.safety-report')->middleware('throttle:5,10');
     Route::post('/host/compliance/policies', [\App\Http\Controllers\HostComplianceController::class, 'acceptPolicies'])->name('host.compliance.policies')->middleware('throttle:20,1');
     Route::post('/host/cancellation-requests/{cancellationId}/review', [HostDashboardController::class, 'reviewCancellationRequest'])->name('host.cancellations.review')->middleware('throttle:30,1');
     Route::post('/host/cancellation-requests/{cancellationId}/refund', [HostDashboardController::class, 'recordCancellationRefund'])->name('host.cancellations.refund')->middleware('throttle:10,1');

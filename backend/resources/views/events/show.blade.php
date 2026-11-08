@@ -557,6 +557,31 @@
                             <p style="font-size: 12px; color: #94A3B8; line-height: 1.5; margin: 6px 0 0;">
                                 Purchasing an event ticket does not automatically authorize alcohol consumption, and EventBite does not grant an alcohol licence.
                             </p>
+                            @auth
+                                <details id="report-safety-issue" style="margin-top: 10px;" @if($errors->hasAny(['category', 'description', 'occurred_on'])) open @endif>
+                                    <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: #FCD34D;">Report a safety issue at this event</summary>
+                                    <form method="POST" action="{{ route('events.safety-report', $event->id) }}" style="display: grid; gap: 8px; margin-top: 8px;">
+                                        @csrf
+                                        <p style="font-size: 12px; color: #CBD5E1; margin: 0;">Your report goes to EventBite's compliance team, not the host. If someone is in danger, call 911.</p>
+                                        <label style="font-size: 12px; color: #E2E8F0;">What kind of issue
+                                            <select name="category" required class="eb-input" style="margin-top: 4px;">
+                                                @foreach(\App\Models\Compliance\ComplianceSafetyReport::CATEGORIES as $value => $label)
+                                                    <option value="{{ $value }}" @selected(old('category') === $value)>{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                        </label>
+                                        <label style="font-size: 12px; color: #E2E8F0;">What happened
+                                            <textarea name="description" required minlength="20" maxlength="5000" rows="3" class="eb-input" style="margin-top: 4px;">{{ old('description') }}</textarea>
+                                        </label>
+                                        @error('description')<p style="font-size: 12px; color: #FCA5A5; margin: 0;">{{ $message }}</p>@enderror
+                                        <label style="font-size: 12px; color: #E2E8F0;">When it happened (optional)
+                                            <input type="date" name="occurred_on" value="{{ old('occurred_on') }}" max="{{ now()->toDateString() }}" class="eb-input" style="margin-top: 4px;">
+                                        </label>
+                                        <label style="font-size: 12px; color: #E2E8F0; display: flex; gap: 6px;"><input type="checkbox" name="may_contact" value="1"> EventBite may contact me about this report</label>
+                                        <div><button type="submit" class="eb-btn eb-btn-secondary eb-btn-sm">Send report</button></div>
+                                    </form>
+                                </details>
+                            @endauth
                         </div>
 
                         @if($eventQr)

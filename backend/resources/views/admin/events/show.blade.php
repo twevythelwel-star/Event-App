@@ -16,7 +16,7 @@
 @section('content')
     @php $statusTone = ['published' => 'success', 'draft' => '', 'unpublished' => 'warning', 'cancelled' => 'danger']; @endphp
     <section class="ac-card" aria-labelledby="gates-heading" style="margin-bottom:16px" id="publication-gates">
-        <div class="ac-card-head"><h2 id="gates-heading">Compliance publication gates</h2>
+        <div class="ac-card-head"><h2 id="gates-heading">Compliance publication gates</h2>@can(\App\Support\AdminAuthorization::COMPLIANCE_SUSPEND_EVENT, $event)<a class="ac-link" href="{{ route('admin.console.compliance-centre.declaration', $event->id) }}">Declarations and suspension</a>@endcan
             @php $openGates = collect($gates)->whereNull('override')->count(); @endphp
             <span class="ac-badge {{ $openGates ? 'danger' : 'success' }}">{{ $openGates ? $openGates . ' blocking' : 'None blocking' }}</span></div>
         <div class="ac-card-body">

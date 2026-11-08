@@ -73,6 +73,33 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
         Route::patch('/compliance/records/{type}/{id}', [ComplianceDatabaseController::class, 'update'])->whereIn('type', ['authority', 'requirement'])->whereNumber('id')->name('compliance.records.update')->middleware('throttle:60,1');
         Route::post('/compliance/records/{type}/{id}/{action}', [ComplianceDatabaseController::class, 'transition'])->whereIn('type', ['authority', 'requirement'])->whereNumber('id')->whereIn('action', ['submit', 'approve', 'request-changes', 'reset'])->name('compliance.records.transition')->middleware('throttle:60,1');
 
+        // The compliance management dashboard (ComplianceCentreController): every action authorizes its own Gate or Policy.
+        Route::prefix('compliance-centre')->name('compliance-centre.')->group(function () {
+            $c = \App\Http\Controllers\Admin\ComplianceCentreController::class;
+            $p = \App\Http\Controllers\Admin\CompliancePolicyController::class;
+            Route::get('/', [$c, 'dashboard'])->name('dashboard');
+            Route::get('/identity', [$c, 'identity'])->name('identity');
+            Route::post('/identity/{verification}/document', [$c, 'identityDocument'])->name('identity.document')->middleware('throttle:30,1');
+            Route::get('/declarations', [$c, 'declarations'])->name('declarations');
+            Route::get('/declarations/{event}', [$c, 'declaration'])->name('declaration');
+            Route::post('/events/{event}/suspend', [$c, 'suspendEvent'])->name('events.suspend')->middleware('throttle:20,1');
+            Route::post('/events/{event}/reinstate', [$c, 'reinstateEvent'])->name('events.reinstate')->middleware('throttle:20,1');
+            Route::get('/expiring', [$c, 'expiring'])->name('expiring');
+            Route::get('/safety', [$c, 'safety'])->name('safety');
+            Route::post('/safety/{report}', [$c, 'updateSafety'])->name('safety.update')->middleware('throttle:60,1');
+            Route::get('/hosts', [$c, 'hosts'])->name('hosts');
+            Route::post('/hosts/{user}/suspend', [$c, 'suspendHost'])->name('hosts.suspend')->middleware('throttle:20,1');
+            Route::post('/suspensions/{suspension}/lift', [$c, 'reinstateHost'])->name('hosts.reinstate')->middleware('throttle:20,1');
+            Route::get('/records', [$c, 'records'])->name('records');
+            Route::get('/access', [$c, 'access'])->name('access');
+            Route::post('/access/{user}', [$c, 'updateAccess'])->name('access.update')->middleware('throttle:20,1');
+            Route::get('/policies', [$p, 'index'])->name('policies');
+            Route::post('/policies', [$p, 'store'])->name('policies.store')->middleware('throttle:20,1');
+            Route::post('/policies/{version}/publish', [$p, 'publish'])->name('policies.publish')->middleware('throttle:10,1');
+            Route::delete('/policies/{version}', [$p, 'destroy'])->name('policies.destroy')->middleware('throttle:20,1');
+            Route::get('/export/{report}', [\App\Http\Controllers\Admin\ComplianceExportController::class, 'export'])->name('export')->middleware('throttle:10,1');
+        });
+
         Route::get('/locations', [LocationManagementController::class, 'index'])->name('locations.index');
         Route::post('/locations/states', [LocationManagementController::class, 'storeState'])->name('locations.states.store')->middleware('throttle:20,1');
         Route::patch('/locations/states/{state}', [LocationManagementController::class, 'updateState'])->name('locations.states.update')->middleware('throttle:30,1');

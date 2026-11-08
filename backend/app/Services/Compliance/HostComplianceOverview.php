@@ -33,7 +33,7 @@ final class HostComplianceOverview
     public const EXPIRY_WINDOW_DAYS = 60;
 
     /** Gate codes that belong to the host's account rather than to one event. */
-    private const ACCOUNT_GATES = ['identity', 'host_policies'];
+    private const ACCOUNT_GATES = ['identity', 'host_policies', 'host_suspended'];
 
     public function __construct(private readonly EventPublicationGates $gates)
     {
@@ -58,6 +58,7 @@ final class HostComplianceOverview
             'expiring' => $expiring,
             'acknowledgements' => $acknowledgements,
             'messages' => $this->messages($host, $events),
+            'suspension' => \App\Models\Compliance\HostPublishingSuspension::activeFor((int) $host->id),
         ];
         $overview['account'] = $this->account($overview);
 
@@ -119,9 +120,10 @@ final class HostComplianceOverview
             ->orderByDesc('accepted_at_utc')->get(['policy_name', 'policy_version', 'accepted_at_utc'])->groupBy('policy_name');
 
         $rows = [];
+        $catalog = app(PolicyCatalog::class);
         $specs = array_merge(
-            array_map(fn ($s) => $s + ['group' => 'Account policy', 'description' => implode(' ', $s['clauses'])], LegalComplianceService::registrationPolicies()),
-            array_map(fn ($s) => $s + ['group' => 'Host responsibility'], LegalComplianceService::hostResponsibilityPolicies()),
+            array_map(fn ($s) => ['group' => 'Account policy'] + $s, $catalog->group('account')),
+            array_map(fn ($s) => ['group' => 'Host responsibility'] + $s, $catalog->group('host')),
         );
         foreach ($specs as $spec) {
             $history = $accepted->get($spec['policy_name'], collect());
@@ -156,6 +158,7 @@ final class HostComplianceOverview
         $published = $event->status === 'published';
 
         [$state, $tone, $label] = match (true) {
+            $event->compliance_suspended_at !== null => ['suspended', 'error', 'Suspended by EventBite'],
             $blocking->isEmpty() && !$accountBlocked => ['ready', 'success', $published ? 'Compliant' : 'Ready to publish'],
             $blocking->isEmpty() => ['account', 'warning', 'Blocked by your account'],
             $waitingOnly => ['waiting', 'info', 'Waiting for EventBite review'],
@@ -296,6 +299,16 @@ final class HostComplianceOverview
                     : 'A temporary waiver for one requirement has ended. The requirement applies again.',
                 'at' => $override->revoked_at ?? ($active ? $override->granted_at : $override->review_by), 'tone' => $active ? 'info' : 'warning'];
         }
+        foreach (\App\Models\Compliance\HostPublishingSuspension::where('user_id', $host->id)->latest('suspended_at')->take(5)->get() as $suspension) {
+            $messages[] = ['from' => 'EventBite compliance', 'subject' => $suspension->lifted_at ? 'Publishing privileges restored' : 'Publishing privileges suspended',
+                'body' => $suspension->lifted_at ? ($suspension->lift_reason ?: 'Your publishing privileges were restored.') : $suspension->reason,
+                'at' => $suspension->lifted_at ?? $suspension->suspended_at, 'tone' => $suspension->lifted_at ? 'success' : 'error'];
+        }
+        foreach ($events->whereNotNull('compliance_suspended_at') as $event) {
+            $messages[] = ['from' => $event->title, 'subject' => 'Event suspended by EventBite',
+                'body' => (string) ($event->compliance_suspension_reason ?: 'This event was suspended on compliance grounds.'),
+                'at' => $event->compliance_suspended_at, 'tone' => 'error'];
+        }
         usort($messages, fn ($a, $b) => $b['at'] <=> $a['at']);
 
         return array_slice($messages, 0, 30);
@@ -324,7 +337,11 @@ final class HostComplianceOverview
 
         $identityOk = $o['identity']['tone'] === 'success';
         $identityWaiting = $o['identity']['tone'] === 'info';
+        if ($o['suspension']) {
+            array_unshift($todo, ['text' => 'Your publishing privileges are suspended: ' . $o['suspension']->reason . ' Contact EventBite compliance to resolve it.', 'url' => route('host.compliance') . '#messages']);
+        }
         [$state, $tone, $label, $summary] = match (true) {
+            $o['suspension'] !== null => ['suspended', 'error', 'Publishing suspended', 'EventBite has suspended your publishing privileges. Your events cannot be published until the suspension is lifted.'],
             !$identityOk && !$identityWaiting, $hostAcks !== [] => ['restricted', 'error', 'Action required', 'You cannot publish events until the items below are resolved.'],
             $identityWaiting => ['under_review', 'info', 'Under review', 'EventBite is reviewing your identity. You cannot publish events until it is approved.'],
             $todo !== [] => ['attention', 'warning', 'Attention needed', 'Your account is in good standing, but some items need your attention.'],

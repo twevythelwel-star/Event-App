@@ -51,12 +51,21 @@ final class EventPublicationGates
             $gates[] = ['code' => $code, 'section' => $section, 'message' => $message, 'overridable' => $overridable, 'override' => null];
         };
 
+        // 0: a compliance administrator suspended this event, or a host's publishing privileges. Never overridable.
+        if ($event->compliance_suspended_at !== null) {
+            $add('event_suspended', 'identity', 'EventBite suspended this event on compliance grounds'
+                . ($event->compliance_suspension_reason ? ': ' . $event->compliance_suspension_reason : '') . '. It cannot be published until the suspension is lifted.');
+        }
+
         // 1 and 2: the hosts behind the event (its organizer's event owners, and a host publishing it themselves).
         $hosts = $this->hosts($event, $actor);
         if ($hosts === []) {
             $add('identity', 'identity', "This event's organizer has no active event host whose identity can be verified.");
         }
         foreach ($hosts as $host) {
+            if ($suspension = \App\Models\Compliance\HostPublishingSuspension::activeFor((int) $host->id)) {
+                $add('host_suspended', 'identity', "{$host->name}'s publishing privileges are suspended: {$suspension->reason}");
+            }
             if (!self::identityVerified($host)) {
                 $add('identity', 'identity', "{$host->name} has not passed government ID verification. An approved, unexpired ID verification is needed before this event can be published.");
             }
@@ -139,7 +148,8 @@ final class EventPublicationGates
         $accepted = PolicyAcceptance::where('user_id', $user->id)->where('acceptance_status', 'accepted')
             ->get(['policy_name', 'policy_version'])->map(fn ($row) => $row->policy_name . '@' . $row->policy_version)->all();
         $missing = [];
-        foreach (LegalComplianceService::hostResponsibilityPolicies() as $spec) {
+        // Every host acknowledgement at its current version, including ones an administrator published since.
+        foreach (app(PolicyCatalog::class)->group('host') as $spec) {
             if (!in_array($spec['policy_name'] . '@' . $spec['version'], $accepted, true)) {
                 $missing[] = $spec['title'];
             }

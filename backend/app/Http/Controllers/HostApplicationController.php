@@ -127,7 +127,9 @@ class HostApplicationController extends Controller
         }
 
         $pending = HostApplicationService::getPendingApplications();
-        $identityVerifications = \Illuminate\Support\Facades\Schema::hasTable('host_identity_verifications')
+        // Identity submissions only for administrators specifically granted identity document access.
+        $identityVerifications = \Illuminate\Support\Facades\Gate::allows('viewAny', \App\Models\HostIdentityVerification::class)
+            && \Illuminate\Support\Facades\Schema::hasTable('host_identity_verifications')
             ? \App\Models\HostIdentityVerification::with(['user', 'reviewer'])
                 ->orderByDesc('updated_at')
                 ->limit(50)

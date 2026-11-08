@@ -57,6 +57,9 @@ class DemoAccountsSeeder extends Seeder
                     'can_view_payments' => true,
                     'can_view_reports' => true,
                     'can_access_audit_logs' => false,
+                    // Compliance management, but not identity documents: a system administrator grants those
+                    // on the Compliance Dashboard's Access page.
+                    'can_manage_compliance' => true,
                     'assigned_organizer_ids' => [],
                 ]);
             }

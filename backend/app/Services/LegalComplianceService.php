@@ -16,11 +16,38 @@ class LegalComplianceService
     public const CURRENT_POLICY_VERSION = '2026.11-v1';
 
     /**
+     * The account policies at their current version: the built-in text, replaced by the version an administrator
+     * last published (PolicyCatalog). Form fields never change, so registration keeps working when a version is published.
+     */
+    public static function registrationPolicies(): array
+    {
+        return self::currentVersions(self::builtInRegistrationPolicies());
+    }
+
+    /** The host responsibility acknowledgements at their current version (see registrationPolicies). */
+    public static function hostResponsibilityPolicies(): array
+    {
+        return self::currentVersions(self::builtInHostResponsibilityPolicies());
+    }
+
+    private static function currentVersions(array $specs): array
+    {
+        if (!function_exists('app')) {
+            return $specs;
+        }
+        try {
+            return app(\App\Services\Compliance\PolicyCatalog::class)->overlay($specs);
+        } catch (\Throwable) {
+            return $specs;
+        }
+    }
+
+    /**
      * Mandatory individual policies required during account registration.
      *
      * @return array<string, array{field: string, policy_name: string, title: string, version: string, clauses: string[]}>
      */
-    public static function registrationPolicies(): array
+    public static function builtInRegistrationPolicies(): array
     {
         return [
             'platform_terms_and_conditions' => [
@@ -79,7 +106,7 @@ class LegalComplianceService
      *
      * @return array<string, array{field: string, policy_name: string, title: string, version: string, description: string}>
      */
-    public static function hostResponsibilityPolicies(): array
+    public static function builtInHostResponsibilityPolicies(): array
     {
         return [
             'host_resp_independent_compliance' => [

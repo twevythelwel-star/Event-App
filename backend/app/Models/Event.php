@@ -181,6 +181,7 @@ class Event extends Model
         'private' => 'Private residence', 'street' => 'Street or block party', 'other' => 'Other'];
 
     protected $casts = [
+        'compliance_suspended_at' => 'datetime',
         'advance_order_deadline' => 'datetime',
         'is_ordering_open' => 'boolean',
         'is_flyer_public' => 'boolean',

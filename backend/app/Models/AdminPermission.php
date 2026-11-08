@@ -21,6 +21,10 @@ class AdminPermission extends Model
         'can_view_payments',
         'can_view_reports',
         'can_access_audit_logs',
+        'can_manage_compliance',
+        'can_access_identity_documents',
+        'identity_access_granted_by',
+        'identity_access_granted_at',
         'assigned_organizer_ids',
     ];
 
@@ -31,6 +35,9 @@ class AdminPermission extends Model
         'can_view_payments' => 'boolean',
         'can_view_reports' => 'boolean',
         'can_access_audit_logs' => 'boolean',
+        'can_manage_compliance' => 'boolean',
+        'can_access_identity_documents' => 'boolean',
+        'identity_access_granted_at' => 'datetime',
         'assigned_organizer_ids' => 'array',
     ];
 

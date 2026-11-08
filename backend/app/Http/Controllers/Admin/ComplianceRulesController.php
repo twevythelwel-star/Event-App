@@ -89,21 +89,51 @@ class ComplianceRulesController extends Controller
 
     public function evidence(Request $request): View
     {
-        Gate::authorize(Admin::COMPLIANCE_EDIT);
+        Gate::authorize('viewAny', EventComplianceEvidence::class);
         $status = (string) $request->query('status', 'open');
+        $kind = (string) $request->query('kind', 'all');
+        $state = strtolower(substr(preg_replace('/[^A-Za-z]/', '', (string) $request->query('state', '')), 0, 2));
+
+        $query = EventComplianceEvidence::with(['event', 'submitter', 'reviewer'])
+            ->whereIn('event_id', Admin::applyOrganizerScope(\App\Models\Event::allTenants(), $request->user())->select('id'))
+            ->when($status === 'open', fn ($q) => $q->whereIn('status', ['submitted', 'pending_verification']))
+            ->when($status !== 'open' && array_key_exists($status, EventComplianceEvidence::STATUSES), fn ($q) => $q->where('status', $status));
+        self::filterKind($query, $kind);
+        if ($state !== '') {
+            // Checklist keys end in "{type}:{state}/{place}", e.g. "event:food_permit:county:fl/miami-dade".
+            $query->where('item_key', 'like', "%:{$state}/%");
+        }
 
         return view('admin.compliance.evidence', [
             'status' => $status,
-            'items' => EventComplianceEvidence::with(['event', 'submitter', 'reviewer'])
-                ->when($status === 'open', fn ($q) => $q->whereIn('status', ['submitted', 'pending_verification']))
-                ->when($status !== 'open' && array_key_exists($status, EventComplianceEvidence::STATUSES), fn ($q) => $q->where('status', $status))
-                ->latest('submitted_at')->paginate(30)->withQueryString(),
+            'kind' => $kind,
+            'state' => strtoupper($state),
+            'stateFilter' => strtoupper($state),
+            'canIdentity' => Gate::allows('viewAny', \App\Models\HostIdentityVerification::class),
+            'canRecords' => Gate::allows(Admin::COMPLIANCE_RECORDS),
+            'states' => \App\Models\Compliance\ComplianceJurisdiction::where('type', 'state')->orderBy('name')->get(['code', 'name']),
+            'items' => $query->latest('submitted_at')->paginate(30)->withQueryString(),
         ]);
+    }
+
+    /** Food permits or alcohol licences, by the checklist topic and location in the item key. */
+    public static function filterKind($query, string $kind)
+    {
+        if ($kind === 'food') {
+            $query->where(fn ($q) => $q->where('item_key', 'like', '%:food\_%')->orWhere('item_key', 'like', '%:temporary_food_event:%')
+                ->orWhere('item_key', 'like', 'event_food:%')->orWhere('item_key', 'like', 'food_preparation:%'));
+        } elseif ($kind === 'alcohol') {
+            $query->where(fn ($q) => $q->where('item_key', 'like', 'alcohol_service:%')->orWhere('item_key', 'like', '%:alcohol_licensing:%')
+                ->orWhere('item_key', 'like', '%:minimum_drinking_age:%'));
+        }
+
+        return $query;
     }
 
     public function review(Request $request, EventComplianceEvidence $evidence, string $action): RedirectResponse
     {
-        Gate::authorize(Admin::COMPLIANCE_EDIT);
+        Gate::authorize('viewAny', EventComplianceEvidence::class);
+        abort_unless(Admin::organizerInScope($request->user(), $evidence->event?->organizer_id), 403);
         $data = $request->validate(['comment' => [$action === 'reject' ? 'required' : 'nullable', 'string', 'max:2000']]);
         $allowed = ['start' => ['submitted'], 'verify' => ['submitted', 'pending_verification'], 'reject' => ['submitted', 'pending_verification']];
         if (!in_array($evidence->status, $allowed[$action], true)) {
@@ -121,6 +151,9 @@ class ComplianceRulesController extends Controller
         ComplianceRecordReview::create(['record_type' => 'evidence', 'record_id' => $evidence->id, 'action' => $action,
             'to_status' => $evidence->status, 'user_id' => $request->user()->id, 'comment' => $data['comment'] ?? null,
             'snapshot' => $evidence->only(['event_id', 'item_key', 'reference_number', 'issuing_authority', 'expires_on'])]);
+        \App\Services\AuditLogService::log(action: 'compliance_evidence_' . $action, targetEntity: 'event_compliance_evidence', targetId: (string) $evidence->id,
+            details: "{$evidence->item_title} for event {$evidence->event_id}: {$evidence->status}" . (!empty($data['comment']) ? ". Comment: {$data['comment']}" : ''),
+            actor: $request->user(), organizerId: $evidence->event?->organizer_id, eventId: (string) $evidence->event_id);
 
         return back()->with('success', ['start' => 'Marked Pending Verification.', 'verify' => 'Verified.', 'reject' => 'Rejected; the host will see your comment.'][$action]);
     }

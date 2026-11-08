@@ -44,7 +44,7 @@ class ComplianceDatabaseTest extends TestCase
         UserRole::create(['user_id' => $user->id, 'role' => 'admin', 'is_active' => true, 'assigned_at' => now()]);
         AdminPermission::create(['user_id' => $user->id, 'scope' => 'assigned_events', 'assigned_organizer_ids' => [],
             'can_manage_events' => false, 'can_moderate_content' => false, 'can_support_orders' => false,
-            'can_view_payments' => false, 'can_view_reports' => false, 'can_access_audit_logs' => false]);
+            'can_view_payments' => false, 'can_view_reports' => false, 'can_access_audit_logs' => false, 'can_manage_compliance' => true]);
 
         return $user->fresh();
     }
@@ -213,6 +213,11 @@ class ComplianceDatabaseTest extends TestCase
 
         $researcher = $this->administrator();
         $florida = $this->state('FL');
+        // Compliance management is a specific grant: without it a delegated administrator is refused.
+        AdminPermission::where('user_id', $researcher->id)->update(['can_manage_compliance' => false]);
+        $this->actingAs($researcher->fresh())->get(route('admin.console.compliance.index'))->assertForbidden();
+        AdminPermission::where('user_id', $researcher->id)->update(['can_manage_compliance' => true]);
+        $researcher = $researcher->fresh();
         $this->actingAs($researcher)->get(route('admin.console.compliance.index'))->assertOk()
             ->assertSee('Compliance Database')->assertSee('Florida')->assertSee('Verification Required');
         $this->actingAs($researcher)->get(route('admin.console.compliance.jurisdictions.show', $florida))->assertOk()

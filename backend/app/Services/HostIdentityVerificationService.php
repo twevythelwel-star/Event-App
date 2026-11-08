@@ -698,8 +698,8 @@ class HostIdentityVerificationService
 
     private static function assertAdminCanReview(User $admin): void
     {
-        $isAuthorized = $admin->hasRole(AccountType::SYSTEM_ADMIN) || $admin->hasRole(AccountType::ADMINISTRATOR);
-        if (!$isAuthorized) {
+        // An explicit grant of identity document access (HostIdentityVerificationPolicy), never a role alone.
+        if (!\App\Support\AdminAuthorization::canAccessIdentityDocuments($admin)) {
             throw new SecurityException('Unauthorized: Only authorized compliance administrators may access or review host identity verifications.');
         }
     }

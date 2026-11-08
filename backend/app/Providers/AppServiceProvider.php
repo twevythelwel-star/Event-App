@@ -27,7 +27,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Published policy versions, read once per request.
+        $this->app->scoped(\App\Services\Compliance\PolicyCatalog::class);
     }
 
     /**

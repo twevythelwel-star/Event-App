@@ -30,7 +30,11 @@
                     <div><dt class="eb-text-label">Identity &amp; compliance</dt><dd style="margin: 0;">{{ $idStatusLabel }}{{ $app->compliance_acknowledged_at ? ' · 6/6 policies accepted' : '' }}</dd></div>
                     <div><dt class="eb-text-label">Government ID</dt><dd style="margin: 0;">
                         @if($idVerification)
-                            {{ $idVerification->documentTypeLabel() }}{{ $idVerification->document_last4 ? ' (••' . $idVerification->document_last4 . ')' : '' }} · Scan: {{ strtoupper($idVerification->malware_scan_status) }}
+                            @can('viewAny', \App\Models\HostIdentityVerification::class)
+                                {{ $idVerification->documentTypeLabel() }}{{ $idVerification->document_last4 ? ' (••' . $idVerification->document_last4 . ')' : '' }} · Scan: {{ strtoupper($idVerification->malware_scan_status) }}
+                            @else
+                                Submitted. Details are visible only to administrators granted identity document access.
+                            @endcan
                         @else
                             {{ $app->government_id_type ? ucfirst(str_replace('_', ' ', $app->government_id_type)) : 'Not uploaded yet' }}
                         @endif
