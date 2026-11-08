@@ -125,6 +125,34 @@ class Event extends Model
         'food_pickup_windows',
         'food_max_orders',
         'creation_key',
+        'serves_alcohol',
+        'alcohol_age_verification_required',
+        'food_permit_status',
+        'food_permit_number',
+        'alcohol_permit_status',
+        'alcohol_permit_number',
+        'allergen_disclosure_confirmed',
+        'temperature_and_sanitation_confirmed',
+        'compliance_verified_at',
+        'compliance_jurisdiction_county',
+        'compliance_jurisdiction_municipality',
+        'compliance_acknowledgement_id',
+        'compliance_reacknowledgement_required',
+        'compliance_reacknowledgement_reason',
+        'compliance_arrangement_fingerprint',
+        // How food and alcohol are provided, and where (EventRequirementChecklist).
+        'food_service_mode',
+        'alcohol_service_mode',
+        'uses_licensed_caterer',
+        'uses_licensed_alcohol_vendor',
+        'food_prepared_elsewhere',
+        'food_prep_state_code',
+        'food_prep_county',
+        'food_prep_city',
+        'alcohol_served_elsewhere',
+        'alcohol_service_state_code',
+        'alcohol_service_county',
+        'alcohol_service_city',
     ];
 
     /** How guests may order food: before the event, on the day during food service, or both. */
@@ -132,6 +160,21 @@ class Event extends Model
 
     /** How food reaches guests. Delivery means to a table or a designated area at the venue. */
     public const FOOD_FULFILLMENT = ['pickup' => 'Pickup only', 'pickup_and_delivery' => 'Pickup, or delivery to a table or area'];
+
+    public const FOOD_PERMIT_STATUSES = [
+        'not_applicable' => 'No food prepared or served',
+        'licensed_caterer_or_venue' => 'Licensed restaurant, caterer, or commercial kitchen',
+        'temporary_food_permit_obtained' => 'Temporary / special-event food permit obtained',
+        'permit_pending_inspection' => 'Permit application submitted — pending municipal inspection',
+        'cottage_or_exempt_disclosed' => 'Exempt community / cottage food with required state disclosure',
+    ];
+
+    public const ALCOHOL_PERMIT_STATUSES = [
+        'no_alcohol' => 'No alcohol sold, supplied, or served',
+        'licensed_venue_or_bar' => 'Served under venue or licensed bar liquor licence',
+        'special_event_permit_obtained' => 'Special-event / temporary alcohol permit obtained',
+        'licensed_caterer_bartender' => 'Served by licensed alcohol caterer with certified bartenders',
+    ];
 
     public const VENUE_TYPES = ['park' => 'Park or outdoor space', 'hall' => 'Hall or community center', 'restaurant' => 'Restaurant or bar',
         'church' => 'Church or place of worship', 'school' => 'School or campus', 'stadium' => 'Stadium or arena', 'beach' => 'Beach or waterfront',
@@ -176,6 +219,16 @@ class Event extends Model
         'food_service_fee_minor' => 'integer',
         'food_pickup_windows' => 'array',
         'food_max_orders' => 'integer',
+        'serves_alcohol' => 'boolean',
+        'alcohol_age_verification_required' => 'boolean',
+        'allergen_disclosure_confirmed' => 'boolean',
+        'temperature_and_sanitation_confirmed' => 'boolean',
+        'compliance_verified_at' => 'datetime',
+        'compliance_reacknowledgement_required' => 'boolean',
+        'uses_licensed_caterer' => 'boolean',
+        'uses_licensed_alcohol_vendor' => 'boolean',
+        'food_prepared_elsewhere' => 'boolean',
+        'alcohol_served_elsewhere' => 'boolean',
     ];
 
     /**
@@ -496,5 +549,16 @@ class Event extends Model
     {
         $validMethods = ['bank', 'zelle', 'cashapp', 'cash', 'card'];
         $this->payment_methods = array_intersect($methods, $validMethods);
+    }
+
+    public function complianceAcknowledgements(): HasMany
+    {
+        return $this->hasMany(EventComplianceAcknowledgement::class, 'event_id', 'id')
+            ->orderByDesc('accepted_at_utc');
+    }
+
+    public function activeComplianceAcknowledgement(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(EventComplianceAcknowledgement::class, 'compliance_acknowledgement_id', 'id');
     }
 }

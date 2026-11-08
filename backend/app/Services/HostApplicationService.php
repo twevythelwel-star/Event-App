@@ -69,7 +69,10 @@ class HostApplicationService
             throw new \InvalidArgumentException('A contact phone number is required for event operations verification.');
         }
 
-        $application = HostApplication::create([
+        // Validate mandatory individual Host Responsibility & Legal Compliance acknowledgements when present
+        LegalComplianceService::assertHostApplicationPoliciesAccepted($data);
+
+        $applicationAttributes = [
             'user_id' => $user->id,
             'organization_name' => $orgName,
             'description' => $description ?: null,
@@ -77,7 +80,37 @@ class HostApplicationService
             'contact_phone' => $contactPhone,
             'website_or_social' => $website ?: null,
             'status' => 'pending',
-        ]);
+        ];
+
+        if (!empty($data['legal_full_name'])) {
+            $applicationAttributes['legal_full_name'] = trim((string) $data['legal_full_name']);
+        }
+        if (!empty($data['business_entity_type'])) {
+            $applicationAttributes['business_entity_type'] = trim((string) $data['business_entity_type']);
+        }
+        if (!empty($data['government_id_type'])) {
+            $applicationAttributes['government_id_type'] = trim((string) $data['government_id_type']);
+        }
+        if (!empty($data['government_id_last4'])) {
+            $applicationAttributes['government_id_last4'] = substr(preg_replace('/\D/', '', (string) $data['government_id_last4']), -4);
+        }
+        if (!empty($data['food_handler_permit_number'])) {
+            $applicationAttributes['food_handler_permit_number'] = trim((string) $data['food_handler_permit_number']);
+        }
+        if (!empty($data['alcohol_license_number'])) {
+            $applicationAttributes['alcohol_license_number'] = trim((string) $data['alcohol_license_number']);
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('host_applications', 'identity_verification_status')) {
+            $applicationAttributes['identity_verification_status'] = 'pending_verification';
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('host_applications', 'compliance_acknowledged_at')) {
+            $applicationAttributes['compliance_acknowledged_at'] = now();
+        }
+
+        $application = HostApplication::create($applicationAttributes);
+
+        // Persist auditable Host Responsibility & Compliance acceptance records
+        LegalComplianceService::recordHostApplicationAcceptances($user, $application, $data);
 
         SecurityAuditLog::create([
             'id' => (string) Str::uuid(),
@@ -129,12 +162,28 @@ class HostApplicationService
         }
 
         return DB::transaction(function () use ($application, $applicant, $reviewer, $notes) {
-            // 1. Update application status
+            // 1. Update application status & mark host identity verified
             $application->status = 'approved';
             $application->reviewed_by = $reviewer->id;
             $application->reviewed_at = now();
             $application->review_notes = $notes;
+            if (\Illuminate\Support\Facades\Schema::hasColumn('host_applications', 'identity_verification_status')) {
+                $application->identity_verification_status = 'verified';
+            }
             $application->save();
+
+            // Sync any pending HostIdentityVerification record for this applicant when approved by admin
+            if (\Illuminate\Support\Facades\Schema::hasTable('host_identity_verifications')) {
+                $idVerification = \App\Models\HostIdentityVerification::where('user_id', $applicant->id)->latest()->first();
+                if ($idVerification && in_array($idVerification->status, ['pending_review', 'under_review'], true) && !$idVerification->isDocumentExpired()) {
+                    $idVerification->forceFill([
+                        'status' => \App\Enums\HostVerificationStatus::APPROVED->value,
+                        'reviewed_by' => $reviewer->id,
+                        'reviewed_at_utc' => now()->utc(),
+                        'review_notes' => $notes,
+                    ])->save();
+                }
+            }
 
             // 2. Assign explicit Event Host role in user_roles
             $existingRole = UserRole::where('user_id', $applicant->id)
@@ -256,7 +305,12 @@ class HostApplicationService
      */
     public static function getPendingApplications(): Collection
     {
-        return HostApplication::with('user')
+        $relations = ['user'];
+        if (\Illuminate\Support\Facades\Schema::hasTable('host_identity_verifications')) {
+            $relations[] = 'identityVerification';
+        }
+
+        return HostApplication::with($relations)
             ->where('status', 'pending')
             ->orderBy('created_at')
             ->get();

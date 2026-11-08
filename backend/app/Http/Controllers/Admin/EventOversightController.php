@@ -85,6 +85,10 @@ class EventOversightController extends Controller
             'canSeePayments' => Gate::allows(Admin::PAYMENTS_VIEW),
             'canModerate' => $canModerate,
             'actions' => $canModerate ? $this->availableActions($record) : [],
+            // The compliance publication gates and any overrides (EventPublicationGates).
+            'gates' => app(\App\Services\Compliance\EventPublicationGates::class)->check($record),
+            'overrides' => \App\Models\Compliance\CompliancePublicationOverride::with(['grantor', 'revoker'])->where('event_id', $record->id)->latest()->get(),
+            'canOverride' => Gate::allows(Admin::COMPLIANCE_OVERRIDE),
         ]);
     }
 
@@ -106,6 +110,11 @@ class EventOversightController extends Controller
         if (!array_key_exists($action, $this->availableActions($record))) {
             return back()->with('error', self::ACTIONS[$action]['label'] . ' is not possible for an event that is ' . $record->status
                 . ($record->is_ordering_open ? ' with ordering open.' : ' with ordering closed.'));
+        }
+
+        // Republishing goes through the same compliance gates as publishing: no moderation action skips them.
+        if ($action === 'republish' && ($blocking = app(\App\Services\Compliance\EventPublicationGates::class)->blocking($record)) !== []) {
+            return back()->with('error', 'Republishing is blocked by the compliance gates: ' . implode(' ', array_column($blocking, 'message')));
         }
 
         $before = "status={$record->status}, ordering=" . ($record->is_ordering_open ? 'open' : 'closed');

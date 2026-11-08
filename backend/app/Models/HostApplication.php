@@ -24,10 +24,19 @@ class HostApplication extends Model
         'reviewed_at',
         'rejection_reason',
         'review_notes',
+        'legal_full_name',
+        'business_entity_type',
+        'government_id_type',
+        'government_id_last4',
+        'identity_verification_status',
+        'food_handler_permit_number',
+        'alcohol_license_number',
+        'compliance_acknowledged_at',
     ];
 
     protected $casts = [
         'reviewed_at' => 'datetime',
+        'compliance_acknowledged_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -38,6 +47,11 @@ class HostApplication extends Model
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
+    }
+
+    public function identityVerification(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(HostIdentityVerification::class, 'host_application_id')->latestOfMany();
     }
 
     public function isPending(): bool

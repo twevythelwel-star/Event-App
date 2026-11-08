@@ -194,4 +194,36 @@
             </table></div>
         </section>
     @endif
+
+    <section class="ac-card ac-section" aria-labelledby="policy-acceptances-heading" style="margin-top:16px">
+        <div class="ac-card-head"><h2 id="policy-acceptances-heading">Auditable policy &amp; compliance acceptances</h2></div>
+        @if(($policyAcceptances ?? collect())->isEmpty())
+            <div class="ac-empty"><strong>No policy acceptance records</strong></div>
+        @else
+            <div class="ac-table-wrap"><table class="ac-table">
+                <thead>
+                <tr>
+                    <th scope="col">Policy name</th>
+                    <th scope="col">Version</th>
+                    <th scope="col">Context</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Accepted (UTC)</th>
+                    <th scope="col">IP address</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($policyAcceptances as $acceptance)
+                    <tr>
+                        <td>{{ $acceptance->policy_name }}</td>
+                        <td>{{ $acceptance->policy_version }}</td>
+                        <td>{{ $acceptance->context }}</td>
+                        <td><span class="ac-badge success">{{ ucfirst($acceptance->acceptance_status) }}</span></td>
+                        <td>{{ $acceptance->accepted_at_utc?->copy()->utc()->format('Y-m-d H:i:s') }} UTC</td>
+                        <td>{{ $acceptance->ip_address ?: '—' }}</td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table></div>
+        @endif
+    </section>
 @endsection

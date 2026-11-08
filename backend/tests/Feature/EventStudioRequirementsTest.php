@@ -55,7 +55,7 @@ class EventStudioRequirementsTest extends TestCase
 
     private function draftForm(array $overrides = []): array
     {
-        return array_merge(['title' => 'Studio Requirements Night', 'status' => 'draft', 'creation_key' => (string) Str::uuid()], $overrides);
+        return array_merge(['title' => 'Studio Requirements Night', 'status' => 'draft', 'creation_key' => (string) Str::uuid(), 'state_code' => 'FL'], $this->eventComplianceFields(), $overrides);
     }
 
     // ---- Access ---------------------------------------------------------------------------------------------------

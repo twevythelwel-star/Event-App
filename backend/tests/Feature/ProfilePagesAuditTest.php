@@ -54,7 +54,7 @@ class ProfilePagesAuditTest extends TestCase
             'state_code' => $event->state_code, 'zip_code' => $event->zip_code, 'country_code' => 'US',
             'organizer_name' => $event->organizer_name, 'organizer_phone' => $event->organizer_phone,
             'advance_order_deadline' => '2027-01-10 18:00',
-        ], $overrides);
+        ], $this->eventComplianceFields(), $overrides);
     }
 
     public function test_no_page_depends_on_tailwind_classes_the_app_never_loads(): void

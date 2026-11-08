@@ -424,8 +424,15 @@ class EventController extends Controller
         }
 
         // The event, its ticket types, starter menu items and catalog links are created together or not at all.
+        // Creating an event from the form always needs its own Event Compliance acknowledgement.
         try {
+            app(\App\Services\Compliance\EventComplianceService::class)->assertComplete($validated);
             $event = DB::transaction(fn () => app(\App\Services\EventManagementService::class)->createEvent($user, $validated));
+        } catch (\InvalidArgumentException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $e->getMessage()], 422);
+            }
+            return back()->withInput()->withErrors(['compliance' => $e->getMessage()]);
         } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             // Two submissions of the same form raced; the other one created the event.
             $existing = $this->eventForCreationKey($organizerId, $validated['creation_key'] ?? null);
@@ -569,7 +576,27 @@ class EventController extends Controller
         // Countries come from the picker and live in their own table, not on the event row.
         $countryIds = $request->boolean('country_ids_submitted') ? array_values(array_unique((array) $request->validated('country_ids', []))) : null;
         unset($changes['country_ids'], $changes['country_ids_submitted']);
-        $event->update($changes);
+        // Checked before anything is saved: a material change to the jurisdiction, food or alcohol arrangements
+        // of an acknowledged event needs the Event Compliance declarations confirmed again in the same save.
+        $compliance = app(\App\Services\Compliance\EventComplianceService::class);
+        try {
+            $reacknowledges = $compliance->checkUpdate($event, $changes);
+            $ackContext = $compliance->materialChanges($event, $changes) !== [] ? 'event_material_change_reacknowledgement' : 'event_editing';
+            DB::transaction(function () use ($event, $changes, $reacknowledges, $compliance, $request, $ackContext) {
+                $event->update($changes);
+                if ($event->allergen_disclosure_confirmed && $event->temperature_and_sanitation_confirmed && !$event->compliance_verified_at) {
+                    $event->forceFill(['compliance_verified_at' => now()])->save();
+                }
+                if ($reacknowledges) {
+                    $compliance->record($request->user(), $event, $changes, $ackContext);
+                }
+            });
+        } catch (\InvalidArgumentException $e) {
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $e->getMessage()], 422);
+            }
+            return back()->withInput()->withErrors(['compliance' => $e->getMessage()]);
+        }
         if ($countryIds !== null) {
             $event->countries()->sync($countryIds);
         }

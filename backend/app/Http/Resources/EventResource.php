@@ -183,6 +183,23 @@ class EventResource extends JsonResource
             'packagingFeeJMD' => (int) $this->packaging_fee_jmd,
             'packagingFeeMinor' => (int) $this->packaging_fee_minor,
             'supportsFoodOrdering' => (bool) ($this->supports_food_ordering ?? true),
+            'servesAlcohol' => (bool) ($this->serves_alcohol ?? false),
+            'alcoholAgeVerificationRequired' => (bool) ($this->alcohol_age_verification_required ?? false),
+            'foodPermitStatus' => $this->food_permit_status,
+            'foodPermitNumber' => $this->food_permit_number,
+            'alcoholPermitStatus' => $this->alcohol_permit_status,
+            'alcoholPermitNumber' => $this->alcohol_permit_number,
+            'allergenDisclosureConfirmed' => (bool) ($this->allergen_disclosure_confirmed ?? false),
+            'temperatureAndSanitationConfirmed' => (bool) ($this->temperature_and_sanitation_confirmed ?? false),
+            'complianceVerifiedAt' => $this->compliance_verified_at?->toIso8601String(),
+            'complianceJurisdictionCounty' => $this->compliance_jurisdiction_county,
+            'complianceJurisdictionMunicipality' => $this->compliance_jurisdiction_municipality ?: $this->city,
+            'complianceAcknowledgementId' => $this->compliance_acknowledgement_id,
+            // Acknowledged, but the jurisdiction, food or alcohol arrangements changed since (no extra query).
+            'complianceReacknowledgementRequired' => $this->compliance_acknowledgement_id !== null && $this->compliance_arrangement_fingerprint !== null
+                && !hash_equals((string) $this->compliance_arrangement_fingerprint, \App\Services\LegalComplianceService::computeArrangementFingerprint(
+                    \App\Services\LegalComplianceService::extractComplianceState($this->resource))),
+            'complianceReacknowledgementReason' => $this->compliance_reacknowledgement_reason,
             'foodServiceConfig' => [
                 'enabled' => (bool) ($this->supports_food_ordering ?? true),
                 'serviceMode' => !$this->supports_food_ordering

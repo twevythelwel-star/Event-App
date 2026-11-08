@@ -67,6 +67,27 @@ class DemoAccountsSeeder extends Seeder
                     ['role' => 'event_owner', 'is_active' => true]
                 );
             }
+
+            // The demo host passes the publication gates (EventPublicationGates) like a real approved host would:
+            // a demo identity verification with no document, and the host acknowledgements, both labelled as demo
+            // data. Never run this seeder against a production database.
+            if ($account['role'] === 'event_host') {
+                \App\Models\HostIdentityVerification::firstOrCreate(['user_id' => $user->id], [
+                    'status' => \App\Enums\HostVerificationStatus::APPROVED->value,
+                    'legal_full_name' => $account['name'],
+                    'malware_scan_status' => 'not_applicable',
+                    'submitted_at_utc' => now(),
+                    'reviewed_at_utc' => now(),
+                    'review_notes' => 'DEMO ACCOUNT: seeded for local development. No identity document exists.',
+                ]);
+                foreach (\App\Services\LegalComplianceService::hostResponsibilityPolicies() as $spec) {
+                    \App\Models\PolicyAcceptance::firstOrCreate(
+                        ['user_id' => $user->id, 'policy_name' => $spec['policy_name'], 'policy_version' => $spec['version']],
+                        ['acceptance_status' => 'accepted', 'accepted_at_utc' => now(), 'context' => 'demo_seed',
+                            'metadata' => ['note' => 'DEMO ACCOUNT: seeded for local development.']]
+                    );
+                }
+            }
         }
 
         // The demo host takes bank transfers and cash, so both checkout paths can be tried.

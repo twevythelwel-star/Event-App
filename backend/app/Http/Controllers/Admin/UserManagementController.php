@@ -103,6 +103,10 @@ class UserManagementController extends Controller
             ->filter(fn ($role) => !$user->hasRole($role) && Gate::allows(Admin::ROLES_MANAGE, $user) && $admin->canAssignRole($user, $role))
             ->values();
 
+        $policyAcceptances = Schema::hasTable('policy_acceptances')
+            ? \App\Models\PolicyAcceptance::where('user_id', $user->id)->orderByDesc('accepted_at_utc')->take(30)->get()
+            : collect();
+
         return view('admin.users.show', [
             'subject' => $user,
             'roles' => $user->getAuthorizedRoles(),
@@ -111,6 +115,7 @@ class UserManagementController extends Controller
             'assignments' => $assignments,
             'orderCount' => $orderCount,
             'activity' => $activity,
+            'policyAcceptances' => $policyAcceptances,
             'revealContact' => $revealContact,
             'canRevealContact' => Gate::allows(Admin::USER_CONTACT) && filled($user->phone),
             'canManageStatus' => Gate::allows(Admin::USER_STATUS, $user),

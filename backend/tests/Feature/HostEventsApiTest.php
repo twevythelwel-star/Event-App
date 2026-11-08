@@ -284,6 +284,10 @@ class HostEventsApiTest extends TestCase
 
         $this->actingAs($host)->patchJson('/api/v1/host/events/' . self::KINGSTON, ['is_ordering_open' => true])->assertStatus(422);
 
+        // Publishing again needs this event's own Event Compliance acknowledgement (the seeded event has none).
+        $this->actingAs($host)->postJson($url, ['status' => 'published'])->assertStatus(422);
+        $this->actingAs($host)->patchJson('/api/v1/host/events/' . self::KINGSTON, $this->eventComplianceFields() + $this->eventArrangementFields(true))->assertOk();
+
         $this->actingAs($host)->postJson($url, ['status' => 'published'])
             ->assertOk()
             ->assertJsonPath('data.isOrderingOpen', true);

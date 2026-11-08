@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\ComplianceDatabaseController;
 use App\Http\Controllers\Admin\FraudPreventionController;
 use App\Http\Controllers\Admin\FeatureFlagController;
 use App\Http\Controllers\Admin\LocationManagementController;
@@ -56,6 +57,21 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
         Route::get('/charges', [\App\Http\Controllers\Admin\ChargeRuleController::class, 'index'])->name('charges.index');
         Route::post('/charges', [\App\Http\Controllers\Admin\ChargeRuleController::class, 'store'])->name('charges.store')->middleware('throttle:20,1');
         Route::post('/charges/{rule}/toggle', [\App\Http\Controllers\Admin\ChargeRuleController::class, 'toggle'])->name('charges.toggle')->middleware('throttle:30,1');
+
+        // The US state and local compliance database and its review workflow (ComplianceReviewWorkflow).
+        Route::get('/compliance', [ComplianceDatabaseController::class, 'index'])->name('compliance.index');
+        Route::get('/compliance/jurisdictions/{jurisdiction}', [ComplianceDatabaseController::class, 'show'])->name('compliance.jurisdictions.show');
+        // Event-checklist rules, exceptions and local requirements, and the hosts' evidence to verify.
+        Route::post('/compliance/jurisdictions/{jurisdiction}/rules', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'store'])->name('compliance.rules.store')->middleware('throttle:30,1');
+        Route::post('/compliance/rules/{rule}/toggle', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'toggle'])->name('compliance.rules.toggle')->middleware('throttle:30,1');
+        Route::post('/events/{event}/compliance-overrides', [\App\Http\Controllers\Admin\CompliancePublicationOverrideController::class, 'store'])->name('compliance.overrides.store')->middleware('throttle:20,1');
+        Route::post('/compliance/overrides/{override}/revoke', [\App\Http\Controllers\Admin\CompliancePublicationOverrideController::class, 'revoke'])->name('compliance.overrides.revoke')->middleware('throttle:20,1');
+        Route::get('/compliance/evidence',[\App\Http\Controllers\Admin\ComplianceRulesController::class, 'evidence'])->name('compliance.evidence.index');
+        Route::post('/compliance/evidence/{evidence}/{action}', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'review'])->whereIn('action', ['start', 'verify', 'reject'])->name('compliance.evidence.review')->middleware('throttle:60,1');
+        Route::post('/compliance/jurisdictions/{jurisdiction}/research', [ComplianceDatabaseController::class, 'startResearch'])->name('compliance.jurisdictions.research')->middleware('throttle:30,1');
+        Route::post('/compliance/jurisdictions/{jurisdiction}/authorities', [ComplianceDatabaseController::class, 'storeAuthority'])->name('compliance.authorities.store')->middleware('throttle:30,1');
+        Route::patch('/compliance/records/{type}/{id}', [ComplianceDatabaseController::class, 'update'])->whereIn('type', ['authority', 'requirement'])->whereNumber('id')->name('compliance.records.update')->middleware('throttle:60,1');
+        Route::post('/compliance/records/{type}/{id}/{action}', [ComplianceDatabaseController::class, 'transition'])->whereIn('type', ['authority', 'requirement'])->whereNumber('id')->whereIn('action', ['submit', 'approve', 'request-changes', 'reset'])->name('compliance.records.transition')->middleware('throttle:60,1');
 
         Route::get('/locations', [LocationManagementController::class, 'index'])->name('locations.index');
         Route::post('/locations/states', [LocationManagementController::class, 'storeState'])->name('locations.states.store')->middleware('throttle:20,1');

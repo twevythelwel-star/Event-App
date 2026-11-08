@@ -50,9 +50,12 @@ class AuthenticationService
             throw new \InvalidArgumentException('Password confirmation does not match.');
         }
 
-        if (!$agreeTerms) {
+        if (!$agreeTerms && empty($data['accept_platform_terms'])) {
             throw new \InvalidArgumentException('You must agree to the platform terms and privacy policy.');
         }
+
+        // Validate mandatory individual policy acknowledgements (Platform Terms, Food Safety Disclaimer, Alcohol Policy)
+        LegalComplianceService::assertRegistrationPoliciesAccepted($data);
 
         // 3. Database uniqueness check
         if (User::where('email', $email)->exists()) {
@@ -91,6 +94,14 @@ class AuthenticationService
             return $user;
         });
 
+        // 4b. Persist auditable mandatory policy acceptance records (UTC timestamp, IP, user-agent, version, context)
+        $policyAcceptances = LegalComplianceService::recordRegistrationAcceptances(
+            $user,
+            $data,
+            isset($data['ip_address']) ? (string) $data['ip_address'] : null,
+            isset($data['user_agent']) ? (string) $data['user_agent'] : null
+        );
+
         // 5. Immutable security audit log
         $auditId = (string) Str::uuid();
         SecurityAuditLog::create([
@@ -110,6 +121,7 @@ class AuthenticationService
         return [
             'success' => true,
             'user' => $user,
+            'policy_acceptances' => $policyAcceptances,
             'message' => 'Registration successful! Welcome to EventBite.',
             'redirect_route' => 'attendee.dashboard',
         ];

@@ -118,6 +118,22 @@ class User extends Authenticatable
     }
 
     /**
+     * Auditable legal & policy acceptances recorded for this user.
+     */
+    public function policyAcceptances(): HasMany
+    {
+        return $this->hasMany(PolicyAcceptance::class, 'user_id');
+    }
+
+    /**
+     * Government-issued identity verification submissions for this user.
+     */
+    public function identityVerifications(): HasMany
+    {
+        return $this->hasMany(HostIdentityVerification::class, 'user_id');
+    }
+
+    /**
      * Organizers (tenants) where this user has membership.
      */
     public function organizerMemberships(): HasMany

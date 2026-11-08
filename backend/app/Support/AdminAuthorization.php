@@ -46,6 +46,13 @@ final class AdminAuthorization
     public const REPORTS_EXPORT = 'admin.reports.export';
     public const AUDIT_VIEW = 'admin.audit.view';
     public const SETTINGS_MANAGE = 'admin.settings.manage';
+    // The US state and local compliance database: any active administrator researches and submits records;
+    // only a system administrator approves them (and never one they submitted, ComplianceReviewWorkflow).
+    public const COMPLIANCE_VIEW = 'admin.compliance.view';
+    public const COMPLIANCE_EDIT = 'admin.compliance.edit';
+    public const COMPLIANCE_APPROVE = 'admin.compliance.approve';
+    // Overriding an event publication gate: system administrators only, always with a reason, an expiry and an audit entry.
+    public const COMPLIANCE_OVERRIDE = 'admin.compliance.override';
 
     public static function register(): void
     {
@@ -95,6 +102,11 @@ final class AdminAuthorization
 
         Gate::define(self::AUDIT_VIEW, fn (User $user) => self::isSystemAdmin($user)
             || (self::isActiveAdmin($user) && self::flag($user, 'can_access_audit_logs')));
+
+        Gate::define(self::COMPLIANCE_VIEW, fn (User $user) => self::isActiveAdmin($user));
+        Gate::define(self::COMPLIANCE_EDIT, fn (User $user) => self::isActiveAdmin($user));
+        Gate::define(self::COMPLIANCE_APPROVE, fn (User $user) => self::isSystemAdmin($user));
+        Gate::define(self::COMPLIANCE_OVERRIDE, fn (User $user) => self::isSystemAdmin($user));
 
         Gate::define(self::SETTINGS_MANAGE, fn (User $user) => self::isActiveAdmin($user)
             && Gate::forUser($user)->allows('updatePlatformConfiguration', SystemPlatformSetting::class));

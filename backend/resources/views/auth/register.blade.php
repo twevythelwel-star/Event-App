@@ -555,12 +555,44 @@
                 </div>
             </div>
 
-            <!-- Terms & Conditions Checkbox -->
-            <div class="terms-row">
-                <input type="checkbox" id="agree_terms" name="agree_terms" value="1" {{ old('agree_terms') ? 'checked' : '' }} required>
-                <label for="agree_terms" class="terms-label">
-                    I agree to the <span style="color: #059669; font-weight: 600;">Terms of Service</span>, culinary collection guidelines, and acknowledge the <span style="color: #059669; font-weight: 600;">Privacy Policy</span>.
-                </label>
+            <!-- Mandatory Platform Policy Acknowledgements (Sections A, B, C & D) -->
+            <input type="hidden" name="enforce_policy_acknowledgements" value="1">
+            <div class="form-group" id="mandatory-policy-acknowledgements" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 16px; padding: 14px 16px;">
+                <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #0f172a; margin-bottom: 10px;">
+                    Mandatory Platform Policy Acknowledgements (Version 2026.11-v1)
+                </div>
+
+                <!-- A. Platform Terms and Conditions -->
+                <div class="terms-row" style="margin-bottom: 10px;">
+                    <input type="checkbox" id="accept_platform_terms" name="accept_platform_terms" value="1" {{ old('accept_platform_terms') ? 'checked' : '' }} required>
+                    <label for="accept_platform_terms" class="terms-label">
+                        <strong>A. Platform Terms and Conditions *</strong> — I accept EventBite's Terms of Service, understand EventBite's role as an event discovery, ticketing and food-ordering platform, acknowledge that hosts are independently responsible for the legality and safety of their events, and agree not to use EventBite to facilitate unlawful activities.
+                    </label>
+                </div>
+
+                <!-- B. Food Safety Disclaimer -->
+                <div class="terms-row" style="margin-bottom: 10px;">
+                    <input type="checkbox" id="accept_food_safety_disclaimer" name="accept_food_safety_disclaimer" value="1" {{ old('accept_food_safety_disclaimer') ? 'checked' : '' }} required>
+                    <label for="accept_food_safety_disclaimer" class="terms-label">
+                        <strong>B. Food Safety Disclaimer *</strong> — I understand that anyone preparing, handling, transporting or serving food must comply with applicable food-safety laws covering safe food preparation and handling, cooking and holding temperatures, refrigeration and storage, cross-contamination prevention, handwashing and sanitation, food transportation, allergen identification and disclosure, foodborne illness prevention, required food-service permits and inspections, and safe disposal of food and waste.
+                    </label>
+                </div>
+
+                <!-- C. Alcohol Policy -->
+                <div class="terms-row" style="margin-bottom: 10px;">
+                    <input type="checkbox" id="accept_alcohol_policy" name="accept_alcohol_policy" value="1" {{ old('accept_alcohol_policy') ? 'checked' : '' }} required>
+                    <label for="accept_alcohol_policy" class="terms-label">
+                        <strong>C. Alcohol Policy *</strong> — I understand that alcohol may only be sold, supplied or served when legally authorized under state and local laws with required licences and permits, minimum legal drinking ages and valid ID verification must be enforced, alcohol must not be served to prohibited persons, responsible-service and liquor liability obligations apply to hosts, and purchasing an event ticket does not automatically authorize alcohol consumption or imply that EventBite grants an alcohol licence.
+                    </label>
+                </div>
+
+                <!-- D. Host Responsibility Notice -->
+                <div class="terms-row" style="margin-bottom: 4px;">
+                    <input type="checkbox" id="agree_terms" name="agree_terms" value="1" {{ old('agree_terms') ? 'checked' : '' }} required>
+                    <label for="agree_terms" class="terms-label">
+                        <strong>D. Host Responsibility & Auditable Consent *</strong> — I understand that applying to become an Event Host requires separate mandatory individual compliance acknowledgements and identity verification, and I consent to EventBite recording my policy acceptance status, policy version, UTC timestamp, IP address, and registration context.
+                    </label>
+                </div>
             </div>
 
             <!-- Submit Button -->

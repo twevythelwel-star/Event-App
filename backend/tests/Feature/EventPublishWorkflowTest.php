@@ -44,7 +44,7 @@ class EventPublishWorkflowTest extends TestCase
             'ticket_tiers_submitted' => '1',
             'ticket_tiers' => [['name' => 'General Admission', 'price' => '15.00', 'available_stock' => 100, 'max_per_customer' => 6]],
             'creation_key' => (string) Str::uuid(),
-        ], $overrides);
+        ], $this->eventComplianceFields(), $this->eventArrangementFields(), $overrides);
     }
 
     private function eventsCalled(string $title)
@@ -55,8 +55,8 @@ class EventPublishWorkflowTest extends TestCase
     public function test_an_incomplete_draft_saves_and_lists_what_is_missing(): void
     {
         $response = $this->actingAs($this->host)->post(route('events.store'), [
-            'title' => 'Half-planned Fish Fry', 'status' => 'draft', 'creation_key' => (string) Str::uuid(),
-        ]);
+            'title' => 'Half-planned Fish Fry', 'status' => 'draft', 'creation_key' => (string) Str::uuid(), 'state_code' => 'FL',
+        ] + $this->eventComplianceFields());
 
         $event = $this->eventsCalled('Half-planned Fish Fry')->firstOrFail();
         $response->assertRedirect(route('events.edit', $event->id))->assertSessionHas('status');
@@ -121,7 +121,7 @@ class EventPublishWorkflowTest extends TestCase
 
     public function test_food_menu_problems_block_publishing_when_food_ordering_is_on(): void
     {
-        $this->actingAs($this->host)->post(route('events.store'), $this->complete(['status' => 'draft', 'supports_food_ordering' => '1']));
+        $this->actingAs($this->host)->post(route('events.store'), $this->complete(['status' => 'draft', 'supports_food_ordering' => '1'] + $this->eventArrangementFields(true)));
         $event = $this->eventsCalled('Harbour Lights Food Night')->firstOrFail();
         $messages = fn () => array_column(array_filter(app(EventManagementService::class)->publicationReadiness($event->fresh(), $this->host), fn ($i) => $i['critical']), 'message');
 

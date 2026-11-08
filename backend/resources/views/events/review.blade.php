@@ -5,9 +5,13 @@
 
 @section('content')
 @php
-    $link = fn (string $section) => $section === 'menu' && \Illuminate\Support\Facades\Route::has('events.menu-studio')
-        ? route('events.menu-studio', $event->id)
-        : route('events.edit', $event->id) . '#studio-' . $section;
+    $link = fn (string $section) => match (true) {
+        $section === 'menu' && \Illuminate\Support\Facades\Route::has('events.menu-studio') => route('events.menu-studio', $event->id),
+        // Permits and local requirements are submitted on the Requirements page; identity and host acknowledgements on the host application.
+        $section === 'requirements' => route('events.requirements', $event->id),
+        $section === 'identity' => route('host.apply'),
+        default => route('events.edit', $event->id) . '#studio-' . $section,
+    };
     $bySection = collect($issues)->groupBy('section');
     $ready = $blocking === [];
     $tz = $event->timezone ?: config('events.market.default_timezone', 'America/New_York');
@@ -77,6 +81,10 @@
                     @empty None yet @endforelse
                 </dd></div>
                 <div><dt>Food</dt><dd>{{ $event->supports_food_ordering === false ? 'Not offered' : $itemCount . ' ' . \Illuminate\Support\Str::plural('item', $itemCount) . ', ' . $packageCount . ' ' . \Illuminate\Support\Str::plural('package', $packageCount) }}</dd></div>
+                <div><dt>Compliance</dt><dd>
+                    Food safety &amp; allergen disclosure: {{ ($event->temperature_and_sanitation_confirmed && $event->allergen_disclosure_confirmed) ? 'Confirmed' : 'Pending confirmation' }}
+                    · Alcohol service: {{ $event->serves_alcohol ? ('Yes (' . ($event->alcohol_age_verification_required ? 'ID age verification required' : 'Age check needed') . ')') : 'No alcohol served' }}
+                </dd></div>
             </dl>
             <div class="eb-cluster" style="gap: var(--space-2); flex-wrap: wrap;">
                 <a class="eb-btn eb-btn-secondary eb-btn-sm" href="{{ route('events.edit', $event->id) }}">Back to editing</a>

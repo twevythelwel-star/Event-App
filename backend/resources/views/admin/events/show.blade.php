@@ -15,6 +15,66 @@
 
 @section('content')
     @php $statusTone = ['published' => 'success', 'draft' => '', 'unpublished' => 'warning', 'cancelled' => 'danger']; @endphp
+    <section class="ac-card" aria-labelledby="gates-heading" style="margin-bottom:16px" id="publication-gates">
+        <div class="ac-card-head"><h2 id="gates-heading">Compliance publication gates</h2>
+            @php $openGates = collect($gates)->whereNull('override')->count(); @endphp
+            <span class="ac-badge {{ $openGates ? 'danger' : 'success' }}">{{ $openGates ? $openGates . ' blocking' : 'None blocking' }}</span></div>
+        <div class="ac-card-body">
+            @error('gate_code')<div class="ac-alert error" role="alert">{{ $message }}</div>@enderror
+            @error('reason')<div class="ac-alert error" role="alert">{{ $message }}</div>@enderror
+            @error('review_by')<div class="ac-alert error" role="alert">{{ $message }}</div>@enderror
+            @error('confirm')<div class="ac-alert error" role="alert">{{ $message }}</div>@enderror
+            @error('revoke_reason')<div class="ac-alert error" role="alert">{{ $message }}</div>@enderror
+            @forelse($gates as $gate)
+                <div style="padding:10px 0;border-bottom:1px solid var(--ac-line)">
+                    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                        <span>{{ $gate['message'] }}</span>
+                        @if($gate['override'])
+                            <span class="ac-badge warning">Overridden until {{ $gate['override']->review_by->format('j M Y') }}</span>
+                        @else
+                            <span class="ac-badge danger">{{ $gate['overridable'] ? 'Blocking' : 'Blocking · cannot be overridden' }}</span>
+                        @endif
+                    </div>
+                    @if($canOverride && $gate['overridable'] && !$gate['override'])
+                        <details style="margin-top:8px">
+                            <summary class="ac-link">Override this requirement</summary>
+                            <form method="POST" action="{{ route('admin.console.compliance.overrides.store', $event->id) }}" style="margin-top:8px">
+                                @csrf
+                                <input type="hidden" name="gate_code" value="{{ $gate['code'] }}">
+                                <div class="ac-form-row">
+                                    <div class="ac-field grow"><label for="reason-{{ md5($gate['code']) }}">Documented reason</label>
+                                        <textarea id="reason-{{ md5($gate['code']) }}" class="ac-textarea" name="reason" rows="2" required minlength="20" maxlength="2000" placeholder="What you checked and why the event may proceed"></textarea></div>
+                                    <div class="ac-field"><label for="review-{{ md5($gate['code']) }}">Expires (review by)</label>
+                                        <input id="review-{{ md5($gate['code']) }}" class="ac-input" type="date" name="review_by" required min="{{ now()->addDay()->toDateString() }}" max="{{ now()->addDays(\App\Http\Controllers\Admin\CompliancePublicationOverrideController::MAX_DAYS)->toDateString() }}"></div>
+                                </div>
+                                <label class="ac-check" style="display:block;margin:6px 0"><input type="checkbox" name="confirm" value="1" required> I have authority to override this requirement, and this is recorded in the audit log.</label>
+                                <button class="ac-btn ac-btn-danger ac-btn-sm" type="submit">Record override</button>
+                            </form>
+                        </details>
+                    @endif
+                </div>
+            @empty
+                <p class="ac-empty">Nothing blocks publication.</p>
+            @endforelse
+
+            @if($overrides->isNotEmpty())
+                <h3 style="font-size:14px;margin:14px 0 6px">Overrides</h3>
+                <div class="ac-table-wrap"><table class="ac-table">
+                    <thead><tr><th>Requirement</th><th>Reason</th><th>By</th><th>Expires</th><th>Status</th><th></th></tr></thead>
+                    <tbody>@foreach($overrides as $override)
+                        <tr><td>{{ $override->gate_message }}</td><td>{{ $override->reason }}</td><td>{{ $override->grantor?->name }}<span class="ac-cell-sub">{{ $override->granted_at->format('j M Y') }}</span></td>
+                            <td>{{ $override->review_by->format('j M Y') }}</td>
+                            <td>@if($override->revoked_at)<span class="ac-badge">Revoked</span><span class="ac-cell-sub">{{ $override->revoke_reason }}</span>@elseif($override->isActive())<span class="ac-badge warning">Active</span>@else<span class="ac-badge">Expired</span>@endif</td>
+                            <td>@if($canOverride && $override->isActive())
+                                <form method="POST" action="{{ route('admin.console.compliance.overrides.revoke', $override) }}" style="display:flex;gap:6px">@csrf
+                                    <label class="ac-label" for="revoke-{{ $override->id }}" style="position:absolute;left:-9999px">Reason for revoking</label>
+                                    <input id="revoke-{{ $override->id }}" class="ac-input" name="revoke_reason" required minlength="5" maxlength="2000" placeholder="Reason">
+                                    <button class="ac-btn ac-btn-sm" type="submit">Revoke</button></form>@endif</td></tr>
+                    @endforeach</tbody>
+                </table></div>
+            @endif
+        </div>
+    </section>
     <div class="ac-grid ac-grid-2">
         <section class="ac-card" aria-labelledby="details-heading">
             <div class="ac-card-head"><h2 id="details-heading">Event details</h2></div>
@@ -51,6 +111,28 @@
             </div>
         </section>
     </div>
+
+    <section class="ac-card ac-section" aria-labelledby="compliance-heading" style="margin-top:16px">
+        <div class="ac-card-head"><h2 id="compliance-heading">Food safety, allergen &amp; alcohol compliance</h2></div>
+        <div class="ac-card-body">
+            <dl class="ac-dl">
+                <dt>Food safety &amp; temperatures</dt>
+                <dd><span class="ac-badge {{ $event->temperature_and_sanitation_confirmed ? 'success' : 'warning' }}">{{ $event->temperature_and_sanitation_confirmed ? 'Confirmed' : 'Pending' }}</span></dd>
+                <dt>Allergen &amp; cross-contamination</dt>
+                <dd><span class="ac-badge {{ $event->allergen_disclosure_confirmed ? 'success' : 'warning' }}">{{ $event->allergen_disclosure_confirmed ? 'Confirmed' : 'Pending' }}</span></dd>
+                <dt>Food-service permit</dt>
+                <dd>{{ \App\Models\Event::FOOD_PERMIT_STATUSES[$event->food_permit_status ?? ''] ?? ($event->food_permit_status ?: 'Not specified') }}{{ $event->food_permit_number ? ' (#' . $event->food_permit_number . ')' : '' }}</dd>
+                <dt>Alcohol service</dt>
+                <dd><span class="ac-badge {{ $event->serves_alcohol ? 'warning' : '' }}">{{ $event->serves_alcohol ? 'Serves alcohol' : 'No alcohol served' }}</span></dd>
+                <dt>Age &amp; ID verification</dt>
+                <dd>{{ $event->serves_alcohol ? ($event->alcohol_age_verification_required ? 'Mandatory government ID check confirmed' : 'Missing confirmation') : 'N/A' }}</dd>
+                <dt>Alcohol licence / permit</dt>
+                <dd>{{ \App\Models\Event::ALCOHOL_PERMIT_STATUSES[$event->alcohol_permit_status ?? ''] ?? ($event->alcohol_permit_status ?: 'Not specified') }}{{ $event->alcohol_permit_number ? ' (#' . $event->alcohol_permit_number . ')' : '' }}</dd>
+                <dt>Compliance verified at</dt>
+                <dd>{{ $event->compliance_verified_at?->format('M j, Y g:i A') ?? '—' }}</dd>
+            </dl>
+        </div>
+    </section>
 
     @php
         // Every image the host uploaded for this event, for review. Bundled sample images are not host content.

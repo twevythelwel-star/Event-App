@@ -46,14 +46,32 @@ class SessionController extends Controller
 
     public function register(Request $request): JsonResponse
     {
+        $enforcePolicies = $request->boolean('enforce_policy_acknowledgements');
+        $policyRule = $enforcePolicies ? ['required', 'accepted'] : ['sometimes', 'accepted'];
+
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:32'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'agree_terms' => ['accepted'],
+            'password_confirmation' => ['required', 'string'],
+            'agree_terms' => ['sometimes', 'accepted'],
+            'accept_platform_terms' => $policyRule,
+            'accept_food_safety_disclaimer' => $policyRule,
+            'accept_alcohol_policy' => $policyRule,
+            'accept_host_responsibility' => ['nullable', 'boolean'],
+            'enforce_policy_acknowledgements' => ['nullable', 'boolean'],
         ]);
+
+        if (
+            empty($data['agree_terms'])
+            && !empty($data['accept_platform_terms'])
+            && !empty($data['accept_food_safety_disclaimer'])
+            && !empty($data['accept_alcohol_policy'])
+        ) {
+            $data['agree_terms'] = true;
+        }
 
         try {
             $result = AuthenticationService::register($data);

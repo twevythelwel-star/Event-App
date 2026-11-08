@@ -13,9 +13,11 @@
         ['id' => 'menu', 'label' => 'Food & menu', 'short' => '05'],
         ['id' => 'tickets', 'label' => 'Tickets', 'short' => '06'],
         ['id' => 'policy', 'label' => 'Policies', 'short' => '07'],
-        ['id' => 'branding', 'label' => 'Branding', 'short' => '08'],
-        ['id' => 'preview', 'label' => 'Preview', 'short' => '09'],
-        ['id' => 'review', 'label' => 'Review & publish', 'short' => '10'],
+        ['id' => 'event-compliance', 'label' => 'Compliance', 'short' => '08'],
+        ['id' => 'requirements', 'label' => 'Requirements', 'short' => '09'],
+        ['id' => 'branding', 'label' => 'Branding', 'short' => '10'],
+        ['id' => 'preview', 'label' => 'Preview', 'short' => '11'],
+        ['id' => 'review', 'label' => 'Review & publish', 'short' => '12'],
     ];
 @endphp
 <div class="studio-shell" id="event-studio">
@@ -67,7 +69,7 @@
                 <input type="hidden" name="creation_key" value="{{ old('creation_key', (string) \Illuminate\Support\Str::uuid()) }}">
                 @include('events.partials.form', ['event' => $draft ?? null])
                 <section class="studio-section studio-section-card" id="studio-review" data-studio-section="review">
-                    <div class="studio-section-heading"><div><span class="studio-kicker">THE FINAL MOMENT</span><h2>Ready to meet your guests?</h2><p>Give everything one last look. You can keep refining your event after saving it as a draft.</p></div><span class="studio-step-badge">10</span></div>
+                    <div class="studio-section-heading"><div><span class="studio-kicker">THE FINAL MOMENT</span><h2>Ready to meet your guests?</h2><p>Give everything one last look. You can keep refining your event after saving it as a draft.</p></div><span class="studio-step-badge">12</span></div>
                     <div class="studio-review-grid"><div><strong>Event page</strong><span>Your story, location and flyer</span></div><div><strong>Guest experience</strong><span>Tickets and food menu</span></div><div><strong>Guest confidence</strong><span>Contact and refund policy</span></div></div>
                     <div class="studio-submit-row"><button type="submit" name="status" value="draft" class="studio-button studio-button-quiet">{{ $draft ? 'Save draft changes' : 'Save as draft' }}</button><button type="submit" name="status" value="published" class="studio-button studio-button-primary" id="studio-publish">Publish event <span>↗</span></button></div>
                     <p class="studio-submit-note">Publishing makes your event page public. You can unpublish it later from your dashboard.</p>

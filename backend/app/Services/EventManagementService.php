@@ -10,6 +10,7 @@ use App\Models\MenuItem;
 use App\Models\OrganizerUser;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
+use App\Services\Compliance\EventComplianceService;
 use App\Services\LocationAddressNormalizer;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -103,6 +104,12 @@ class EventManagementService
         $data = \App\Services\Events\EventDetails::prepare($data);
         $data['organizer_id'] = $organizerId;
         $this->assertCulturalSelectionValid(null, $data);
+        // The Event Compliance declarations: checked here when given, recorded once the event exists. A draft
+        // saved before the host reaches them cannot be published until they are confirmed (publicationReadiness).
+        $acknowledges = app(EventComplianceService::class)->submitted($data);
+        if ($acknowledges) {
+            app(EventComplianceService::class)->assertComplete($data);
+        }
 
         $timezone = $data['timezone'] ?? config('events.market.default_timezone', 'America/New_York');
         $this->assertValidTimezone($timezone);
@@ -190,6 +197,22 @@ class EventManagementService
             'is_flyer_public' => false,
             // The create form's key: a retried submission finds this event instead of creating another.
             'creation_key' => isset($data['creation_key']) && Str::isUuid((string) $data['creation_key']) ? (string) $data['creation_key'] : null,
+            'serves_alcohol' => (bool) ($data['serves_alcohol'] ?? false),
+            'alcohol_age_verification_required' => (bool) ($data['alcohol_age_verification_required'] ?? false),
+            'food_permit_status' => $data['food_permit_status'] ?? null,
+            'food_permit_number' => $data['food_permit_number'] ?? null,
+            'alcohol_permit_status' => $data['alcohol_permit_status'] ?? ((!empty($data['serves_alcohol'])) ? null : 'no_alcohol'),
+            'alcohol_permit_number' => $data['alcohol_permit_number'] ?? null,
+            // How food and alcohol are provided, and where (the requirements checklist).
+            ...\Illuminate\Support\Arr::only($data, ['food_service_mode', 'alcohol_service_mode', 'uses_licensed_caterer', 'uses_licensed_alcohol_vendor',
+                'food_prep_state_code', 'food_prep_county', 'food_prep_city', 'alcohol_service_state_code', 'alcohol_service_county', 'alcohol_service_city']),
+            'food_prepared_elsewhere' => (bool) ($data['food_prepared_elsewhere'] ?? false),
+            'alcohol_served_elsewhere' => (bool) ($data['alcohol_served_elsewhere'] ?? false),
+            'allergen_disclosure_confirmed' => (bool) ($data['allergen_disclosure_confirmed'] ?? false),
+            'temperature_and_sanitation_confirmed' => (bool) ($data['temperature_and_sanitation_confirmed'] ?? false),
+            'compliance_verified_at' => (!empty($data['allergen_disclosure_confirmed']) && !empty($data['temperature_and_sanitation_confirmed'])) ? now() : null,
+            'compliance_jurisdiction_county' => $data['compliance_jurisdiction_county'] ?? null,
+            'compliance_jurisdiction_municipality' => $data['compliance_jurisdiction_municipality'] ?? ($data['city'] ?? null),
             // Timetable, venue details, verified map pin and food plan (prepared by EventDetails).
             ...\Illuminate\Support\Arr::only($data, ['end_date_iso', 'starts_at', 'ends_at', 'doors_open_time', 'setup_time',
                 'food_service_start_time', 'food_service_end_time', 'ticket_sales_start_at', 'ticket_sales_end_at', 'early_bird_starts_at', 'early_bird_ends_at',
@@ -197,6 +220,9 @@ class EventManagementService
                 'food_ordering_mode', 'food_fulfillment', 'food_delivery_instructions', 'food_service_fee_minor', 'food_pickup_windows', 'food_max_orders']),
         ]);
         $this->syncCulturalCatalog($event, $data);
+        if ($acknowledges) {
+            app(EventComplianceService::class)->record($user, $event, $data, 'event_creation');
+        }
 
         // Event creation via the dashboard also supports starter menu items in the same request.
         if ($menuItems !== []) {
@@ -274,8 +300,19 @@ class EventManagementService
         $data = \App\Services\Events\EventDetails::prepare($data, $event);
 
         $before = $event->only(\App\Services\Notifications\NotificationService::EVENT_NOTICE_FIELDS);
-        $event->fill($data)->save();
+        // A material change to the jurisdiction, food or alcohol arrangements needs the declarations again.
+        $compliance = app(EventComplianceService::class);
+        $reacknowledges = $compliance->checkUpdate($event, $data);
+        $ackContext = $compliance->materialChanges($event, $data) !== [] ? 'event_material_change_reacknowledgement' : 'event_editing';
+        $event->fill($data);
+        if ($event->allergen_disclosure_confirmed && $event->temperature_and_sanitation_confirmed && !$event->compliance_verified_at) {
+            $event->compliance_verified_at = now();
+        }
+        $event->save();
         $this->syncCulturalCatalog($event, $data);
+        if ($reacknowledges) {
+            $compliance->record($user, $event, $data, $ackContext);
+        }
         \App\Services\Notifications\NotificationService::afterEventSaved($event, $before);
         $this->audit($user, 'event_updated', 'events', $event->id, "Event '{$event->title}' updated: " . implode(', ', array_keys($data)) . '.');
 
@@ -386,7 +423,9 @@ class EventManagementService
     /** The event form's sections, for linking a readiness problem to where it is fixed. */
     public const READINESS_SECTIONS = [
         'overview' => 'Basics', 'location' => 'When and where', 'contact' => 'Contact', 'menu' => 'Food ordering',
-        'tickets' => 'Tickets', 'policy' => 'Cancellations and refunds', 'branding' => 'Flyer and images', 'publishing' => 'Publishing',
+        'tickets' => 'Tickets', 'policy' => 'Cancellations and refunds', 'compliance' => 'Food, alcohol and legal compliance', 'event-compliance' => 'Event Compliance',
+        'identity' => 'Host verification and acknowledgements', 'requirements' => 'Permits and local requirements',
+        'branding' => 'Flyer and images', 'publishing' => 'Publishing',
     ];
 
     /**
@@ -510,6 +549,19 @@ class EventManagementService
             $policy = \App\Models\HostPaymentPolicy::where('organizer_id', $event->organizer_id)->first();
             if (!$policy || ($policy->refund_policy_deadline_hours === null && $blank($policy->refund_policy_notes))) {
                 $add('policy', 'Set a refund policy: when guests can ask for a refund, and on what terms.');
+            }
+        }
+
+        // The compliance publication gates (EventPublicationGates): the hosts' identity verification and host
+        // acknowledgements, the event's own acknowledgement, its food and alcohol declarations, and every
+        // requirement an administrator's rule makes mandatory for its jurisdiction. A compliance administrator's
+        // override of a requirement item shows as a note and no longer blocks.
+        foreach (app(\App\Services\Compliance\EventPublicationGates::class)->check($event, $user) as $gate) {
+            if ($gate['override']) {
+                $add($gate['section'], 'Overridden by ' . ($gate['override']->grantor?->name ?? 'a compliance administrator') . ' until '
+                    . $gate['override']->review_by->format('j M Y') . " ({$gate['override']->reason}): {$gate['message']}", false);
+            } else {
+                $add($gate['section'], $gate['message']);
             }
         }
 

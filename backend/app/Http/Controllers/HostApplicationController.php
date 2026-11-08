@@ -32,17 +32,23 @@ class HostApplicationController extends Controller
         $existingApplication = HostApplication::where('user_id', $user->id)
             ->latest()
             ->first();
+        $identityVerification = \Illuminate\Support\Facades\Schema::hasTable('host_identity_verifications')
+            ? \App\Models\HostIdentityVerification::where('user_id', $user->id)->latest()->first()
+            : null;
 
         if ($request->wantsJson()) {
             return response()->json([
                 'user' => $user,
                 'existing_application' => $existingApplication,
+                'identity_verification' => $identityVerification,
             ]);
         }
 
         return view('host.apply', [
             'user' => $user,
             'existingApplication' => $existingApplication,
+            'identityVerification' => $identityVerification,
+            'supportedDocumentTypes' => \App\Services\HostIdentityVerificationService::supportedDocumentTypes(),
         ]);
     }
 
@@ -57,10 +63,33 @@ class HostApplicationController extends Controller
             'country' => ['required', 'string', 'in:JM,US'],
             'contact_phone' => ['required', 'string', 'max:32'],
             'website_or_social' => ['nullable', 'string', 'max:255'],
+            'legal_full_name' => ['nullable', 'string', 'max:255'],
+            'business_entity_type' => ['nullable', 'string', 'max:64'],
+            'government_id_type' => ['nullable', 'string', 'max:64'],
+            'government_id_last4' => ['nullable', 'string', 'max:16'],
+            'document_expires_at' => ['nullable', 'date'],
+            'identity_document' => ['nullable', 'file'],
+            'food_handler_permit_number' => ['nullable', 'string', 'max:120'],
+            'alcohol_license_number' => ['nullable', 'string', 'max:120'],
+            'ack_independent_compliance' => ['sometimes', 'accepted'],
+            'ack_food_safety_temperatures' => ['sometimes', 'accepted'],
+            'ack_allergen_disclosure' => ['sometimes', 'accepted'],
+            'ack_permits_and_inspections' => ['sometimes', 'accepted'],
+            'ack_alcohol_compliance' => ['sometimes', 'accepted'],
+            'ack_identity_accountability' => ['sometimes', 'accepted'],
+            'enforce_host_compliance' => ['nullable', 'boolean'],
         ]);
 
         try {
             $application = HostApplicationService::submitApplication($request->user(), $validated);
+            if ($request->hasFile('identity_document')) {
+                \App\Services\HostIdentityVerificationService::submitOrReplaceDocument(
+                    user: $request->user(),
+                    file: $request->file('identity_document'),
+                    data: $validated,
+                    application: $application
+                );
+            }
 
             if ($request->wantsJson()) {
                 return response()->json([
@@ -98,17 +127,25 @@ class HostApplicationController extends Controller
         }
 
         $pending = HostApplicationService::getPendingApplications();
+        $identityVerifications = \Illuminate\Support\Facades\Schema::hasTable('host_identity_verifications')
+            ? \App\Models\HostIdentityVerification::with(['user', 'reviewer'])
+                ->orderByDesc('updated_at')
+                ->limit(50)
+                ->get()
+            : collect();
 
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'count' => $pending->count(),
                 'applications' => $pending,
+                'identity_verifications' => $identityVerifications,
             ]);
         }
 
         return view('admin.host-applications', [
             'pendingApplications' => $pending,
+            'identityVerifications' => $identityVerifications,
             'user' => $user,
         ]);
     }

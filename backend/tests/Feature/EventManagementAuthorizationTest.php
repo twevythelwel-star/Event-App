@@ -69,7 +69,7 @@ class EventManagementAuthorizationTest extends TestCase
             'organizer_name' => 'Atlanta Community Foundation',
             'organizer_phone' => '+14045550100',
             'advance_order_deadline' => '2026-12-04 18:00',
-        ], $overrides);
+        ], $this->eventComplianceFields(), $overrides);
     }
 
     /** @return array<string, array{string, string, array<string, mixed>}> */
@@ -116,6 +116,13 @@ class EventManagementAuthorizationTest extends TestCase
 
         $this->actingAs($host)->post('/events/' . self::KINGSTON . '/unpublish')->assertRedirect();
         $this->assertSame('unpublished', $this->kingston()->status);
+
+        // Publishing again needs this event's own Event Compliance acknowledgement (the seeded event has none).
+        $this->actingAs($host)->post('/events/' . self::KINGSTON . '/publish')->assertRedirect();
+        $this->assertSame('unpublished', $this->kingston()->status);
+        // It also needs its food and alcohol declarations (the seeded event sells food, no alcohol).
+        $this->kingston()->forceFill($this->eventArrangementFields(true))->save();
+        app(\App\Services\Compliance\EventComplianceService::class)->record($host, $this->kingston(), $this->eventComplianceFields(), 'event_editing');
 
         $this->actingAs($host)->post('/events/' . self::KINGSTON . '/publish')->assertRedirect();
         $this->assertSame('published', $this->kingston()->status);

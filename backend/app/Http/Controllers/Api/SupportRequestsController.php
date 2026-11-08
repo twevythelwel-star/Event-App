@@ -32,12 +32,37 @@ class SupportRequestsController extends Controller
             'country' => ['required', Rule::in(['JM', 'US'])],
             'contact_phone' => ['required', 'string', 'max:32'],
             'website_or_social' => ['nullable', 'string', 'max:255'],
+            'legal_full_name' => ['nullable', 'string', 'max:255'],
+            'business_entity_type' => ['nullable', 'string', 'max:64'],
+            'government_id_type' => ['nullable', 'string', 'max:64'],
+            'government_id_last4' => ['nullable', 'string', 'max:16'],
+            'document_expires_at' => ['nullable', 'date'],
+            'identity_document' => ['nullable', 'file'],
+            'food_handler_permit_number' => ['nullable', 'string', 'max:120'],
+            'alcohol_license_number' => ['nullable', 'string', 'max:120'],
+            'ack_independent_compliance' => ['sometimes', 'accepted'],
+            'ack_food_safety_temperatures' => ['sometimes', 'accepted'],
+            'ack_allergen_disclosure' => ['sometimes', 'accepted'],
+            'ack_permits_and_inspections' => ['sometimes', 'accepted'],
+            'ack_alcohol_compliance' => ['sometimes', 'accepted'],
+            'ack_identity_accountability' => ['sometimes', 'accepted'],
+            'enforce_host_compliance' => ['nullable', 'boolean'],
         ]);
 
-        return $this->run(fn () => response()->json(
-            ['data' => $this->presentApplication(HostApplicationService::submitApplication($request->user(), $data))],
-            201
-        ));
+        return $this->run(function () use ($request, $data) {
+            $application = HostApplicationService::submitApplication($request->user(), $data);
+            if ($request->hasFile('identity_document')) {
+                \App\Services\HostIdentityVerificationService::submitOrReplaceDocument(
+                    user: $request->user(),
+                    file: $request->file('identity_document'),
+                    data: $data,
+                    application: $application
+                );
+                $application->refresh();
+            }
+
+            return response()->json(['data' => $this->presentApplication($application)], 201);
+        });
     }
 
     public function myHostApplications(Request $request): JsonResponse
@@ -153,6 +178,12 @@ class SupportRequestsController extends Controller
             'country' => $application->country,
             'contactPhone' => $application->contact_phone,
             'websiteOrSocial' => $application->website_or_social,
+            'legalFullName' => $application->legal_full_name,
+            'businessEntityType' => $application->business_entity_type,
+            'identityVerificationStatus' => $application->identity_verification_status ?? 'pending_verification',
+            'foodHandlerPermitNumber' => $application->food_handler_permit_number,
+            'alcoholLicenseNumber' => $application->alcohol_license_number,
+            'complianceAcknowledgedAt' => $application->compliance_acknowledged_at?->toIso8601String(),
             'status' => $application->status,
             'rejectionReason' => $application->rejection_reason,
             'reviewedAt' => $application->reviewed_at?->toIso8601String(),

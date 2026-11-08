@@ -1,0 +1,74 @@
+{
+    "retrieved": "2026-11-07",
+    "authorities": [
+        {
+            "key": "fda",
+            "area": "food",
+            "name": "U.S. Food and Drug Administration (FDA)",
+            "role": "Federal food safety. Publishes the model FDA Food Code, which state and local agencies adopt into their own rules.",
+            "website_url": "https://www.fda.gov/food",
+            "legislation_title": "FDA Food Code",
+            "legislation_url": "https://www.fda.gov/food/fda-food-code",
+            "source_url": "https://www.fda.gov/food/fda-food-code",
+            "source_title": "FDA: FDA Food Code"
+        },
+        {
+            "key": "fsis",
+            "area": "agriculture",
+            "name": "U.S. Department of Agriculture, Food Safety and Inspection Service (FSIS)",
+            "role": "Federal inspection of meat, poultry and egg products, where applicable.",
+            "website_url": "https://www.fsis.usda.gov/",
+            "legislation_title": "9 CFR Chapter III (Food Safety and Inspection Service)",
+            "legislation_url": "https://www.ecfr.gov/current/title-9/chapter-III",
+            "source_url": "https://www.fsis.usda.gov/",
+            "source_title": "USDA FSIS"
+        },
+        {
+            "key": "ttb",
+            "area": "alcohol",
+            "name": "Alcohol and Tobacco Tax and Trade Bureau (TTB), U.S. Department of the Treasury",
+            "role": "Federal alcohol permits, excise taxes, labeling and trade practices, where applicable. State and local requirements must also be met.",
+            "website_url": "https://www.ttb.gov/",
+            "legislation_title": "27 CFR Chapter I (Alcohol and Tobacco Tax and Trade Bureau)",
+            "legislation_url": "https://www.ecfr.gov/current/title-27/chapter-I",
+            "source_url": "https://www.ttb.gov/business-central/alcohol-beverage-authorities-in-united-states-canada-and-puerto-rico",
+            "source_title": "TTB: Alcohol Beverage Authorities in United States, Canada, and Puerto Rico"
+        }
+    ],
+    "requirements": [
+        {
+            "topic": "minimum_drinking_age",
+            "authority": null,
+            "status": "pending_review",
+            "value": "21 (federal funding condition)",
+            "summary": "Federal law withholds a share of federal-aid highway funds from any state that allows a person under twenty-one years of age to purchase or publicly possess alcoholic beverages. Each state sets its own minimum age, and any exceptions, in its own law: see the state's record.",
+            "legislation_citation": "23 U.S.C. 158 (National minimum drinking age)",
+            "source_url": "https://www.govinfo.gov/content/pkg/USCODE-2023-title23/html/USCODE-2023-title23-chap1-sec158.htm",
+            "source_title": "GovInfo: 23 U.S.C. 158, National minimum drinking age",
+            "research_notes": "Checked against the official GovInfo text of 23 U.S.C. 158 on 2026-11-07 during initial research: subsection (a)(1)(A) names \"twenty-one years of age\". Needs administrator approval."
+        },
+        {
+            "topic": "food_establishment",
+            "authority": "fda",
+            "status": "pending_review",
+            "value": null,
+            "summary": "The FDA Food Code is a model code. It is neither federal law nor federal regulation and does not preempt state rules: food establishments follow the version their state and local authorities have adopted, with any local changes. See the state and local records.",
+            "legislation_citation": "FDA Food Code (model code)",
+            "source_url": "https://www.fda.gov/food/fda-food-code/adoption-fda-food-code-state-and-territorial-agencies-responsible-oversight-restaurants-andor-retail",
+            "source_title": "FDA: Adoption of the FDA Food Code by State and Territorial Agencies",
+            "research_notes": "FDA's adoption page and 2025 report (data as of 2025-12-31) were read on 2026-11-07. Needs administrator approval."
+        },
+        {
+            "topic": "alcohol_licensing",
+            "authority": "ttb",
+            "status": "verification_required",
+            "research_notes": "TTB administers federal alcohol permits, taxes, labeling and trade practices (27 CFR). Which federal requirements, if any, apply to an event depends on the business activity. Research TTB's guidance before summarising."
+        },
+        {
+            "topic": "food_permit",
+            "authority": "fda",
+            "status": "verification_required",
+            "research_notes": "Food permits for events are issued by state and local authorities, not by the FDA. Confirm whether any federal requirement applies before summarising."
+        }
+    ]
+}

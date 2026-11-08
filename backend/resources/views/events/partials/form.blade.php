@@ -312,6 +312,242 @@
     </div>
 </section>
 
+<section class="eb-panel card studio-section-card" style="margin: 0;" id="studio-compliance" data-studio-section="compliance">
+    <div class="eb-card-header card-header"><div>
+        <h2 class="eb-card-title card-title">Food safety, alcohol service and legal compliance</h2>
+        <p class="eb-card-subtitle card-subtitle">Confirm safe food handling, allergen disclosures, alcohol licensing, and municipal permit compliance for this event.</p>
+    </div></div>
+
+    <fieldset class="eb-fieldset" style="margin-bottom: var(--space-4);">
+        <legend class="eb-text-label">Food Safety, Allergen &amp; Permit Disclosures</legend>
+        <div class="eb-grid-2">
+            <x-form-field name="food_permit_status" type="select" label="Food-service permit &amp; inspection status"
+                          :value="old('food_permit_status', $e?->food_permit_status ?? 'licensed_caterer_or_venue')"
+                          :options="\App\Models\Event::FOOD_PERMIT_STATUSES" />
+            <x-form-field name="food_permit_number" label="Food-service / health permit # (if applicable)"
+                          :value="old('food_permit_number', $e?->food_permit_number)"
+                          placeholder="e.g. FL-DBPR-2026-8841" />
+        </div>
+        <div class="eb-stack" style="gap: var(--space-2); margin-top: var(--space-3);">
+            <input type="hidden" name="temperature_and_sanitation_confirmed" value="0">
+            <label class="eb-choice-label">
+                <input type="checkbox" class="eb-checkbox" name="temperature_and_sanitation_confirmed" value="1"
+                       @checked(old('temperature_and_sanitation_confirmed', $e?->temperature_and_sanitation_confirmed ?? false))>
+                <span>I confirm compliance with safe food preparation, proper cooking and holding temperatures, refrigeration, handwashing, sanitation, food transport, foodborne illness prevention, and safe disposal of food and waste.</span>
+            </label>
+            <input type="hidden" name="allergen_disclosure_confirmed" value="0">
+            <label class="eb-choice-label">
+                <input type="checkbox" class="eb-checkbox" name="allergen_disclosure_confirmed" value="1"
+                       @checked(old('allergen_disclosure_confirmed', $e?->allergen_disclosure_confirmed ?? false))>
+                <span>I confirm major food allergens and dietary disclosures are identified on menu items and cross-contamination prevention controls are enforced across all food stations.</span>
+            </label>
+        </div>
+    </fieldset>
+
+    <fieldset class="eb-fieldset">
+        <legend class="eb-text-label">Alcohol Service, Age Verification &amp; Licensing</legend>
+        <div class="eb-stack" style="gap: var(--space-2); margin-bottom: var(--space-3);">
+            <input type="hidden" name="serves_alcohol" value="0">
+            <label class="eb-choice-label">
+                <input type="checkbox" class="eb-checkbox" name="serves_alcohol" value="1"
+                       @checked(old('serves_alcohol', $e?->serves_alcohol ?? false))>
+                <span>Alcohol will be sold, supplied, or served at this event (only when legally authorized under state, county, and municipal law).</span>
+            </label>
+            <input type="hidden" name="alcohol_age_verification_required" value="0">
+            <label class="eb-choice-label">
+                <input type="checkbox" class="eb-checkbox" name="alcohol_age_verification_required" value="1"
+                       @checked(old('alcohol_age_verification_required', $e?->alcohol_age_verification_required ?? false))>
+                <span>Mandatory legal drinking age and valid government ID verification will be enforced on-site; alcohol will not be served to minors or prohibited persons.</span>
+            </label>
+        </div>
+        <div class="eb-grid-2">
+            <x-form-field name="alcohol_permit_status" type="select" label="Alcohol licence / permit status"
+                          :value="old('alcohol_permit_status', $e?->alcohol_permit_status ?? 'no_alcohol')"
+                          :options="\App\Models\Event::ALCOHOL_PERMIT_STATUSES" />
+            <x-form-field name="alcohol_permit_number" label="Alcohol / special-event permit # (if applicable)"
+                          :value="old('alcohol_permit_number', $e?->alcohol_permit_number)"
+                          placeholder="e.g. ABT-TEMP-4410" />
+        </div>
+        <p class="eb-help-text" style="margin-top: var(--space-2);">
+            <strong>Legal notice:</strong> Purchasing an event ticket does not automatically authorize alcohol consumption and EventBite does not grant an alcohol licence. Hosts are independently responsible for applicable alcohol-related insurance, licences, and legal obligations.
+        </p>
+    </fieldset>
+</section>
+
+@php
+    $complianceService = app(\App\Services\Compliance\EventComplianceService::class);
+    $complianceStatus = $e ? $complianceService->status($e) : null;
+    $complianceAck = $complianceStatus['acknowledgement'] ?? null;
+    $complianceStateCode = old('state_code', $e?->state_code);
+    $complianceStateName = $complianceStateCode ? (collect($states ?? [])->firstWhere('code', $complianceStateCode)?->name ?? $complianceStateCode) : null;
+@endphp
+<section class="eb-panel card studio-section-card" style="margin: 0;" id="studio-event-compliance" data-studio-section="event-compliance" data-event-compliance aria-labelledby="event-compliance-heading">
+    <div class="eb-card-header card-header"><div>
+        <h2 class="eb-card-title card-title" id="event-compliance-heading">Event Compliance</h2>
+        <p class="eb-card-subtitle card-subtitle">Confirm these for this event. They are separate from the policies you accepted when you registered: every new event needs them, and they are recorded for this event only.</p>
+    </div></div>
+
+    @error('compliance')<x-alert type="error" title="Event Compliance">{{ $message }}</x-alert>@enderror
+    @if($complianceStatus && $complianceStatus['state'] === 'current')
+        <x-alert type="success" title="Confirmed for this event">
+            Confirmed on {{ $complianceAck->accepted_at_utc->setTimezone($e->timezone ?: config('app.timezone'))->format('j M Y, g:i A') }}
+            for {{ $complianceAck->jurisdictionLabel() }}. Changing the event's jurisdiction, food-service or alcohol-service arrangements will ask you to confirm them again.
+        </x-alert>
+    @elseif($complianceStatus && $complianceStatus['state'] === 'outdated')
+        <x-alert type="warning" title="Confirm these again">
+            The event's jurisdiction, food-service or alcohol-service arrangements changed after these were confirmed on
+            {{ $complianceAck->accepted_at_utc->setTimezone($e->timezone ?: config('app.timezone'))->format('j M Y') }}. The event cannot be published until you confirm them for what it does now.
+        </x-alert>
+    @elseif($complianceStatus)
+        <x-alert type="info" title="Not confirmed yet">
+            @if($e->status === 'published')
+                This event has no Event Compliance acknowledgement yet. Give its jurisdiction and confirm every declaration below.
+            @else
+                This event cannot be published until its jurisdiction is given and every declaration is confirmed.
+            @endif
+        </x-alert>
+    @endif
+
+    <fieldset class="eb-fieldset" style="margin-bottom: var(--space-4);">
+        <legend class="eb-text-label">Applicable jurisdiction <span class="eb-label-required" aria-hidden="true">*</span></legend>
+        <p class="eb-help-text" id="compliance-jurisdiction-help">Where the event's laws, permits and inspections come from. Give the county, the city or municipality, or both.</p>
+        <p class="eb-help-text">Country: <strong>United States</strong> · State: <strong data-compliance-state>{{ $complianceStateName ?? 'choose it under When and where' }}</strong></p>
+        <div class="eb-grid-2">
+            <x-form-field name="compliance_jurisdiction_county" label="County" :value="old('compliance_jurisdiction_county', $e?->compliance_jurisdiction_county)"
+                          placeholder="e.g. Miami-Dade County" maxlength="120" />
+            <x-form-field name="compliance_jurisdiction_municipality" label="City or municipality" :value="old('compliance_jurisdiction_municipality', $e?->compliance_jurisdiction_municipality)"
+                          placeholder="e.g. City of Miami" maxlength="120" />
+        </div>
+    </fieldset>
+
+    @php
+        $stateOptions = collect($states ?? [])->mapWithKeys(fn ($s) => [$s->code => $s->name])->all();
+        $flagValue = fn (string $name) => old($name, $e?->{$name}) ? '1' : '0';
+    @endphp
+    <fieldset class="eb-fieldset" style="margin-bottom: var(--space-4);" data-arrangements>
+        <legend class="eb-text-label">How food and alcohol are provided</legend>
+        <p class="eb-help-text">These decide which requirements apply to this event, and where.</p>
+        <div class="eb-grid-2">
+            <x-form-field name="food_service_mode" type="select" label="Food at this event" :value="old('food_service_mode', $e?->food_service_mode)"
+                          :options="\App\Models\Compliance\ComplianceEventRule::FOOD_MODES" placeholder="Choose one" />
+            <x-form-field name="alcohol_service_mode" type="select" label="Alcohol at this event" :value="old('alcohol_service_mode', $e?->alcohol_service_mode)"
+                          :options="\App\Models\Compliance\ComplianceEventRule::ALCOHOL_MODES" placeholder="Choose one" />
+        </div>
+        <div class="eb-stack" style="gap: var(--space-2); margin-top: var(--space-2);">
+            @foreach(['uses_licensed_caterer' => 'A licensed caterer prepares or serves the food.', 'uses_licensed_alcohol_vendor' => 'A licensed alcohol vendor sells or serves the alcohol.',
+                      'food_prepared_elsewhere' => 'Food is prepared somewhere other than the event location.', 'alcohol_served_elsewhere' => 'Alcohol is served somewhere other than the event address (for example a separate licensed area).'] as $flag => $text)
+                <input type="hidden" name="{{ $flag }}" value="0">
+                <label class="eb-choice-label"><input type="checkbox" class="eb-checkbox" name="{{ $flag }}" value="1" @checked($flagValue($flag) === '1') data-arrangement-toggle="{{ $flag }}"><span>{{ $text }}</span></label>
+            @endforeach
+        </div>
+        @foreach(['food_prepared_elsewhere' => ['food_prep', 'Where the food is prepared'], 'alcohol_served_elsewhere' => ['alcohol_service', 'Where the alcohol is served']] as $flag => [$prefix, $title])
+            <div class="eb-grid-3" style="margin-top: var(--space-2);" data-arrangement-location="{{ $flag }}" @if($flagValue($flag) !== '1') hidden @endif>
+                <x-form-field :name="$prefix . '_state_code'" type="select" :label="$title . ': state'" :value="old($prefix . '_state_code', $e?->{$prefix . '_state_code'})" :options="$stateOptions" placeholder="Same state" />
+                <x-form-field :name="$prefix . '_county'" label="County" :value="old($prefix . '_county', $e?->{$prefix . '_county'})" maxlength="120" />
+                <x-form-field :name="$prefix . '_city'" label="City or municipality" :value="old($prefix . '_city', $e?->{$prefix . '_city'})" maxlength="120" />
+            </div>
+        @endforeach
+    </fieldset>
+
+    <p class="eb-help-text" data-compliance-locked role="status">Give the state and the county or city above before confirming the declarations.</p>
+    @foreach(\App\Services\Compliance\EventComplianceService::declarations() as $group)
+        <fieldset class="eb-fieldset" style="margin-bottom: var(--space-3);">
+            <legend class="eb-text-label">{{ $group['title'] }}</legend>
+            <div class="eb-stack" style="gap: var(--space-2);">
+                @foreach($group['items'] as $field => $statement)
+                    <label class="eb-choice-label">
+                        <input type="checkbox" class="eb-checkbox" name="{{ $field }}" value="1" data-compliance-declaration @checked(old($field))>
+                        <span>{{ $statement }}</span>
+                    </label>
+                @endforeach
+            </div>
+        </fieldset>
+    @endforeach
+    <p class="eb-help-text">Every declaration is required. When you save, they are stored with the jurisdiction and the food and alcohol arrangements they cover.</p>
+</section>
+
+<section class="eb-panel card studio-section-card" style="margin: 0;" id="studio-requirements" data-studio-section="requirements" aria-labelledby="requirements-heading">
+    <div class="eb-card-header card-header"><div>
+        <h2 class="eb-card-title card-title" id="requirements-heading">Requirements for this event</h2>
+        <p class="eb-card-subtitle card-subtitle">Identified from the event's location and the details above, and updated as you change them.
+            @if($e)<a href="{{ route('events.requirements', $e->id) }}">Submit permits and licences for verification</a>@endif</p>
+    </div></div>
+    <div data-requirements-preview data-preview-url="{{ route('events.requirements.preview') }}" data-event-id="{{ $e?->id }}" aria-live="polite">
+        @if($e)
+            @include('events.partials.requirements-checklist', [
+                'checklist' => app(\App\Services\Compliance\EventRequirementChecklist::class)->build(\App\Services\Compliance\EventRequirementChecklist::factsFromEvent($e), $e),
+                'event' => $e, 'interactive' => false,
+            ])
+        @else
+            <p class="eb-help-text">Choose the event's state and city to see its requirements.</p>
+        @endif
+    </div>
+</section>
+<script>
+(function () {
+    // Arrangement locations open with their checkbox; the requirements list follows the form as it changes.
+    const panel = document.querySelector('[data-requirements-preview]');
+    if (!panel) { return; }
+    const form = panel.closest('form') || document;
+    document.querySelectorAll('[data-arrangement-toggle]').forEach((box) => {
+        const target = document.querySelector('[data-arrangement-location="' + box.dataset.arrangementToggle + '"]');
+        if (target) { box.addEventListener('change', () => { target.hidden = !box.checked; }); }
+    });
+    const keys = ['category', 'state_code', 'city', 'compliance_jurisdiction_county', 'compliance_jurisdiction_municipality', 'supports_food_ordering', 'serves_alcohol',
+        'food_service_mode', 'alcohol_service_mode', 'uses_licensed_caterer', 'uses_licensed_alcohol_vendor', 'food_prepared_elsewhere', 'food_prep_state_code',
+        'food_prep_county', 'food_prep_city', 'alcohol_served_elsewhere', 'alcohol_service_state_code', 'alcohol_service_county', 'alcohol_service_city'];
+    const value = (name) => {
+        const fields = Array.from(form.querySelectorAll('[name="' + name + '"]')).filter((el) => !el.disabled);
+        const box = fields.find((el) => el.type === 'checkbox');
+        if (box) { return box.checked ? '1' : '0'; }
+        return (fields.find((el) => el.type !== 'hidden') || fields[0])?.value || '';
+    };
+    let timer = null;
+    let last = '';
+    function refresh() {
+        const body = new FormData();
+        keys.forEach((key) => body.append(key, value(key)));
+        if (panel.dataset.eventId) { body.append('event_id', panel.dataset.eventId); }
+        const signature = new URLSearchParams(body).toString();
+        if (signature === last || !value('state_code')) { return; }
+        last = signature;
+        body.append('_token', document.querySelector('meta[name="csrf-token"]')?.content || '');
+        fetch(panel.dataset.previewUrl, { method: 'POST', body, headers: { 'Accept': 'text/html', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+            .then((response) => response.ok ? response.text() : Promise.reject(response.status))
+            .then((html) => { panel.innerHTML = html; })
+            .catch(() => {});
+    }
+    const schedule = () => { clearTimeout(timer); timer = setTimeout(refresh, 450); };
+    form.addEventListener('input', schedule);
+    form.addEventListener('change', schedule);
+    if (!panel.dataset.eventId) { schedule(); }
+})();
+</script>
+<script>
+(function () {
+    // The declarations open once the jurisdiction is given; the server checks the same rule.
+    const section = document.querySelector('[data-event-compliance]');
+    if (!section) { return; }
+    const form = section.closest('form') || document;
+    const boxes = section.querySelectorAll('[data-compliance-declaration]');
+    const locked = section.querySelector('[data-compliance-locked]');
+    const stateLabel = section.querySelector('[data-compliance-state]');
+    const field = (name) => Array.from(form.querySelectorAll('[name="' + name + '"]')).find((el) => !el.disabled);
+    function refresh() {
+        const state = field('state_code');
+        const stateText = state ? (state.tagName === 'SELECT' && state.value ? state.options[state.selectedIndex].text : state.value.trim()) : '';
+        stateLabel.textContent = stateText || 'choose it under When and where';
+        const local = ['compliance_jurisdiction_county', 'compliance_jurisdiction_municipality'].some((name) => (field(name)?.value || '').trim() !== '');
+        const ready = stateText !== '' && local;
+        boxes.forEach((box) => { box.disabled = !ready; });
+        locked.hidden = ready;
+    }
+    form.addEventListener('input', refresh);
+    form.addEventListener('change', refresh);
+    refresh();
+})();
+</script>
+
 <section class="eb-panel card studio-section-card" style="margin: 0;" id="studio-tickets" data-studio-section="tickets">
     <div class="eb-card-header card-header"><div>
         <h2 class="eb-card-title card-title">Tickets</h2>

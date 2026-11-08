@@ -43,7 +43,7 @@
             @if($missing)
                 <ul style="margin: 4px 0 0; padding-left: 1.1rem;">
                     @foreach(array_slice($missing, 0, 5) as $issue)
-                        <li>{{ $issue['message'] }} <a href="{{ $issue['section'] === 'menu' ? route('events.menu-studio', $event->id) : '#studio-' . $issue['section'] }}">Go there</a></li>
+                        <li>{{ $issue['message'] }} <a href="{{ match ($issue['section']) { 'menu' => route('events.menu-studio', $event->id), 'requirements' => route('events.requirements', $event->id), 'identity' => route('host.apply'), default => '#studio-' . $issue['section'] } }}">Go there</a></li>
                     @endforeach
                 </ul>
                 @if(count($missing) > 5)<p style="margin: 4px 0 0;">And {{ count($missing) - 5 }} more on the <a href="{{ route('events.review', $event->id) }}">review screen</a>.</p>@endif

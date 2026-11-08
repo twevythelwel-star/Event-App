@@ -411,6 +411,18 @@
                                         @if($item->category)<div style="font-size: 10px; text-transform: uppercase; color: #818CF8; font-weight: 700;">{{ $item->category }}</div>@endif
                                         <h4 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 4px 0 6px;">{{ $item->name }}</h4>
                                         @if($item->description)<p style="font-size: 12px; color: #94A3B8; margin: 0 0 8px; line-height: 1.4;">{{ $item->description }}</p>@endif
+                                        @if(!empty($item->dietary_tags) && is_array($item->dietary_tags))
+                                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;">
+                                                @foreach($item->dietary_tags as $tag)
+                                                    <span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; background: rgba(16, 185, 129, 0.18); color: #6EE7B7;">{{ \App\Models\MenuItem::DIETARY_TAGS[$tag] ?? $tag }}</span>
+                                                @endforeach
+                                            </div>
+                                        @endif
+                                        @if(!empty($item->allergens) && is_array($item->allergens))
+                                            <div style="font-size: 11px; color: #FCD34D; margin-bottom: 6px; font-weight: 600;">
+                                                Allergens: {{ implode(', ', array_map(fn ($a) => \App\Models\MenuItem::ALLERGENS[$a] ?? $a, $item->allergens)) }}
+                                            </div>
+                                        @endif
                                         @if($item->pricing_type === 'customizable' && !empty($item->custom_option_groups))
                                             <span class="eb-badge eb-badge-info" style="margin-bottom: 8px;">Choose options</span>
                                         @endif
@@ -530,6 +542,21 @@
                             @if($foodCancelHours !== null && $refundDeadlineHours !== null)
                                 <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">If multiple cancellation cutoffs apply, the earliest deadline controls.</p>
                             @endif
+                        </div>
+
+                        <div id="food-safety-and-alcohol-policy" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px;">
+                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Food safety, allergen &amp; alcohol compliance</h3>
+                            <p style="font-size: 12px; color: #CBD5E1; line-height: 1.6; margin: 0;">
+                                Event hosts and participating vendors are independently responsible for safe food preparation, proper cooking and holding temperatures, refrigeration, sanitation, allergen identification, and required state, county, and municipal food-service permits and inspections. Guests with severe allergies should confirm cross-contamination precautions directly with the organizer before ordering.
+                            </p>
+                            @if($event->serves_alcohol)
+                                <p style="font-size: 12px; color: #FCD34D; line-height: 1.6; margin: 8px 0 0; font-weight: 600;">
+                                    Alcohol Service &amp; Age Restriction Notice: Alcohol is served at this event subject to state and local liquor laws. Valid government-issued photo ID and minimum legal drinking age verification are strictly required at the venue.
+                                </p>
+                            @endif
+                            <p style="font-size: 12px; color: #94A3B8; line-height: 1.5; margin: 6px 0 0;">
+                                Purchasing an event ticket does not automatically authorize alcohol consumption, and EventBite does not grant an alcohol licence.
+                            </p>
                         </div>
 
                         @if($eventQr)
