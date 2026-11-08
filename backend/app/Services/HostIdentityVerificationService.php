@@ -133,7 +133,9 @@ class HostIdentityVerificationService
         }
 
         $existing = HostIdentityVerification::where('user_id', $user->id)->latest()->first();
-        if ($existing && !$existing->statusEnum()->allowsDocumentReplacement()) {
+        // An approved ID whose document has expired must be renewable, or the host could never publish again.
+        $renewingExpired = $existing && $existing->status === HostVerificationStatus::APPROVED->value && $existing->isDocumentExpired();
+        if ($existing && !$renewingExpired && !$existing->statusEnum()->allowsDocumentReplacement()) {
             throw new \InvalidArgumentException("Your identity verification is currently '{$existing->statusLabel()}' and cannot be replaced at this time.");
         }
 

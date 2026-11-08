@@ -214,6 +214,8 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // 2. Event Host Command Center
     Route::get('/host/dashboard', [HostDashboardController::class, 'index'])->name('host.dashboard');
+    Route::get('/host/compliance', [\App\Http\Controllers\HostComplianceController::class, 'index'])->name('host.compliance');
+    Route::post('/host/compliance/policies', [\App\Http\Controllers\HostComplianceController::class, 'acceptPolicies'])->name('host.compliance.policies')->middleware('throttle:20,1');
     Route::post('/host/cancellation-requests/{cancellationId}/review', [HostDashboardController::class, 'reviewCancellationRequest'])->name('host.cancellations.review')->middleware('throttle:30,1');
     Route::post('/host/cancellation-requests/{cancellationId}/refund', [HostDashboardController::class, 'recordCancellationRefund'])->name('host.cancellations.refund')->middleware('throttle:10,1');
 
@@ -301,6 +303,7 @@ Route::prefix('api/v1')->group(function () {
 
         // Event Host editing of their own events and menus (organizer owners only; checked per event)
         Route::get('/host/dashboard', [HostDashboardController::class, 'index'])->name('api.host.dashboard');
+        Route::get('/host/compliance', [\App\Http\Controllers\HostComplianceController::class, 'index'])->name('api.host.compliance');
         Route::post('/host/location-lookup', [\App\Http\Controllers\EventLocationController::class, 'lookup'])->name('api.host.location-lookup')->middleware('throttle:30,1');
         Route::get('/host/events', [HostEventsController::class, 'index'])->name('api.host.events');
         Route::post('/host/events', [HostEventsController::class, 'store'])->name('api.host.events.store')->middleware('throttle:30,1');

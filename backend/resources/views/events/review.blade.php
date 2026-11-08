@@ -9,7 +9,7 @@
         $section === 'menu' && \Illuminate\Support\Facades\Route::has('events.menu-studio') => route('events.menu-studio', $event->id),
         // Permits and local requirements are submitted on the Requirements page; identity and host acknowledgements on the host application.
         $section === 'requirements' => route('events.requirements', $event->id),
-        $section === 'identity' => route('host.apply'),
+        $section === 'identity' => route('host.compliance') . '#identity',
         default => route('events.edit', $event->id) . '#studio-' . $section,
     };
     $bySection = collect($issues)->groupBy('section');

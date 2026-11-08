@@ -268,8 +268,19 @@ class HostDashboardController extends Controller
             'workers' => $workers,
         ];
 
+        // Compliance and verification summary for the host's own account (the full page is host.compliance).
+        $data['compliance'] = $user->hasRole(AccountType::EVENT_HOST)
+            ? app(\App\Services\Compliance\HostComplianceOverview::class)->for($user)
+            : null;
+
         if ($request->wantsJson()) {
-            return response()->json($data);
+            return response()->json(array_diff_key($data, ['compliance' => 1]) + ['compliance' => $data['compliance'] ? [
+                'account' => $data['compliance']['account'],
+                'identity_status' => $data['compliance']['identity']['state'],
+                'events_needing_information' => count($data['compliance']['events_needing_information']),
+                'outstanding_acknowledgements' => count($data['compliance']['acknowledgements']),
+                'upcoming_expirations' => count($data['compliance']['expiring']),
+            ] : null]);
         }
 
         return view('dashboards.host', $data);

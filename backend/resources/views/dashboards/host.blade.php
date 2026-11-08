@@ -8,6 +8,10 @@
     $money = fn ($order) => \App\Support\Money::ofMinor((int) $order->total_minor, $order->currency ?: 'USD')->display();
 @endphp
 
+@push('head')
+<style>.eb-compliance a:not([class]) { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }</style>
+@endpush
+
 @section('content')
 <div class="eb-stack" style="gap: var(--layout-section-gap);">
     <x-page-header
@@ -25,6 +29,50 @@
         <x-metric-card label="Payments to review" :value="$pending_verification_count ?? 0" note="Transfers and confirmations waiting on you" href="#review" />
         <x-metric-card label="Food portions to prepare" :value="$prep_with_buffer ?? 0" :note="'Paid portions not yet handed over, plus ' . ($buffer_percent ?? 10) . '% buffer'" href="#forecast" />
     </section>
+
+    {{-- Compliance and verification --}}
+    @if(!empty($compliance))
+        @php
+            $tone = $compliance['account']['tone'];
+            $badgeClass = ['success' => 'eb-badge-success', 'warning' => 'eb-badge-warning', 'error' => 'eb-badge-error'][$tone] ?? 'eb-badge-info';
+            $policyCount = collect($compliance['policies'])->where('state', '!=', 'accepted')->count();
+            $tiles = [
+                ['label' => 'Identity', 'value' => $compliance['identity']['label'], 'anchor' => 'identity', 'ok' => $compliance['identity']['tone'] === 'success'],
+                ['label' => 'Acknowledgements due', 'value' => count($compliance['acknowledgements']), 'anchor' => 'acknowledgements', 'ok' => count($compliance['acknowledgements']) === 0],
+                ['label' => 'Policy updates', 'value' => $policyCount, 'anchor' => 'policies', 'ok' => $policyCount === 0],
+                ['label' => 'Events needing information', 'value' => count($compliance['events_needing_information']), 'anchor' => 'events-needing', 'ok' => count($compliance['events_needing_information']) === 0],
+                ['label' => 'Licences and permits', 'value' => count($compliance['documents']), 'anchor' => 'documents', 'ok' => true],
+                ['label' => 'Expiring in ' . \App\Services\Compliance\HostComplianceOverview::EXPIRY_WINDOW_DAYS . ' days', 'value' => count($compliance['expiring']), 'anchor' => 'expiring', 'ok' => count($compliance['expiring']) === 0],
+            ];
+        @endphp
+        <section id="compliance" class="eb-card eb-stack eb-compliance" aria-labelledby="dash-compliance-title" style="padding: 1.25rem; gap: 0.75rem;">
+            <div class="eb-cluster" style="justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+                <div>
+                    <h2 id="dash-compliance-title" class="eb-text-section-title" style="margin: 0;">Compliance and verification</h2>
+                    <p class="eb-text-supporting" style="margin: 0.2rem 0 0;">
+                        <span class="eb-badge {{ $badgeClass }}">{{ $compliance['account']['label'] }}</span>
+                        {{ $compliance['account']['summary'] }}
+                    </p>
+                </div>
+                <x-button :variant="$tone === 'success' ? 'secondary' : 'primary'" :href="route('host.compliance')">Open compliance</x-button>
+            </div>
+            <div class="eb-grid-3" style="gap: 0.5rem;">
+                @foreach($tiles as $tile)
+                    <a href="{{ route('host.compliance') }}#{{ $tile['anchor'] }}" class="eb-card" style="padding: 0.6rem 0.8rem; color: inherit; text-decoration: none;">
+                        <div class="eb-help-text">{{ $tile['label'] }}</div>
+                        <div style="font-weight: 700;"><span aria-hidden="true">{{ $tile['ok'] ? '✓' : '!' }}</span> {{ $tile['value'] }}</div>
+                    </a>
+                @endforeach
+            </div>
+            @if($compliance['account']['todo'])
+                <ul style="margin: 0; padding-left: 1.1rem;">
+                    @foreach($compliance['account']['todo'] as $todo)
+                        <li>{{ $todo['text'] }} <a href="{{ $todo['url'] }}">Go there</a></li>
+                    @endforeach
+                </ul>
+            @endif
+        </section>
+    @endif
 
     {{-- Events --}}
     <section id="events" class="eb-stack">
