@@ -100,5 +100,16 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(5)->by('login:' . strtolower(trim((string) $request->input('email'))) . '|' . $request->ip()),
             Limit::perMinute(60)->by('login-ip:' . $request->ip()),
         ]);
+
+        // Sensitive compliance and verification endpoints, limited per signed-in person (per IP when signed out):
+        // identity documents (uploads, decisions, opening a document) and compliance documents and reviews.
+        RateLimiter::for('identity-verification', fn (Request $request) => Limit::perMinute(10)
+            ->by('identity:' . ($request->user()?->id ?? $request->ip())));
+        RateLimiter::for('compliance-sensitive', fn (Request $request) => Limit::perMinute(30)
+            ->by('compliance:' . ($request->user()?->id ?? $request->ip())));
+
+        // Compliance review notifications (app/Listeners). WriteComplianceAuditLog is found by event discovery, through
+        // its ComplianceAuditable type hint; a subscriber's methods are not, so it is registered here.
+        \Illuminate\Support\Facades\Event::subscribe(\App\Listeners\SendComplianceNotifications::class);
     }
 }

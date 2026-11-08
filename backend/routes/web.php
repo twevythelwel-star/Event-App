@@ -103,7 +103,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Event Host Application & Approval Workflow
     Route::get('/host/apply', [HostApplicationController::class, 'showApplyForm'])->name('host.apply');
     Route::post('/host/apply', [HostApplicationController::class, 'submit'])->name('host.apply.submit')->middleware('throttle:5,1');
-    Route::post('/host/identity-verification', [\App\Http\Controllers\HostIdentityVerificationController::class, 'store'])->name('host.verification.store')->middleware('throttle:10,1');
+    Route::post('/host/identity-verification', [\App\Http\Controllers\HostIdentityVerificationController::class, 'store'])->name('host.verification.store')->middleware('throttle:identity-verification');
 
     // Email verification
     Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
@@ -126,8 +126,9 @@ Route::middleware(['auth', 'active'])->group(function () {
     // Jurisdiction-specific requirements: the live checklist, the full list and evidence for verification.
     Route::post('/events/requirements-preview', [\App\Http\Controllers\EventRequirementsController::class, 'preview'])->name('events.requirements.preview')->middleware('throttle:120,1');
     Route::get('/events/{id}/requirements', [\App\Http\Controllers\EventRequirementsController::class, 'show'])->name('events.requirements');
-    Route::post('/events/{id}/requirements/evidence', [\App\Http\Controllers\EventRequirementsController::class, 'submit'])->name('events.requirements.evidence')->middleware('throttle:30,1');
-    Route::get('/compliance-evidence/{evidence}/document', [\App\Http\Controllers\EventRequirementsController::class, 'document'])->name('events.requirements.document')->middleware('throttle:60,1');
+    Route::post('/events/{id}/requirements/evidence', [\App\Http\Controllers\EventRequirementsController::class, 'submit'])->name('events.requirements.evidence')->middleware('throttle:compliance-sensitive');
+    Route::delete('/compliance-evidence/{evidence}', [\App\Http\Controllers\EventRequirementsController::class, 'withdraw'])->name('events.requirements.evidence.withdraw')->middleware('throttle:compliance-sensitive');
+    Route::get('/compliance-evidence/{evidence}/document', [\App\Http\Controllers\EventRequirementsController::class, 'document'])->name('events.requirements.document')->middleware('throttle:compliance-sensitive');
     Route::post('/events', [EventController::class, 'store'])->name('events.store');
     Route::get('/events/{id}/edit', [EventController::class, 'edit'])->name('events.edit');
     Route::get('/events/{id}/preview', [EventController::class, 'preview'])->name('events.preview');
@@ -236,8 +237,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/admin/host-applications', [HostApplicationController::class, 'indexAdmin'])->name('admin.host-applications');
         Route::post('/admin/host-applications/{id}/approve', [HostApplicationController::class, 'approve'])->name('admin.host-applications.approve');
         Route::post('/admin/host-applications/{id}/reject', [HostApplicationController::class, 'reject'])->name('admin.host-applications.reject');
-        Route::post('/admin/host-verifications/{verification}/status', [\App\Http\Controllers\HostIdentityVerificationController::class, 'updateStatus'])->name('admin.host-verification.status');
-        Route::get('/admin/host-verifications/{verification}/document', [\App\Http\Controllers\HostIdentityVerificationController::class, 'viewDocument'])->name('admin.host-verification.document')->middleware('throttle:30,1');
+        Route::post('/admin/host-verifications/{verification}/status', [\App\Http\Controllers\HostIdentityVerificationController::class, 'updateStatus'])->name('admin.host-verification.status')->middleware('throttle:identity-verification');
+        Route::get('/admin/host-verifications/{verification}/document', [\App\Http\Controllers\HostIdentityVerificationController::class, 'viewDocument'])->name('admin.host-verification.document')->middleware('throttle:identity-verification');
     });
 
     // 4. System Administrator Root Governance
@@ -352,7 +353,7 @@ Route::prefix('api/v1')->group(function () {
         Route::get('/host-applications', [SupportRequestsController::class, 'myHostApplications'])->name('api.host-applications.mine');
         Route::post('/host-applications', [SupportRequestsController::class, 'submitHostApplication'])->name('api.host-applications.store')->middleware('throttle:5,1');
         Route::get('/host-verifications/status', [\App\Http\Controllers\HostIdentityVerificationController::class, 'status'])->name('api.host-verifications.status');
-        Route::post('/host-verifications', [\App\Http\Controllers\HostIdentityVerificationController::class, 'store'])->name('api.host-verifications.store')->middleware('throttle:10,1');
+        Route::post('/host-verifications', [\App\Http\Controllers\HostIdentityVerificationController::class, 'store'])->name('api.host-verifications.store')->middleware('throttle:identity-verification');
         Route::get('/disputes', [SupportRequestsController::class, 'myDisputes'])->name('api.disputes.mine');
         Route::post('/disputes', [SupportRequestsController::class, 'submitDispute'])->name('api.disputes.store')->middleware('throttle:10,1');
 
@@ -362,9 +363,9 @@ Route::prefix('api/v1')->group(function () {
             Route::post('/host-applications/{id}/approve', [SupportRequestsController::class, 'approveHostApplication'])->name('api.admin.host-applications.approve');
             Route::post('/host-applications/{id}/reject', [SupportRequestsController::class, 'rejectHostApplication'])->name('api.admin.host-applications.reject');
             Route::get('/host-verifications', [\App\Http\Controllers\HostIdentityVerificationController::class, 'indexAdmin'])->name('api.admin.host-verifications.index');
-            Route::post('/host-verifications/breach-lockdown', [\App\Http\Controllers\HostIdentityVerificationController::class, 'breachLockdown'])->name('api.admin.host-verifications.breach-lockdown')->middleware('throttle:10,1');
-            Route::post('/host-verifications/{verification}/status', [\App\Http\Controllers\HostIdentityVerificationController::class, 'updateStatus'])->name('api.admin.host-verifications.status');
-            Route::post('/host-verifications/{verification}/signed-link', [\App\Http\Controllers\HostIdentityVerificationController::class, 'issueTemporaryLink'])->name('api.admin.host-verifications.signed-link')->middleware('throttle:30,1');
+            Route::post('/host-verifications/breach-lockdown', [\App\Http\Controllers\HostIdentityVerificationController::class, 'breachLockdown'])->name('api.admin.host-verifications.breach-lockdown')->middleware('throttle:identity-verification');
+            Route::post('/host-verifications/{verification}/status', [\App\Http\Controllers\HostIdentityVerificationController::class, 'updateStatus'])->name('api.admin.host-verifications.status')->middleware('throttle:identity-verification');
+            Route::post('/host-verifications/{verification}/signed-link', [\App\Http\Controllers\HostIdentityVerificationController::class, 'issueTemporaryLink'])->name('api.admin.host-verifications.signed-link')->middleware('throttle:identity-verification');
             Route::get('/disputes', [SupportRequestsController::class, 'adminDisputes'])->name('api.admin.disputes');
             Route::post('/disputes/{id}/status', [SupportRequestsController::class, 'updateDispute'])->name('api.admin.disputes.status');
         });

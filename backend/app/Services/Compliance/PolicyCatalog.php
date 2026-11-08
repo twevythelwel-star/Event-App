@@ -211,6 +211,11 @@ final class PolicyCatalog
      */
     public function record(User $user, array $names, string $context, ?Request $request = null): int
     {
+        return \Illuminate\Support\Facades\DB::transaction(fn () => $this->recordEach($user, $names, $context, $request));
+    }
+
+    private function recordEach(User $user, array $names, string $context, ?Request $request): int
+    {
         $created = 0;
         foreach (array_unique($names) as $name) {
             $spec = $this->all()[$name] ?? null;

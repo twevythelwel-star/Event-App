@@ -84,17 +84,10 @@ class EventRequirementsController extends Controller
         ]);
     }
 
-    public function submit(Request $request, string $id): RedirectResponse
+    public function submit(\App\Http\Requests\Compliance\SubmitComplianceEvidenceRequest $request, string $id): RedirectResponse
     {
         $event = $this->events->findEvent($request->user(), $id);
-        $data = $request->validate([
-            'item_key' => ['required', 'string', 'max:160'],
-            'reference_number' => ['required', 'string', 'max:120'],
-            'issuing_authority' => ['required', 'string', 'max:255'],
-            'expires_on' => ['nullable', 'date', 'after:today'],
-            'note' => ['nullable', 'string', 'max:2000'],
-            'document' => ['nullable', 'file', 'max:5120', 'mimes:pdf,jpg,jpeg,png', 'mimetypes:application/pdf,image/jpeg,image/png'],
-        ]);
+        $data = $request->validated();
         // Only an item on this event's checklist that can take evidence.
         $item = collect($this->checklist->build(EventRequirementChecklist::factsFromEvent($event), $event)['sections'])
             ->pluck('items')->flatten(1)->firstWhere('key', $data['item_key']);
@@ -105,10 +98,12 @@ class EventRequirementsController extends Controller
             return back()->withErrors(['item_key' => 'This is being verified now. Wait for the result before submitting again.']);
         }
 
+        // The file goes to private storage first; if recording the submission fails, the file is removed again.
         $document = $request->file('document');
         $path = $document?->storeAs('compliance-evidence/' . $event->id, Str::uuid() . '.' . $document->guessExtension(), self::DOCUMENT_DISK);
 
-        EventComplianceEvidence::create([
+        try {
+            $evidence = \Illuminate\Support\Facades\DB::transaction(fn () => EventComplianceEvidence::create([
             'event_id' => $event->id,
             'item_key' => $item['key'],
             'item_title' => $item['title'] . ' · ' . $item['level']['name'],
@@ -122,26 +117,49 @@ class EventRequirementsController extends Controller
             'document_mime' => $document?->getMimeType(),
             'submitted_by' => $request->user()->id,
             'submitted_at' => now(),
-        ]);
+        ]));
+        } catch (\Throwable $e) {
+            if ($path) {
+                Storage::disk(self::DOCUMENT_DISK)->delete($path);
+            }
+            throw $e;
+        }
+        \App\Events\Compliance\ComplianceActionRecorded::dispatch('compliance_evidence_submitted', 'event_compliance_evidence', (string) $evidence->id,
+            "{$evidence->item_title} submitted for event {$event->id}" . ($path ? ' with a document' : ''), $request->user(), (string) $event->organizer_id, (string) $event->id);
 
         return redirect()->to(route('events.requirements', $event->id) . '#item-' . md5($item['key']))
             ->with('status', 'Submitted. An EventBite administrator will verify it; until then it shows as Submitted.');
     }
 
-    /** The private document, to the event's managers and administrators who review evidence. */
+    /**
+     * The private document (EventComplianceEvidencePolicy::viewDocument): the event's hosts and compliance managers
+     * whose scope covers the event. Every download is audited.
+     */
     public function document(Request $request, EventComplianceEvidence $evidence): StreamedResponse
     {
         $user = $request->user();
         abort_unless($user && $evidence->document_path, 404);
-        if (!Gate::forUser($user)->allows(Admin::COMPLIANCE_EDIT)) {
-            $this->events->findEvent($user, $evidence->event_id); // 404 unless the user manages this event
-        }
+        abort_unless(Gate::forUser($user)->allows('viewDocument', $evidence), 404);
+        abort_unless(Storage::disk(self::DOCUMENT_DISK)->exists($evidence->document_path), 404);
+        \App\Events\Compliance\ComplianceActionRecorded::dispatch('compliance_document_downloaded', 'event_compliance_evidence', (string) $evidence->id,
+            "Downloaded the document for {$evidence->item_title} (event {$evidence->event_id}).", $user, $evidence->event?->organizer_id, (string) $evidence->event_id);
 
         return Storage::disk(self::DOCUMENT_DISK)->download($evidence->document_path, $evidence->document_name ?: 'document', [
             'Content-Type' => $evidence->document_mime ?: 'application/octet-stream',
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, no-store',
         ]);
+    }
+
+    /** A host withdraws a submission before review starts. The record is kept (soft deleted) for the audit trail. */
+    public function withdraw(Request $request, EventComplianceEvidence $evidence): RedirectResponse
+    {
+        Gate::authorize('withdraw', $evidence);
+        \Illuminate\Support\Facades\DB::transaction(fn () => $evidence->delete());
+        \App\Events\Compliance\ComplianceActionRecorded::dispatch('compliance_evidence_withdrawn', 'event_compliance_evidence', (string) $evidence->id,
+            "{$evidence->item_title} withdrawn by the host before review.", $request->user(), $evidence->event?->organizer_id, (string) $evidence->event_id);
+
+        return redirect()->route('events.requirements', $evidence->event_id)->with('status', 'Submission withdrawn. You can submit it again.');
     }
 
     private function assertHost(Request $request): void

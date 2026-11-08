@@ -20,3 +20,5 @@ Artisan::command('compliance:purge-expired-id-documents', function () {
 \Illuminate\Support\Facades\Schedule::command('compliance:purge-expired-id-documents')->dailyAt('02:45')->withoutOverlapping();
 // Verified compliance-database records past their next review date need checking again (ComplianceReviewWorkflow).
 \Illuminate\Support\Facades\Schedule::command('compliance:flag-due-reviews')->dailyAt('03:15')->withoutOverlapping();
+// Queued reminders for verified permits, licences and host IDs expiring in 30 or 7 days, or expired yesterday.
+\Illuminate\Support\Facades\Schedule::command('compliance:notify-expiring')->dailyAt('07:30')->withoutOverlapping();

@@ -305,6 +305,9 @@ class HostIdentityVerificationService
             default => (int) config('compliance.host_verification.retention_days_unreviewed_abandoned', 60),
         };
 
+        // The decision, the linked host application and the audit entry are saved together.
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
         $verification->status = $targetStatus->value;
         $verification->reviewed_by = $reviewer->id;
         $verification->reviewed_at_utc = now()->utc();
@@ -336,6 +339,12 @@ class HostIdentityVerificationService
                 . ($reason ? " Reason: {$reason}" : ''),
             isPiiAccess: true
         );
+            \Illuminate\Support\Facades\DB::commit();
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+            throw $e;
+        }
+        \App\Events\Compliance\IdentityVerificationReviewed::dispatch($verification, $reviewer, (string) $previousStatus);
 
         if ($verification->user) {
             $notificationCopy = match ($targetStatus) {

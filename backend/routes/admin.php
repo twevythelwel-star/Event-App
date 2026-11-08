@@ -64,10 +64,10 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
         // Event-checklist rules, exceptions and local requirements, and the hosts' evidence to verify.
         Route::post('/compliance/jurisdictions/{jurisdiction}/rules', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'store'])->name('compliance.rules.store')->middleware('throttle:30,1');
         Route::post('/compliance/rules/{rule}/toggle', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'toggle'])->name('compliance.rules.toggle')->middleware('throttle:30,1');
-        Route::post('/events/{event}/compliance-overrides', [\App\Http\Controllers\Admin\CompliancePublicationOverrideController::class, 'store'])->name('compliance.overrides.store')->middleware('throttle:20,1');
-        Route::post('/compliance/overrides/{override}/revoke', [\App\Http\Controllers\Admin\CompliancePublicationOverrideController::class, 'revoke'])->name('compliance.overrides.revoke')->middleware('throttle:20,1');
+        Route::post('/events/{event}/compliance-overrides', [\App\Http\Controllers\Admin\CompliancePublicationOverrideController::class, 'store'])->name('compliance.overrides.store')->middleware('throttle:compliance-sensitive');
+        Route::post('/compliance/overrides/{override}/revoke', [\App\Http\Controllers\Admin\CompliancePublicationOverrideController::class, 'revoke'])->name('compliance.overrides.revoke')->middleware('throttle:compliance-sensitive');
         Route::get('/compliance/evidence',[\App\Http\Controllers\Admin\ComplianceRulesController::class, 'evidence'])->name('compliance.evidence.index');
-        Route::post('/compliance/evidence/{evidence}/{action}', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'review'])->whereIn('action', ['start', 'verify', 'reject'])->name('compliance.evidence.review')->middleware('throttle:60,1');
+        Route::post('/compliance/evidence/{evidence}/{action}', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'review'])->whereIn('action', ['start', 'verify', 'reject'])->name('compliance.evidence.review')->middleware('throttle:compliance-sensitive');
         Route::post('/compliance/jurisdictions/{jurisdiction}/research', [ComplianceDatabaseController::class, 'startResearch'])->name('compliance.jurisdictions.research')->middleware('throttle:30,1');
         Route::post('/compliance/jurisdictions/{jurisdiction}/authorities', [ComplianceDatabaseController::class, 'storeAuthority'])->name('compliance.authorities.store')->middleware('throttle:30,1');
         Route::patch('/compliance/records/{type}/{id}', [ComplianceDatabaseController::class, 'update'])->whereIn('type', ['authority', 'requirement'])->whereNumber('id')->name('compliance.records.update')->middleware('throttle:60,1');
@@ -79,7 +79,7 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
             $p = \App\Http\Controllers\Admin\CompliancePolicyController::class;
             Route::get('/', [$c, 'dashboard'])->name('dashboard');
             Route::get('/identity', [$c, 'identity'])->name('identity');
-            Route::post('/identity/{verification}/document', [$c, 'identityDocument'])->name('identity.document')->middleware('throttle:30,1');
+            Route::post('/identity/{verification}/document', [$c, 'identityDocument'])->name('identity.document')->middleware('throttle:identity-verification');
             Route::get('/declarations', [$c, 'declarations'])->name('declarations');
             Route::get('/declarations/{event}', [$c, 'declaration'])->name('declaration');
             Route::post('/events/{event}/suspend', [$c, 'suspendEvent'])->name('events.suspend')->middleware('throttle:20,1');

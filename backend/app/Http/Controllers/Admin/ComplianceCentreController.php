@@ -17,7 +17,8 @@ use App\Models\HostIdentityVerification;
 use App\Models\PolicyAcceptance;
 use App\Models\SecurityAuditLog;
 use App\Models\User;
-use App\Services\AuditLogService;
+use App\Events\Compliance\ComplianceActionRecorded;
+use App\Events\Compliance\PublishingSuspensionChanged;
 use App\Services\Compliance\EventComplianceService;
 use App\Services\Compliance\EventPublicationGates;
 use App\Services\HostIdentityVerificationService;
@@ -46,13 +47,7 @@ class ComplianceCentreController extends Controller
     public const EXPIRY_WINDOW_DAYS = 60;
 
     /** Audit actions that belong to the compliance trail. */
-    public const AUDIT_ACTIONS = [
-        'compliance_override_granted', 'compliance_override_revoked', 'compliance_evidence_start', 'compliance_evidence_verify', 'compliance_evidence_reject',
-        'compliance_event_suspended', 'compliance_event_reinstated', 'compliance_host_suspended', 'compliance_host_reinstated',
-        'compliance_safety_report_updated', 'compliance_policy_drafted', 'compliance_policy_published', 'compliance_report_exported',
-        'compliance_identity_access_changed', 'host_id_status_transition', 'host_id_temporary_link_issued', 'host_id_document_viewed',
-        'host_compliance_policies_accepted',
-    ];
+    public const AUDIT_ACTIONS = \App\Models\ComplianceAuditLog::ACTIONS;
 
     public function dashboard(Request $request): View
     {
@@ -142,41 +137,40 @@ class ComplianceCentreController extends Controller
         ]));
     }
 
-    public function suspendEvent(Request $request, string $event): RedirectResponse
+    public function suspendEvent(\App\Http\Requests\Compliance\SuspendEventRequest $request, string $event): RedirectResponse
     {
         $record = Event::allTenants()->findOrFail($event);
         Gate::authorize(Admin::COMPLIANCE_SUSPEND_EVENT, $record);
-        $data = $request->validate(['reason' => ['required', 'string', 'min:20', 'max:1000'], 'confirm' => ['accepted']],
-            ['reason.min' => 'Explain the compliance reason in at least 20 characters. The host sees it.', 'confirm.accepted' => 'Tick the box to confirm.']);
+        $data = $request->validated();
         if ($record->compliance_suspended_at) {
             return back()->with('error', 'This event is already suspended.');
         }
         $before = $record->status;
-        $record->forceFill(['compliance_suspended_at' => now(), 'compliance_suspended_by' => $request->user()->id, 'compliance_suspension_reason' => $data['reason'],
-            'status' => $record->status === 'published' ? 'unpublished' : $record->status, 'is_ordering_open' => false])->save();
-        AuditLogService::log(action: 'compliance_event_suspended', targetEntity: 'events', targetId: (string) $record->id,
-            details: "{$record->title} suspended (was {$before}; unpublished and ordering closed). Reason: {$data['reason']}",
-            actor: $request->user(), organizerId: (string) $record->organizer_id, eventId: (string) $record->id);
+        DB::transaction(function () use ($record, $data, $request, $before) {
+            $record->forceFill(['compliance_suspended_at' => now(), 'compliance_suspended_by' => $request->user()->id, 'compliance_suspension_reason' => $data['reason'],
+                'status' => $record->status === 'published' ? 'unpublished' : $record->status, 'is_ordering_open' => false])->save();
+            PublishingSuspensionChanged::dispatch(true, $data['reason'], $request->user(), $record, null,
+                "{$record->title} suspended (was {$before}; unpublished and ordering closed). Reason: {$data['reason']}");
+        });
 
         return back()->with('success', "\"{$record->title}\" is suspended: unpublished, ordering closed, and it cannot be published until reinstated.");
     }
-
-    public function reinstateEvent(Request $request, string $event): RedirectResponse
+    public function reinstateEvent(\App\Http\Requests\Compliance\ComplianceReasonRequest $request, string $event): RedirectResponse
     {
         $record = Event::allTenants()->findOrFail($event);
         Gate::authorize(Admin::COMPLIANCE_SUSPEND_EVENT, $record);
-        $data = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:1000']]);
+        $data = $request->validated();
         if (!$record->compliance_suspended_at) {
             return back()->with('error', 'This event is not suspended.');
         }
-        $record->forceFill(['compliance_suspended_at' => null, 'compliance_suspended_by' => null, 'compliance_suspension_reason' => null])->save();
-        AuditLogService::log(action: 'compliance_event_reinstated', targetEntity: 'events', targetId: (string) $record->id,
-            details: "{$record->title} reinstated. It stays unpublished until the host publishes it through the compliance gates. Reason: {$data['reason']}",
-            actor: $request->user(), organizerId: (string) $record->organizer_id, eventId: (string) $record->id);
+        DB::transaction(function () use ($record, $data, $request) {
+            $record->forceFill(['compliance_suspended_at' => null, 'compliance_suspended_by' => null, 'compliance_suspension_reason' => null])->save();
+            PublishingSuspensionChanged::dispatch(false, $data['reason'], $request->user(), $record, null,
+                "{$record->title} reinstated. It stays unpublished until the host publishes it through the compliance gates. Reason: {$data['reason']}");
+        });
 
         return back()->with('success', "\"{$record->title}\" is reinstated. It stays unpublished until the host publishes it, which runs every compliance gate again.");
     }
-
     // ----- Expiring documents ---------------------------------------------------------------------------------
 
     public function expiring(Request $request): View
@@ -203,30 +197,22 @@ class ComplianceCentreController extends Controller
         return view('admin.compliance-centre.safety', $this->shared($request, compact('items', 'status', 'managers')));
     }
 
-    public function updateSafety(Request $request, ComplianceSafetyReport $report): RedirectResponse
+    public function updateSafety(\App\Http\Requests\Compliance\UpdateSafetyReportRequest $request, ComplianceSafetyReport $report): RedirectResponse
     {
-        Gate::authorize('update', $report);
-        $data = $request->validate([
-            'status' => ['required', Rule::in(array_keys(ComplianceSafetyReport::STATUSES))],
-            'priority' => ['required', Rule::in(array_keys(ComplianceSafetyReport::PRIORITIES))],
-            'assigned_to' => ['nullable', 'integer', 'exists:users,id'],
-            'resolution' => [Rule::requiredIf(in_array($request->input('status'), ['resolved', 'dismissed'], true)), 'nullable', 'string', 'max:2000'],
-        ], ['resolution.required' => 'Say what was found and done before resolving or dismissing a report.']);
-        if (!empty($data['assigned_to']) && !Admin::isComplianceManager(User::find($data['assigned_to']))) {
-            return back()->withErrors(['assigned_to' => 'Assign it to a compliance administrator.']);
-        }
+        $data = $request->validated();
         $closing = in_array($data['status'], ['resolved', 'dismissed'], true);
-        $report->forceFill($data + [
-            'resolved_by' => $closing ? $request->user()->id : null,
-            'resolved_at' => $closing ? ($report->resolved_at ?? now()) : null,
-        ])->save();
-        AuditLogService::log(action: 'compliance_safety_report_updated', targetEntity: 'compliance_safety_reports', targetId: (string) $report->id,
-            details: "Safety report #{$report->id}: {$report->status}, {$report->priority}" . ($report->resolution ? ". {$report->resolution}" : ''),
-            actor: $request->user(), organizerId: $report->event?->organizer_id, eventId: $report->event_id);
+        DB::transaction(function () use ($report, $data, $closing, $request) {
+            $report->forceFill($data + [
+                'resolved_by' => $closing ? $request->user()->id : null,
+                'resolved_at' => $closing ? ($report->resolved_at ?? now()) : null,
+            ])->save();
+            ComplianceActionRecorded::dispatch('compliance_safety_report_updated', 'compliance_safety_reports', (string) $report->id,
+                "Safety report #{$report->id}: {$report->status}, {$report->priority}" . ($report->resolution ? ". {$report->resolution}" : ''),
+                $request->user(), $report->event?->organizer_id, $report->event_id);
+        });
 
         return back()->with('success', "Safety report #{$report->id} updated.");
     }
-
     // ----- Hosts ----------------------------------------------------------------------------------------------
 
     public function hosts(Request $request): View
@@ -253,50 +239,46 @@ class ComplianceCentreController extends Controller
         return view('admin.compliance-centre.hosts', $this->shared($request, compact('hosts', 'rows', 'search', 'show')));
     }
 
-    public function suspendHost(Request $request, User $user): RedirectResponse
+    public function suspendHost(\App\Http\Requests\Compliance\SuspendHostRequest $request, User $user): RedirectResponse
     {
-        Gate::authorize(Admin::COMPLIANCE_SUSPEND_HOST, $user);
-        $data = $request->validate([
-            'reason' => ['required', 'string', 'min:20', 'max:1000'],
-            'review_by' => ['nullable', 'date', 'after:today'],
-            'unpublish' => ['nullable', 'boolean'],
-            'confirm' => ['accepted'],
-        ], ['reason.min' => 'Explain the compliance reason in at least 20 characters. The host sees it.', 'confirm.accepted' => 'Tick the box to confirm.']);
+        $data = $request->validated();
         if (HostPublishingSuspension::activeFor((int) $user->id)) {
             return back()->with('error', "{$user->name}'s publishing privileges are already suspended.");
         }
 
-        $unpublished = 0;
-        DB::transaction(function () use ($request, $user, $data, &$unpublished) {
+        // The suspension, any unpublishing and the audit entry succeed or fail together.
+        $unpublished = DB::transaction(function () use ($request, $user, $data) {
             HostPublishingSuspension::create(['user_id' => $user->id, 'reason' => $data['reason'], 'suspended_by' => $request->user()->id,
                 'suspended_at' => now(), 'review_by' => $data['review_by'] ?? null]);
+            $unpublished = 0;
             if (!empty($data['unpublish'])) {
                 $organizers = \App\Models\OrganizerUser::where('user_id', $user->id)->where('is_active', true)->pluck('organizer_id');
                 $unpublished = Event::allTenants()->whereIn('organizer_id', $organizers)->where('status', 'published')
                     ->update(['status' => 'unpublished', 'is_ordering_open' => false]);
             }
+            PublishingSuspensionChanged::dispatch(true, $data['reason'], $request->user(), null, $user,
+                "Publishing privileges suspended for {$user->name}" . ($unpublished ? "; {$unpublished} published events unpublished" : '') . ". Reason: {$data['reason']}");
+
+            return $unpublished;
         });
-        AuditLogService::log(action: 'compliance_host_suspended', targetEntity: 'users', targetId: (string) $user->id,
-            details: "Publishing privileges suspended for {$user->name}" . ($unpublished ? "; {$unpublished} published events unpublished" : '') . ". Reason: {$data['reason']}",
-            actor: $request->user());
 
         return back()->with('success', "{$user->name} can no longer publish events" . ($unpublished ? " and {$unpublished} published " . str('event')->plural($unpublished) . ' were unpublished' : '') . '.');
     }
-
-    public function reinstateHost(Request $request, HostPublishingSuspension $suspension): RedirectResponse
+    public function reinstateHost(\App\Http\Requests\Compliance\ComplianceReasonRequest $request, HostPublishingSuspension $suspension): RedirectResponse
     {
         Gate::authorize(Admin::COMPLIANCE_SUSPEND_HOST, $suspension->user);
-        $data = $request->validate(['reason' => ['required', 'string', 'min:10', 'max:1000']]);
+        $data = $request->validated();
         if ($suspension->lifted_at) {
             return back()->with('error', 'This suspension has already been lifted.');
         }
-        $suspension->forceFill(['lifted_at' => now(), 'lifted_by' => $request->user()->id, 'lift_reason' => $data['reason']])->save();
-        AuditLogService::log(action: 'compliance_host_reinstated', targetEntity: 'users', targetId: (string) $suspension->user_id,
-            details: "Publishing privileges restored for {$suspension->user?->name}. Reason: {$data['reason']}", actor: $request->user());
+        DB::transaction(function () use ($suspension, $data, $request) {
+            $suspension->forceFill(['lifted_at' => now(), 'lifted_by' => $request->user()->id, 'lift_reason' => $data['reason']])->save();
+            PublishingSuspensionChanged::dispatch(false, $data['reason'], $request->user(), null, $suspension->user,
+                "Publishing privileges restored for {$suspension->user?->name}. Reason: {$data['reason']}");
+        });
 
         return back()->with('success', "{$suspension->user?->name} can publish again (every compliance gate still applies).");
     }
-
     // ----- Consent and audit records --------------------------------------------------------------------------
 
     public function records(Request $request): View
@@ -330,34 +312,27 @@ class ComplianceCentreController extends Controller
         return view('admin.compliance-centre.access', $this->shared($request, ['admins' => $admins]));
     }
 
-    public function updateAccess(Request $request, User $user): RedirectResponse
+    public function updateAccess(\App\Http\Requests\Compliance\UpdateComplianceAccessRequest $request, User $user): RedirectResponse
     {
-        $data = $request->validate([
-            'grant' => ['required', 'boolean'],
-            'manage' => ['nullable', 'boolean'],
-            'reason' => ['required', 'string', 'min:10', 'max:500'],
-            'confirm' => ['accepted'],
-        ]);
-        $permissions = AdminPermission::firstOrNew(['user_id' => $user->id], ['scope' => 'all']);
-        $before = sprintf('identity documents=%s, compliance management=%s', $permissions->can_access_identity_documents ? 'yes' : 'no', $permissions->can_manage_compliance ? 'yes' : 'no');
-
-        // Identity document access: a system administrator, never for themselves.
-        Gate::authorize(Admin::IDENTITY_ACCESS_GRANT, $user);
-        $permissions->can_access_identity_documents = (bool) $data['grant'];
-        $permissions->identity_access_granted_by = $data['grant'] ? $request->user()->id : null;
-        $permissions->identity_access_granted_at = $data['grant'] ? now() : null;
-        if (array_key_exists('manage', $data) && $data['manage'] !== null) {
-            $permissions->can_manage_compliance = (bool) $data['manage'];
-        }
-        $permissions->save();
-        $after = sprintf('identity documents=%s, compliance management=%s', $permissions->can_access_identity_documents ? 'yes' : 'no', $permissions->can_manage_compliance ? 'yes' : 'no');
-
-        AuditLogService::log(action: 'compliance_identity_access_changed', targetEntity: 'users', targetId: (string) $user->id,
-            details: "Compliance access for {$user->name}: {$before} -> {$after}. Reason: {$data['reason']}", actor: $request->user());
+        $data = $request->validated();
+        DB::transaction(function () use ($user, $data, $request) {
+            $permissions = AdminPermission::firstOrNew(['user_id' => $user->id], ['scope' => 'all']);
+            $describe = fn () => sprintf('identity documents=%s, compliance management=%s',
+                $permissions->can_access_identity_documents ? 'yes' : 'no', $permissions->can_manage_compliance ? 'yes' : 'no');
+            $before = $describe();
+            $permissions->can_access_identity_documents = (bool) $data['grant'];
+            $permissions->identity_access_granted_by = $data['grant'] ? $request->user()->id : null;
+            $permissions->identity_access_granted_at = $data['grant'] ? now() : null;
+            if (array_key_exists('manage', $data) && $data['manage'] !== null) {
+                $permissions->can_manage_compliance = (bool) $data['manage'];
+            }
+            $permissions->save();
+            ComplianceActionRecorded::dispatch('compliance_identity_access_changed', 'users', (string) $user->id,
+                "Compliance access for {$user->name}: {$before} -> {$describe()}. Reason: {$data['reason']}", $request->user());
+        });
 
         return back()->with('success', "Compliance access updated for {$user->name}.");
     }
-
     // ----- Helpers --------------------------------------------------------------------------------------------
 
     /** The tab counts and filters every page shares. */

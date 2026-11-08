@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -14,6 +15,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class EventComplianceEvidence extends Model
 {
+    // A host may withdraw a submission before review; the withdrawn record is kept (soft deleted) for the audit trail.
+    use SoftDeletes;
+
     protected $table = 'event_compliance_evidence';
 
     public const STATUSES = ['submitted' => 'Submitted', 'pending_verification' => 'Pending Verification', 'verified' => 'Verified', 'rejected' => 'Rejected'];

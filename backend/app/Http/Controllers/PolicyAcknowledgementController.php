@@ -21,10 +21,9 @@ class PolicyAcknowledgementController extends Controller
         return view('policies.acknowledge', ['outstanding' => $catalog->outstanding($request->user())]);
     }
 
-    public function store(Request $request, PolicyCatalog $catalog): RedirectResponse
+    public function store(\App\Http\Requests\Compliance\AcknowledgePoliciesRequest $request, PolicyCatalog $catalog): RedirectResponse
     {
-        $data = $request->validate(['policies' => ['required', 'array', 'min:1'], 'policies.*' => ['string']],
-            ['policies.required' => 'Tick each policy you have read and accept.']);
+        $data = $request->validated();
         $outstanding = $catalog->outstanding($request->user());
         if (array_diff($data['policies'], array_keys($outstanding)) !== []) {
             throw ValidationException::withMessages(['policies' => 'One of those policies does not need your acceptance. Reload the page and try again.']);

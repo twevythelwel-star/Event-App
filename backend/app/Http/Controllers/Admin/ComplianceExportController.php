@@ -51,8 +51,8 @@ class ComplianceExportController extends Controller
 
         [$header, $rows] = $this->build($report, $events, $admin);
 
-        AuditLogService::log(action: 'compliance_report_exported', targetEntity: 'compliance_reports', targetId: $report,
-            details: self::REPORTS[$report] . ' exported' . ($state !== '' ? ' for ' . strtoupper($state) : '') . ', ' . count($rows) . ' rows.', actor: $admin);
+        \App\Events\Compliance\ComplianceActionRecorded::dispatch('compliance_report_exported', 'compliance_reports', $report,
+            self::REPORTS[$report] . ' exported' . ($state !== '' ? ' for ' . strtoupper($state) : '') . ', ' . count($rows) . ' rows.', $admin);
 
         $filename = 'compliance-' . $report . ($state !== '' ? '-' . $state : '') . '-' . now()->format('Y-m-d') . '.csv';
 

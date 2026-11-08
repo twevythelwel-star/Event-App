@@ -49,15 +49,13 @@ class HostComplianceController extends Controller
      * Accept updated or outstanding policies. Each policy is accepted only when its own box is ticked, and each is
      * recorded separately at its current version with the time, IP address and browser.
      */
-    public function acceptPolicies(Request $request): RedirectResponse
+    public function acceptPolicies(\App\Http\Requests\Compliance\AcknowledgePoliciesRequest $request): RedirectResponse
     {
         $user = $request->user();
         abort_unless($this->isHost($user), 403);
 
         $specs = collect(app(\App\Services\Compliance\PolicyCatalog::class)->all());
-        $data = $request->validate(['policies' => ['required', 'array', 'min:1'], 'policies.*' => ['string']], [
-            'policies.required' => 'Tick each policy you have read and accept.',
-        ]);
+        $data = $request->validated();
         $unknown = array_diff($data['policies'], $specs->keys()->all());
         if ($unknown !== []) {
             throw ValidationException::withMessages(['policies' => 'One of the policies is not a current EventBite policy. Reload the page and try again.']);

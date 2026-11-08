@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Compliance\ComplianceJurisdiction;
 use App\Models\Compliance\CompliancePolicyVersion;
 use App\Models\PolicyAcceptance;
-use App\Services\AuditLogService;
+use App\Events\Compliance\ComplianceActionRecorded;
 use App\Services\Compliance\PolicyCatalog;
 use App\Support\AdminAuthorization as Admin;
 use Illuminate\Http\RedirectResponse;
@@ -54,30 +54,10 @@ class CompliancePolicyController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(\App\Http\Requests\Compliance\StorePolicyVersionRequest $request): RedirectResponse
     {
-        Gate::authorize('create', CompliancePolicyVersion::class);
         $current = app(PolicyCatalog::class)->published();
-        $data = $request->validate([
-            'policy_name' => ['nullable', 'string', 'max:120'],
-            'identifier' => ['nullable', 'string', 'max:80', 'regex:/^[a-z][a-z0-9_]*$/'],
-            'version' => ['required', 'string', 'max:40', 'regex:/^[A-Za-z0-9.\-]+$/'],
-            'title' => ['required', 'string', 'max:255'],
-            'category' => ['required', Rule::in(array_keys(CompliancePolicyVersion::CATEGORIES))],
-            'body' => ['required', 'string', 'min:20', 'max:50000'],
-            'change_summary' => ['required', 'string', 'min:10', 'max:2000'],
-            'effective_at' => ['nullable', 'date', 'after_or_equal:today'],
-            'applicable_roles' => ['required', 'array', 'min:1'],
-            'applicable_roles.*' => [Rule::in(array_keys(CompliancePolicyVersion::ROLES))],
-            'applicable_jurisdictions' => ['nullable', 'array'],
-            'applicable_jurisdictions.*' => ['string', 'regex:/^[A-Za-z]{2}$/'],
-            'acknowledgement_mandatory' => ['nullable', 'boolean'],
-            'requires_reacknowledgement' => ['nullable', 'boolean'],
-        ], [
-            'change_summary.required' => 'Say what changed, so the people accepting it know.',
-            'applicable_roles.required' => 'Choose who the policy applies to.',
-            'identifier.regex' => 'Use lower-case letters, numbers and underscores, starting with a letter.',
-        ]);
+        $data = $request->validated();
 
         // A new version of an existing policy, or a new policy with its own unique identifier.
         $existing = $data['policy_name'] ?? null;
@@ -114,16 +94,14 @@ class CompliancePolicyController extends Controller
             'source' => 'admin',
             'drafted_by' => $request->user()->id,
         ]);
-        AuditLogService::log(action: 'compliance_policy_drafted', targetEntity: 'compliance_policy_versions', targetId: (string) $version->id,
-            details: "Drafted {$name} version {$version->version}: {$version->title}", actor: $request->user());
+        ComplianceActionRecorded::dispatch('compliance_policy_drafted', 'compliance_policy_versions', (string) $version->id,
+            "Drafted {$name} version {$version->version}: {$version->title}", $request->user());
 
         return redirect()->route('admin.console.compliance-centre.policies')->with('success', "Draft saved: {$version->title} version {$version->version}. Nothing changes until a system administrator publishes it.");
     }
 
-    public function publish(Request $request, CompliancePolicyVersion $version): RedirectResponse
+    public function publish(\App\Http\Requests\Compliance\PublishPolicyVersionRequest $request, CompliancePolicyVersion $version): RedirectResponse
     {
-        Gate::authorize('publish', $version);
-        $request->validate(['confirm' => ['accepted']], ['confirm.accepted' => 'Tick the box to confirm you understand who must accept it.']);
 
         DB::transaction(function () use ($version, $request) {
             // Earlier versions are kept, marked retired; one with a later effective date leaves them in force until then.
@@ -138,10 +116,9 @@ class CompliancePolicyController extends Controller
         $mustAccept = $version->acknowledgement_mandatory && $version->requires_reacknowledgement;
         $affected = $mustAccept ? $catalog->affectedUsers($version)->count() : 0;
         $when = $version->effective_at->isFuture() ? 'from ' . $version->effective_at->format('j M Y') : 'now';
-        AuditLogService::log(action: 'compliance_policy_published', targetEntity: 'compliance_policy_versions', targetId: (string) $version->id,
-            details: "Published {$version->policy_name} version {$version->version} ({$version->title}), in force {$when}; "
+        ComplianceActionRecorded::dispatch('compliance_policy_published', 'compliance_policy_versions', (string) $version->id, "Published {$version->policy_name} version {$version->version} ({$version->title}), in force {$when}; "
                 . ($mustAccept ? "{$affected} people must acknowledge it" : 'no re-acknowledgement required') . ". Changes: {$version->change_summary}",
-            actor: $request->user());
+            $request->user());
 
         return back()->with('success', "Published {$version->title} version {$version->version}, in force {$when}. "
             . ($mustAccept ? "{$affected} " . Str::plural('person', $affected) . ' must acknowledge it at their next visit; restricted actions wait until they do.'
@@ -155,8 +132,8 @@ class CompliancePolicyController extends Controller
         Gate::authorize(Admin::COMPLIANCE_EXPORT);
         $catalog = app(PolicyCatalog::class);
         $users = $catalog->affectedUsers($version);
-        AuditLogService::log(action: 'compliance_report_exported', targetEntity: 'compliance_policy_versions', targetId: (string) $version->id,
-            details: "Exported people who must acknowledge {$version->policy_name} version {$version->version}.", actor: $request->user());
+        ComplianceActionRecorded::dispatch('compliance_report_exported', 'compliance_policy_versions', (string) $version->id,
+            "Exported people who must acknowledge {$version->policy_name} version {$version->version}.", $request->user());
 
         return response()->streamDownload(function () use ($users, $version, $catalog) {
             $out = fopen('php://output', 'w');

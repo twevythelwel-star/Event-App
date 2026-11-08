@@ -130,11 +130,10 @@ class ComplianceRulesController extends Controller
         return $query;
     }
 
-    public function review(Request $request, EventComplianceEvidence $evidence, string $action): RedirectResponse
+    public function review(\App\Http\Requests\Compliance\ReviewComplianceEvidenceRequest $request, EventComplianceEvidence $evidence, string $action): RedirectResponse
     {
-        Gate::authorize('viewAny', EventComplianceEvidence::class);
         abort_unless(Admin::organizerInScope($request->user(), $evidence->event?->organizer_id), 403);
-        $data = $request->validate(['comment' => [$action === 'reject' ? 'required' : 'nullable', 'string', 'max:2000']]);
+        $data = $request->validated();
         $allowed = ['start' => ['submitted'], 'verify' => ['submitted', 'pending_verification'], 'reject' => ['submitted', 'pending_verification']];
         if (!in_array($evidence->status, $allowed[$action], true)) {
             return back()->withErrors(['evidence' => 'This submission has already been reviewed.']);
@@ -142,19 +141,19 @@ class ComplianceRulesController extends Controller
         if ($action !== 'start' && $evidence->submitted_by === $request->user()->id) {
             return back()->withErrors(['evidence' => 'You submitted this, so another administrator must review it.']);
         }
-        $evidence->forceFill([
-            'status' => ['start' => 'pending_verification', 'verify' => 'verified', 'reject' => 'rejected'][$action],
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-            'review_comment' => $data['comment'] ?? $evidence->review_comment,
-        ])->save();
-        ComplianceRecordReview::create(['record_type' => 'evidence', 'record_id' => $evidence->id, 'action' => $action,
-            'to_status' => $evidence->status, 'user_id' => $request->user()->id, 'comment' => $data['comment'] ?? null,
-            'snapshot' => $evidence->only(['event_id', 'item_key', 'reference_number', 'issuing_authority', 'expires_on'])]);
-        \App\Services\AuditLogService::log(action: 'compliance_evidence_' . $action, targetEntity: 'event_compliance_evidence', targetId: (string) $evidence->id,
-            details: "{$evidence->item_title} for event {$evidence->event_id}: {$evidence->status}" . (!empty($data['comment']) ? ". Comment: {$data['comment']}" : ''),
-            actor: $request->user(), organizerId: $evidence->event?->organizer_id, eventId: (string) $evidence->event_id);
-
+        // The decision and its review record are saved together; the audit entry and the host's email follow the commit.
+        \Illuminate\Support\Facades\DB::transaction(function () use ($evidence, $action, $data, $request) {
+            $evidence->forceFill([
+                'status' => ['start' => 'pending_verification', 'verify' => 'verified', 'reject' => 'rejected'][$action],
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+                'review_comment' => $data['comment'] ?? $evidence->review_comment,
+            ])->save();
+            ComplianceRecordReview::create(['record_type' => 'evidence', 'record_id' => $evidence->id, 'action' => $action,
+                'to_status' => $evidence->status, 'user_id' => $request->user()->id, 'comment' => $data['comment'] ?? null,
+                'snapshot' => $evidence->only(['event_id', 'item_key', 'reference_number', 'issuing_authority', 'expires_on'])]);
+            \App\Events\Compliance\ComplianceEvidenceReviewed::dispatch($evidence, $request->user(), $action, $data['comment'] ?? null);
+        });
         return back()->with('success', ['start' => 'Marked Pending Verification.', 'verify' => 'Verified.', 'reject' => 'Rejected; the host will see your comment.'][$action]);
     }
 

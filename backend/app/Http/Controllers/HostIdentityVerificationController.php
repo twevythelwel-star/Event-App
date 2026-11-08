@@ -35,29 +35,9 @@ class HostIdentityVerificationController extends Controller
     /**
      * Upload or replace the authenticated user's government-issued ID document.
      */
-    public function store(Request $request): JsonResponse|RedirectResponse
+    public function store(\App\Http\Requests\Compliance\StoreIdentityDocumentRequest $request): JsonResponse|RedirectResponse
     {
-        $supportedKeys = array_keys(HostIdentityVerificationService::supportedDocumentTypes());
-
-        if (!$request->filled('document_type') && $request->filled('government_id_type')) {
-            $request->merge(['document_type' => $request->input('government_id_type')]);
-        }
-        if (!$request->filled('document_last4') && $request->filled('government_id_last4')) {
-            $request->merge(['document_last4' => $request->input('government_id_last4')]);
-        }
-
-        $data = $request->validate([
-            'document_type' => ['required', 'string', Rule::in($supportedKeys)],
-            'document_type_other_note' => ['nullable', 'string', 'max:255'],
-            'legal_full_name' => ['required', 'string', 'min:2', 'max:255'],
-            'issuing_country' => ['nullable', 'string', 'max:16'],
-            'document_last4' => ['nullable', 'string', 'max:16'],
-            'document_expires_at' => ['nullable', 'date'],
-            'identity_document' => ['required', 'file'],
-            'consent_id_verification' => ['accepted'],
-        ], [
-            'consent_id_verification.accepted' => 'You must consent to secure identity verification processing and the document retention policy.',
-        ]);
+        $data = $request->validated();
 
         try {
             $verification = HostIdentityVerificationService::submitOrReplaceDocument(
@@ -109,15 +89,9 @@ class HostIdentityVerificationController extends Controller
      * Compliance Administrator: transition verification status
      * (under_review, additional_information_required, approved, rejected, expired, suspended, reverification_required).
      */
-    public function updateStatus(Request $request, string $verificationId): JsonResponse|RedirectResponse
+    public function updateStatus(\App\Http\Requests\Compliance\UpdateIdentityVerificationStatusRequest $request, string $verificationId): JsonResponse|RedirectResponse
     {
-        $this->authorizeComplianceAdmin($request->user());
-
-        $data = $request->validate([
-            'status' => ['required', 'string', Rule::in(HostVerificationStatus::values())],
-            'reason' => ['nullable', 'string', 'max:1000'],
-            'notes' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $data = $request->validated();
 
         try {
             $verification = HostIdentityVerificationService::transitionStatus(

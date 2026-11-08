@@ -39,7 +39,7 @@ class CompliancePolicyVersion extends Model
     /** Who a policy applies to. "all" is every signed-in user. */
     public const ROLES = ['all' => 'Every user', 'attendee' => 'Attendees', 'event_host' => 'Event hosts', 'admin' => 'Administrators'];
 
-    protected $fillable = ['policy_name', 'policy_group', 'version', 'title', 'body', 'change_summary', 'status', 'drafted_by', 'published_by',
+    protected $fillable = ['policy_id', 'policy_name', 'policy_group', 'version', 'title', 'body', 'change_summary', 'status', 'drafted_by', 'published_by',
         'published_at', 'category', 'applicable_roles', 'applicable_jurisdictions', 'acknowledgement_mandatory', 'requires_reacknowledgement',
         'effective_at', 'source'];
 
@@ -54,6 +54,12 @@ class CompliancePolicyVersion extends Model
 
     protected static function booted(): void
     {
+        // Every version belongs to its policy (CompliancePolicy), created with the first version.
+        static::creating(function (self $version) {
+            if ($version->policy_id === null && $version->policy_name) {
+                $version->policy_id = CompliancePolicy::firstOrCreate(['policy_name' => $version->policy_name], ['category' => $version->category ?? 'other'])->id;
+            }
+        });
         // Historical versions are never overwritten: once published, only published -> retired is allowed.
         static::updating(function (self $version) {
             if ($version->getOriginal('status') === 'draft') {
@@ -70,6 +76,16 @@ class CompliancePolicyVersion extends Model
                 throw new \LogicException('A published policy version cannot be deleted.');
             }
         });
+    }
+
+    public function policy(): BelongsTo
+    {
+        return $this->belongsTo(CompliancePolicy::class, 'policy_id');
+    }
+
+    public function acknowledgements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\PolicyAcceptance::class, 'policy_version_id');
     }
 
     public function drafter(): BelongsTo

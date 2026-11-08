@@ -17,16 +17,10 @@ use Illuminate\Validation\Rule;
  */
 class SafetyReportController extends Controller
 {
-    public function store(Request $request, string $event): RedirectResponse
+    public function store(\App\Http\Requests\Compliance\StoreSafetyReportRequest $request, string $event): RedirectResponse
     {
-        Gate::authorize('create', ComplianceSafetyReport::class);
         $record = Event::allTenants()->where('status', '!=', 'draft')->findOrFail($event);
-        $data = $request->validate([
-            'category' => ['required', Rule::in(array_keys(ComplianceSafetyReport::CATEGORIES))],
-            'description' => ['required', 'string', 'min:20', 'max:5000'],
-            'occurred_on' => ['nullable', 'date', 'before_or_equal:today'],
-            'may_contact' => ['nullable', 'boolean'],
-        ], ['description.min' => 'Describe what happened in at least 20 characters.']);
+        $data = $request->validated();
 
         ComplianceSafetyReport::create([
             'event_id' => $record->id,
