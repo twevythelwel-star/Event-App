@@ -10,7 +10,7 @@
     };
     $icon = fn (string $tone) => match ($tone) { 'success' => '✓', 'error' => '!', 'warning' => '!', 'info' => '…', default => '•' };
     $alertType = fn (string $tone) => match ($tone) { 'success' => 'success', 'error' => 'error', 'warning' => 'warning', default => 'info' };
-    $policyGaps = collect($policies)->where('state', '!=', 'accepted');
+    $policyGaps = collect($policies)->whereNotIn('state', ['accepted', 'optional']);
     $sections = [
         'identity' => 'Identity',
         'acknowledgements' => 'Acknowledgements (' . count($acknowledgements) . ')',

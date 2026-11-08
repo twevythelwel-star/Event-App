@@ -96,6 +96,7 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
             Route::get('/policies', [$p, 'index'])->name('policies');
             Route::post('/policies', [$p, 'store'])->name('policies.store')->middleware('throttle:20,1');
             Route::post('/policies/{version}/publish', [$p, 'publish'])->name('policies.publish')->middleware('throttle:10,1');
+            Route::get('/policies/{version}/affected', [$p, 'affected'])->name('policies.affected')->middleware('throttle:10,1');
             Route::delete('/policies/{version}', [$p, 'destroy'])->name('policies.destroy')->middleware('throttle:20,1');
             Route::get('/export/{report}', [\App\Http\Controllers\Admin\ComplianceExportController::class, 'export'])->name('export')->middleware('throttle:10,1');
         });

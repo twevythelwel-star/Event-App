@@ -63,28 +63,8 @@ class HostComplianceController extends Controller
             throw ValidationException::withMessages(['policies' => 'One of the policies is not a current EventBite policy. Reload the page and try again.']);
         }
 
-        $recorded = 0;
-        foreach (array_unique($data['policies']) as $name) {
-            $spec = $specs[$name];
-            $already = PolicyAcceptance::where('user_id', $user->id)->where('policy_name', $name)
-                ->where('policy_version', $spec['version'])->where('acceptance_status', 'accepted')->exists();
-            if ($already) {
-                continue;
-            }
-            PolicyAcceptance::create([
-                'user_id' => $user->id,
-                'policy_name' => $name,
-                'policy_version' => $spec['version'],
-                'acceptance_status' => 'accepted',
-                'accepted_at_utc' => now('UTC'),
-                'ip_address' => $request->ip(),
-                'user_agent' => substr((string) $request->userAgent(), 0, 512),
-                'context' => 'policy_update',
-                'context_entity_id' => (string) $user->id,
-                'metadata' => ['title' => $spec['title']],
-            ]);
-            $recorded++;
-        }
+        // One append-only record per policy, linked to the exact version accepted (PolicyCatalog::record).
+        $recorded = app(\App\Services\Compliance\PolicyCatalog::class)->record($user, $data['policies'], 'policy_update', $request);
 
         return redirect()->to(route('host.compliance') . '#policies')
             ->with('success', $recorded === 0 ? 'Those policies were already accepted.' : "Recorded your acceptance of {$recorded} " . str('policy')->plural($recorded) . '.');

@@ -35,7 +35,7 @@
         @php
             $tone = $compliance['account']['tone'];
             $badgeClass = ['success' => 'eb-badge-success', 'warning' => 'eb-badge-warning', 'error' => 'eb-badge-error'][$tone] ?? 'eb-badge-info';
-            $policyCount = collect($compliance['policies'])->where('state', '!=', 'accepted')->count();
+            $policyCount = collect($compliance['policies'])->whereNotIn('state', ['accepted', 'optional'])->count();
             $tiles = [
                 ['label' => 'Identity', 'value' => $compliance['identity']['label'], 'anchor' => 'identity', 'ok' => $compliance['identity']['tone'] === 'success'],
                 ['label' => 'Acknowledgements due', 'value' => count($compliance['acknowledgements']), 'anchor' => 'acknowledgements', 'ok' => count($compliance['acknowledgements']) === 0],

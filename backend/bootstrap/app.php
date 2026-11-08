@@ -20,6 +20,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->append(LogSlowRequests::class);
+        // Material policy changes are acknowledged at the next interaction; restricted actions wait until they are.
+        $middleware->web(append: \App\Http\Middleware\RequirePolicyAcknowledgement::class);
         $middleware->alias([
             'active' => EnsureAccountActive::class,
             'account.type' => EnsureAccountType::class,

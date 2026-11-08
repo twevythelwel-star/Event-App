@@ -25,6 +25,13 @@ use Illuminate\Support\Facades\DB;
  */
 final class EventComplianceService
 {
+    /** The versioned policies behind each group of declarations (PolicyCatalog). */
+    public const POLICY_NAMES = [
+        'food_safety' => 'event_food_safety_and_sanitation',
+        'alcohol' => 'event_alcohol_service_and_age_verification',
+        'general_legal' => 'event_general_legal_responsibility',
+    ];
+
     public const CHANGE_LABELS = [
         'jurisdiction' => 'applicable jurisdiction',
         'food_service' => 'food-service arrangements',
@@ -112,8 +119,20 @@ final class EventComplianceService
             return ['state' => 'missing', 'acknowledgement' => null];
         }
         $current = LegalComplianceService::computeArrangementFingerprint(LegalComplianceService::extractComplianceState($event));
+        if (!hash_equals($ack->arrangement_fingerprint, $current)) {
+            return ['state' => 'outdated', 'acknowledgement' => $ack];
+        }
+        // A material change to the declarations themselves, in force after this acknowledgement, needs it again.
+        $catalog = app(PolicyCatalog::class);
+        foreach (self::POLICY_NAMES as $name) {
+            $required = $catalog->required($name);
+            $since = $required?->effective_at ?? $required?->published_at;
+            if ($required && $required->source !== 'built_in' && $since && $ack->accepted_at_utc && $ack->accepted_at_utc->lt($since)) {
+                return ['state' => 'outdated', 'acknowledgement' => $ack, 'policy_updated' => true];
+            }
+        }
 
-        return ['state' => hash_equals($ack->arrangement_fingerprint, $current) ? 'current' : 'outdated', 'acknowledgement' => $ack];
+        return ['state' => 'current', 'acknowledgement' => $ack];
     }
 
     /**
@@ -224,15 +243,11 @@ final class EventComplianceService
             ])->save();
 
             // The same acceptance in the account's policy history, one row per group of declarations.
-            foreach ([
-                'food_safety' => 'event_food_safety_and_sanitation',
-                'alcohol' => 'event_alcohol_service_and_age_verification',
-                'general_legal' => 'event_general_legal_responsibility',
-            ] as $group => $policyName) {
+            foreach (self::POLICY_NAMES as $group => $policyName) {
                 PolicyAcceptance::create([
                     'user_id' => $user->id,
                     'policy_name' => $policyName,
-                    'policy_version' => LegalComplianceService::CURRENT_POLICY_VERSION,
+                    'policy_version' => app(PolicyCatalog::class)->current($policyName)?->version ?? LegalComplianceService::CURRENT_POLICY_VERSION,
                     'acceptance_status' => 'accepted',
                     'accepted_at_utc' => $now,
                     'ip_address' => $ip,

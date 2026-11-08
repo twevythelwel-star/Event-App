@@ -121,26 +121,29 @@ final class HostComplianceOverview
 
         $rows = [];
         $catalog = app(PolicyCatalog::class);
-        $specs = array_merge(
-            array_map(fn ($s) => ['group' => 'Account policy'] + $s, $catalog->group('account')),
-            array_map(fn ($s) => ['group' => 'Host responsibility'] + $s, $catalog->group('host')),
-        );
+        // Policies in force for this host (role and jurisdiction); optional ones are listed but never required.
+        $specs = array_filter($catalog->all(), fn ($spec) => $catalog->appliesTo($host, $spec, ignoreRole: $spec['group'] === 'host'));
         foreach ($specs as $spec) {
             $history = $accepted->get($spec['policy_name'], collect());
             $current = $history->firstWhere('policy_version', $spec['version']);
             $previous = $history->first(fn ($row) => $row->policy_version !== $spec['version']);
-            $state = $current ? 'accepted' : ($previous ? 'updated' : 'not_accepted');
+            $state = $catalog->state($host, $spec['policy_name']);
+            if (!$spec['mandatory'] && $state !== 'accepted') {
+                $state = 'optional';
+            }
             $rows[] = [
                 'policy_name' => $spec['policy_name'],
                 'title' => $spec['title'],
-                'group' => $spec['group'],
+                'group' => $spec['group'] === 'host' ? 'Host responsibility' : 'Account policy',
                 'description' => $spec['description'],
                 'version' => $spec['version'],
                 'state' => $state,
-                'accepted_at' => $current?->accepted_at_utc,
+                'accepted_at' => ($current ?? $history->first())?->accepted_at_utc,
                 'previous_version' => $previous?->policy_version,
-                'tone' => $state === 'accepted' ? 'success' : ($state === 'updated' ? 'warning' : 'error'),
-                'label' => match ($state) { 'accepted' => 'Accepted', 'updated' => 'Updated: accept again', default => 'Not accepted' },
+                'mandatory' => $spec['mandatory'],
+                'change_summary' => $spec['change_summary'],
+                'tone' => match ($state) { 'accepted' => 'success', 'updated' => 'warning', 'optional' => 'info', default => 'error' },
+                'label' => match ($state) { 'accepted' => 'Accepted', 'updated' => 'Updated: accept again', 'optional' => 'For information', default => 'Not accepted' },
             ];
         }
 
@@ -317,8 +320,8 @@ final class HostComplianceOverview
     /** The host's overall standing, worst first. */
     private function account(array $o): array
     {
-        $policyGaps = array_filter($o['policies'], fn ($p) => $p['state'] !== 'accepted');
-        $hostAcks = array_filter($o['policies'], fn ($p) => $p['group'] === 'Host responsibility' && $p['state'] !== 'accepted');
+        $policyGaps = array_filter($o['policies'], fn ($p) => !in_array($p['state'], ['accepted', 'optional'], true));
+        $hostAcks = array_filter($o['policies'], fn ($p) => $p['group'] === 'Host responsibility' && !in_array($p['state'], ['accepted', 'optional'], true));
         $todo = [];
         if ($o['identity']['action']) {
             $todo[] = ['text' => $o['identity']['action'], 'url' => $o['identity']['url'] ?? route('host.compliance') . '#identity'];

@@ -86,6 +86,10 @@ Route::middleware(['guest'])->group(function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // Updated and new policies to acknowledge (RequirePolicyAcknowledgement sends people here).
+    Route::get('/policies/acknowledge', [\App\Http\Controllers\PolicyAcknowledgementController::class, 'show'])->name('policies.acknowledge');
+    Route::post('/policies/acknowledge', [\App\Http\Controllers\PolicyAcknowledgementController::class, 'store'])->name('policies.acknowledge.store')->middleware('throttle:20,1');
+
     // Authenticated Food Ordering & Checkout
     Route::post('/events/{event}/order', [OrderController::class, 'store'])->name('orders.store')->middleware('throttle:15,1');
     Route::get('/orders/retrieve', [OrderController::class, 'retrieve'])->name('orders.retrieve');

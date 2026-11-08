@@ -76,11 +76,14 @@ final class EventPublicationGates
         }
 
         // 3: this event's own acknowledgement, covering what it does now.
-        $status = $this->acknowledgements->status($event)['state'];
+        $ackStatus = $this->acknowledgements->status($event);
+        $status = $ackStatus['state'];
         if ($status !== 'current') {
-            $add('event_ack', 'event-compliance', $status === 'missing'
-                ? "Give the event's applicable jurisdiction and confirm the Event Compliance declarations for this event."
-                : "The event's jurisdiction, food-service or alcohol-service arrangements changed after the Event Compliance declarations were confirmed. Confirm them again.");
+            $add('event_ack', 'event-compliance', match (true) {
+                $status === 'missing' => "Give the event's applicable jurisdiction and confirm the Event Compliance declarations for this event.",
+                !empty($ackStatus['policy_updated']) => 'EventBite updated the Event Compliance declarations since they were confirmed for this event. Review and confirm them again.',
+                default => "The event's jurisdiction, food-service or alcohol-service arrangements changed after the Event Compliance declarations were confirmed. Confirm them again.",
+            });
         }
 
         // 4: the food and alcohol declarations.
@@ -145,12 +148,12 @@ final class EventPublicationGates
     /** @return list<string> titles of the current host responsibility acknowledgements this user has not accepted */
     public static function missingHostPolicies(User $user): array
     {
-        $accepted = PolicyAcceptance::where('user_id', $user->id)->where('acceptance_status', 'accepted')
-            ->get(['policy_name', 'policy_version'])->map(fn ($row) => $row->policy_name . '@' . $row->policy_version)->all();
+        // Every mandatory host acknowledgement in force for this host (by jurisdiction), at its required version:
+        // a material change published since needs accepting again; a minor one does not.
+        $catalog = app(PolicyCatalog::class);
         $missing = [];
-        // Every host acknowledgement at its current version, including ones an administrator published since.
-        foreach (app(PolicyCatalog::class)->group('host') as $spec) {
-            if (!in_array($spec['policy_name'] . '@' . $spec['version'], $accepted, true)) {
+        foreach ($catalog->group('host') as $name => $spec) {
+            if ($spec['mandatory'] && $catalog->appliesTo($user, $spec, ignoreRole: true) && $catalog->state($user, $name) !== 'accepted') {
                 $missing[] = $spec['title'];
             }
         }

@@ -193,10 +193,10 @@ class AdminComplianceDashboardTest extends TestCase
 
         // A compliance manager drafts it; a draft changes nothing.
         $this->actingAs($this->delegate)->post(route('admin.console.compliance-centre.policies.store'), [
-            'policy_group' => 'host', 'version' => '2026.12-v1', 'title' => 'Heat Illness Prevention',
+            'category' => 'safety', 'applicable_roles' => ['event_host'], 'acknowledgement_mandatory' => '1', 'requires_reacknowledgement' => '1', 'version' => '2026.12-v1', 'title' => 'Heat Illness Prevention',
             'body' => "I will provide shade and drinking water at outdoor events.\nI will plan for extreme heat.", 'change_summary' => 'New acknowledgement for outdoor summer events.',
         ])->assertRedirect()->assertSessionHasNoErrors();
-        $draft = CompliancePolicyVersion::firstOrFail();
+        $draft = CompliancePolicyVersion::where('status', 'draft')->firstOrFail();
         $this->assertSame([], $this->codes($event));
 
         // Only a system administrator publishes.
@@ -215,7 +215,7 @@ class AdminComplianceDashboardTest extends TestCase
 
         // A new version of a built-in policy retires nothing built in, and the host sees it as an update.
         $this->actingAs($this->delegate)->post(route('admin.console.compliance-centre.policies.store'), [
-            'policy_name' => 'host_resp_permits_and_inspections', 'policy_group' => 'host', 'version' => '2026.12-v2',
+            'policy_name' => 'host_resp_permits_and_inspections', 'category' => 'host_responsibility', 'applicable_roles' => ['event_host'], 'acknowledgement_mandatory' => '1', 'requires_reacknowledgement' => '1', 'version' => '2026.12-v2',
             'title' => 'Food-Service Permits, Licences & Health Inspections', 'body' => 'I will hold every required permit before serving food, and show it on request.',
             'change_summary' => 'Hosts must show permits on request.',
         ])->assertSessionHasNoErrors();
