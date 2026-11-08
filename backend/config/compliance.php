@@ -8,6 +8,13 @@ return [
     | US state and local compliance database (docs/eventbite-compliance-database.md)
     |--------------------------------------------------------------------------
     */
+    // The user-facing legal pages (LegalPages). Their wording must be reviewed by qualified US legal counsel before
+    // production release; until this is set, every page says it is draft wording.
+    'legal' => [
+        'counsel_reviewed' => (bool) env('LEGAL_COUNSEL_REVIEWED', false),
+        'reviewed_on' => env('LEGAL_COUNSEL_REVIEWED_ON'),
+    ],
+
     'database' => [
         // A record is approved by a different administrator from the one who submitted it.
         'require_second_reviewer' => (bool) env('COMPLIANCE_REQUIRE_SECOND_REVIEWER', true),

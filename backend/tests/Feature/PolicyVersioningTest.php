@@ -70,8 +70,8 @@ class PolicyVersioningTest extends TestCase
         $this->assertTrue($terms->acknowledgement_mandatory);
         $this->assertNotNull($terms->effective_at);
         $this->assertStringContainsString("Terms of Service", $terms->body);
-        // 3 account policies, 6 host acknowledgements and 3 groups of event declarations.
-        $this->assertSame(12, CompliancePolicyVersion::where('source', 'built_in')->count());
+        // 3 account policies, 6 host acknowledgements, 3 groups of event declarations, and the 5 legal-page notices.
+        $this->assertSame(12 + count(\App\Support\LegalPages::originals()), CompliancePolicyVersion::where('source', 'built_in')->count());
 
         try {
             $terms->update(['title' => 'Rewritten']);

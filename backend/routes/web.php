@@ -47,6 +47,12 @@ Route::get('/', [\App\Http\Controllers\HomeController::class, 'index'])->name('h
 Route::get('/events', [EventController::class, 'index'])->name('events.index');
 Route::get('/locations', [LocationCatalogController::class, 'index'])->name('locations.catalog');
 
+// Public legal and policy pages (LegalPages): each shows the policy version in force and its history.
+Route::get('/legal', [\App\Http\Controllers\LegalPageController::class, 'index'])->name('legal.index');
+Route::get('/legal/jurisdictions', [\App\Http\Controllers\LegalPageController::class, 'jurisdictions'])->name('legal.jurisdictions');
+Route::get('/legal/jurisdictions/{state}', [\App\Http\Controllers\LegalPageController::class, 'jurisdiction'])->where('state', '[A-Za-z]{2}')->name('legal.jurisdiction');
+Route::get('/legal/{slug}', [\App\Http\Controllers\LegalPageController::class, 'show'])->where('slug', '[a-z-]+')->name('legal.show');
+
 // Event QR short links: resolve only for published events; never used for admission
 Route::get('/e/{code}', [EventQrController::class, 'resolve'])->where('code', '[A-Za-z0-9]{10}')->name('event-qr.resolve')->middleware('throttle:120,1');
 // A typographic flyer for events whose host has not uploaded one

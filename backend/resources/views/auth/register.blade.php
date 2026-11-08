@@ -559,8 +559,9 @@
             <input type="hidden" name="enforce_policy_acknowledgements" value="1">
             <div class="form-group" id="mandatory-policy-acknowledgements" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 16px; padding: 14px 16px;">
                 <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #0f172a; margin-bottom: 10px;">
-                    Mandatory Platform Policy Acknowledgements (Version 2026.11-v1)
+                    Mandatory Platform Policy Acknowledgements
                 </div>
+                <p style="font-size: 0.8rem; color: #334155; margin: 0 0 10px;">Read the full <a href="{{ route('legal.show', 'terms') }}" target="_blank" rel="noopener" style="color: #1d4ed8;">Terms of Service</a>, <a href="{{ route('legal.show', 'food-safety') }}" target="_blank" rel="noopener" style="color: #1d4ed8;">Food Safety Policy</a>, <a href="{{ route('legal.show', 'alcohol') }}" target="_blank" rel="noopener" style="color: #1d4ed8;">Alcohol Policy</a> and <a href="{{ route('legal.show', 'privacy') }}" target="_blank" rel="noopener" style="color: #1d4ed8;">Privacy Policy</a>.</p>
 
                 <!-- A. Platform Terms and Conditions -->
                 <div class="terms-row" style="margin-bottom: 10px;">

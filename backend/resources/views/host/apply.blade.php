@@ -138,7 +138,7 @@
                 <div class="eb-card" id="host-responsibility-acknowledgements" style="padding: 1.25rem; background: var(--surface-subtle, #f8fafc); border: 1px solid var(--border-default, #cbd5e1); border-radius: 12px;">
                     <input type="hidden" name="enforce_host_compliance" value="1">
                     <h3 style="margin: 0 0 0.35rem; font-size: 1rem; font-weight: 800;">Mandatory Host Responsibility Acknowledgements (Section D)</h3>
-                    <p class="eb-help-text" style="margin: 0 0 0.85rem;">Each responsibility below must be individually acknowledged before submitting your Event Host application.</p>
+                    <p class="eb-help-text" style="margin: 0 0 0.85rem;">Each responsibility below must be individually acknowledged before submitting your Event Host application. Read the full <a href="{{ route('legal.show', 'host-agreement') }}" target="_blank" rel="noopener">Event Host Agreement</a> and the <a href="{{ route('legal.show', 'host-identity-privacy') }}" target="_blank" rel="noopener">Host Identity Verification and Privacy Notice</a>.</p>
 
                     <div class="eb-stack" style="gap: 0.65rem;">
                         <label style="display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.88rem;">

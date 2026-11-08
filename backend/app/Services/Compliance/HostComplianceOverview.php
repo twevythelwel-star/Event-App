@@ -128,8 +128,9 @@ final class HostComplianceOverview
             $current = $history->firstWhere('policy_version', $spec['version']);
             $previous = $history->first(fn ($row) => $row->policy_version !== $spec['version']);
             $state = $catalog->state($host, $spec['policy_name']);
-            if (!$spec['mandatory'] && $state !== 'accepted') {
-                $state = 'optional';
+            // Notices that need no acknowledgement are on the legal pages, not in this list.
+            if (!$spec['mandatory']) {
+                continue;
             }
             $rows[] = [
                 'policy_name' => $spec['policy_name'],

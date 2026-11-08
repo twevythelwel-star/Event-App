@@ -327,6 +327,14 @@
                 @endif
 
                 @yield('content')
+
+                {{-- Legal and policy pages (LegalPages), on every page. --}}
+                <nav aria-label="Policies and legal information" style="margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.8rem;">
+                    @foreach(\App\Support\LegalPages::PAGES as $legalSlug => $legalPage)
+                        <a href="{{ $legalSlug === 'jurisdictions' ? route('legal.jurisdictions') : route('legal.show', $legalSlug) }}" style="color: var(--color-text-secondary, inherit); text-decoration: underline;">{{ $legalPage['title'] }}</a>
+                    @endforeach
+                    <span style="color: var(--color-text-secondary, inherit);">General information, not legal advice.</span>
+                </nav>
             </main>
 
             <!-- Customer Mobile Bottom Navigation (Home, My Tickets, Orders, Profile) -->
