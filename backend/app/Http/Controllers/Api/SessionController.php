@@ -46,8 +46,8 @@ class SessionController extends Controller
 
     public function register(Request $request): JsonResponse
     {
-        $enforcePolicies = $request->boolean('enforce_policy_acknowledgements');
-        $policyRule = $enforcePolicies ? ['required', 'accepted'] : ['sometimes', 'accepted'];
+        // The mandatory policies are always accepted one by one; there is no way to register without them.
+        $policyRule = ['required', 'accepted'];
 
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:100'],

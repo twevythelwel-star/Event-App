@@ -16,8 +16,8 @@ class RegisterRequest extends FormRequest
 
     public function rules(): array
     {
-        $enforcePolicies = $this->boolean('enforce_policy_acknowledgements');
-        $policyRule = $enforcePolicies ? ['required', 'accepted'] : ['sometimes', 'accepted'];
+        // The mandatory policies are always accepted one by one; there is no way to register without them.
+        $policyRule = ['required', 'accepted'];
         $emailRule = app()->environment('testing') ? 'email:rfc' : 'email:rfc,dns';
 
         return [

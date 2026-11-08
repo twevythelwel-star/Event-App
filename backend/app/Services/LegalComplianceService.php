@@ -312,6 +312,11 @@ class LegalComplianceService
         $canPersist = self::canUsePolicyAcceptancesTable();
 
         foreach (self::hostResponsibilityPolicies() as $spec) {
+            // Only what the applicant actually ticked is recorded. An application sent without the acknowledgements
+            // records none: the host accepts them later on their compliance page, and cannot publish until then.
+            if (empty($data[$spec['field']])) {
+                continue;
+            }
             $records[] = self::persistAcceptanceRecord([
                 'user_id' => $user->id,
                 'policy_name' => $spec['policy_name'],
@@ -338,7 +343,8 @@ class LegalComplianceService
             'target_id' => (string) $application->id,
             'ip_address' => $resolvedIp,
             'user_agent' => $resolvedUa,
-            'details' => "User {$user->email} accepted all 6 mandatory Host Responsibility, Food Safety, and Alcohol Compliance policies (version " . self::CURRENT_POLICY_VERSION . ").",
+            'details' => "User {$user->email} accepted " . count($records) . ' of ' . count(self::hostResponsibilityPolicies())
+                . ' host responsibility acknowledgements with their host application' . ($records === [] ? '; none were ticked, so they must be accepted before publishing.' : '.'),
             'is_pii_access' => false,
             'created_at' => now(),
         ]);

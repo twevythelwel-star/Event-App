@@ -14,6 +14,20 @@ use App\Support\AdminAuthorization as Admin;
  */
 class HostIdentityVerificationPolicy
 {
+    /**
+     * Uploading a government ID: only event hosts and people with a host application that is not rejected. An
+     * ordinary attendee has no reason to hand EventBite an identity document.
+     */
+    public function create(User $user): bool
+    {
+        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
+            return true;
+        }
+        $application = \App\Models\HostApplication::where('user_id', $user->id)->latest()->first();
+
+        return $application !== null && $application->status !== 'rejected';
+    }
+
     public function viewAny(User $user): bool
     {
         return Admin::canAccessIdentityDocuments($user);

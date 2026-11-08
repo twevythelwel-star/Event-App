@@ -1818,6 +1818,9 @@ class TestRunner
             'phone' => '+1-876-555-0199',
             'preferred_display_currency' => 'JMD',
             'agree_terms' => true,
+            'accept_platform_terms' => true,
+            'accept_food_safety_disclaimer' => true,
+            'accept_alcohol_policy' => true,
         ];
 
         $regResult = \App\Services\AuthenticationService::register($regData);
@@ -2656,6 +2659,9 @@ class TestRunner
             'password' => 'SafePass123!',
             'password_confirmation' => 'SafePass123!',
             'agree_terms' => true,
+            'accept_platform_terms' => true,
+            'accept_food_safety_disclaimer' => true,
+            'accept_alcohol_policy' => true,
         ];
         $regResult = \App\Services\AuthenticationService::register($registerData);
         $registeredUser = $regResult['user'];

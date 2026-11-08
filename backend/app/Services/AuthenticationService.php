@@ -55,7 +55,8 @@ class AuthenticationService
         }
 
         // Validate mandatory individual policy acknowledgements (Platform Terms, Food Safety Disclaimer, Alcohol Policy)
-        LegalComplianceService::assertRegistrationPoliciesAccepted($data);
+        // Always explicit: each policy is accepted individually, or nobody is registered and nothing is recorded.
+        LegalComplianceService::assertRegistrationPoliciesAccepted($data, requireExplicitIndividual: true);
 
         // 3. Database uniqueness check
         if (User::where('email', $email)->exists()) {

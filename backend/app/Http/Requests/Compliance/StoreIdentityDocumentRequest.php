@@ -11,9 +11,10 @@ use Illuminate\Validation\Rule;
 /** A host uploads (or replaces) their government ID. The file is scanned, encrypted and kept in private storage. */
 class StoreIdentityDocumentRequest extends FormRequest
 {
+    /** Event hosts and host applicants only (HostIdentityVerificationPolicy::create). */
     public function authorize(): bool
     {
-        return $this->user() !== null;
+        return (bool) $this->user()?->can('create', \App\Models\HostIdentityVerification::class);
     }
 
     /** The host application form uses older field names; accept both. */
