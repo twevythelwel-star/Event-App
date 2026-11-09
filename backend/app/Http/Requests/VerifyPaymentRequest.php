@@ -17,7 +17,7 @@ class VerifyPaymentRequest extends FormRequest
         }
 
         // Use policy to check authorization
-        return $user->can('verifyPayment', $order, $this->attributes->get('worker_assignment'));
+        return $user->can('verifyPayment', [$order, $this->attributes->get('worker_assignment')]);
     }
 
     public function rules(): array

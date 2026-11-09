@@ -21,7 +21,8 @@
     ];
 @endphp
 <div class="studio-shell" id="event-studio">
-    <header class="studio-hero">
+    {{-- The studio hero is this page's standard page header (eb-page-header); its own styles keep its look. --}}
+    <header class="studio-hero eb-page-header">
         <div class="studio-hero-copy">
             <a class="studio-back-link" href="{{ route('host.dashboard') }}">← Host dashboard</a>
             <div class="studio-eyebrow"><span class="studio-eyebrow-dot"></span> EVENT PUBLISHING STUDIO</div>

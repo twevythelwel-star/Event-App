@@ -100,6 +100,7 @@ class EventQrCodeTest extends TestCase
     public function test_event_qr_only_opens_public_event_and_never_admits_a_ticket(): void
     {
         $event = $this->createEvent();
+        $event->forceFill(['status' => 'published'])->save(); // new events start as drafts
         $qr = $this->qrFor($event);
         $this->get(route('event-qr.resolve', $qr->public_code))->assertRedirect(route('events.show', $event->id));
 

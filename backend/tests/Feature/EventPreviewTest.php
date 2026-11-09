@@ -137,8 +137,10 @@ class EventPreviewTest extends TestCase
             'email' => 'admin@system.test',
             'password' => bcrypt('password'),
             'status' => 'active',
-            'account_type' => 'system_admin',
+            'is_system_admin' => true,
         ]);
+        \App\Models\UserRole::create(['user_id' => $admin->id, 'role' => 'system_admin', 'is_active' => true, 'assigned_at' => now()]);
+        $admin = $admin->fresh();
 
         $this->actingAs($admin)
             ->get(route('events.preview', self::KINGSTON))

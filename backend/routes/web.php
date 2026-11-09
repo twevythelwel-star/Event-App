@@ -259,7 +259,7 @@ Route::middleware(['auth', 'active'])->group(function () {
                 ->middleware('worker.permission:record_cash_received');
             Route::post('/lookup', [WorkerTerminalController::class, 'lookupOrder'])
                 ->name('worker.lookup')
-                ->middleware('throttle:60,1', 'worker.permission:view_relevant_orders');
+                ->middleware('throttle:60,1', 'worker.permission:view_assigned_food_items');
             Route::post('/collect', [WorkerTerminalController::class, 'collectFood'])
                 ->name('worker.collect')
                 ->middleware('throttle:60,1', 'worker.permission:mark_quantities_collected');

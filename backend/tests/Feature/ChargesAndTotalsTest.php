@@ -17,6 +17,7 @@ use App\Services\OrderPlacementService;
 use App\Services\Pricing\RevenueSummary;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 /**
@@ -363,9 +364,14 @@ class ChargesAndTotalsTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
+        // Run the whole migration, not just its check: the currency check must stop it before any schema change.
+        // (Every migration has already run here, so a schema change made first would fail as a duplicate column
+        // instead of with the currency message; the schema must also be exactly as it was.)
+        $columnsBefore = Schema::getColumnListing('orders');
+        $tablesBefore = Schema::getTableListing();
         $migration = require database_path('migrations/2026_10_30_000020_money_minor_units_and_charges.php');
         try {
-            (new \ReflectionMethod($migration, 'assertCurrenciesAreKnown'))->invoke($migration);
+            $migration->up();
             $this->fail('Unknown historical currencies must block the backfill.');
         } catch (\ReflectionException $exception) {
             throw $exception;
@@ -374,7 +380,8 @@ class ChargesAndTotalsTest extends TestCase
         }
 
         $this->assertSame('EUR', DB::table('orders')->where('id', $orderId)->value('currency'));
-        $this->assertFalse(Schema::hasColumn('orders', 'subtotal_minor'), 'Preflight must stop before adding or changing columns.');
+        $this->assertSame($columnsBefore, Schema::getColumnListing('orders'), 'Preflight must stop before adding or changing columns.');
+        $this->assertSame($tablesBefore, Schema::getTableListing(), 'Preflight must stop before creating tables.');
     }
 
     public function test_only_settings_admins_configure_rules_and_rates_are_exact(): void

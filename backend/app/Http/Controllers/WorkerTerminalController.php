@@ -36,6 +36,14 @@ class WorkerTerminalController extends Controller
             abort(403, 'You are not assigned to this event.');
         }
 
+        // A staff role with nothing to do at the terminal (e.g. a custom role with no permissions granted yet) does
+        // not get the page; the event's host and managers always do.
+        $terminalActions = ['scan_qr_tickets', 'record_cash_received', 'verify_payments', 'view_assigned_food_items', 'mark_quantities_collected', 'oversee_assigned_operations'];
+        if (!$request->attributes->get('worker_runs_event')
+            && !collect($terminalActions)->contains(fn (string $action) => $assignment->canPerform($action))) {
+            abort(403, 'Your staff role has no terminal permissions for this event. Ask the event host to grant them.');
+        }
+
         // Active role defaults to assignment role or event_host
         $activeRole = $assignment->worker_role ?? EventWorkerRole::EVENT_SUPERVISOR;
 
@@ -114,7 +122,7 @@ class WorkerTerminalController extends Controller
         }
 
         // Policy check
-        if (!$user->can('recordCashPayment', $order, $assignment)) {
+        if (!$user->can('recordCashPayment', [$order, $assignment])) {
             return response()->json(['success' => false, 'error' => 'Permission denied.'], 403);
         }
 

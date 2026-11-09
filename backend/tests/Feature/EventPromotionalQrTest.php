@@ -105,15 +105,13 @@ class EventPromotionalQrTest extends TestCase
 
     public function test_promotional_qr_public_artwork_for_published_event(): void
     {
+        \Illuminate\Support\Facades\Storage::fake('local');
         $event = Event::find(self::KINGSTON);
         $event->status = 'published';
         $event->save();
 
-        $qr = EventQrCode::create([
-            'event_id' => $event->id,
-            'public_code' => 'ABCD123456',
-            'status' => EventQrCode::STATUS_READY,
-        ]);
+        // A ready QR code is one with its artwork stored, made the way the app makes it.
+        $qr = app(\App\Services\EventQr\EventQrService::class)->ensureFor($event);
 
         $response = $this->get(route('event-qr.public', $qr->public_code))
             ->assertOk();

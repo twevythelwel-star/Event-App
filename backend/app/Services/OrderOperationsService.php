@@ -445,10 +445,21 @@ class OrderOperationsService
      */
     public function notificationsQuery(User $user): Builder
     {
-        $reach = $this->reach($user);
+        // Only where the user handles payments: organizer roles that verify payments, or staff assignments that
+        // verify payments or take cash. A food station or ticket scanner never sees customers' contact details.
+        $organizers = OrganizerUser::where('user_id', $user->id)->where('is_active', true)->get()
+            ->filter(function (OrganizerUser $membership) {
+                $role = $membership->role instanceof TenantRole ? $membership->role : TenantRole::tryFrom((string) $membership->role);
+
+                return $role?->canVerifyPayments() ?? false;
+            })->pluck('organizer_id');
+        $events = EventWorkerAssignment::where('user_id', $user->id)->where('is_active', true)->get()
+            ->filter(fn (EventWorkerAssignment $assignment) => $assignment->isCurrentlyActive()
+                && ($assignment->canPerform('verify_payments') || $assignment->canPerform('record_cash_received')))
+            ->pluck('event_id');
         $orderIds = Order::withoutGlobalScopes()->whereNull('deleted_at')
-            ->where(function (Builder $query) use ($reach) {
-                $query->whereIn('organizer_id', $reach['organizers'])->orWhereIn('event_id', $reach['events']);
+            ->where(function (Builder $query) use ($organizers, $events) {
+                $query->whereIn('organizer_id', $organizers)->orWhereIn('event_id', $events);
             })->whereIn('status', ['payment_submitted', 'under_verification', 'partially_paid', 'awaiting_payment'])
             ->select('id');
 
