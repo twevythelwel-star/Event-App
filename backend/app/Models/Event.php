@@ -33,6 +33,7 @@ class Event extends Model
         'title',
         'tagline',
         'category',
+        'photo_subject',
         'summary',
         'event_types',
         'event_format',

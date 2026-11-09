@@ -20,7 +20,8 @@ describe("27. EventBite Customer Mobile Experience — End-to-End Journey & Secu
       expect(evt.timeStr).toBeTruthy();
       expect(evt.venueName).toBeTruthy();
       expect(getEventCategory(evt, index)).toMatch(/^(All|Music|Food|Sports|Culture|Community|Parties)$/);
-      expect(getEventImage(evt, index)).toMatch(/^\/images\//);
+      // No flyer uploaded: the event's own labelled artwork, never a bundled stock photo of another event.
+      expect(getEventImage(evt, index)).toBe(`/api/v1/media/events/${evt.id}/artwork.svg`);
       expect(getEventPerformer(evt, index)).toBeTruthy();
     });
   });

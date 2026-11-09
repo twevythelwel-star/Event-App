@@ -29,6 +29,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // Published policy versions, read once per request.
         $this->app->scoped(\App\Services\Compliance\PolicyCatalog::class);
+        // Approved library photos, read once per request.
+        $this->app->scoped(\App\Services\PhotoLibrary::class);
     }
 
     /**

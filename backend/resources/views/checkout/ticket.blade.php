@@ -41,8 +41,10 @@
     <article class="eb-ticket-card" aria-labelledby="ticket-title" @if($tickets->isNotEmpty()) data-design="{{ $tierDesign['designStyle'] ?? 'premium_minimal' }}" data-accent="{{ $tierDesign['accentColor'] ?? 'indigo' }}" @endif>
         @if($event)
             <div class="eb-ticket-card-head">
-                <x-responsive-image :image="$event->coverImage()" alt="" sizes="(min-width: 640px) 560px, 100vw" :eager="true" />
+                @php $ticketCover = $event->coverImage(); @endphp
+                <x-responsive-image :image="$ticketCover" alt="" sizes="(min-width: 640px) 560px, 100vw" :eager="true" />
                 <div class="eb-event-card-scrim"></div>
+                <x-image-label :image="$ticketCover" corner="top-right" />
                 <div class="eb-card-chip">@include('components.status-indicator', ['status' => $status])</div>
             </div>
         @endif

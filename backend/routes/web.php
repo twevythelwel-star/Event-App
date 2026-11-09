@@ -277,6 +277,9 @@ Route::prefix('api/v1')->group(function () {
 
     // Uploaded images: public for published events, otherwise only for accounts that manage the event
     Route::get('/media/events/{eventId}/flyer', [MediaController::class, 'flyer'])->name('api.media.flyer');
+    // Labelled artwork drawn from a published event's own details, for events with no flyer (never stock photography).
+    Route::get('/media/library/{photoId}', [MediaController::class, 'libraryPhoto'])->name('api.media.library-photo')->middleware('throttle:600,1');
+    Route::get('/media/events/{id}/artwork.svg', [EventController::class, 'generatedFlyer'])->name('api.media.event-artwork')->middleware('throttle:240,1');
     Route::get('/media/menu/{itemId}/photo', [MediaController::class, 'menuPhoto'])->name('api.media.menu-photo');
     Route::get('/media/event-media/{mediaId}', [MediaController::class, 'eventMedia'])->name('api.media.event-media');
     Route::get('/media/performers/{performerId}/photo', [MediaController::class, 'performerPhoto'])->name('api.media.performer-photo');

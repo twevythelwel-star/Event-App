@@ -34,6 +34,7 @@ import {
 } from "../../types";
 import { HostRolePermissions } from "./types";
 import { resolveEventThumbnail } from "./financialCalculations";
+import { EVENT_PLACEHOLDER } from "../../lib/imageResolver";
 import {
   CulturalCatalogCategory,
   fetchCulturalCatalog,
@@ -3905,7 +3906,7 @@ export function EventCreationWizard({
               src={resolveEventThumbnail(eventDetails)}
               alt={eventDetails.title || "Event Preview"}
               onError={(e) => {
-                e.currentTarget.src = "/images/escovitch_fish.jpg";
+                e.currentTarget.src = EVENT_PLACEHOLDER;
               }}
               style={{
                 width: "100%",

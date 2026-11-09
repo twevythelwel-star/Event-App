@@ -59,6 +59,17 @@
                   help="Programme, parking, entry rules and anything guests should know." />
     <div class="eb-grid-2">
         <x-form-field name="category" id="eb-field-category" label="Event category" :value="$e?->category" type="select" :options="['Community'=>'Community','Food'=>'Food & drink','Music'=>'Music','Culture'=>'Arts & culture','Sports'=>'Sports','Fundraiser'=>'Fundraiser','Market'=>'Market','Workshop'=>'Workshop','Other'=>'Other']" placeholder="Choose a category" />
+        @php $photoSubject = old('photo_subject', $e?->photo_subject); @endphp
+        <div class="eb-field">
+            <label class="eb-label" for="eb-field-photo-subject">What kind of event is this? <span class="eb-help-text">(optional)</span></label>
+            <select id="eb-field-photo-subject" name="photo_subject" class="eb-input" aria-describedby="eb-photo-subject-help">
+                <option value="">Not specified</option>
+                @foreach(\App\Services\PhotoLibrary::subjectOptions() as $group => $options)
+                    <optgroup label="{{ $group }}">@foreach($options as $value => $label)<option value="{{ $value }}" @selected($photoSubject === $value)>{{ $label }}</option>@endforeach</optgroup>
+                @endforeach
+            </select>
+            <p id="eb-photo-subject-help" class="eb-help-text" style="margin:4px 0 0">Until you upload a flyer, guests may see an illustrative photo of this kind of event, labelled "Illustrative photo". Your own flyer always replaces it.</p>
+        </div>
         <div class="studio-inline-note"><span>✦</span><p>A clear title and inviting description help guests understand what makes this gathering special.</p></div>
     </div>
 </section>

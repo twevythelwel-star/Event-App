@@ -99,6 +99,25 @@ class MediaController extends Controller
      *
      * @return array{0: string, 1: ?string} path and MIME type
      */
+    /**
+     * A photo from the event photography library: public once approved (with its rights covered); before that only
+     * the administrators who manage the library may see it, to review it.
+     */
+    public function libraryPhoto(Request $request, string $photoId): Response
+    {
+        $photo = \App\Models\LibraryPhoto::find($photoId);
+        if (!$photo || !MediaStorageService::isStoredPath($photo->path)) {
+            abort(404);
+        }
+        $public = $photo->isUsable();
+        if (!$public && !($request->user()?->can(\App\Support\AdminAuthorization::PHOTO_LIBRARY_MANAGE))) {
+            abort(404);
+        }
+        [$path, $mime] = $this->pick($request, $photo->variants, $photo->path, $photo->mime, null);
+
+        return $this->serve($path, $mime, $public);
+    }
+
     private function pick(Request $request, ?array $variants, string $original, ?string $originalMime, ?string $thumbnail): array
     {
         $variant = (string) $request->query('variant', 'original');

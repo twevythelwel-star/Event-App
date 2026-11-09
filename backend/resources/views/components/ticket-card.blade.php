@@ -17,8 +17,10 @@
 <article {{ $attributes->merge(['class' => 'eb-ticket-card']) }}>
     @if($event)
         <div class="eb-ticket-card-head">
-            <x-responsive-image :image="$event->coverImage()" alt="" sizes="(min-width: 768px) 420px, 100vw" />
+            @php $ticketCover = $event->coverImage(); @endphp
+            <x-responsive-image :image="$ticketCover" alt="" sizes="(min-width: 768px) 420px, 100vw" />
             <div class="eb-event-card-scrim"></div>
+            <x-image-label :image="$ticketCover" corner="top-right" />
             <div class="eb-card-chip">@include('components.status-indicator', ['status' => $order->status])</div>
         </div>
     @endif

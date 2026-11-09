@@ -137,6 +137,7 @@ class EventManagementService
             'title' => $title,
             'tagline' => $data['tagline'] ?? '',
             'category' => $data['category'] ?? 'Community',
+            'photo_subject' => \App\Services\PhotoLibrary::isSubject($data['photo_subject'] ?? null) ? $data['photo_subject'] : null,
             'summary' => $data['summary'] ?? null,
             'event_types' => $data['event_types'] ?? [],
             'event_format' => $data['event_format'] ?? 'in_person',

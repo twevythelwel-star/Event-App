@@ -227,10 +227,14 @@ class EventResource extends JsonResource
             'ticketTiers' => $request->routeIs('api.host.events*')
                 ? ($this->ticket_tiers ?? [])
                 : \App\Services\Checkout\TicketTierCatalog::sellable($this->resource),
-            // Uploaded flyers go through the media route, which enforces who may see unpublished events
+            // Uploaded flyers go through the media route, which enforces who may see unpublished events. Only the
+            // host's own artwork is a flyer: a bundled photo path is never passed on as this event's flyer.
             'flyerUrl' => MediaStorageService::isStoredPath($this->flyer_path)
                 ? "/api/v1/media/events/{$this->id}/flyer?v=" . substr(sha1($this->flyer_path), 0, 10)
-                : $this->flyer_path,
+                : (str_starts_with((string) $this->flyer_path, 'https://') ? $this->flyer_path : null),
+            // What the event's picture is, so every client shows the same, truthful image: the host's flyer, or
+            // artwork drawn from the event's own details and labelled as such. Never generic event photography.
+            'coverImage' => $this->coverImageForClients($request),
             'flyerThumbnailUrl' => MediaStorageService::isStoredPath($this->flyer_thumbnail_path)
                 ? "/api/v1/media/events/{$this->id}/flyer?variant=thumbnail&v=" . substr(sha1($this->flyer_thumbnail_path), 0, 10)
                 : ($this->flyer_path ?? null),
@@ -269,6 +273,36 @@ class EventResource extends JsonResource
             'isFlyerPublic' => $this->is_flyer_public,
             'menu' => MenuItemResource::collection($menuItems->reject(fn ($item) => $item->isPackage())->values()),
         ];
+    }
+
+    /**
+     * The event's picture for API clients. The host's flyer when they uploaded one and an administrator has not
+     * hidden it (the host's own management still sees a hidden flyer); otherwise labelled artwork from the event's
+     * own details. The kind and label let clients say what the picture is.
+     *
+     * @return array{kind: string, url: string, alt: string, label: ?string}
+     */
+    private function coverImageForClients(Request $request): array
+    {
+        $title = (string) ($this->title ?: 'Event');
+        $managing = $request->routeIs('api.host.*');
+        if (MediaStorageService::isStoredPath($this->flyer_path) && ($managing || !$this->resource->flyerIsHidden())) {
+            return ['kind' => 'flyer', 'url' => "/api/v1/media/events/{$this->id}/flyer?v=" . substr(sha1($this->flyer_path), 0, 10),
+                'alt' => (string) ($this->flyer_alt_text ?: "{$title} event flyer"), 'label' => null];
+        }
+        if (str_starts_with((string) $this->flyer_path, 'https://')) {
+            return ['kind' => 'flyer', 'url' => (string) $this->flyer_path, 'alt' => (string) ($this->flyer_alt_text ?: "{$title} event flyer"), 'label' => null];
+        }
+
+        // An approved library photo of the kind of event the host said this is, labelled as illustrative.
+        if ($photo = app(\App\Services\PhotoLibrary::class)->forEvent($this->resource)) {
+            return ['kind' => 'library', 'url' => '/api/v1/media/library/' . $photo->id . '?variant=large&format=webp&v=' . substr(sha1((string) $photo->path), 0, 10),
+                'alt' => 'Illustrative photo of a ' . strtolower($photo->subjectLabel()) . ", not of {$title}",
+                'label' => 'Illustrative photo · ' . $photo->subjectLabel()];
+        }
+
+        return ['kind' => 'artwork', 'url' => "/api/v1/media/events/{$this->id}/artwork.svg",
+            'alt' => "Artwork for {$title}: the host has not uploaded a flyer yet", 'label' => 'Event artwork · no flyer uploaded yet'];
     }
 
     /** A versioned link to one stored variant (size and format) of an image, or null when it was not made. */

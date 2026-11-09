@@ -100,7 +100,21 @@ When no true image exists, the fallback says so:
 
 No image is presented as a customer's, vendor's or venue's photograph, or as evidence of attendance or a partnership, unless it was uploaded for that purpose by the event's own host.
 
-`tests/Feature/ImageAccuracyTest.php` covers these rules.
+**The API and the React app follow the same rules:**
+- **`coverImage` field:** the event API (`EventResource`) returns `coverImage` with `kind` (`flyer` or `artwork`), `url`, `alt` and `label`.
+- **No flyer:** the URL is the labelled artwork at `/api/v1/media/events/{id}/artwork.svg`.
+- **`flyerUrl`:** set only for the host's own upload. A bundled photo path is never sent as an event's flyer.
+- **React resolver:** every event picture in React goes through `src/lib/imageResolver.ts`. This covers the discovery homepage, event detail, ticket screens, checkout, the host's upcoming events and the event wizard. The resolver gives:
+  - the host's flyer;
+  - otherwise the labelled artwork;
+  - for a menu item, its own photo, a server-approved sample labelled "Illustrative photo", or a "No photo yet" placeholder.
+- **No guessing:** nothing guesses a photo from an event's title or category.
+- **Broken images:** a broken image falls back to the labelled placeholder, never to a photo of a dish or another event.
+- **Homepage hero:** behind the homepage headline, only a real flyer is shown. Without one, the background stays a plain gradient, and the artwork appears on the event's own card.
+
+**Tests:**
+- `tests/Feature/ImageAccuracyTest.php` (Laravel);
+- `src/tests/imageResolver.test.ts` (React).
 
 ## Host tools
 

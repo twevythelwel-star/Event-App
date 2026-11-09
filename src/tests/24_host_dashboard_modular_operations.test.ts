@@ -304,7 +304,8 @@ describe("24. Host Dashboard Modular Operations & Financial Integrity", () => {
 
     expect(upcoming.length).toBeGreaterThanOrEqual(1);
     expect(upcoming[0].title).toBe(DEFAULT_EVENT_DETAILS.title);
-    expect(upcoming[0].imageUrl).toMatch(/^\/images\//);
+    // The event's own flyer or its labelled artwork: never a bundled stock photo.
+    expect(upcoming[0].imageUrl).toMatch(/^\/api\/v1\/media\/events\/[^/]+\/(flyer|artwork\.svg)/);
     expect(upcoming[0].status).toBe("published");
   });
 

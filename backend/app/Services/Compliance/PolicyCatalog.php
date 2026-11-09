@@ -236,6 +236,8 @@ final class PolicyCatalog
                 'metadata' => ['title' => $spec['title'], 'previous_versions' => $this->acceptedVersions($user)[$name] ?? []],
             ]);
             $this->accepted[$user->id][$name][] = $spec['version'];
+            \App\Events\Compliance\ComplianceActionRecorded::dispatch('policy_acknowledged', 'policy_acceptances', $name,
+                "{$user->email} acknowledged {$spec['title']} version {$spec['version']} ({$context}).", $user);
             $created++;
         }
 

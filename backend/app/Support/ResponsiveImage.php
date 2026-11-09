@@ -34,6 +34,8 @@ final class ResponsiveImage
         public readonly bool $generated = false,
         /** Shown instead if the image cannot be loaded (e.g. the event's generated artwork for a flyer). */
         public readonly ?string $fallback = null,
+        /** What the picture is, shown on it when it is not the record's own image, e.g. "Illustrative photo". */
+        public readonly ?string $label = null,
     ) {}
 
     /** The CSS object-position for the focal point. */
@@ -65,9 +67,26 @@ final class ResponsiveImage
             return new self($path, alt: $alt, focalX: $x, focalY: $y);
         }
 
-        // No flyer: artwork drawn from the event's own details, said to be artwork rather than a photo.
+        // No flyer: an approved library photograph of the kind of event the host said this is, labelled as illustrative.
+        if ($photo = app(\App\Services\PhotoLibrary::class)->forEvent($event)) {
+            return self::forLibraryPhoto($photo, route('events.generated-flyer', $event->id, false),
+                'Illustrative photo of a ' . strtolower($photo->subjectLabel()) . ', not of this event: ' . ($event->title ?: 'this event') . ' has no flyer yet');
+        }
+
+        // Otherwise: artwork drawn from the event's own details, said to be artwork rather than a photo.
         return new self($event->display_image_url, width: 1200, height: 750,
             alt: 'Artwork made from the event details for ' . ($event->title ?: 'this event') . ' (no flyer uploaded)', generated: true);
+    }
+
+    /** A library photograph with its sizes and focal point, labelled as illustrative wherever it is shown. */
+    public static function forLibraryPhoto(\App\Models\LibraryPhoto $photo, ?string $fallback = null, ?string $alt = null): self
+    {
+        $url = fn (array $query) => route('api.media.library-photo', ['photoId' => $photo->id] + $query, false);
+        $image = self::fromVariants($photo->variants, $url, (string) $photo->path, $alt ?? (string) $photo->alt_text,
+            (int) $photo->focal_x, (int) $photo->focal_y, $photo->width, $photo->height);
+
+        return new self($image->src, $image->sources, $image->width, $image->height, $image->alt, $image->focalX, $image->focalY,
+            illustrative: true, fallback: $fallback, label: 'Illustrative photo');
     }
 
     /** A menu item's photo, or null when it has none to show (no photo, or hidden by an administrator). */

@@ -24,8 +24,10 @@
 <article {{ $attributes->merge(['class' => 'eb-event-card']) }}>
     <a href="{{ $link }}" class="eb-card-link" style="display: flex; flex-direction: column; height: 100%;" aria-label="{{ $event->title }}: view event details">
         <div class="eb-event-card-media">
-            <x-responsive-image :image="$event->coverImage()" alt="" sizes="(min-width: 1280px) 400px, (min-width: 768px) 45vw, 100vw" />
+            @php $cardCover = $event->coverImage(); @endphp
+            <x-responsive-image :image="$cardCover" alt="" sizes="(min-width: 1280px) 400px, (min-width: 768px) 45vw, 100vw" />
             <div class="eb-event-card-scrim"></div>
+            <x-image-label :image="$cardCover" />
             @if($event->category)
                 <span class="eb-card-chip eb-badge eb-badge-info">{{ $event->category }}</span>
             @endif

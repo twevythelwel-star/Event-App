@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FoodPhoto } from "./FoodPhoto";
+import { resolveEventImage } from "../lib/imageResolver";
 import { refundPolicyPreviewLines } from "../lib/refundPolicy";
 import {
   ArrowLeft,
@@ -312,8 +313,8 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
       >
         {/* Background Event Photo */}
         <img
-          src={event.flyerUrl || event.flyerThumbnailUrl || "/images/event-placeholder.svg"}
-          alt={event.title}
+          src={resolveEventImage(event).src}
+          alt={resolveEventImage(event).alt}
           style={{
             width: "100%",
             height: "100%",

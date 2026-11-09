@@ -61,6 +61,10 @@ final class AdminAuthorization
     public const COMPLIANCE_SUSPEND_EVENT = 'admin.compliance.suspend-event';
     public const POLICY_PUBLISH = 'admin.compliance.policy-publish';
     public const COMPLIANCE_VIEW = 'admin.compliance.view';
+    // The event photography library: administrators who moderate content add photos; a system administrator other
+    // than the uploader approves each one against the photography standards before it can be shown.
+    public const PHOTO_LIBRARY_MANAGE = 'admin.photo-library.manage';
+    public const PHOTO_LIBRARY_APPROVE = 'admin.photo-library.approve';
     public const COMPLIANCE_EDIT = 'admin.compliance.edit';
     public const COMPLIANCE_APPROVE = 'admin.compliance.approve';
     // Overriding an event publication gate: system administrators only, always with a reason, an expiry and an audit entry.
@@ -129,6 +133,10 @@ final class AdminAuthorization
         Gate::define(self::COMPLIANCE_SUSPEND_EVENT, fn (User $user, Event $event) => self::isComplianceManager($user)
             && self::organizerInScope($user, $event->organizer_id));
         Gate::define(self::POLICY_PUBLISH, fn (User $user) => self::isSystemAdmin($user));
+        Gate::define(self::PHOTO_LIBRARY_MANAGE, fn (User $user) => self::isSystemAdmin($user)
+            || (self::isActiveAdmin($user) && self::flag($user, 'can_moderate_content')));
+        Gate::define(self::PHOTO_LIBRARY_APPROVE, fn (User $user, ?\App\Models\LibraryPhoto $photo = null) => self::isSystemAdmin($user)
+            && ($photo === null || $photo->uploaded_by !== $user->id));
 
         Gate::policy(\App\Models\HostIdentityVerification::class, \App\Policies\HostIdentityVerificationPolicy::class);
         Gate::policy(\App\Models\EventComplianceEvidence::class, \App\Policies\EventComplianceEvidencePolicy::class);

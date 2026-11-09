@@ -22,6 +22,7 @@ class ComplianceAuditLog extends SecurityAuditLog
         'compliance_identity_access_changed', 'host_id_verification_status_changed', 'host_id_temporary_link_issued',
         'host_id_document_viewed', 'host_id_document_purged_by_retention', 'host_id_integrity_mismatch', 'host_id_malware_blocked',
         'security_breach_id_lockdown_executed', 'host_compliance_policies_accepted',
+        'policy_acknowledged', 'event_compliance_acknowledged', 'compliance_rule_created', 'compliance_rule_approved', 'compliance_rule_toggled',
     ];
 
     protected $table = 'security_audit_logs';

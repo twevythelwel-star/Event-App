@@ -148,7 +148,7 @@ class LegalComplianceAndPolicyAcceptanceTest extends TestCase
             'action' => 'host_compliance_policies_accepted',
         ]);
 
-        // Administrator approval marks host identity_verification_status = verified
+        // Approving the application makes them a host but never verifies their identity: that needs an ID review.
         $admin = User::where('email', 'admin@islandevents.example')->firstOrFail();
         $applicationId = $this->actingAs($attendee)->getJson('/api/v1/host-applications')->json('data.0.id');
 
@@ -158,7 +158,8 @@ class LegalComplianceAndPolicyAcceptanceTest extends TestCase
             ])
             ->assertOk()
             ->assertJsonPath('data.status', 'approved')
-            ->assertJsonPath('data.identityVerificationStatus', 'verified');
+            ->assertJsonPath('data.identityVerificationStatus', 'pending_verification');
+        $this->assertFalse(\App\Services\Compliance\EventPublicationGates::identityVerified($attendee->fresh()));
     }
 
     public function test_event_creation_editing_publishing_and_admin_oversight_enforce_food_and_alcohol_compliance(): void

@@ -64,7 +64,7 @@
         <article class="ac-card" style="margin-top:10px;{{ $rule->is_active ? '' : 'opacity:.7' }}">
             <div class="ac-card-head">
                 <h2 style="font-size:15px">{{ $rule->label() }} · {{ \App\Models\Compliance\ComplianceEventRule::EFFECTS[$rule->effect] }}</h2>
-                <span class="ac-badge {{ $rule->is_active ? 'success' : '' }}">{{ $rule->is_active ? 'On' : 'Off' }}</span>
+                <span class="ac-badge {{ $rule->is_active ? 'success' : ($rule->awaitingApproval() ? 'warning' : '') }}">{{ $rule->is_active ? 'On' : ($rule->awaitingApproval() ? 'Awaiting approval' : 'Off') }}</span>
             </div>
             <div class="ac-card-body">
                 <dl class="ac-dl">
@@ -74,8 +74,16 @@
                     <dt>Official source</dt><dd><a class="ac-link" href="{{ $rule->source_url }}" target="_blank" rel="noopener noreferrer">{{ $rule->source_title ?: $rule->source_url }}</a></dd>
                 </dl>
                 @if($canEdit)
+                    @if($rule->awaitingApproval())
+                        <p class="ac-hint" style="margin-top:10px">Not in force. A system administrator other than its author must check it against its official source and approve it.</p>
+                        @if(\App\Support\AdminAuthorization::isSystemAdmin(auth()->user()) && $rule->created_by !== auth()->id())
+                            <form method="POST" action="{{ route('admin.console.compliance.rules.approve', $rule) }}">@csrf
+                                <button class="ac-btn ac-btn-primary ac-btn-sm" type="submit">Approve and put in force</button></form>
+                        @endif
+                    @else
                     <form method="POST" action="{{ route('admin.console.compliance.rules.toggle', $rule) }}" style="margin-top:10px">@csrf
                         <button class="ac-btn ac-btn-sm" type="submit">{{ $rule->is_active ? 'Turn off' : 'Turn on' }}</button></form>
+                    @endif
                 @endif
             </div>
         </article>

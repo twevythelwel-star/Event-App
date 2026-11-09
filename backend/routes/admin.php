@@ -63,6 +63,7 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
         Route::get('/compliance/jurisdictions/{jurisdiction}', [ComplianceDatabaseController::class, 'show'])->name('compliance.jurisdictions.show');
         // Event-checklist rules, exceptions and local requirements, and the hosts' evidence to verify.
         Route::post('/compliance/jurisdictions/{jurisdiction}/rules', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'store'])->name('compliance.rules.store')->middleware('throttle:30,1');
+        Route::post('/compliance/rules/{rule}/approve', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'approve'])->name('compliance.rules.approve')->middleware('throttle:compliance-sensitive');
         Route::post('/compliance/rules/{rule}/toggle', [\App\Http\Controllers\Admin\ComplianceRulesController::class, 'toggle'])->name('compliance.rules.toggle')->middleware('throttle:30,1');
         Route::post('/events/{event}/compliance-overrides', [\App\Http\Controllers\Admin\CompliancePublicationOverrideController::class, 'store'])->name('compliance.overrides.store')->middleware('throttle:compliance-sensitive');
         Route::post('/compliance/overrides/{override}/revoke', [\App\Http\Controllers\Admin\CompliancePublicationOverrideController::class, 'revoke'])->name('compliance.overrides.revoke')->middleware('throttle:compliance-sensitive');
@@ -100,6 +101,13 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
             Route::delete('/policies/{version}', [$p, 'destroy'])->name('policies.destroy')->middleware('throttle:20,1');
             Route::get('/export/{report}', [\App\Http\Controllers\Admin\ComplianceExportController::class, 'export'])->name('export')->middleware('throttle:10,1');
         });
+
+        // The event photography library: uploads with provenance, two-person review, focal points and alt text.
+        Route::get('/photo-library', [\App\Http\Controllers\Admin\PhotoLibraryController::class, 'index'])->name('photo-library.index');
+        Route::post('/photo-library', [\App\Http\Controllers\Admin\PhotoLibraryController::class, 'store'])->name('photo-library.store')->middleware('throttle:30,1');
+        Route::patch('/photo-library/{photo}', [\App\Http\Controllers\Admin\PhotoLibraryController::class, 'update'])->name('photo-library.update')->middleware('throttle:60,1');
+        Route::post('/photo-library/{photo}/review', [\App\Http\Controllers\Admin\PhotoLibraryController::class, 'review'])->name('photo-library.review')->middleware('throttle:60,1');
+        Route::post('/photo-library/{photo}/retire', [\App\Http\Controllers\Admin\PhotoLibraryController::class, 'retire'])->name('photo-library.retire')->middleware('throttle:30,1');
 
         Route::get('/locations', [LocationManagementController::class, 'index'])->name('locations.index');
         Route::post('/locations/states', [LocationManagementController::class, 'storeState'])->name('locations.states.store')->middleware('throttle:20,1');

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { FoodPhoto } from "./FoodPhoto";
+import { resolveEventImage } from "../lib/imageResolver";
 import {
   ArrowLeft,
   Calendar,
@@ -477,8 +478,8 @@ export const TicketSelectionScreen: React.FC<TicketSelectionScreenProps> = ({
             }}
           >
             <img
-              src={event.flyerUrl || "/images/island_festival_sunset.jpg"}
-              alt={event.title}
+              src={resolveEventImage(event).src}
+              alt={resolveEventImage(event).alt}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />
           </div>

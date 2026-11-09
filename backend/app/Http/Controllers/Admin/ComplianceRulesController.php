@@ -71,17 +71,46 @@ class ComplianceRulesController extends Controller
             'source_title' => $data['source_title'] ?? null,
             'created_by' => $request->user()->id,
             'updated_by' => $request->user()->id,
+            // Not in force until a system administrator other than its author approves it.
+            'is_active' => false,
         ]);
+        \App\Events\Compliance\ComplianceActionRecorded::dispatch('compliance_rule_created', 'compliance_event_rules', (string) $rule->id,
+            'Rule drafted: ' . $rule->label() . ' for ' . $rule->conditionSummary() . '. Source: ' . $rule->source_url, $request->user());
         $this->log($rule, 'created', $request, 'Rule added: ' . $rule->label() . ' (' . strtolower(ComplianceEventRule::EFFECTS[$rule->effect]) . ') for ' . $rule->conditionSummary() . '.');
 
-        return redirect()->to(route('admin.console.compliance.jurisdictions.show', $jurisdiction) . '#event-rules')->with('success', 'Rule added.');
+        return redirect()->to(route('admin.console.compliance.jurisdictions.show', $jurisdiction) . '#event-rules')->with('success', 'Rule saved. It affects no event until a system administrator other than you approves it.');
+    }
+
+    /** A system administrator other than the rule's author checks it against its official source and puts it in force. */
+    public function approve(Request $request, ComplianceEventRule $rule): RedirectResponse
+    {
+        Gate::authorize(Admin::COMPLIANCE_APPROVE);
+        if ($rule->approved_at !== null) {
+            return back()->with('error', 'This rule is already approved.');
+        }
+        if ($rule->created_by === $request->user()->id) {
+            return back()->withErrors(['rule' => 'You wrote this rule, so another system administrator must approve it.']);
+        }
+        \Illuminate\Support\Facades\DB::transaction(function () use ($rule, $request) {
+            $rule->forceFill(['approved_by' => $request->user()->id, 'approved_at' => now(), 'is_active' => true, 'updated_by' => $request->user()->id])->save();
+            $this->log($rule, 'approved', $request, null);
+            \App\Events\Compliance\ComplianceActionRecorded::dispatch('compliance_rule_approved', 'compliance_event_rules', (string) $rule->id,
+                'Rule approved and in force: ' . $rule->label() . '. Source: ' . $rule->source_url, $request->user());
+        });
+
+        return redirect()->to(route('admin.console.compliance.jurisdictions.show', $rule->jurisdiction_id) . '#event-rules')->with('success', 'Rule approved. It now applies to matching events.');
     }
 
     public function toggle(Request $request, ComplianceEventRule $rule): RedirectResponse
     {
         Gate::authorize(Admin::COMPLIANCE_EDIT);
+        if (!$rule->is_active && $rule->approved_at === null) {
+            return back()->withErrors(['rule' => 'This rule has not been approved yet. A system administrator other than its author must approve it first.']);
+        }
         $rule->forceFill(['is_active' => !$rule->is_active, 'updated_by' => $request->user()->id])->save();
         $this->log($rule, $rule->is_active ? 'reactivated' : 'deactivated', $request, null);
+        \App\Events\Compliance\ComplianceActionRecorded::dispatch('compliance_rule_toggled', 'compliance_event_rules', (string) $rule->id,
+            'Rule ' . ($rule->is_active ? 'turned on' : 'turned off') . ': ' . $rule->label(), $request->user());
 
         return redirect()->to(route('admin.console.compliance.jurisdictions.show', $rule->jurisdiction_id) . '#event-rules')
             ->with('success', $rule->is_active ? 'Rule turned on.' : 'Rule turned off.');

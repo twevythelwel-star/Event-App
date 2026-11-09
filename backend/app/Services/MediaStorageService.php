@@ -39,6 +39,8 @@ class MediaStorageService
         'event-media' => ['min' => [200, 200], 'max' => [4500, 4500]],
         'performers' => ['min' => [120, 120], 'max' => [4500, 4500]],
         'sponsors' => ['min' => [80, 40], 'max' => [4500, 4500]],
+        // The event photography library (PhotoLibrary also requires its own, larger minimum).
+        'library' => ['min' => [1200, 800], 'max' => [6000, 6000]],
     ];
 
     /**

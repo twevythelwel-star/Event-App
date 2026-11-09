@@ -673,35 +673,13 @@ class HostIdentityVerificationService
             ];
         }
 
-        // Check if the user has a HostApplication with a non-approved verification status
-        if (Schema::hasTable('host_applications')) {
-            $latestApp = HostApplication::where('user_id', $user->id)->latest()->first();
-            if ($latestApp) {
-                $appVerStatus = (string) ($latestApp->identity_verification_status ?? 'not_submitted');
-                if (in_array($appVerStatus, ['verified', 'approved'], true)) {
-                    return [
-                        'allowed' => true,
-                        'status' => HostVerificationStatus::APPROVED->value,
-                        'label' => HostVerificationStatus::APPROVED->label(),
-                        'message' => null,
-                    ];
-                }
-
-                $statusEnum = HostVerificationStatus::tryFrom($appVerStatus) ?? HostVerificationStatus::NOT_SUBMITTED;
-                return [
-                    'allowed' => false,
-                    'status' => $statusEnum->value,
-                    'label' => $statusEnum->label(),
-                    'message' => "Government-issued ID verification must be Approved before publishing events (current status: {$statusEnum->label()}).",
-                ];
-            }
-        }
-
+        // No verification record: publishing is not allowed. An approved host application does not stand in for an
+        // ID review (the same rule as EventPublicationGates::identityVerified).
         return [
-            'allowed' => true,
-            'status' => HostVerificationStatus::APPROVED->value,
-            'label' => HostVerificationStatus::APPROVED->label(),
-            'message' => null,
+            'allowed' => false,
+            'status' => HostVerificationStatus::NOT_SUBMITTED->value,
+            'label' => HostVerificationStatus::NOT_SUBMITTED->label(),
+            'message' => 'Upload a government-issued photo ID. Events can be published once EventBite approves it.',
         ];
     }
 

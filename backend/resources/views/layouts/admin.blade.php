@@ -11,6 +11,7 @@
         ['route' => 'admin.console.events.index', 'match' => 'admin.console.events.*', 'label' => 'Events', 'icon' => 'events', 'can' => Admin::EVENTS_VIEW],
         ['route' => 'admin.console.charges.index', 'match' => 'admin.console.charges.*', 'label' => 'Fees & Taxes', 'icon' => 'settings', 'can' => Admin::SETTINGS_MANAGE],
         ['route' => 'admin.console.locations.index', 'match' => 'admin.console.locations.*', 'label' => 'Locations', 'icon' => 'events', 'can' => Admin::SETTINGS_MANAGE],
+        ['route' => 'admin.console.photo-library.index', 'match' => 'admin.console.photo-library.*', 'label' => 'Photo Library', 'icon' => 'events', 'can' => Admin::PHOTO_LIBRARY_MANAGE],
         ['route' => 'admin.console.compliance-centre.dashboard', 'match' => 'admin.console.compliance-centre.*', 'label' => 'Compliance Dashboard', 'icon' => 'checkin', 'can' => Admin::COMPLIANCE_MANAGE],
         ['route' => 'admin.console.compliance.index', 'match' => 'admin.console.compliance.*', 'label' => 'Compliance Database', 'icon' => 'audit', 'can' => Admin::COMPLIANCE_VIEW],
         ['route' => 'admin.console.orders.index', 'match' => 'admin.console.orders.*', 'label' => 'Orders & Payments', 'icon' => 'payment', 'can' => Admin::PAYMENTS_VIEW],

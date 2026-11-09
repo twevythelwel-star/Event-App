@@ -1,3 +1,4 @@
+import { EVENT_PLACEHOLDER, resolveEventImage } from "../lib/imageResolver";
 import React, { useState, useMemo } from "react";
 import {
   Ticket,
@@ -714,15 +715,9 @@ export const AttendeeTicketManagementScreen: React.FC<Props> = ({
                 ticket.venueLocation ||
                 "Biscayne Bay Waterfront Park Amphitheater, Miami, FL";
 
-              const eventImg =
-                ticket.eventThumbnail ||
-                (isOrderPast(ticket)
-                  ? "/images/island_culture_carnival.jpg"
-                  : eventTitle.includes("Hellshire")
-                  ? "/images/island_festival_sunset.jpg"
-                  : eventTitle.includes("Miami")
-                  ? "/images/escovitch_fish.jpg"
-                  : "/images/island_music_reggae_concert.jpg");
+              // The event's own flyer, or labelled artwork drawn from its details: never a guessed stock photo.
+              const resolvedImage = resolveEventImage({ ...ticket, title: eventTitle });
+              const eventImg = resolvedImage.src;
 
               return (
                 <article
@@ -749,7 +744,7 @@ export const AttendeeTicketManagementScreen: React.FC<Props> = ({
                   >
                     <img
                       src={eventImg}
-                      alt={eventTitle}
+                      alt={resolvedImage.alt}
                       style={{
                         width: "100%",
                         height: "100%",
@@ -757,8 +752,7 @@ export const AttendeeTicketManagementScreen: React.FC<Props> = ({
                         objectPosition: "center",
                       }}
                       onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src =
-                          "/images/island_music_reggae_concert.jpg";
+                        (e.currentTarget as HTMLImageElement).src = EVENT_PLACEHOLDER;
                       }}
                     />
                     <div

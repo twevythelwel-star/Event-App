@@ -262,6 +262,10 @@ final class EventComplianceService
                     ],
                 ]);
             }
+            // Audited as well as recorded (written after the transaction commits).
+            \App\Events\Compliance\ComplianceActionRecorded::dispatch('event_compliance_acknowledged', 'events', (string) $event->id,
+                "{$user->email} confirmed the Event Compliance declarations for {$event->title} ({$context}) for {$ack->jurisdictionLabel()}.",
+                $user, (string) $event->organizer_id, (string) $event->id);
 
             return $ack;
         });

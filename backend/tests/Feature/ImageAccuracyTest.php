@@ -113,6 +113,36 @@ class ImageAccuracyTest extends TestCase
         $this->assertSame('https://cdn.example.org/our-flyer.png', $event->display_image_url);
     }
 
+    public function test_the_api_tells_every_client_what_an_events_picture_is(): void
+    {
+        $event = Event::allTenants()->whereKey(self::EVENT)->firstOrFail();
+        $event->forceFill(['status' => 'published', 'flyer_path' => null])->save();
+        $json = fn () => collect($this->getJson(route('api.events.index'))->assertOk()->json('data') ?? $this->getJson(route('api.events.index'))->json())
+            ->firstWhere('id', self::EVENT);
+
+        // No flyer: labelled artwork from the event's own details, served under /api so every client can reach it.
+        $cover = $json()['coverImage'];
+        $this->assertSame('artwork', $cover['kind']);
+        $this->assertSame('/api/v1/media/events/' . self::EVENT . '/artwork.svg', $cover['url']);
+        $this->assertSame('Event artwork · no flyer uploaded yet', $cover['label']);
+        $this->assertStringContainsString('has not uploaded a flyer', $cover['alt']);
+        $svg = $this->get($cover['url'])->assertOk()->assertHeader('Content-Type', 'image/svg+xml')->getContent();
+        $this->assertStringContainsString('no flyer uploaded yet', $svg);
+        $this->assertStringContainsString(e($event->title), $svg);
+
+        // A bundled photo path is never passed on as the event's flyer.
+        $event->forceFill(['flyer_path' => '/images/island_music_reggae_concert.jpg'])->save();
+        $this->assertNull($json()['flyerUrl']);
+        $this->assertSame('artwork', $json()['coverImage']['kind']);
+
+        // The host's own upload is the picture, until an administrator hides it.
+        $event->forceFill(['flyer_path' => 'tenants/org-kingston-youth/flyers/own.jpg', 'flyer_moderation_status' => 'approved'])->save();
+        $this->assertSame('flyer', $json()['coverImage']['kind']);
+        $this->assertNull($json()['coverImage']['label']);
+        $event->forceFill(['flyer_moderation_status' => 'hidden'])->save();
+        $this->assertSame('artwork', $json()['coverImage']['kind']);
+    }
+
     public function test_every_catalogued_sample_exists_and_names_the_dishes_it_may_stand_for(): void
     {
         foreach ((array) config('visual_assets.sample_photos') as $cuisine => $photos) {

@@ -142,6 +142,8 @@ class ComplianceLifecycleIntegrationTest extends TestCase
             'compliance_policy_published' => (string) $draft->id,
             'compliance_event_suspended' => (string) $event->id,
             'compliance_report_exported' => 'permits',
+            'event_compliance_acknowledged' => (string) $event->id,
+            'policy_acknowledged' => 'host_resp_permits_and_inspections',
         ];
         foreach ($expected as $action => $target) {
             $this->assertTrue(ComplianceAuditLog::where('action', $action)->where('target_id', $target)->exists(), "Audit entry missing: {$action}");

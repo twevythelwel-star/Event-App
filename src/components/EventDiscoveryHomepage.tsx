@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { BrandLogo } from "./BrandLogo";
+import { resolveEventImage } from "../lib/imageResolver";
+import { ImageLabel } from "./ImageLabel";
 import type { LocationCatalog } from "../lib/api";
 import {
   Search,
@@ -75,8 +77,13 @@ export function getEventPerformer(event: any, _index: number): string {
 }
 
 export function getEventImage(event: any, _index: number): string {
-  if (event.flyerUrl && event.flyerUrl.trim().length > 0) return event.flyerUrl;
-  return "/images/island_festival_sunset.jpg";
+  // The host's flyer, or labelled artwork from the event's own details (see resolveEventImage for the rules).
+  return resolveEventImage(event).src;
+}
+
+/** Alt text that says what the picture is: the event's flyer, or artwork because no flyer was uploaded. */
+export function getEventImageAlt(event: any): string {
+  return resolveEventImage(event).alt;
 }
 
 export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
@@ -538,17 +545,22 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
             alignItems: "flex-end",
           }}
         >
-          <img
-            src={primaryFeaturedEvent ? getEventImage(primaryFeaturedEvent, primaryFeaturedIndex) : "/images/island_festival_sunset.jpg"}
-            alt="EventBite Featured Gathering"
-            style={{
-              position: "absolute",
-              inset: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
+          {/* Photography-led hero: the featured event's own flyer, or an approved illustrative photo of its kind
+              (labelled). Its text-heavy generated artwork is never put behind the headline; the plain gradient shows. */}
+          {primaryFeaturedEvent && resolveEventImage(primaryFeaturedEvent).kind !== "artwork" && (
+            <img
+              src={getEventImage(primaryFeaturedEvent, primaryFeaturedIndex)}
+              alt={getEventImageAlt(primaryFeaturedEvent)}
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          )}
+          {primaryFeaturedEvent && <ImageLabel event={primaryFeaturedEvent} corner="top-left" />}
           <div
             style={{
               position: "absolute",
@@ -1095,9 +1107,10 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
             >
               {/* Event Image */}
               <div style={{ position: "relative", minHeight: "260px", maxHeight: "380px" }}>
+                <ImageLabel event={primaryFeaturedEvent} />
                 <img
                   src={getEventImage(primaryFeaturedEvent, primaryFeaturedIndex)}
-                  alt={primaryFeaturedEvent.title}
+                  alt={getEventImageAlt(primaryFeaturedEvent)}
                   style={{
                     width: "100%",
                     height: "100%",
@@ -1335,9 +1348,10 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
                 >
                   {/* Thumbnail */}
                   <div style={{ height: "135px", position: "relative" }}>
+                    <ImageLabel event={evt} />
                     <img
                       src={getEventImage(evt, idx)}
-                      alt={evt.title}
+                      alt={getEventImageAlt(evt)}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />
                     <div
@@ -1530,9 +1544,10 @@ export const EventDiscoveryHomepage: React.FC<EventDiscoveryHomepageProps> = ({
                   >
                     {/* Flyer / Image Banner */}
                     <div style={{ height: "170px", position: "relative" }}>
+                      <ImageLabel event={evt} />
                       <img
                         src={getEventImage(evt, originalIndex)}
-                        alt={evt.title}
+                        alt={getEventImageAlt(evt)}
                         style={{ width: "100%", height: "100%", objectFit: "cover" }}
                       />
                       <div

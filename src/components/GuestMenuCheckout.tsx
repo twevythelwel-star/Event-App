@@ -1,3 +1,4 @@
+import { resolveEventImage } from "../lib/imageResolver";
 import React, { useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
@@ -696,7 +697,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
                     selectedOptionsSummary: [],
                     finalItemPrice: unitPrice,
                     quantity: qty,
-                    imageUrl: activeEvt?.flyerUrl || "/images/island_festival_sunset.jpg",
+                    imageUrl: resolveEventImage(activeEvt).src,
                   });
                 }
               });
@@ -867,7 +868,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
             minHeight: "340px",
             borderRadius: "20px",
             marginBottom: "20px",
-            background: "linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.55) 50%, rgba(15, 23, 42, 0.25) 100%), url('/images/island_festival_sunset.jpg') center bottom / cover no-repeat",
+            background: "linear-gradient(to top, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0.55) 50%, rgba(15, 23, 42, 0.25) 100%)",
             color: "#ffffff",
             padding: "36px 32px 28px",
             display: "flex",
@@ -2343,7 +2344,7 @@ export const GuestMenuCheckout: React.FC<Props> = ({
           <div className="saved-cards-grid">
             <div className="saved-event-card">
               <div className="saved-event-img">
-                <img src={eventDetails.flyerUrl || "/images/escovitch_fish.jpg"} alt={eventDetails.title} />
+                <img src={resolveEventImage(eventDetails).src} alt={resolveEventImage(eventDetails).alt} />
                 <span className="saved-tag">⭐ SAVED</span>
               </div>
               <div className="saved-event-body">

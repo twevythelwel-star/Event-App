@@ -257,17 +257,20 @@
         @php
             $cover = $event->coverImage();
             $heroImg = $cover->src;
+            // A photograph (the host's flyer, or a labelled library photo) fills the banner; generated artwork is shown whole.
+            $isPhoto = $event->hasFlyer() || $cover->illustrative;
         @endphp
         {{-- A generated flyer is text, so it is shown whole rather than cropped; uploaded artwork fills the banner,
              at the size the screen needs and cropped around the host's focal point. Behind a whole flyer, a blurred
              copy of the same artwork fills the full width. --}}
-        @unless($event->hasFlyer())
+        @unless($isPhoto)
             <img src="{{ $heroImg }}" alt="" aria-hidden="true" class="detail-hero-backdrop">
         @endunless
         <x-responsive-image :image="$cover" :alt="$event->hasFlyer() ? ($event->flyer_alt_text ?: $event->title) : $cover->alt" class="detail-hero-img" sizes="100vw" :eager="true"
-            :fit="$event->hasFlyer() ? 'cover' : 'contain'"
-            :style="$event->hasFlyer() ? '' : 'background: transparent; filter: drop-shadow(0 18px 40px rgba(0,0,0,.5));'" />
+            :fit="$isPhoto ? 'cover' : 'contain'"
+            :style="$isPhoto ? '' : 'background: transparent; filter: drop-shadow(0 18px 40px rgba(0,0,0,.5));'" />
         <div class="detail-hero-overlay"></div>
+        <x-image-label :image="$cover" corner="top-left" />
 
         <!-- Floating Top Navigation -->
         <div class="detail-hero-nav">

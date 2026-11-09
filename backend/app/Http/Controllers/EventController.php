@@ -43,6 +43,13 @@ class EventController extends Controller
                 ->orWhereRaw('LOWER(COALESCE(category, \'\')) LIKE ?', [$term])
                 ->orWhereRaw('LOWER(COALESCE(city, \'\')) LIKE ?', [$term]));
         }
+        // A kind of event, or a group of kinds (the homepage collections), as the host declared it.
+        if ($request->filled('kind')) {
+            $kind = (string) $request->query('kind');
+            $subjects = \App\Services\PhotoLibrary::subjects();
+            $keys = array_key_exists($kind, $subjects) ? [$kind] : array_keys(array_filter($subjects, fn ($s) => $s['group'] === $kind));
+            $query->whereIn('photo_subject', $keys ?: ['__none__']);
+        }
         $perPage = min(48, max(12, (int) $request->query('per_page', 24)));
         $events = $query->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')
             ->paginate($perPage)->withQueryString();

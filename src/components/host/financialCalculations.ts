@@ -1,3 +1,4 @@
+import { resolveEventImage } from "../../lib/imageResolver";
 import {
   CashPaymentRecord,
   Currency,
@@ -22,33 +23,12 @@ import {
   PaymentMethodFinancialRow,
 } from "./types";
 
-const HIGH_QUALITY_EVENT_THUMBNAILS: Record<string, string> = {
-  "evt-kingston-fishfry-2026": "/images/escovitch_fish.jpg",
-  "evt-kingston-harbour-fry": "/images/escovitch_fish.jpg",
-  "evt-hellshire-sunset-fry": "/images/island_festival_sunset.jpg",
-  "evt-port-royal-heritage-fry": "/images/island_culture_carnival.jpg",
-  "evt-ochorios-fishermans-fry": "/images/island_music_reggae_concert.jpg",
-  "evt-negril-7mile-catch": "/images/jerk_chicken.jpg",
-  "evt-mobay-pier1-fiesta": "/images/caribbean_curry_goat.jpg",
-  "evt-treasure-beach-calabash": "/images/fried_chicken.jpg",
-  "evt-boston-bay-jerk-fish": "/images/crispy_island_wings.jpg",
-  "evt-whitehouse-cooperative": "/images/oxtail.jpg",
-  "evt-runaway-bay-carnival": "/images/rum_punch.jpg",
-  "evt-us-miami-fishfry-2026": "/images/island_festival_sunset.jpg",
-};
-
-export function resolveEventThumbnail(event: { id?: string; flyerUrl?: string; flyerThumbnailUrl?: string }): string {
-  if (event.flyerThumbnailUrl || event.flyerUrl) {
-    // Prefer local high-res asset if the flyerUrl is an external placeholder that might fail offline
-    const url = event.flyerThumbnailUrl || event.flyerUrl!;
-    if (url.startsWith("data:") || url.startsWith("/api/") || url.startsWith("/images/")) {
-      return url;
-    }
-  }
-  if (event.id && HIGH_QUALITY_EVENT_THUMBNAILS[event.id]) {
-    return HIGH_QUALITY_EVENT_THUMBNAILS[event.id];
-  }
-  return "/images/event-placeholder.svg";
+/**
+ * The event's picture: its own flyer, or artwork drawn from its own details and labelled as such
+ * (see lib/imageResolver). Never a stock photo of food or of another event.
+ */
+export function resolveEventThumbnail(event: { id?: string; title?: string; flyerUrl?: string; flyerThumbnailUrl?: string; coverImage?: unknown }): string {
+  return resolveEventImage({ ...event, flyerUrl: event.flyerThumbnailUrl || event.flyerUrl }).src;
 }
 
 export function computeHostRolePermissions(role: TenantRole): HostRolePermissions {

@@ -133,16 +133,15 @@ final class EventPublicationGates
         return $owners->filter(fn (User $user) => !$user->hasRole(\App\Enums\AccountType::SYSTEM_ADMIN) || $user->hasRole(\App\Enums\AccountType::EVENT_HOST))->values()->all();
     }
 
-    /** An approved, unexpired government ID verification, or a host application whose ID check was approved. */
+    /**
+     * An approved, unexpired government ID verification. Nothing else counts: not an approved host application, not
+     * an application flag. Approval of an ID requires an uploaded document (HostIdentityVerificationService).
+     */
     public static function identityVerified(User $user): bool
     {
         $verification = HostIdentityVerification::where('user_id', $user->id)->latest()->first();
-        if ($verification) {
-            return $verification->status === HostVerificationStatus::APPROVED->value && !$verification->isDocumentExpired();
-        }
-        $application = HostApplication::where('user_id', $user->id)->latest()->first();
 
-        return $application !== null && in_array((string) $application->identity_verification_status, ['verified', 'approved'], true);
+        return $verification !== null && $verification->status === HostVerificationStatus::APPROVED->value && !$verification->isDocumentExpired();
     }
 
     /** @return list<string> titles of the current host responsibility acknowledgements this user has not accepted */

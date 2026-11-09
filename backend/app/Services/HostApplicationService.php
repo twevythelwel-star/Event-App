@@ -162,28 +162,14 @@ class HostApplicationService
         }
 
         return DB::transaction(function () use ($application, $applicant, $reviewer, $notes) {
-            // 1. Update application status & mark host identity verified
+            // 1. Approve the application. This makes the applicant an event host; it does NOT verify their identity.
+            // Their government ID is reviewed separately by an administrator granted identity document access
+            // (HostIdentityVerificationService::transitionStatus), and their events cannot be published until it is approved.
             $application->status = 'approved';
             $application->reviewed_by = $reviewer->id;
             $application->reviewed_at = now();
             $application->review_notes = $notes;
-            if (\Illuminate\Support\Facades\Schema::hasColumn('host_applications', 'identity_verification_status')) {
-                $application->identity_verification_status = 'verified';
-            }
             $application->save();
-
-            // Sync any pending HostIdentityVerification record for this applicant when approved by admin
-            if (\Illuminate\Support\Facades\Schema::hasTable('host_identity_verifications')) {
-                $idVerification = \App\Models\HostIdentityVerification::where('user_id', $applicant->id)->latest()->first();
-                if ($idVerification && in_array($idVerification->status, ['pending_review', 'under_review'], true) && !$idVerification->isDocumentExpired()) {
-                    $idVerification->forceFill([
-                        'status' => \App\Enums\HostVerificationStatus::APPROVED->value,
-                        'reviewed_by' => $reviewer->id,
-                        'reviewed_at_utc' => now()->utc(),
-                        'review_notes' => $notes,
-                    ])->save();
-                }
-            }
 
             // 2. Assign explicit Event Host role in user_roles
             $existingRole = UserRole::where('user_id', $applicant->id)

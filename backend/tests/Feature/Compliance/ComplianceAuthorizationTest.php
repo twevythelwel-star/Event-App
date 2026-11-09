@@ -138,6 +138,52 @@ class ComplianceAuthorizationTest extends TestCase
         $this->assertSame($reviewer->id, $verification->fresh()->reviewed_by);
     }
 
+    public function test_approving_a_host_application_never_verifies_identity(): void
+    {
+        $applicant = $this->user('applicant@example.test', null);
+        $application = HostApplication::create(['user_id' => $applicant->id, 'organization_name' => 'Applicant Events', 'contact_phone' => '+13055550000', 'status' => 'pending']);
+        $root = $this->user('root@example.test', 'system_admin');
+        \App\Services\HostApplicationService::approveApplication($root, $application->id);
+
+        $this->assertTrue($applicant->fresh()->hasRole(\App\Enums\AccountType::EVENT_HOST), 'they become a host');
+        $this->assertFalse(\App\Services\Compliance\EventPublicationGates::identityVerified($applicant->fresh()), 'but are not identity-verified');
+        $this->assertFalse(HostIdentityVerificationService::evaluateHostPublishingEligibility($applicant->fresh())['allowed']);
+
+        // An uploaded ID awaiting review is not approved by the application decision either.
+        [$other, $verification] = $this->hostWithDocument();
+        $otherApplication = HostApplication::create(['user_id' => $other->id, 'organization_name' => 'Other Events', 'contact_phone' => '+13055550001', 'status' => 'pending']);
+        \App\Services\HostApplicationService::approveApplication($root, $otherApplication->id);
+        $this->assertSame('pending_review', $verification->fresh()->status);
+    }
+
+    public function test_a_requirement_rule_is_in_force_only_after_a_second_system_administrator_approves_it(): void
+    {
+        $florida = \App\Models\Compliance\ComplianceJurisdiction::where('type', 'state')->where('code', 'FL')->firstOrFail();
+        $author = $this->user('author@example.test', 'system_admin');
+        $this->actingAs($author)->post(route('admin.console.compliance.rules.store', $florida), ['topic' => 'food_permit', 'effect' => 'required',
+            'location' => 'event', 'source_url' => 'https://www.myfloridalicense.com/dbpr/hr/', 'source_confirmed_official' => '1'])->assertSessionHasNoErrors();
+        $rule = \App\Models\Compliance\ComplianceEventRule::latest('id')->firstOrFail();
+        $this->assertFalse($rule->is_active);
+        $this->assertTrue($rule->awaitingApproval());
+
+        // Not shown to hosts as required while it awaits approval.
+        $facts = \App\Services\Compliance\EventRequirementChecklist::facts(['state_code' => 'FL', 'food_service_mode' => 'sold']);
+        $this->assertNotContains('required', collect(app(\App\Services\Compliance\EventRequirementChecklist::class)->build($facts)['sections'][0]['items'])->pluck('base')->all());
+
+        // Its author cannot approve it, nor can a compliance manager, nor turn it on without approval.
+        $this->actingAs($author)->post(route('admin.console.compliance.rules.approve', $rule))->assertSessionHasErrors('rule');
+        $this->actingAs($this->delegate)->post(route('admin.console.compliance.rules.approve', $rule))->assertForbidden();
+        $this->actingAs($this->delegate)->post(route('admin.console.compliance.rules.toggle', $rule))->assertSessionHasErrors('rule');
+        $this->assertFalse($rule->fresh()->is_active);
+
+        $approver = $this->user('approver@example.test', 'system_admin');
+        $this->actingAs($approver)->post(route('admin.console.compliance.rules.approve', $rule))->assertSessionHasNoErrors();
+        $this->assertTrue($rule->fresh()->is_active);
+        $this->assertSame($approver->id, $rule->fresh()->approved_by);
+        $this->assertContains('required', collect(app(\App\Services\Compliance\EventRequirementChecklist::class)->build($facts)['sections'][0]['items'])->pluck('base')->all());
+        $this->assertDatabaseHas('security_audit_logs', ['action' => 'compliance_rule_approved', 'user_id' => $approver->id, 'target_id' => (string) $rule->id]);
+    }
+
     public function test_15_compliance_overrides_require_permission_and_a_recorded_reason(): void
     {
         \App\Models\Compliance\ComplianceEventRule::create(['jurisdiction_id' => \App\Models\Compliance\ComplianceJurisdiction::where('code', 'FL')->value('id'),

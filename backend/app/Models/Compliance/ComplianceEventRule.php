@@ -24,9 +24,15 @@ class ComplianceEventRule extends Model
         'complimentary' => 'Alcohol complimentary', 'byob' => 'Bring your own (BYOB)'];
 
     protected $fillable = ['jurisdiction_id', 'include_descendants', 'topic', 'title', 'description', 'effect', 'location', 'conditions',
-        'requirement_id', 'source_url', 'source_title', 'is_active', 'created_by', 'updated_by'];
+        'requirement_id', 'source_url', 'source_title', 'is_active', 'created_by', 'updated_by', 'approved_by', 'approved_at'];
 
-    protected $casts = ['conditions' => 'array', 'include_descendants' => 'boolean', 'is_active' => 'boolean'];
+    protected $casts = ['conditions' => 'array', 'include_descendants' => 'boolean', 'is_active' => 'boolean', 'approved_at' => 'datetime'];
+
+    /** A new rule waits for a second administrator's approval before it affects any event. */
+    public function awaitingApproval(): bool
+    {
+        return $this->approved_at === null && !$this->is_active;
+    }
 
     public function jurisdiction(): BelongsTo
     {

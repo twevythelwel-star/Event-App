@@ -1,3 +1,4 @@
+import { EVENT_PLACEHOLDER } from "../../lib/imageResolver";
 import {
   ArrowRight,
   BarChart3,
@@ -243,9 +244,10 @@ export function HostUpcomingEventsSection({
                   src={ev.imageUrl}
                   alt={ev.title}
                   onError={(e) => {
+                    // A broken image becomes the labelled placeholder, never a photo of some dish.
                     const target = e.currentTarget;
-                    if (!target.src.endsWith("/images/escovitch_fish.jpg")) {
-                      target.src = "/images/escovitch_fish.jpg";
+                    if (target.src !== EVENT_PLACEHOLDER) {
+                      target.src = EVENT_PLACEHOLDER;
                     }
                   }}
                   style={{

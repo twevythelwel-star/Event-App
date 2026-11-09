@@ -15,6 +15,29 @@ use Illuminate\Support\Str;
 
 class FishFryEventsSeeder extends Seeder
 {
+    /** Kind of event for each sample event (config/photo_library.php subjects). */
+    public const PHOTO_SUBJECTS = [
+        'evt-kingston-harbour-fry' => 'jamaican_fish_fry',
+        'evt-hellshire-sunset-fry' => 'community_gathering',
+        'evt-port-royal-heritage-fry' => 'cultural_celebration',
+        'evt-ochorios-fishermans-fry' => 'dancehall_event',
+        'evt-negril-7mile-catch' => 'outdoor_cookout',
+        'evt-mobay-pier1-fiesta' => 'international_food_festival',
+        'evt-treasure-beach-calabash' => 'cultural_celebration',
+        'evt-boston-bay-jerk-fish' => 'caribbean_food_festival',
+        'evt-whitehouse-cooperative' => 'international_food_festival',
+        'evt-runaway-bay-carnival' => 'outdoor_cookout',
+        'evt-us-miami-gardens' => 'caribbean_food_festival',
+        'evt-us-sunrise' => 'family_festival',
+        'evt-us-tamarac' => 'outdoor_cookout',
+        'evt-us-tampa' => 'caribbean_food_festival',
+        'evt-us-jacksonville' => 'outdoor_cookout',
+        'evt-us-queens' => 'street_food_market',
+        'evt-us-mount-vernon' => 'cultural_heritage',
+        'evt-us-newark' => 'international_food_festival',
+        'evt-us-bridgeport' => 'cultural_celebration',
+    ];
+
     /**
      * Seed the sample EventBite catalogue: 20 fictional demonstration events, one per target market,
      * with ticket tiers and demo menus. All content is labelled as sample content in the event description.
@@ -54,6 +77,9 @@ class FishFryEventsSeeder extends Seeder
             $event['status'] = 'published';
             $event['packaging_fee_jmd'] = 0;
             $event['is_flyer_public'] = true;
+            // The kind of event, declared here as a host would on the event form (never guessed from the title);
+            // an event with no fitting kind keeps none and is shown with its generated artwork.
+            $event['photo_subject'] = self::PHOTO_SUBJECTS[$eventId] ?? null;
             $event['target_market_id'] = TargetMarket::where('state_code', $event['state_code'] ?? '')
                 ->whereRaw('LOWER(city) = ?', [strtolower($event['city'] ?? '')])
                 ->value('id');

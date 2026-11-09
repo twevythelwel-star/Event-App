@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { EVENT_PLACEHOLDER, resolveEventImage } from "../lib/imageResolver";
 import {
   Ticket,
   Calendar,
@@ -78,13 +79,8 @@ export const IslandEventDigitalTicketScreen: React.FC<Props> = ({
     eventDetails?.timeStr ||
     "4:00 PM – 11:30 PM EDT";
 
-  const eventThumbnail =
-    ticket.eventThumbnail ||
-    (eventTitle.includes("Hellshire")
-      ? "/images/island_festival_sunset.jpg"
-      : eventTitle.includes("Fish") || eventTitle.includes("Harbour")
-      ? "/images/escovitch_fish.jpg"
-      : "/images/island_music_reggae_concert.jpg");
+  // The event's own flyer, or labelled artwork drawn from its details: never a guessed stock photo.
+  const eventThumbnail = resolveEventImage({ ...ticket, title: eventTitle }).src;
 
   const totalQuantity = ticket.items.reduce((sum, item) => sum + item.quantity, 0) || 1;
   const primaryItemName =
@@ -465,8 +461,7 @@ export const IslandEventDigitalTicketScreen: React.FC<Props> = ({
                 filter: isCancelled || isRefunded ? "grayscale(80%)" : "none",
               }}
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src =
-                  "/images/island_music_reggae_concert.jpg";
+                (e.currentTarget as HTMLImageElement).src = EVENT_PLACEHOLDER;
               }}
             />
             {/* Cinematic Gradient Overlay */}

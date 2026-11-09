@@ -37,9 +37,22 @@
 
 <div class="eb-home">
     @php
-        // Featured events with the host's own flyer lead the hero (still soonest first within each group); events
-        // without one follow with their generated cover.
-        $heroArt = $featured->sortByDesc(fn ($event) => $event->hasFlyer())->take(3)->values();
+        // Photography leads the hero: events with the host's own flyer first, then events shown by an illustrative
+        // photo of their kind (labelled), then events with only their generated cover; soonest first within each.
+        $heroArt = $featured->sortByDesc(fn ($event) => $event->hasFlyer() ? 2 : ($event->coverImage()->illustrative ? 1 : 0))->take(3)->values();
+        // Event collections by kind of event, each with a photograph from the library when one is approved.
+        $library = app(\App\Services\PhotoLibrary::class);
+        $collections = [];
+        foreach ((array) config('photo_library.groups') as $groupKey => $groupLabel) {
+            $subjectKeys = array_keys(array_filter(\App\Services\PhotoLibrary::subjects(), fn ($s) => $s['group'] === $groupKey));
+            $count = \App\Models\Event::allTenants()->where('status', 'published')->where('visibility', 'public')->whereIn('photo_subject', $subjectKeys)
+                ->where(fn ($q) => $q->whereNull('event_date_iso')->orWhereDate('event_date_iso', '>=', now()->toDateString()))->count();
+            $photo = collect($subjectKeys)->map(fn ($key) => $library->forSubject($key)->first())->filter()->first();
+            if ($count > 0) {
+                $collections[] = ['key' => $groupKey, 'label' => $groupLabel, 'count' => $count,
+                    'image' => $photo ? \App\Support\ResponsiveImage::forLibraryPhoto($photo) : null];
+            }
+        }
         // A real photograph for each tradition: the flyer of an upcoming event that celebrates it.
         $traditionPhotos = [];
         foreach (collect($sections)->pluck('events')->map(fn ($events) => collect($events))->flatten(1)->unique('id') as $listed) {
@@ -112,7 +125,9 @@
             <div class="eb-hero-art">
                 @foreach($heroArt as $i => $art)
                     <a href="{{ route('events.show', $art->id) }}" class="eb-hero-card eb-hero-card-{{ $i }}" @if($i > 0) tabindex="-1" aria-hidden="true" @endif>
-                        <x-responsive-image :image="$art->coverImage()" :alt="$i === 0 ? 'Featured: ' . $art->title : ''" :eager="$i === 0" sizes="(min-width: 1280px) 520px, 90vw" />
+                        @php $heroCover = $art->coverImage(); @endphp
+                        <x-responsive-image :image="$heroCover" :alt="$i === 0 ? 'Featured: ' . $art->title . ($heroCover->label ? ' (illustrative photo)' : '') : ''" :eager="$i === 0" sizes="(min-width: 1280px) 520px, 90vw" />
+                        @if($i === 0)<x-image-label :image="$heroCover" corner="top-right" />@endif
                         @if($i === 0)
                             <span class="eb-hero-card-label"><span class="eb-badge eb-badge-accent">Featured</span></span>
                         @endif
@@ -151,6 +166,27 @@
                             <span class="eb-tradition-name">{{ $label }}</span>
                             <span class="eb-tradition-count">{{ $count }} {{ \Illuminate\Support\Str::plural('event', $count) }}</span>
                             @if($photoEvent)<span class="eb-tradition-credit">Photo: {{ $photoEvent->title }}</span>@endif
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
+
+    @if($collections !== [])
+        <section aria-labelledby="collections-heading">
+            <div class="eb-home-section-head">
+                <h2 id="collections-heading" class="eb-text-section-title" style="margin: 0;">Browse by kind of event</h2>
+            </div>
+            <ul class="eb-tradition-cards">
+                @foreach($collections as $collection)
+                    <li>
+                        <a href="{{ route('events.index', ['kind' => $collection['key']]) }}" class="eb-tradition-card{{ $collection['image'] ? ' has-art' : '' }}" style="--tint: {{ ['#C7FF45', '#C4B5FD', '#7DD3FC', '#FBBF24'][crc32($collection['key']) % 4] }}; --turn: {{ crc32($collection['key']) % 360 }}deg; position: relative;">
+                            {{-- An illustrative library photo of this kind of event, labelled; the name says what the collection is. --}}
+                            <span class="eb-tradition-art" aria-hidden="true">@if($collection['image'])<x-responsive-image :image="$collection['image']" alt="" sizes="240px" />@endif</span>
+                            <span class="eb-tradition-name">{{ $collection['label'] }}</span>
+                            <span class="eb-tradition-count">{{ $collection['count'] }} {{ \Illuminate\Support\Str::plural('event', $collection['count']) }}</span>
+                            @if($collection['image'])<span class="eb-tradition-credit">Illustrative photo</span>@endif
                         </a>
                     </li>
                 @endforeach
