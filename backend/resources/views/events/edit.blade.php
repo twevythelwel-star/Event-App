@@ -143,6 +143,25 @@
         @include('events.partials.event-qr')
     @endif
 
+    @if($event->status !== 'cancelled')
+        <section class="eb-card card" aria-labelledby="cancel-event-heading" style="border-color: var(--color-danger, #DC2626);">
+            <div class="eb-card-header card-header"><div>
+                <h2 id="cancel-event-heading" class="eb-card-title card-title">Cancel this event</h2>
+                <p class="eb-card-subtitle card-subtitle">Cancelling takes the event out of discovery and stops all ticket and food sales. It cannot be undone: to run it again, create a new event. Existing orders and tickets are kept so you can refund them.</p>
+            </div></div>
+            <form action="{{ route('events.cancel', $event->id) }}" method="POST"
+                  onsubmit="return confirm('Cancel {{ addslashes($event->title) }}? This cannot be undone.');">
+                @csrf
+                <div class="eb-form-group">
+                    <label class="eb-label" for="cancel-reason">Reason (kept in the audit log)</label>
+                    <textarea id="cancel-reason" name="reason" class="eb-input" rows="2" minlength="5" maxlength="500" required>{{ old('reason') }}</textarea>
+                    @error('reason')<p class="eb-help-text" style="color: var(--color-danger, #DC2626);">{{ $message }}</p>@enderror
+                </div>
+                <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Cancel event</button>
+            </form>
+        </section>
+    @endif
+
     @if($event->flyer_path)
         <form id="delete-flyer-form" action="{{ route('events.flyer.remove', $event->id) }}" method="POST" hidden>
             @csrf

@@ -141,6 +141,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/events/{id}/review', [EventController::class, 'review'])->name('events.review');
     Route::post('/events/{id}/publish', [EventController::class, 'publish'])->name('events.publish');
     Route::post('/events/{id}/unpublish', [EventController::class, 'unpublish'])->name('events.unpublish');
+    Route::post('/events/{id}/cancel', [EventController::class, 'cancel'])->name('events.cancel')->middleware('throttle:10,1');
     Route::post('/events/{id}/toggle-ordering', [EventController::class, 'toggleOrdering'])->name('events.toggle-ordering');
 
     // Event QR artwork (only for events the user manages)

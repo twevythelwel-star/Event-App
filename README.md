@@ -37,7 +37,7 @@ A comprehensive, production-grade event ticketing, culinary pre-ordering, and ki
 
 ## Running Locally
 
-The app has two parts: a Laravel 13 backend (`backend/`) and the React frontend (Vite). Vite proxies `/api` to Laravel, so the browser talks to one origin and the session cookie and XSRF token just work.
+The app is a Laravel 13 application in `backend/`. Its Blade pages are the one front end: discovery, event pages, checkout and tickets, the host dashboard and event studios, the staff terminal, attendee and account pages, and the admin console. The JSON API under `/api/v1` serves the same data to other clients.
 
 **Backend** (PHP 8.3+, Composer):
 
@@ -54,37 +54,22 @@ php artisan serve --port=8000
 
 The seeders create the 10 fish fry events with their menus, a System Administrator, and demo sign-in accounts for an attendee, an event host (Kingston Youth Foundation) and a delegated admin. Their emails and the shared local password are in `backend/database/seeders/DemoAccountsSeeder.php`; that seeder refuses to run in production. The System Administrator's email and password come from `SYSTEM_ADMIN_EMAIL` / `SYSTEM_ADMIN_PASSWORD` in `backend/.env`; locally the password falls back to the demo password, and seeding in production stops unless it is set. The `/login` page's demo-account shortcuts only appear when `APP_ENV=local`.
 
-**Frontend:**
+Open `http://localhost:8000/`.
 
-```sh
-npm install
-npm run dev
-```
+**Front end:** every screen is a Blade page served by Laravel; there is no separate front-end build. The earlier React single-page app was retired in favour of the Blade pages, which cover every screen it had (see `docs/frontend-consolidation.md`).
 
-Open `http://localhost:5173/`. If the backend isn't running, the app shows a banner and falls back to the bundled demo data in your browser.
-
-**What is live vs. demo:** with the backend running, these go through the API:
-- event browsing, menus, sign-in/sign-out and attendee ordering (the server prices every order);
-- the Event Host's payment verification queue (paid, partial, under verification, rejected) and kitchen status;
-- the Staff Scanner's portion handovers, reversals, supervisor overrides and order closing, each written to the handover audit log under the signed-in account;
-- the Event Host's event and menu editing: event details (saved after a short pause while typing), publish / unpublish / cancel, and adding, editing, repricing, restocking or removing menu items. Only the organizer's event owners can edit. Event flyers and menu photos are uploaded to the server (JPEG/PNG/WebP up to 5 MB, re-encoded to strip metadata) and are publicly visible only while the event is published;
-- the cash ledger: cash receipts (against an order or walk-up for an event) and reversals, with server-issued receipt numbers, plus order refunds;
-- Event Host applications: signed-in attendees apply from the Attendee tab; administrators approve or reject them in a review queue on the Administrator and System Administrator tabs. Approval grants the Event Host role and creates the applicant's own organizer;
-- ticket disputes: attendees file them on their own orders; administrators move them to under review, resolved or rejected (delegated admins only see the organizers assigned to them). Resolving a dispute never moves money; refunds stay with the event owner.
-
-Hosts and staff only see orders and cash for their own organizer's events or the events they are assigned to. Payment verifiers and cashiers can take cash; only the event owner can reverse cash or issue refunds. Money is append-only: corrections are linked reversal rows, never edits. Still browser-local demo data: the administrator dashboards' platform stats, users, fees, health and audit panels.
+Hosts and staff only see orders and cash for their own organizer's events or the events they are assigned to. Payment verifiers and cashiers can take cash; only the event owner can reverse cash or issue refunds. Money is append-only: corrections are linked reversal rows, never edits.
 
 Seeded demo data also includes four Kingston Harbour orders in different payment states and a food-station staff account assigned to that event (`DemoOrdersSeeder.php`). `DemoSupportRequestsSeeder.php` adds a pending host application (from a demo applicant account) and an open dispute.
 
 **Tests:**
 
 ```sh
-npm test                                   # frontend (Vitest)
 cd backend && php artisan test             # backend feature tests (PHPUnit)
 cd backend && php tests/run_backend_tests.php   # legacy standalone service checks
 ```
 
-**Continuous integration:** `.github/workflows/ci.yml` runs on every push to `main` and on pull requests: the frontend type-check, build and Vitest suite, plus the backend PHPUnit tests, legacy service checks, PHP lint, and a full `migrate:fresh --seed`.
+**Continuous integration:** `.github/workflows/ci.yml` runs on every push to `main` and on pull requests: the backend PHPUnit tests (SQLite and MySQL 8), legacy service checks, PHP lint, and a full `migrate:fresh --seed`.
 
 **Customer messages:** customers get an SMS (and an email when their order has one) when an order is placed, payment is verified or rejected, cash is recorded, the order is ready for pickup, and everything has been handed over; hosts can also send event reminders. Messages go through the queue, so run a worker alongside the server:
 

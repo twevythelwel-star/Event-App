@@ -10,24 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  frontend:
-    name: Frontend (type-check, build, Vitest)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      # `npm run build` runs `tsc -b` first, so this is also the type check
-      - run: npm run build
-
-      - run: npm test
-
+  # The front end is Laravel Blade (backend/resources/views), tested by the backend jobs below.
   backend:
     name: Backend (PHPUnit, legacy checks, lint)
     runs-on: ubuntu-latest

@@ -804,20 +804,22 @@ class EventController extends Controller
     }
 
     /**
-     * Cancel the event.
+     * Cancel the event: it leaves discovery, ordering closes, and it can never be reopened. Existing orders and
+     * tickets are kept so refunds can be handled. The host gives a reason, which is written to the audit log.
      */
-    public function cancel(Request $request, string $id): JsonResponse
+    public function cancel(Request $request, string $id): mixed
     {
         $event = $this->managedEvent($request, $id);
-        $event->status = 'cancelled';
-        $event->is_ordering_open = false;
-        $event->save();
+        $data = $request->validate(['reason' => ['required', 'string', 'min:5', 'max:500']]);
+        $event = app(\App\Services\EventManagementService::class)->setStatus($request->user(), $event->id, 'cancelled');
+        \App\Services\AuditLogService::log(action: 'event_cancelled', targetEntity: 'events', targetId: (string) $event->id,
+            details: "Event '{$event->title}' cancelled: {$data['reason']}", actor: $request->user());
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Event marked as cancelled.',
-            'event' => $event,
-        ]);
+        if ($request->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Event cancelled.', 'event' => $event]);
+        }
+
+        return redirect()->route('host.dashboard')->with('status', "'{$event->title}' is cancelled. Ticket holders keep their orders until you refund them.");
     }
 
     /**
