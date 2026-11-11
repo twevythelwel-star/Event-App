@@ -21,7 +21,7 @@ class PaymentVerifiedOrRejectedNotification extends Notification implements Shou
         $this->isVerified = $isVerified;
         $statusKey = $isVerified ? 'verified' : 'rejected';
         $this->idempotencyKey = 'idemp_pay_' . $statusKey . '_' . ($orderData['orderNumber'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

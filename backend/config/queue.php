@@ -16,6 +16,16 @@ return [
     'default' => env('QUEUE_CONNECTION', 'database'),
 
     /*
+    | Queue names used by the application. Customer and host messages go to their own queue so a burst of
+    | them never delays other work. On Laravel Cloud each managed queue serves one queue name: create a
+    | managed queue with this name too, or set NOTIFICATIONS_QUEUE to an empty value to send messages to the
+    | default queue (needed on plans with a single managed queue).
+    */
+    'names' => [
+        'notifications' => env('NOTIFICATIONS_QUEUE', 'notifications') ?: null,
+    ],
+
+    /*
     |--------------------------------------------------------------------------
     | Queue Connections
     |--------------------------------------------------------------------------

@@ -17,7 +17,7 @@ class ComplianceDocumentReviewedNotification extends Notification implements Sho
 
     public function __construct(public readonly EventComplianceEvidence $evidence)
     {
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

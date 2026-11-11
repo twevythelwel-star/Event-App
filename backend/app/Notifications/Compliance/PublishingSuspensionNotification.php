@@ -19,7 +19,7 @@ class PublishingSuspensionNotification extends Notification implements ShouldQue
         public readonly string $reason,
         public readonly ?string $eventTitle = null,
     ) {
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

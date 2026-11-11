@@ -21,7 +21,7 @@ class TicketIssuedOrUpdatedNotification extends Notification implements ShouldQu
         $this->isUpdate = $isUpdate;
         $action = $isUpdate ? 'update_' . ($ticketData['version'] ?? '2') : 'issued';
         $this->idempotencyKey = 'idemp_tck_' . $action . '_' . ($ticketData['ticketCode'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

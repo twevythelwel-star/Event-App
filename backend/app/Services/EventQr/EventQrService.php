@@ -34,7 +34,11 @@ use Illuminate\Support\Facades\Storage;
  */
 class EventQrService
 {
-    private const DISK = 'local';
+    /** Uploaded media (flyers, QR artwork) lives on the configured media disk so ephemeral hosts can use object storage. */
+    private static function disk(): string
+    {
+        return \App\Services\MediaStorageService::diskName();
+    }
     private const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
     private const CODE_LENGTH = 10;
 
@@ -48,7 +52,7 @@ class EventQrService
     {
         $qr = $this->identityFor($event);
 
-        if ($qr->isReady() && Storage::disk(self::DISK)->exists($qr->asset_path)) {
+        if ($qr->isReady() && Storage::disk(self::disk())->exists($qr->asset_path)) {
             return $qr;
         }
 
@@ -77,8 +81,8 @@ class EventQrService
 
     public function svg(EventQrCode $qr): string
     {
-        if ($qr->asset_path && Storage::disk(self::DISK)->exists($qr->asset_path)) {
-            return (string) Storage::disk(self::DISK)->get($qr->asset_path);
+        if ($qr->asset_path && Storage::disk(self::disk())->exists($qr->asset_path)) {
+            return (string) Storage::disk(self::disk())->get($qr->asset_path);
         }
 
         return $this->renderer->svg($this->destinationUrl($qr), $this->designOf($qr));
@@ -147,7 +151,7 @@ class EventQrService
 
             $svg = $this->renderer->svg($url, $chosen);
             $path = "event-qr/{$event->id}/v{$version}.svg";
-            Storage::disk(self::DISK)->put($path, $svg);
+            Storage::disk(self::disk())->put($path, $svg);
 
             $previous = $qr->asset_path;
             DB::transaction(function () use ($qr, $chosen, $version, $path) {
@@ -163,7 +167,7 @@ class EventQrService
             });
 
             if ($previous && $previous !== $path) {
-                Storage::disk(self::DISK)->delete($previous);
+                Storage::disk(self::disk())->delete($previous);
             }
         } catch (\Throwable $e) {
             Log::warning('Event QR artwork generation failed', ['event_id' => $event->id, 'error' => $e->getMessage()]);
@@ -242,7 +246,7 @@ class EventQrService
         }
 
         try {
-            $disk = Storage::disk('s3_flyers');
+            $disk = Storage::disk(self::disk());
             if (!$disk->exists($path) || $disk->size($path) > 10 * 1024 * 1024) {
                 return [];
             }

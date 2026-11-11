@@ -18,7 +18,7 @@ class HostVerificationReviewedNotification extends Notification implements Shoul
 
     public function __construct(public readonly HostIdentityVerification $verification)
     {
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

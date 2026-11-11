@@ -18,7 +18,7 @@ class PickupInstructionsNotification extends Notification implements ShouldQueue
     {
         $this->pickupData = $pickupData;
         $this->idempotencyKey = 'idemp_pickup_instr_' . ($pickupData['orderNumber'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

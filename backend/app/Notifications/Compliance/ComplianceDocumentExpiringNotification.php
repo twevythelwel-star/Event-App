@@ -22,7 +22,7 @@ class ComplianceDocumentExpiringNotification extends Notification implements Sho
         public readonly int $daysLeft,
         public readonly string $url,
     ) {
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

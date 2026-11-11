@@ -43,9 +43,7 @@ class PaymentStatusService
             Log::info('payment.status_transition', ['order_id' => $locked->id, 'from' => $currentStatus, 'to' => $newStatus, 'actor_id' => $actor->id]);
             if ($newStatus === self::FAILED) {
                 Log::error('payment.failed', ['order_id' => $locked->id, 'actor_id' => $actor->id, 'method' => $locked->method]);
-                if (app()->environment('production')) {
-                    Log::channel('slack')->error('payment.failed', ['order_id' => $locked->id, 'actor_id' => $actor->id, 'method' => $locked->method]);
-                }
+                \App\Support\Alert::send('error', 'payment.failed', ['order_id' => $locked->id, 'actor_id' => $actor->id, 'method' => $locked->method]);
             }
             return true;
         });

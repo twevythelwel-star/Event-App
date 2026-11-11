@@ -150,10 +150,8 @@ final class StripePaymentReconciliationService
                 Log::critical('payments.reconciliation.mismatch', ['payment_id' => $lockedPayment->id,
                     'order_id' => $lockedOrder->id, 'provider_reference' => $intentId, 'mismatches' => $mismatches,
                     'provider_refunded_minor' => $providerRefunded]);
-                if (app()->environment('production')) {
-                    Log::channel('slack')->critical('payments.reconciliation.mismatch', [
-                        'payment_id' => $lockedPayment->id, 'order_id' => $lockedOrder->id, 'mismatches' => $mismatches]);
-                }
+                \App\Support\Alert::send('critical', 'payments.reconciliation.mismatch', [
+                    'payment_id' => $lockedPayment->id, 'order_id' => $lockedOrder->id, 'mismatches' => $mismatches]);
                 return 'mismatches';
             }
             return 'applied';

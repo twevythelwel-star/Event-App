@@ -18,7 +18,7 @@ class PaymentInstructionsNotification extends Notification implements ShouldQueu
     {
         $this->orderData = $orderData;
         $this->idempotencyKey = 'idemp_pay_instructions_' . ($orderData['orderNumber'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

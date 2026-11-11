@@ -18,7 +18,7 @@ class OrderCollectionCompletedNotification extends Notification implements Shoul
     {
         $this->collectionData = $collectionData;
         $this->idempotencyKey = 'idemp_collection_done_' . ($collectionData['orderNumber'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

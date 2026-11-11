@@ -33,6 +33,18 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(\App\Services\PhotoLibrary::class);
     }
 
+    /** Artisan commands that build or cache the application before it is configured for its environment. */
+    private static function isBuildCommand(): bool
+    {
+        if (!app()->runningInConsole()) {
+            return false;
+        }
+        $command = (string) ($_SERVER['argv'][1] ?? '');
+
+        return in_array($command, ['package:discover', 'config:cache', 'config:clear', 'route:cache', 'route:clear', 'view:cache',
+            'view:clear', 'event:cache', 'event:clear', 'optimize', 'optimize:clear', 'key:generate', 'list', 'about'], true);
+    }
+
     /**
      * Bootstrap any application services.
      */
@@ -42,8 +54,11 @@ class AppServiceProvider extends ServiceProvider
             Log::error('queue.job_failed', ['connection' => $event->connectionName, 'queue' => $event->job->getQueue(),
                 'job' => $event->job->resolveName(), 'uuid' => $event->job->uuid(), 'exception' => $event->exception::class]);
             if ($this->app->environment('production')) {
-                Log::channel('slack')->error('queue.job_failed', ['queue' => $event->job->getQueue(), 'job' => $event->job->resolveName(),
-                    'uuid' => $event->job->uuid(), 'exception_type' => $event->exception::class]);
+                try { // best effort: an unreachable alert webhook must not break failed-job handling
+                    Log::channel('slack')->error('queue.job_failed', ['queue' => $event->job->getQueue(), 'job' => $event->job->resolveName(),
+                        'uuid' => $event->job->uuid(), 'exception_type' => $event->exception::class]);
+                } catch (\Throwable) {
+                }
             }
         });
         DB::listen(function ($query): void {
@@ -52,7 +67,14 @@ class AppServiceProvider extends ServiceProvider
                     'query_fingerprint' => hash('sha256', preg_replace('/\s+/', ' ', trim($query->sql)))]);
             }
         });
-        if ($this->app->environment('production')) {
+        // Trusted proxies (see bootstrap/app.php): "*" trusts the platform load balancer; a list narrows it.
+        $proxies = (string) config('security.trusted_proxies', '*');
+        \Illuminate\Http\Middleware\TrustProxies::at($proxies === '*' ? '*' : array_values(array_filter(array_map('trim', explode(',', $proxies)))));
+
+        // The production configuration guard stops the app serving requests, running migrations or working the
+        // queue with unsafe settings. It does not run for build steps (composer's package:discover, the cache and
+        // optimize commands), which run before the real environment exists (CI, Laravel Cloud's build).
+        if ($this->app->environment('production') && !self::isBuildCommand()) {
             if (config('app.env') !== 'production' || config('app.debug') !== false) {
                 throw new RuntimeException('Production requires APP_ENV=production and APP_DEBUG=false.');
             }
@@ -72,19 +94,26 @@ class AppServiceProvider extends ServiceProvider
             if (config('queue.default') === 'sync' || config('cache.default') === 'array') {
                 throw new RuntimeException('Production requires durable queue and cache stores.');
             }
-            if (config('logging.default') !== 'daily'
-                || !str_starts_with((string) config('logging.channels.slack.url'), 'https://')) {
-                throw new RuntimeException('Production requires retained daily logs and a configured HTTPS critical-alert webhook.');
-            }
+            $logChannels = (array) config('logging.channels.stack.channels', []);
             if (config('logging.default') !== 'stack'
-                || !in_array('slack', config('logging.channels.stack.channels', []), true)
+                || !in_array('daily', $logChannels, true)
+                || !in_array('slack', $logChannels, true)
                 || !str_starts_with((string) config('logging.channels.slack.url'), 'https://')) {
-                throw new RuntimeException('Production requires durable logs and a configured HTTPS critical-alert webhook (LOG_STACK=daily,slack).');
+                throw new RuntimeException('Production requires durable daily logs and a configured HTTPS critical-alert webhook (LOG_CHANNEL=stack, LOG_STACK=daily,slack).');
             }
-            if (!str_contains((string) config('filesystems.disks.local.root'), '/storage/app/private')
-                || !is_dir((string) config('filesystems.disks.local.root'))
-                || !is_writable((string) config('filesystems.disks.local.root'))) {
-                throw new RuntimeException('Production private media storage is not configured to a durable private root.');
+            // Uploaded media and host ID documents: on the private local root (self-managed), or on an S3-compatible
+            // bucket (MEDIA_DISK / HOST_ID_STORAGE_DISK, required on hosts with an ephemeral filesystem).
+            foreach (array_unique([\App\Services\MediaStorageService::diskName(), (string) config('compliance.host_verification.storage_disk', 'local')]) as $diskName) {
+                $disk = (array) config("filesystems.disks.{$diskName}");
+                $ok = match ($disk['driver'] ?? null) {
+                    'local' => str_contains((string) ($disk['root'] ?? ''), '/storage/app/private')
+                        && is_dir((string) $disk['root']) && is_writable((string) $disk['root']),
+                    's3' => filled($disk['bucket'] ?? null) && ($disk['visibility'] ?? 'private') !== 'public',
+                    default => false,
+                };
+                if (!$ok) {
+                    throw new RuntimeException("Production storage disk '{$diskName}' is not a durable private root or a private S3 bucket.");
+                }
             }
             URL::forceScheme('https');
         }

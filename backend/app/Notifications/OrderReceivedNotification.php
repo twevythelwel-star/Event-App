@@ -24,7 +24,7 @@ class OrderReceivedNotification extends Notification implements ShouldQueue
         $this->orderData = $orderData;
         // Deterministic idempotency key: prevents duplicate receipts on job retries
         $this->idempotencyKey = 'idemp_order_received_' . ($orderData['orderNumber'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     /**

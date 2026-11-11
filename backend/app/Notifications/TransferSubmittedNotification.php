@@ -18,7 +18,7 @@ class TransferSubmittedNotification extends Notification implements ShouldQueue
     {
         $this->orderData = $orderData;
         $this->idempotencyKey = 'idemp_transfer_sub_' . ($orderData['orderNumber'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

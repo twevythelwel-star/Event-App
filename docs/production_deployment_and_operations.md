@@ -5,6 +5,9 @@ pgBackRest, Redis with Laravel Horizon, `spatie/laravel-backup`, scheduled comma
 None of these were installed or tested. Each section below says plainly whether something is **in place and
 verified**, **in place but not verified in production**, or **not in place (recommended)**.
 
+For Laravel Cloud specifically (ephemeral filesystem, managed queues, buckets, scheduler toggle) see
+`laravel_cloud_deployment.md`.
+
 ---
 
 ## 1. Platform baseline
@@ -53,8 +56,12 @@ viewer may see them:
 - `/events/{id}/qr/...` serves QR artwork to hosts, and `/e/{code}/qr.svg` serves it publicly for published
   events.
 
-The host event form writes flyers through the `s3_flyers` disk. Despite its name, that disk is a local disk on the
-same private root, so the flyer route finds the file.
+All uploads — flyers, menu photos, event QR artwork, host ID documents — go through `MediaStorageService`
+(or the host-verification disk config) on the disk named by `MEDIA_DISK` / `HOST_ID_STORAGE_DISK`, default
+`local` (the private root above). `league/flysystem-aws-s3-v3` is installed, so setting `MEDIA_DISK=s3` (with
+the `AWS_*` values, or the credentials a host injects) moves every upload to an S3-compatible bucket —
+required on hosts with an ephemeral filesystem such as Laravel Cloud (see `laravel_cloud_deployment.md`).
+Every file is still served through the app's authorized routes; buckets stay private.
 
 Production requirements:
 - `storage/` must be **persistent and shared across releases**. See the `shared/storage` link in §9. On a multi-server
@@ -62,9 +69,9 @@ Production requirements:
 - Set `PRIVATE_MEDIA_ROOT=/var/www/eventbite/shared/storage/app/private` so media paths stay stable across releases.
 - Back up `storage/app/private` together with the database (§6).
 
-**Not in place:** S3 or R2 object storage. To move to it, install `league/flysystem-aws-s3-v3`, switch the
-`s3_flyers` disk and `MediaStorageService::DISK` to an S3 disk at the same time, and copy the existing
-`tenants/` tree across.
+**Optional:** S3 or R2 object storage is supported (`MEDIA_DISK=s3`, `HOST_ID_STORAGE_DISK=s3`) for hosts with
+ephemeral filesystems; see §3 and `laravel_cloud_deployment.md`. To move an existing local tree to a bucket,
+upload the `tenants/` and `host-identity-documents/` prefixes, then switch the disk settings.
 
 ---
 
@@ -180,6 +187,12 @@ The app expects HTTPS in production. Required settings:
   durable storage, a real mail provider (`MAIL_MAILER`), `QUEUE_CONNECTION=database`, and a durable cache store.
   Laravel startup now fails in production when debug, URL, secure cookie, database, mail, queue/cache or media-root
   configuration is unsafe. `SESSION_HTTP_ONLY` and `SESSION_SAME_SITE=lax` remain secure defaults.
+- `TRUSTED_PROXIES=127.0.0.1` when NGINX on the same server proxies to PHP, so the app trusts only that proxy's
+  `X-Forwarded-*` headers (the default `*` suits a platform load balancer such as Laravel Cloud's).
+- The app sets its own security headers (`App\Http\Middleware\SecurityHeaders`): HSTS for one year on HTTPS
+  responses (`SECURITY_HSTS_MAX_AGE`), `nosniff`, `SAMEORIGIN` framing, a strict referrer policy and a
+  permissions policy. NGINX may repeat them; a header the response already has is not changed by the app.
+- Notifications queue on `notifications` (`NOTIFICATIONS_QUEUE`); the worker below listens on it and on `default`.
 
 Example NGINX origin configuration (replace the domain):
 ```nginx
@@ -218,12 +231,16 @@ server {
 
 ## 8. Logging, error monitoring and secrets
 
-- **Logging and critical alerts (implemented, target unverified):** configure `LOG_CHANNEL=daily`,
-  `LOG_SLACK_WEBHOOK_URL` (HTTPS secret), `LOG_LEVEL=info`, `LOG_SLACK_LEVEL=error`, and `LOG_DAILY_DAYS=14`.
-  Detailed exceptions stay in retained local logs; curated exception, queue and payment failure alerts go to Slack.
-  Startup refuses production without both channels configured.
+- **Logging and critical alerts (implemented, target unverified):** configure `LOG_CHANNEL=stack` with
+  `LOG_STACK=daily,slack`, `LOG_SLACK_WEBHOOK_URL` (HTTPS secret), `LOG_LEVEL=info`, `LOG_SLACK_LEVEL=error`,
+  and `LOG_DAILY_DAYS=14`. Detailed exceptions stay in retained local logs; curated exception, queue and
+  payment failure alerts go to Slack. Startup refuses production unless the stack contains both `daily` and
+  `slack` with an HTTPS webhook.
   Failed queue jobs, payment failures/transitions, slow requests, hashed failed sign-ins, and ticket redemption
   conflicts are logged. Do not include customer payment data or secrets in alert payloads.
+- **PII and secret redaction (in place):** `App\Logging\RedactSensitiveLogData` is tapped onto the `single`,
+  `daily`, `slack` and `stderr` channels. It replaces credential-, token-, card- and identity-document-shaped
+  keys and values with `[redacted]` before a record is written or alerted.
 - **Audit trail (in place):** security-relevant actions are written to `security_audit_logs`, and food handovers to
   `handover_audit_logs`. These include payment decisions, refunds, cash, check-ins and admin changes.
 - **Error monitoring:** Slack critical/error alerts are configured as above. Sentry is not installed; it remains
@@ -288,11 +305,12 @@ tested. Restore from backup (§6) instead if data was damaged.
 | Full test suite on SQLite, standalone checks, PHP lint | In place and verified | CI `backend` |
 | File storage (private local disk) | In place and verified | Feature tests (`FlyerStorageTest`, media and QR tests). Persistence across releases depends on the host |
 | Queue (database driver) | In place, not verified in production | Worker command in §4 |
-| Scheduler | Nothing scheduled | — |
+| Scheduler | In place (retention purge, reservation expiry, Stripe reconciliation) | §5 |
 | Backups and restore | Scripts supplied; no staging restore has been run | §6 |
 | HTTPS, secure cookies | Required and app startup guarded; host TLS not verified | §7 |
-| Error monitoring | Not in place | §8 |
-| Structured logging and PII redaction | Not in place | §8 |
+| Error monitoring | Slack alerts in place; Sentry not installed | §8 |
+| Structured logging and PII redaction | In place (`RedactSensitiveLogData` on all file/alert channels) | §8 |
+| S3-compatible object storage | Supported (`MEDIA_DISK=s3`, `HOST_ID_STORAGE_DISK=s3`); required on ephemeral hosts | §3, `laravel_cloud_deployment.md` |
 | Production configuration guard | In code; actual host variables still need validation | `AppServiceProvider` startup checks |
 | Ticket QR vs event QR | Separate IDs and routes; event QR cannot admit | `EventQrCodeTest`, `TicketCheckInTest` |
 | Mobile camera scan | Not verified on physical devices | Staging/device check required |

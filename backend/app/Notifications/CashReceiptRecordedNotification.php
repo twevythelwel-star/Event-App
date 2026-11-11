@@ -18,7 +18,7 @@ class CashReceiptRecordedNotification extends Notification implements ShouldQueu
     {
         $this->receiptData = $receiptData;
         $this->idempotencyKey = 'idemp_cash_rcpt_' . ($receiptData['receiptNumber'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

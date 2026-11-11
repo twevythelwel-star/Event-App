@@ -46,10 +46,10 @@ return [
             'report' => false,
         ],
 
-        // Flyers uploaded through the host's event form. Same private root as 'local', because that is where
-        // MediaStorageService and the public flyer route (api.media.flyer) read uploaded flyers from.
-        // Moving flyers to S3 later means changing both this disk and MediaStorageService::DISK together
-        // (and installing league/flysystem-aws-s3-v3).
+        // Legacy alias kept for any direct references: uploaded media (flyers, menu photos, event QR artwork)
+        // is written and read through MediaStorageService, which follows config/media.php (MEDIA_DISK). Set
+        // MEDIA_DISK to an S3-compatible disk on hosts with an ephemeral filesystem (e.g. Laravel Cloud);
+        // league/flysystem-aws-s3-v3 is installed for that.
         's3_flyers' => [
             'driver' => 'local',
             'root' => env('PRIVATE_MEDIA_ROOT', storage_path('app/private')),

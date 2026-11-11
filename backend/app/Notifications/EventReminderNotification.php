@@ -19,7 +19,7 @@ class EventReminderNotification extends Notification implements ShouldQueue
         $this->reminderData = $reminderData;
         $window = $reminderData['reminderWindow'] ?? '24h';
         $this->idempotencyKey = 'idemp_ev_remind_' . $window . '_' . ($reminderData['orderNumber'] ?? uniqid());
-        $this->onQueue('notifications');
+        $this->onQueue(config('queue.names.notifications'));
     }
 
     public function via(object $notifiable): array

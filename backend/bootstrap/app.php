@@ -19,6 +19,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Behind a load balancer that terminates TLS (Laravel Cloud), trust its X-Forwarded-* headers so HTTPS,
+        // secure cookies and the visitor IP are seen correctly. Which proxies: config security.trusted_proxies
+        // (TRUSTED_PROXIES), applied in AppServiceProvider once config is loaded.
+        $middleware->trustProxies(
+            headers: Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_HOST | Request::HEADER_X_FORWARDED_PORT | Request::HEADER_X_FORWARDED_PROTO,
+        );
+        $middleware->web(append: \App\Http\Middleware\SecurityHeaders::class);
         $middleware->append(LogSlowRequests::class);
         // Material policy changes are acknowledged at the next interaction; restricted actions wait until they are.
         $middleware->web(append: \App\Http\Middleware\RequirePolicyAcknowledgement::class);
@@ -34,11 +41,16 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->report(function (\Throwable $exception): void {
             if (app()->environment('production')) {
-                \Illuminate\Support\Facades\Log::channel('slack')->error('application.exception', [
-                    'exception_type' => $exception::class,
-                    'path' => app()->runningInConsole() ? 'console' : request()->path(),
-                    'request_id' => app()->runningInConsole() ? null : request()->header('X-Request-ID'),
-                ]);
+                // Best effort: an unreachable alert webhook must not replace the original exception.
+                try {
+                    \Illuminate\Support\Facades\Log::channel('slack')->error('application.exception', [
+                        'exception_type' => $exception::class,
+                        'path' => app()->runningInConsole() ? 'console' : request()->path(),
+                        'request_id' => app()->runningInConsole() ? null : request()->header('X-Request-ID'),
+                    ]);
+                } catch (\Throwable) {
+                    // The exception itself is still written to the daily log by the default reporter.
+                }
             }
         });
         $exceptions->shouldRenderJsonWhen(
