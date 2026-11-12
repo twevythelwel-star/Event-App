@@ -424,6 +424,18 @@ class Event extends Model
         return $media->where('media_type', 'gallery')->where('moderation_status', '!=', 'hidden')->values();
     }
 
+    /**
+     * Approved host photos of one kind ('cover' main photo, 'venue'), in the host's order.
+     *
+     * @return \Illuminate\Support\Collection<int, EventMedia>
+     */
+    public function visiblePhotos(string $kind): \Illuminate\Support\Collection
+    {
+        $media = $this->relationLoaded('mediaItems') ? $this->mediaItems : $this->mediaItems()->get();
+
+        return $media->where('media_type', $kind)->where('moderation_status', '!=', 'hidden')->sortBy('sort_order')->values();
+    }
+
     /** The schedule: activities in time order. */
     public function activities(): \Illuminate\Database\Eloquent\Relations\HasMany
     {

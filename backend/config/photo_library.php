@@ -59,6 +59,10 @@ return [
             'brief' => "Open-air concert at golden hour in a park: people on blankets and standing near the stage, musicians performing, string lights. {$common}"],
         'nightlife' => ['group' => 'music', 'label' => 'Nightlife event',
             'brief' => "Upscale nightlife evening: friends laughing at a lounge bar with cocktails, soft neon accents without text, dance floor in the background. {$common}"],
+        'rooftop_party' => ['group' => 'music', 'label' => 'Rooftop party',
+            'brief' => "Rooftop party at sunset: friends dancing and talking on an open-air terrace with string lights and plants, a city skyline softly out of focus with no recognisable buildings. {$common}"],
+        'arts_entertainment' => ['group' => 'music', 'label' => 'Art, dance and entertainment',
+            'brief' => "Live dance performance on a small outdoor stage: dancers mid-move in colourful costumes, an audience watching from benches, painted backdrop without text. {$common}"],
 
         // Food and cultural events
         'jamaican_fish_fry' => ['group' => 'food', 'label' => 'Jamaican fish fry',
@@ -89,6 +93,8 @@ return [
             'brief' => "Community fundraiser: volunteers serving food at a bake-and-food table, families donating, cheerful outdoor setting. No visible charity names or logos. {$common}"],
         'family_entertainment_day' => ['group' => 'community', 'label' => 'Family entertainment day',
             'brief' => "Family entertainment day: children watching a magician or entertainer, parents laughing, games and bouncy castle in the background. {$common}"],
+        'sports_outdoor' => ['group' => 'community', 'label' => 'Sports and outdoor activities',
+            'brief' => "Community sports day in a park: a friendly football match on grass, families cheering from the sideline with coolers and folding chairs, bright afternoon light, plain kits without logos or numbers. {$common}"],
 
         // Private and premium events
         'wedding' => ['group' => 'private', 'label' => 'Wedding',

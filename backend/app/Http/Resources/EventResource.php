@@ -294,6 +294,11 @@ class EventResource extends JsonResource
             return ['kind' => 'flyer', 'url' => (string) $this->flyer_path, 'alt' => (string) ($this->flyer_alt_text ?: "{$title} event flyer"), 'label' => null];
         }
 
+        // The host's own main photo of this event.
+        if ($main = $this->resource->visiblePhotos('cover')->first()) {
+            return ['kind' => 'photo', 'url' => $main->responsiveImage()->src, 'alt' => (string) ($main->alt_text ?: "{$title} event photo"), 'label' => null];
+        }
+
         // An approved library photo of the kind of event the host said this is, labelled as illustrative.
         if ($photo = app(\App\Services\PhotoLibrary::class)->forEvent($this->resource)) {
             return ['kind' => 'library', 'url' => '/api/v1/media/library/' . $photo->id . '?variant=large&format=webp&v=' . substr(sha1((string) $photo->path), 0, 10),

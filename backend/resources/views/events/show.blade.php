@@ -347,6 +347,15 @@
                 </div>
             </div>
 
+            @php $venuePhotos = $event->visiblePhotos('venue'); @endphp
+            @if($venuePhotos->isNotEmpty())
+                {{-- The host's own photos of the venue: what the place looks like on arrival. --}}
+                <ul class="eb-venue-photos" aria-label="Photos of the venue">
+                    @foreach($venuePhotos as $photo)
+                        <li><x-responsive-image :image="$photo->responsiveImage()" :alt="$photo->alt_text" sizes="(min-width: 768px) 240px, 70vw" /></li>
+                    @endforeach
+                </ul>
+            @endif
             <!-- 3. Section Switcher Tabs (Tickets · Food · Details) -->
             <div>
                 <div class="section-tab-nav" role="tablist">

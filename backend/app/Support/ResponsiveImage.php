@@ -67,6 +67,11 @@ final class ResponsiveImage
             return new self($path, alt: $alt, focalX: $x, focalY: $y);
         }
 
+        // No flyer: the host's own main photo of this event.
+        if ($main = $event->visiblePhotos('cover')->first()) {
+            return $main->responsiveImage();
+        }
+
         // No flyer: an approved library photograph of the kind of event the host said this is, labelled as illustrative.
         if ($photo = app(\App\Services\PhotoLibrary::class)->forEvent($event)) {
             return self::forLibraryPhoto($photo, route('events.generated-flyer', $event->id, false),

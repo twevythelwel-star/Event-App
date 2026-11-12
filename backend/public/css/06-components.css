@@ -806,3 +806,16 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
 .eb-sponsor-name { display: flex; align-items: center; justify-content: center; aspect-ratio: 3 / 1; font-weight: 800; color: var(--color-text-primary); text-align: center; }
 .eb-vendor-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
 .eb-ticket-sponsors { margin: 0; font-size: 0.85rem; color: var(--color-text-secondary); text-align: center; }
+
+/* Phones: the homepage's event sections are swipeable rails (one card and a peek of the next), and the featured
+   flyer or photo leads the hero, above the search. Tablets and desktops keep the grids. */
+@media (max-width: 767px) {
+  .eb-home-rail { display: flex; gap: var(--space-3); overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding-bottom: var(--space-2); scrollbar-width: thin; }
+  .eb-home-rail > * { flex: 0 0 84%; min-width: 0; scroll-snap-align: start; }
+  .eb-hero-grid > .eb-hero-art { order: -1; }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: no-preference) { .eb-home-rail { scroll-behavior: smooth; } }
+
+/* The host's venue photos on the event page: a short row that scrolls sideways on phones. */
+.eb-venue-photos { display: flex; gap: var(--space-3); margin: 0; padding: 0 0 var(--space-2); list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; }
+.eb-venue-photos > li { flex: 0 0 min(240px, 70%); scroll-snap-align: start; aspect-ratio: var(--ratio-photo); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-border); }

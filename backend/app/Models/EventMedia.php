@@ -14,7 +14,14 @@ class EventMedia extends Model
 {
     use HasUuids;
 
-    public const TYPES = ['cover', 'gallery', 'organization_logo', 'sponsor_logo'];
+    public const TYPES = ['cover', 'gallery', 'venue', 'organization_logo', 'sponsor_logo'];
+
+    /** The kinds of photo a host adds on the event page: name, and how many the event may have. */
+    public const HOST_PHOTO_KINDS = [
+        'gallery' => ['label' => 'Gallery photo', 'limit' => 12],
+        'cover' => ['label' => 'Main photo (shown when there is no flyer)', 'limit' => 1],
+        'venue' => ['label' => 'Venue photo', 'limit' => 8],
+    ];
 
     /** approved: shown; hidden: an administrator took it down (kept, so the decision can be reversed). */
     public const MODERATION_STATUSES = ['approved', 'hidden'];

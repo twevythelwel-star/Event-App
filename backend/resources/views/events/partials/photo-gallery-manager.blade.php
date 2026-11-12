@@ -4,13 +4,15 @@
     not see them. Each form is separate from the main event form.
 --}}
 @php
-    $gallery = $event->mediaItems()->where('media_type', 'gallery')->orderBy('sort_order')->get();
-    $limit = 12;
+    $kinds = \App\Models\EventMedia::HOST_PHOTO_KINDS;
+    $gallery = $event->mediaItems()->whereIn('media_type', array_keys($kinds))->orderByRaw("case media_type when 'cover' then 0 when 'gallery' then 1 else 2 end")->orderBy('sort_order')->get();
+    $counts = $gallery->countBy('media_type');
+    $open = collect($kinds)->filter(fn ($k, $type) => $type === 'cover' || ($counts[$type] ?? 0) < $k['limit']);
 @endphp
 <section class="eb-panel card" style="margin: 0;" id="event-photos" aria-labelledby="event-photos-heading">
     <div class="eb-card-header card-header"><div>
-        <h2 id="event-photos-heading" class="eb-card-title card-title">Event photos ({{ $gallery->count() }} of {{ $limit }})</h2>
-        <p class="eb-card-subtitle card-subtitle">Real photos of this event, its venue or past editions. Guests see them on the event page. Your original files are kept; the site shows resized copies.</p>
+        <h2 id="event-photos-heading" class="eb-card-title card-title">Event photos ({{ $counts['gallery'] ?? 0 }} of {{ $kinds['gallery']['limit'] }})</h2>
+        <p class="eb-card-subtitle card-subtitle">Real photos of this event, its venue or past editions: a main photo (the event's picture until you upload a flyer), up to 12 gallery photos and up to 8 venue photos. Guests see them on the event page. Your original files are kept; the site shows resized copies.</p>
     </div></div>
 
     @if($gallery->isNotEmpty())
@@ -23,6 +25,7 @@
                             <span class="eb-badge eb-badge-error eb-photo-manager-flag">Hidden by an administrator</span>
                         @endif
                     </div>
+                    <span class="eb-badge {{ $media->media_type === 'cover' ? 'eb-badge-purple' : '' }}" style="align-self: flex-start;">{{ $media->media_type === 'cover' ? 'Main photo' : ($media->media_type === 'venue' ? 'Venue photo' : 'Gallery photo') }}</span>
                     @if($media->isHidden() && $media->moderation_note)
                         <p class="eb-help-text" style="margin: 0;">Reason: {{ $media->moderation_note }}</p>
                     @endif
@@ -52,12 +55,18 @@
         <x-empty-state title="No photos yet" description="Add photos of the venue, the food or past editions so guests know what to expect." illustration="events" />
     @endif
 
-    @if($gallery->count() < $limit)
+    @if($open->isNotEmpty())
         <form method="POST" action="{{ route('events.photos.store', $event->id) }}" enctype="multipart/form-data" class="eb-stack eb-photo-upload" style="gap: var(--space-3);" data-photo-upload>
             @csrf
             <h3 class="eb-text-label" style="margin: 0;">Add a photo</h3>
             <div class="eb-grid-2" style="align-items: start;">
                 <div class="eb-stack" style="gap: var(--space-2);">
+                    <label for="gallery-kind" class="eb-label">Kind of photo</label>
+                    <select id="gallery-kind" name="kind" class="eb-input">
+                        @foreach($open as $type => $k)
+                            <option value="{{ $type }}" @selected(old('kind', 'gallery') === $type)>{{ $k['label'] }}{{ $type === 'cover' && ($counts['cover'] ?? 0) > 0 ? ' (replaces the current one)' : '' }}</option>
+                        @endforeach
+                    </select>
                     <label for="gallery-photo" class="eb-label">Photo</label>
                     <input type="file" id="gallery-photo" name="photo" accept="image/jpeg,image/png,image/webp" class="eb-input" required>
                     @error('photo')<div class="eb-field-error" role="alert"><span>{{ $message }}</span></div>@enderror

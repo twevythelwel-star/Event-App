@@ -203,7 +203,7 @@
             @if($near->isEmpty())
                 <x-empty-state illustration="events" title="No upcoming events in {{ $market->state_code }} yet" description="Try another city, or browse every event." />
             @else
-                <div class="eb-grid-4">
+                <div class="eb-grid-4 eb-home-rail">
                     @foreach($near as $event)
                         <x-event-card :event="$event" />
                     @endforeach
@@ -226,7 +226,7 @@
                 </div>
                 @if($section['more'])<a class="eb-text-label" href="{{ $section['more'] }}">See all →</a>@endif
             </div>
-            <div class="eb-grid-4">
+            <div class="eb-grid-4 eb-home-rail">
                 @foreach($section['events'] as $event)
                     <x-event-card :event="$event" />
                 @endforeach

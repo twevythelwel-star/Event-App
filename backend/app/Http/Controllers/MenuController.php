@@ -15,7 +15,8 @@ class MenuController extends Controller
      */
     public function index(string $eventSlug): JsonResponse
     {
-        $event = Event::where('slug', $eventSlug)->first();
+        // Public: only a published event's menu, and only the fields a customer sees.
+        $event = Event::where('slug', $eventSlug)->where('status', 'published')->first();
         if (!$event) {
             return response()->json(['error' => 'Event not found.'], 404);
         }
@@ -33,7 +34,13 @@ class MenuController extends Controller
                 'packaging_fee_jmd' => $event->packaging_fee_jmd,
                 'is_ordering_open' => $event->is_ordering_open,
             ],
-            'menu' => $items,
+            // Never storage paths, kitchen notes, vendor routing, moderation state or bookkeeping columns.
+            'menu' => $items->map(fn (MenuItem $item) => $item->only([
+                'id', 'name', 'category', 'description', 'pricing_type', 'price_usd', 'price_minor', 'currency', 'custom_option_groups',
+                'custom_amount_config', 'allow_special_instructions', 'available_stock', 'cuisine', 'dietary_tags', 'allergens',
+                'spice_level', 'portion_sizes', 'item_type', 'ingredients', 'guest_instructions', 'max_per_order', 'available_from',
+                'available_until', 'is_featured', 'country_of_origin', 'image_is_illustrative', 'image_alt_text',
+            ]))->values(),
         ]);
     }
 
