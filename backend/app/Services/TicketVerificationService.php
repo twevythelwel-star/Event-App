@@ -41,22 +41,58 @@ class TicketVerificationService
         bool $manual = false,
         ?string $requestId = null
     ): array {
-        $isToken = str_starts_with($identifier, 'tok_');
+        $identifier = trim($identifier);
 
-        // Find the order by identifier
-        $order = Order::withoutGlobalScopes()->whereNull('deleted_at')
-            ->where('event_id', $event->id)
-            ->when($isToken,
-                fn ($q) => $q->where('secure_ticket_token', $identifier),
-                fn ($q) => $q->where(fn ($w) => $w->where('ticket_code', $identifier)->orWhere('order_number', $identifier)))
-            ->first();
+        // Architecture A vs B guardrail: Public Event QR codes can never be used for gate admission
+        if (\App\Services\EventQr\EventQrService::isPromotionalEventQrPayload($identifier)) {
+            $reason = 'Promotional Event QR scanned — DO NOT ADMIT. Public event QR codes only open the event page and cannot admit guests.';
+            AuditLogService::log(
+                action: 'ticket_redemption_rejected',
+                targetEntity: 'events',
+                targetId: (string) $event->id,
+                details: "Public promotional event QR scanned at gate by {$verifier->email} ({$identifier}). Reason: {$reason}",
+                actor: $verifier,
+                organizerId: (string) $event->organizer_id,
+                eventId: (string) $event->id
+            );
 
-        if (!$order) {
             return [
                 'success' => false,
                 'valid' => false,
                 'already_admitted' => false,
-                'rejection_reason' => 'No ticket for this event matches that code.',
+                'promotional_qr_rejected' => true,
+                'rejection_reason' => $reason,
+                'ticket' => [],
+            ];
+        }
+
+        $isToken = str_starts_with($identifier, 'tok_');
+
+        // Find the order by SHA-256 token hash (or ticket_code / order_number for supervisor manual verification)
+        $order = Order::withoutGlobalScopes()->whereNull('deleted_at')
+            ->where('event_id', $event->id)
+            ->when($isToken,
+                fn ($q) => $q->whereTicketToken($identifier),
+                fn ($q) => $q->where(fn ($w) => $w->where('ticket_code', $identifier)->orWhere('order_number', $identifier)))
+            ->first();
+
+        if (!$order) {
+            $reason = 'No ticket for this event matches that code.';
+            AuditLogService::log(
+                action: 'ticket_redemption_rejected',
+                targetEntity: 'events',
+                targetId: (string) $event->id,
+                details: "Unrecognized, fake, or replaced ticket identifier rejected at gate by {$verifier->email}.",
+                actor: $verifier,
+                organizerId: (string) $event->organizer_id,
+                eventId: (string) $event->id
+            );
+
+            return [
+                'success' => false,
+                'valid' => false,
+                'already_admitted' => false,
+                'rejection_reason' => $reason,
                 'ticket' => [],
             ];
         }
@@ -112,15 +148,16 @@ class TicketVerificationService
             $rejectionReason = $rejectionReason ?? "Event mismatch: Ticket belongs to event {$order->event_id}, not {$event->id}.";
         }
 
-        // 3. Payment or authorized admission state check
+        // 3. Revocation status check (immediate server-side revocation or terminal revoked status)
+        if ($order->isTicketRevoked()) {
+            $detail = $order->revocation_reason ?: "status: {$order->status}";
+            $rejectionReason = $rejectionReason ?? "Ticket has been revoked ({$detail}).";
+        }
+
+        // 4. Payment or authorized admission state check
         $isPaidOrAuthorized = in_array($order->status, ['paid', 'confirmed'], true) || $order->authorized_unpaid === true;
         if (!$isPaidOrAuthorized) {
             $rejectionReason = $rejectionReason ?? "Invalid admission state: Ticket status is '{$order->status}'. Must be paid, confirmed, or authorized unpaid.";
-        }
-
-        // 4. Revocation status check
-        if (in_array($order->status, ['refunded', 'rejected', 'cancelled', 'expired'], true)) {
-            $rejectionReason = $rejectionReason ?? "Ticket has been revoked (status: {$order->status}).";
         }
 
         // 5. Prior admission check (duplicate redemption prevention)
@@ -195,6 +232,11 @@ class TicketVerificationService
         // Check if event is still active
         if ($order->event && $order->event->status !== 'published') {
             return 'Event is not currently active for admission.';
+        }
+
+        // A finished event's tickets are keepsakes, never valid for admission again.
+        if ($order->event && \App\Support\TicketLifecycle::eventIsOver($order->event)) {
+            return 'This event has ended; admission is closed.';
         }
 
         // Check if ticket has any custom restrictions (stored in ticket_restrictions JSON field)
@@ -313,12 +355,20 @@ class TicketVerificationService
     }
 
     /**
-     * Generate a new secure ticket token.
+     * Validate that a QR token has at least 256 bits of cryptographic entropy (tok_ + 64 hex chars).
+     */
+    public function has256BitEntropy(string $token): bool
+    {
+        return (bool) preg_match('/^tok_[a-f0-9]{64}$/i', $token);
+    }
+
+    /**
+     * Generate a new secure ticket token with 256 bits of CSPRNG randomness.
      *
      * @return string
      */
     public static function generateSecureToken(): string
     {
-        return 'tok_' . \Illuminate\Support\Str::random(32);
+        return Order::generateSecureTicketToken();
     }
 }

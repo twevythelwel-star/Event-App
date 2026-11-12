@@ -208,7 +208,8 @@ class EventStudioRequirementsTest extends TestCase
             'customer_name' => 'Ana Guest', 'customer_phone' => '+13055550199', 'method' => 'cash', 'items' => [['menu_item_id' => $tiers[0]['id'], 'quantity' => 1]],
         ], $buyer)['order']);
         foreach ($orders as $order) {
-            $this->assertMatchesRegularExpression('/^tok_[A-Za-z0-9]{32}$/', $order->secure_ticket_token);
+            // 256-bit tokens: 64 hex characters after the prefix (Order::generateSecureTicketToken).
+            $this->assertMatchesRegularExpression('/^tok_[a-f0-9]{64}$/', $order->secure_ticket_token);
         }
         $this->assertNotSame($orders[0]->secure_ticket_token, $orders[1]->secure_ticket_token);
 

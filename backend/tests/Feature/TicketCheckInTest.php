@@ -116,6 +116,24 @@ class TicketCheckInTest extends TestCase
         $this->assertDatabaseHas('security_audit_logs', ['action' => 'ticket_redemption_rejected', 'target_id' => $order->id]);
     }
 
+    public function test_scan_before_doors_open_is_refused_with_event_not_open(): void
+    {
+        // Doors open tomorrow: no ticket may be admitted before the gate opens.
+        $this->event->forceFill([
+            'event_date_iso' => now()->addDay()->toDateString(),
+            'timezone' => 'UTC',
+            'doors_open_time' => '00:01',
+        ])->save();
+
+        $order = $this->order('paid', 'GATE-EARLY');
+
+        $this->scan($order->secure_ticket_token)
+            ->assertOk()
+            ->assertJson(['success' => false, 'reason_code' => 'event_not_open']);
+
+        $this->assertNull($order->fresh()->checked_in_at);
+    }
+
     public function test_unpaid_ticket_is_refused_and_not_checked_in(): void
     {
         $order = $this->order('payment_submitted', 'GATE-UNPAID');

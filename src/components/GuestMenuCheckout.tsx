@@ -176,6 +176,9 @@ export const GuestMenuCheckout: React.FC<Props> = ({
   const [selectedMethod, setSelectedMethod] = useState<MethodId | "">("");
   const [paymentReference, setPaymentReference] = useState("");
   const [senderName, setSenderName] = useState("");
+  const [selectedPickupWindow, setSelectedPickupWindow] = useState<string>(
+    "12:00 PM – 12:30 PM (Lunch Wave 1)"
+  );
 
   // Ticket viewing state
   const [issuedTicket, setIssuedTicket] = useState<TicketOrder | null>(null);
@@ -488,6 +491,8 @@ export const GuestMenuCheckout: React.FC<Props> = ({
       currency: settings.currency,
       status: initialStatus,
       fulfillmentStatus: "unprepared",
+      pickupNumber: `PU-${String(randomDigits).slice(-3)}`,
+      pickupWindow: selectedPickupWindow,
       paymentReference: paymentReference.trim() || undefined,
       senderName: senderName.trim() || customerName.trim(),
       authorizedUnpaid: selectedMethod === "cash",
@@ -826,6 +831,8 @@ export const GuestMenuCheckout: React.FC<Props> = ({
           }}
           onProceedToCheckout={() => setActiveStep("checkout")}
           formatMoney={formatMoney}
+          selectedPickupWindow={selectedPickupWindow}
+          onSelectPickupWindow={setSelectedPickupWindow}
         />
       )}
 

@@ -50,7 +50,13 @@ class OrderItem extends Model
     public const PACKAGE = 'package';
     public const COMPONENT = 'component';
 
-    public const PREPARATION_STATUSES = ['pending' => 'Not started', 'preparing' => 'Preparing', 'ready' => 'Ready for pickup'];
+    public const PREPARATION_STATUSES = [
+        'pending' => 'Not started',
+        'accepted' => 'Accepted',
+        'preparing' => 'Preparing',
+        'ready' => 'Ready for pickup',
+        'collected' => 'Collected',
+    ];
 
     protected $casts = [
         'base_price' => 'decimal:2',

@@ -6,40 +6,41 @@
 @php
     $authUser = $user ?? Auth::user();
     $isAuthenticated = $authUser !== null;
+    $customerSurface = request()->routeIs('home', 'events.*', 'saved.*', 'attendee.dashboard', 'tickets.*', 'settings.*');
 
-    // Customer Mobile Navigation items:
-    // Home is public; My Tickets, Orders, and Profile require an authenticated account.
+    // Customer mobile navigation: Discover / My Tickets / Saved / Profile (docs/eventbite-mobile-design-audit.md).
+    // Home is the logo; order history stays reachable from the dashboard's Orders section.
     $items = [
         [
-            'key' => 'home',
-            'label' => 'Home',
-            'icon' => 'home',
+            'key' => 'discover',
+            'label' => 'Discover',
+            'icon' => 'search',
             'href' => route('events.index'),
             'visible' => true,
-            'active' => $active === 'home' || request()->routeIs('events.*') || request()->is('/'),
+            'active' => $active === 'discover' || request()->routeIs('home', 'events.*'),
         ],
         [
             'key' => 'tickets',
             'label' => 'My Tickets',
             'icon' => 'tickets',
-            'href' => $isAuthenticated ? route('attendee.dashboard') : null,
+            'href' => $isAuthenticated ? route('tickets.collection') : null,
             'visible' => $isAuthenticated,
-            'active' => $active === 'tickets' || request()->routeIs('attendee.dashboard'),
+            'active' => $active === 'tickets' || request()->routeIs('attendee.dashboard', 'tickets.collection', 'tickets.show'),
         ],
         [
-            'key' => 'orders',
-            'label' => 'Orders',
-            'icon' => 'orders',
-            'href' => $isAuthenticated ? (route('attendee.dashboard') . '#orders') : null,
+            'key' => 'saved',
+            'label' => 'Saved',
+            'icon' => 'heart',
+            'href' => $isAuthenticated ? route('saved.index') : null,
             'visible' => $isAuthenticated,
-            'active' => $active === 'orders',
+            'active' => $active === 'saved' || request()->routeIs('saved.*'),
         ],
         [
             'key' => 'profile',
             'label' => 'Profile',
             'icon' => 'profile',
             'href' => $isAuthenticated ? route('settings.show') : route('login'),
-            'visible' => $isAuthenticated,
+            'visible' => true,
             'active' => $active === 'profile' || request()->routeIs('settings.*'),
         ],
     ];
@@ -47,6 +48,7 @@
     $visibleItems = array_values(array_filter($items, fn (array $item) => $item['visible'] && !empty($item['href'])));
 @endphp
 
+@if($customerSurface)
 <nav class="eb-customer-bottom-nav eb-customer-bottom-nav-mobile-only" aria-label="Customer mobile navigation">
     @foreach($visibleItems as $item)
         <a
@@ -59,4 +61,5 @@
         </a>
     @endforeach
 </nav>
+@endif
 

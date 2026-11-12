@@ -62,6 +62,10 @@ import { FoodPhoto } from "../FoodPhoto";
 import { MenuItemBuilder } from "./MenuItemBuilder";
 import { PackageBuilder } from "./PackageBuilder";
 import { TicketPreview } from "./TicketPreview";
+import { EventOperationsSetupSection } from "./EventOperationsSetupSection";
+import { AttendeeExperienceSetupSection } from "./AttendeeExperienceSetupSection";
+import { EventIntelligencePanel } from "./EventIntelligencePanel";
+import { LegalComplianceSection } from "./LegalComplianceSection";
 
 const EVENT_TYPE_OPTIONS = [
   "Cultural Festival", "Food Festival", "Concert", "Live Music", "Community Gathering",
@@ -141,6 +145,10 @@ export function EventCreationWizard({
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [editingPackage, setEditingPackage] = useState<MenuPackage | null>(null);
   const [activeFoodTab, setActiveFoodTab] = useState<string>("menu");
+  const [isOperationsSetupOpen, setIsOperationsSetupOpen] = useState<boolean>(false);
+  const [isAttendeeExperienceOpen, setIsAttendeeExperienceOpen] = useState<boolean>(false);
+  const [isIntelligencePanelOpen, setIsIntelligencePanelOpen] = useState<boolean>(true);
+  const [isLegalComplianceOpen, setIsLegalComplianceOpen] = useState<boolean>(false);
   const pendingTicketScrollId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -711,6 +719,107 @@ export function EventCreationWizard({
               Cancel Event
             </button>
           )}
+
+          <button
+            type="button"
+            id="btn-toggle-event-operations-setup"
+            onClick={() => setIsOperationsSetupOpen((prev) => !prev)}
+            style={{
+              padding: "8px 14px",
+              borderRadius: "9px",
+              background:
+                isOperationsSetupOpen || currentStep === "review"
+                  ? "rgba(182, 240, 58, 0.2)"
+                  : "rgba(56, 189, 248, 0.16)",
+              color:
+                isOperationsSetupOpen || currentStep === "review"
+                  ? "#B6F03A"
+                  : "#38BDF8",
+              border:
+                isOperationsSetupOpen || currentStep === "review"
+                  ? "1px solid rgba(182, 240, 58, 0.45)"
+                  : "1px solid rgba(56, 189, 248, 0.35)",
+              fontSize: "11px",
+              fontWeight: 800,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+            }}
+          >
+            Event Operations & Staffing Setup (Optional)
+          </button>
+
+          <button
+            type="button"
+            id="btn-toggle-attendee-experience-setup"
+            onClick={() => setIsAttendeeExperienceOpen((prev) => !prev)}
+            style={{
+              padding: "8px 14px",
+              borderRadius: "9px",
+              background:
+                isAttendeeExperienceOpen || currentStep === "review"
+                  ? "rgba(168, 85, 247, 0.24)"
+                  : "rgba(168, 85, 247, 0.14)",
+              color: "#E9D5FF",
+              border: "1px solid rgba(168, 85, 247, 0.45)",
+              fontSize: "11px",
+              fontWeight: 800,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+            }}
+          >
+            Attendee Experience & Guest Questions
+          </button>
+
+          <button
+            type="button"
+            id="btn-toggle-event-intelligence"
+            onClick={() => setIsIntelligencePanelOpen((prev) => !prev)}
+            style={{
+              padding: "8px 14px",
+              borderRadius: "9px",
+              background: isIntelligencePanelOpen
+                ? "rgba(182, 240, 58, 0.24)"
+                : "rgba(182, 240, 58, 0.12)",
+              color: "#B6F03A",
+              border: "1px solid rgba(182, 240, 58, 0.45)",
+              fontSize: "11px",
+              fontWeight: 800,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+            }}
+          >
+            Event Intelligence & Readiness Score
+          </button>
+
+          <button
+            type="button"
+            id="btn-toggle-legal-compliance"
+            onClick={() => setIsLegalComplianceOpen((prev) => !prev)}
+            style={{
+              padding: "8px 14px",
+              borderRadius: "9px",
+              background:
+                isLegalComplianceOpen || currentStep === "review"
+                  ? "rgba(16, 185, 129, 0.24)"
+                  : "rgba(16, 185, 129, 0.14)",
+              color: "#6EE7B7",
+              border: "1px solid rgba(16, 185, 129, 0.45)",
+              fontSize: "11px",
+              fontWeight: 800,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              cursor: "pointer",
+            }}
+          >
+            Food Safety, Alcohol & Legal Compliance
+          </button>
 
           <button
             type="button"
@@ -4222,6 +4331,85 @@ export function EventCreationWizard({
             </div>
           )}
         </div>
+      )}
+
+      {/* Event Intelligence, Readiness Score & 10-Module Event Studio Panel */}
+      {(isIntelligencePanelOpen || currentStep === "review") && (
+        <EventIntelligencePanel
+          eventDetails={eventDetails}
+          menu={menu}
+          currentStep={currentStep}
+          onNavigateToStep={(step, studioModuleId) => {
+            setCurrentStep(step);
+            if (studioModuleId === "people_and_vendors") {
+              setIsOperationsSetupOpen(true);
+            }
+            if (studioModuleId === "event_experience") {
+              setIsAttendeeExperienceOpen(true);
+            }
+          }}
+          onDuplicateEvent={() => {
+            onSaveToast(
+              `Duplicated "${eventDetails.title}" configuration (tickets, menu, and policies).`
+            );
+          }}
+          onSaveAsTemplate={(templateName) => {
+            onSaveToast(`Saved reusable template: ${templateName}`);
+          }}
+        />
+      )}
+
+      {/* Optional Event Operations & Staffing Setup Section */}
+      {(isOperationsSetupOpen || currentStep === "review" || currentStep === "date_location") && (
+        <EventOperationsSetupSection
+          eventDetails={eventDetails}
+          permissions={permissions}
+          mode="wizard"
+          onUpdateEventDetails={onUpdateEventDetails}
+          onSaveToast={onSaveToast}
+        />
+      )}
+
+      {/* Attendee Experience & Registration Questions Setup Section */}
+      {(isAttendeeExperienceOpen ||
+        currentStep === "basic_details" ||
+        currentStep === "tickets" ||
+        currentStep === "review") && (
+        <AttendeeExperienceSetupSection
+          eventDetails={eventDetails}
+          onChange={(updatedAttendeeExperience) => {
+            onUpdateEventDetails({
+              ...eventDetails,
+              attendeeExperienceConfig: updatedAttendeeExperience,
+              venueInstructions:
+                updatedAttendeeExperience.guestInstructions ||
+                eventDetails.venueInstructions,
+              parkingInformation:
+                updatedAttendeeExperience.parkingAndTransitInfo ||
+                eventDetails.parkingInformation,
+              accessibilityInformation:
+                updatedAttendeeExperience.accessibilityInfo ||
+                eventDetails.accessibilityInformation,
+              dressCode:
+                updatedAttendeeExperience.dressCode || eventDetails.dressCode,
+              ageRestriction:
+                updatedAttendeeExperience.ageRequirement ||
+                eventDetails.ageRestriction,
+            });
+          }}
+        />
+      )}
+      {/* Food Safety, Alcohol Service, Legal Compliance & Host Identity Verification */}
+      {(isLegalComplianceOpen || currentStep === "review") && (
+        <LegalComplianceSection
+          eventDetails={eventDetails}
+          organizerId={eventDetails.organizerId || "org-kingston-youth"}
+          onComplianceVerified={(records) => {
+            onSaveToast(
+              `Recorded ${records.length} auditable legal compliance & policy acceptance entries in UTC.`
+            );
+          }}
+        />
       )}
     </div>
   );

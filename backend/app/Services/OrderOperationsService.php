@@ -52,7 +52,7 @@ class OrderOperationsService
         'rejected' => 'rejected', 'refunded' => 'refunded', 'cancelled' => 'cancelled', 'expired' => 'expired',
     ];
 
-    public const FULFILLMENT_STATUSES = ['unprepared', 'preparing', 'ready_for_pickup', 'collected'];
+    public const FULFILLMENT_STATUSES = ['unprepared', 'accepted', 'preparing', 'ready_for_pickup', 'collected'];
 
     /**
      * @return array{verify: bool, collect: bool, scan: bool, cash: bool, reverse: bool, refund: bool}
@@ -140,7 +140,7 @@ class OrderOperationsService
             ->where(function (Builder $q) use ($code) {
                 $q->where('ticket_code', strtoupper($code))
                     ->orWhere('order_number', strtoupper($code))
-                    ->orWhere('secure_ticket_token', $code);
+                    ->orWhere(fn (Builder $t) => $t->whereTicketToken($code));
             })
             ->first();
     }

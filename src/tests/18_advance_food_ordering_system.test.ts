@@ -1,6 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { EventDetails, MenuItem, TicketOrder } from "../types";
 import {
+  KDS_STAGES,
+  getKdsStageMeta,
+  getNextKdsStatus,
+  getOrderPickupNumber,
+  getOrderPickupWindow,
+  getEnrichedFoodMeta,
+  computeFoodWasteAndInventoryReport,
+} from "../lib/foodCommerce";
+import {
   calculateItemFinalPrice,
   calculateOrderTotals,
   fromMinorUnits,
@@ -379,6 +388,147 @@ describe("18: Advance Food-Ordering System Suite", () => {
       const mismatchRetrieval = retrieveOrderSecurely([testOrder], "SFF-8492", "876-999-9999");
       expect(mismatchRetrieval.success).toBe(false);
       expect(mismatchRetrieval.error).toContain("Authentication failed");
+    });
+  });
+
+  describe("H. Advanced Food Commerce (5-Stage KDS, Pickup Queue, Time-of-Day Availability, Multi-Vendor & Waste Reporting)", () => {
+    it("should transition orders sequentially through all 5 KDS stages: New order -> Accepted -> Preparing -> Ready for pickup -> Collected", () => {
+      expect(KDS_STAGES.map((s) => s.label)).toEqual([
+        "New order",
+        "Accepted",
+        "Preparing",
+        "Ready for pickup",
+        "Collected",
+      ]);
+
+      expect(getNextKdsStatus("unprepared")).toBe("accepted");
+      expect(getNextKdsStatus("accepted")).toBe("preparing");
+      expect(getNextKdsStatus("preparing")).toBe("ready_for_pickup");
+      expect(getNextKdsStatus("ready_for_pickup")).toBe("collected");
+      expect(getNextKdsStatus("collected")).toBeNull();
+
+      expect(getKdsStageMeta("accepted").stepNumber).toBe(2);
+      expect(getKdsStageMeta("ready_for_pickup").stepNumber).toBe(4);
+    });
+
+    it("should generate deterministic pickup queue numbers and resolve scheduled pickup windows", () => {
+      const orderWithCode = {
+        id: "ord-104",
+        ticketCode: "SFF-4104",
+        orderNumber: "ORD-2026-4104",
+        createdAt: "2026-11-14T12:05:00Z",
+      };
+      expect(getOrderPickupNumber(orderWithCode)).toBe("PU-104");
+      expect(
+        getOrderPickupWindow({
+          ...orderWithCode,
+          notes: "Pickup Window: 12:30 PM – 1:00 PM (Lunch Wave 2) | Extra lime",
+        })
+      ).toBe("12:30 PM – 1:00 PM (Lunch Wave 2)");
+    });
+
+    it("should enrich menu items with vendor stations, time-of-day windows (Breakfast until 11 AM vs Lunch from 11 AM), dietary tags, allergens, and portion sizes", () => {
+      const ackeeBreakfast: MenuItem = {
+        id: "item-ackee-breakfast",
+        name: "Ackee & Saltfish Plate",
+        category: "Mains",
+        description: "National dish served with roasted breadfruit.",
+        pricingType: "fixed",
+        priceUSD: 19,
+        priceJMD: 2950,
+        imageUrl: "/images/dish_jm_ackee_saltfish.jpg",
+      };
+
+      const ackeeMeta = getEnrichedFoodMeta(ackeeBreakfast);
+      expect(ackeeMeta.availableUntilTime).toBe("11:00");
+      expect(ackeeMeta.timeWindowBadge).toBe("Breakfast · Until 11:00 AM");
+      expect(ackeeMeta.isAvailableForTimeMode("breakfast_before_11")).toBe(true);
+      expect(ackeeMeta.isAvailableForTimeMode("lunch_after_11")).toBe(false);
+      expect(ackeeMeta.allergens).toContain("Fish (Saltfish)");
+      expect(ackeeMeta.dietaryTags).toContain("pescatarian");
+      expect(ackeeMeta.portionSizes.length).toBeGreaterThanOrEqual(3);
+
+      const snapperMeta = getEnrichedFoodMeta(fixedSnapperMeal);
+      expect(snapperMeta.vendorName).toBe("Harbour Catch Seafood");
+      expect(snapperMeta.interactiveSection).toBe("Seafood");
+      expect(snapperMeta.availableFromTime).toBe("11:00");
+      expect(snapperMeta.timeWindowBadge).toBe("Lunch & Dinner · From 11:00 AM");
+      expect(snapperMeta.isAvailableForTimeMode("breakfast_before_11")).toBe(false);
+      expect(snapperMeta.isAvailableForTimeMode("lunch_after_11")).toBe(true);
+    });
+
+    it("should compute accurate food waste, inventory utilization, and multi-vendor breakdown", () => {
+      const sampleOrders: TicketOrder[] = [
+        {
+          id: "ord-1",
+          ticketCode: "SFF-101",
+          orderNumber: "ORD-2026-101",
+          customerName: "Keisha Brown",
+          customerPhone: "876-555-0101",
+          method: "online",
+          subtotal: 36,
+          packagingFee: 2.5,
+          totalAmount: 38.5,
+          currency: "USD",
+          status: "paid",
+          fulfillmentStatus: "collected",
+          createdAt: "2026-11-14T12:00:00Z",
+          allHandedOver: true,
+          items: [
+            {
+              id: "oi-1",
+              menuItemId: fixedSnapperMeal.id,
+              name: fixedSnapperMeal.name,
+              category: fixedSnapperMeal.category,
+              pricingType: "fixed",
+              basePrice: 18,
+              selectedOptionsSummary: [],
+              finalItemPrice: 18,
+              quantity: 2,
+              handedOver: true,
+              preparationStatus: "collected",
+            },
+          ],
+        },
+        {
+          id: "ord-2",
+          ticketCode: "SFF-102",
+          orderNumber: "ORD-2026-102",
+          customerName: "Devon Clarke",
+          customerPhone: "876-555-0102",
+          method: "cash",
+          subtotal: 18,
+          packagingFee: 2.5,
+          totalAmount: 20.5,
+          currency: "USD",
+          status: "paid",
+          fulfillmentStatus: "ready_for_pickup",
+          createdAt: "2026-11-14T12:15:00Z",
+          allHandedOver: false,
+          items: [
+            {
+              id: "oi-2",
+              menuItemId: fixedSnapperMeal.id,
+              name: fixedSnapperMeal.name,
+              category: fixedSnapperMeal.category,
+              pricingType: "fixed",
+              basePrice: 18,
+              selectedOptionsSummary: [],
+              finalItemPrice: 18,
+              quantity: 1,
+              handedOver: false,
+              preparationStatus: "ready",
+            },
+          ],
+        },
+      ];
+
+      const report = computeFoodWasteAndInventoryReport([fixedSnapperMeal], sampleOrders, "USD");
+      expect(report.totalSoldPortions).toBe(3);
+      expect(report.totalCollectedPortions).toBe(2);
+      expect(report.totalUncollectedPortions).toBe(1);
+      expect(report.rows[0].vendorName).toBe("Harbour Catch Seafood");
+      expect(Object.keys(report.byVendor)).toContain("Harbour Catch Seafood");
     });
   });
 });

@@ -805,6 +805,16 @@ export function OrganizerDashboard({
           onOpenEditDishModal={openEditDishModal}
           onDeleteDish={handleDeleteDish}
           formatMoney={formatMoney}
+          onUpdateMenu={onUpdateMenu}
+          orders={orders}
+          onUpdateFulfillmentStatus={onUpdateFulfillmentStatus}
+          onNotifyOrderReady={(order, pickupNum) => {
+            onSendCustomNotification(
+              order.id,
+              `Order Ready for Pickup! Queue #${pickupNum}: Hi ${order.customerName}, your food order #${order.orderNumber} is hot and ready at the pickup counter.`
+            );
+            triggerToast(`Sent Ready-for-Pickup notification for Queue #${pickupNum} (${order.customerName})`);
+          }}
         />
       )}
 
@@ -832,6 +842,8 @@ export function OrganizerDashboard({
           tenantUsers={tenantUsers}
           permissions={permissions}
           onSwitchRolePerspective={onSwitchRolePerspective}
+          onUpdateEventDetails={onUpdateEventDetails}
+          onSaveToast={(msg) => triggerToast(msg)}
         />
       )}
 

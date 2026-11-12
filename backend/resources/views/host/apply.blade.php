@@ -139,6 +139,9 @@
                     <input type="hidden" name="enforce_host_compliance" value="1">
                     <h3 style="margin: 0 0 0.35rem; font-size: 1rem; font-weight: 800;">Mandatory Host Responsibility Acknowledgements (Section D)</h3>
                     <p class="eb-help-text" style="margin: 0 0 0.85rem;">Each responsibility below must be individually acknowledged before submitting your Event Host application. Read the full <a href="{{ route('legal.show', 'host-agreement') }}" target="_blank" rel="noopener">Event Host Agreement</a> and the <a href="{{ route('legal.show', 'host-identity-privacy') }}" target="_blank" rel="noopener">Host Identity Verification and Privacy Notice</a>.</p>
+                    @unless(\App\Support\LegalPages::counselReviewed())
+                        <p class="eb-help-text" style="margin: 0 0 0.85rem; color: #92400e;">These acknowledgements reflect draft policy wording pending review by qualified US legal counsel; they are not yet legally approved.</p>
+                    @endunless
 
                     <div class="eb-stack" style="gap: 0.65rem;">
                         <label style="display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.88rem;">

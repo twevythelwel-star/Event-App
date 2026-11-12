@@ -166,25 +166,33 @@ final class QrCode
     }
 
     /**
-     * Inline SVG of the code with the standard 4-module quiet zone, dark on white.
+     * Inline SVG of the admission QR: encoded by chillerlan/php-qrcode at error-correction
+     * level Q with the standard 4-module quiet zone — the same maintained encoder the
+     * promotional QR artwork uses, so printed and photographed tickets keep scanning.
+     * Dark navy modules on white, crisp edges, accessible label; nothing decorative is drawn
+     * over the modules.
      */
     public static function svg(string $text, int $pixels = 220, string $label = 'Ticket QR code'): string
     {
-        $matrix = self::matrix($text);
-        $size = count($matrix);
-        $view = $size + 8;
+        $matrix = (new \chillerlan\QRCode\QRCode(new \chillerlan\QRCode\QROptions([
+            'eccLevel' => \chillerlan\QRCode\Common\EccLevel::Q,
+            'addQuietzone' => true,
+            'quietzoneSize' => 4,
+        ])))->addByteSegment($text)->getQRMatrix();
+
+        $size = $matrix->getSize();
         $path = '';
-        foreach ($matrix as $r => $row) {
-            foreach ($row as $c => $dark) {
-                if ($dark) {
-                    $path .= 'M' . ($c + 4) . ' ' . ($r + 4) . 'h1v1h-1z';
+        for ($y = 0; $y < $size; $y++) {
+            for ($x = 0; $x < $size; $x++) {
+                if ($matrix->check($x, $y)) {
+                    $path .= 'M' . $x . ' ' . $y . 'h1v1h-1z';
                 }
             }
         }
 
         return sprintf(
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 %1$d %1$d" width="%2$d" height="%2$d" role="img" aria-label="%3$s" shape-rendering="crispEdges"><rect width="%1$d" height="%1$d" fill="#FFFFFF"/><path d="%4$s" fill="#07111F"/></svg>',
-            $view,
+            $size,
             $pixels,
             htmlspecialchars($label, ENT_QUOTES),
             $path,

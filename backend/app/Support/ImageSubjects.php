@@ -68,7 +68,9 @@ final class ImageSubjects
         foreach ((array) config('visual_assets.sample_photos', []) as $cuisine => $photos) {
             foreach ((array) $photos as $photo) {
                 if (($photo['file'] ?? null) === $file) {
-                    return $photo + ['cuisine' => (string) $cuisine, 'matches' => [mb_strtolower((string) ($photo['dish'] ?? ''))]];
+                    $matches = (array) ($photo['matches'] ?? [$photo['dish'] ?? '']);
+                    return array_merge($photo, ['cuisine' => (string) $cuisine,
+                        'matches' => array_values(array_unique(array_map(static fn ($dish) => mb_strtolower((string) $dish), $matches)))]);
                 }
             }
         }

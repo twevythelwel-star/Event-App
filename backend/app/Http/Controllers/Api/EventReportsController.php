@@ -98,9 +98,23 @@ class EventReportsController extends Controller
             ->orderBy('attention_orders.created_at')->paginate(min(100, max(1, (int) $request->query('per_page', 50))))
             ->through(fn ($item) => ['name' => $item->name, 'order_number' => $item->order_number, 'total' => (int) $item->quantity, 'collected' => (int) $item->collected_quantity, 'remaining' => (int) $item->quantity - (int) $item->collected_quantity, 'vendor' => $item->vendor_assignment]);
 
+        $remainingUnsoldStock = (int) \App\Models\MenuItem::withoutGlobalScopes()
+            ->where('event_id', $event->id)
+            ->where('is_active', true)
+            ->whereNotNull('available_stock')
+            ->sum('available_stock');
+        $uncollectedPortions = max(0, $total - $collected);
+        $recommendedCookTarget = (int) ceil($total * 1.1);
+
         return response()->json([
             'event_id' => $event->id, 'event_title' => $event->title,
-            'fulfillment' => ['total_portions' => $total, 'collected_portions' => $collected, 'remaining_portions' => max(0, $total - $collected), 'fulfillment_rate' => $total > 0 ? round($collected / $total * 100, 2) : 0],
+            'fulfillment' => ['total_portions' => $total, 'collected_portions' => $collected, 'remaining_portions' => $uncollectedPortions, 'fulfillment_rate' => $total > 0 ? round($collected / $total * 100, 2) : 0],
+            'inventory_and_waste' => [
+                'remaining_unsold_stock' => $remainingUnsoldStock,
+                'recommended_cook_target' => $recommendedCookTarget,
+                'uncollected_portions' => $uncollectedPortions,
+                'estimated_waste_rate' => $recommendedCookTarget > 0 ? round($uncollectedPortions / $recommendedCookTarget * 100, 2) : 0,
+            ],
             'by_vendor' => $byVendor, 'items_needing_attention' => $attention->items(), 'pagination' => ['current_page' => $attention->currentPage(), 'last_page' => $attention->lastPage(), 'per_page' => $attention->perPage(), 'total' => $attention->total()],
         ]);
     }

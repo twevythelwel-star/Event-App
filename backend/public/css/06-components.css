@@ -98,17 +98,26 @@
 .eb-qty {
   display: inline-flex; align-items: center; gap: var(--space-1);
   padding: var(--space-1);
-  border: 1px solid var(--color-border); border-radius: var(--radius-md);
-  background: var(--color-background-secondary);
+  border: 1px solid var(--color-border-strong); border-radius: var(--radius-md);
+  background: var(--color-surface-recessed);
+  box-shadow: var(--shadow-3d-inset);
 }
 .eb-qty-btn {
   width: 2.25rem; height: 2.25rem;
   display: grid; place-items: center;
   border: 0; border-radius: var(--radius-sm);
-  background: var(--color-surface-elevated); color: var(--color-text-primary);
+  background: var(--color-surface-elevated);
+  background-image: var(--gradient-secondary-btn-3d);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-btn-secondary);
   font-size: 1.1rem; font-weight: 700; cursor: pointer;
 }
-.eb-qty-btn[data-qty="up"] { background: var(--color-accent); color: var(--color-accent-text); }
+.eb-qty-btn[data-qty="up"] {
+  background: var(--color-accent);
+  background-image: var(--gradient-accent-3d);
+  color: var(--color-accent-text);
+  box-shadow: var(--shadow-btn-primary);
+}
 .eb-qty-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 /* Touch screens: 44px targets for the steppers */
 @media (pointer: coarse), (max-width: 640px) {
@@ -531,7 +540,9 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
    Homepage: cinematic hero, step icons, tradition and city cards
    -------------------------------------------------------------------------- */
 .eb-hero-cinematic { position: relative; overflow: hidden; isolation: isolate; padding: clamp(1.5rem, 4vw, 3rem) !important;
-  background: linear-gradient(135deg, #10243a 0%, #0b192b 55%, #07111f 100%) !important; }
+  background: linear-gradient(135deg, #16304C 0%, #0D1F34 52%, #07111F 100%) !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.16) !important;
+  box-shadow: var(--shadow-elevated) !important; }
 .eb-hero-backdrop { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
 .eb-hero-orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.55; }
 .eb-hero-orb-lime { width: 420px; height: 420px; right: -80px; top: -160px; background: radial-gradient(circle, rgba(199, 255, 69, 0.45), transparent 65%); animation: eb-drift 18s ease-in-out infinite alternate; }
@@ -565,14 +576,14 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
 @keyframes eb-sheen { 0%, 60% { background-position: 150% 0; } 100% { background-position: -50% 0; } }
 .eb-hero-card-label { position: absolute; left: 12px; bottom: 12px; display: inline-flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 999px; background: rgba(7, 17, 31, 0.8); color: var(--color-text-primary); font-size: 0.75rem; font-weight: 600; z-index: 1; }
 
-.eb-step-icon { display: inline-grid; place-items: center; width: 40px; height: 40px; margin-bottom: var(--space-2); border-radius: 12px; background: linear-gradient(135deg, var(--color-accent-subtle), rgba(139, 92, 246, 0.16)); color: var(--color-accent); border: 1px solid var(--color-accent-border); }
+.eb-step-icon { display: inline-grid; place-items: center; width: 42px; height: 42px; margin-bottom: var(--space-2); border-radius: 12px; background: linear-gradient(145deg, rgba(199, 255, 69, 0.22), rgba(139, 92, 246, 0.2)); color: var(--color-accent); border: 1px solid var(--color-accent-border); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(2, 6, 14, 0.4); }
 .eb-home-steps li::before { display: none !important; }
-.eb-home-steps li { transition: transform 0.2s ease, border-color 0.2s ease; }
-.eb-home-steps li:hover { transform: translateY(-2px); border-color: var(--color-border-strong); }
+.eb-home-steps li { transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+.eb-home-steps li:hover { transform: translateY(-3px); border-color: var(--color-border-strong); box-shadow: var(--shadow-card); }
 
 .eb-tradition-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 170px), 1fr)); gap: var(--space-3); margin: 0; padding: 0; list-style: none; }
-.eb-tradition-card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; min-height: 104px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); overflow: hidden; text-decoration: none; color: var(--color-text-primary); background: var(--color-surface); border: 1px solid var(--color-border); transition: transform 0.2s ease, border-color 0.2s ease; }
-.eb-tradition-card:hover, .eb-tradition-card:focus-visible { transform: translateY(-3px); border-color: var(--tint); }
+.eb-tradition-card { position: relative; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; min-height: 104px; padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); overflow: hidden; text-decoration: none; color: var(--color-text-primary); background: var(--color-surface); background-image: var(--gradient-surface-3d); border: 1px solid var(--color-border); border-top-color: rgba(255, 255, 255, 0.12); box-shadow: var(--shadow-subtle); transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+.eb-tradition-card:hover, .eb-tradition-card:focus-visible { transform: translateY(-3px); border-color: var(--tint); box-shadow: var(--shadow-card); }
 .eb-tradition-card:focus-visible { outline: 2px solid var(--color-border-focus); outline-offset: 2px; }
 .eb-tradition-art { position: absolute; inset: 0; z-index: 0; opacity: 0.55;
   background:
@@ -612,9 +623,9 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
 .eb-tradition-name { font-weight: 700; }
 .eb-tradition-count { font-size: var(--text-label-size); color: var(--color-text-secondary); }
 
-.eb-city-card { display: flex !important; gap: var(--space-3); align-items: center; transition: border-color 0.2s ease, transform 0.2s ease; }
-.eb-city-card:hover, .eb-city-card:focus-visible { border-color: var(--color-accent-border) !important; transform: translateY(-2px); }
-.eb-city-pin { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(199, 255, 69, 0.3), rgba(139, 92, 246, 0.25)); color: var(--color-accent); }
+.eb-city-card { display: flex !important; gap: var(--space-3); align-items: center; transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
+.eb-city-card:hover, .eb-city-card:focus-visible { border-color: var(--color-accent-border) !important; transform: translateY(-3px); box-shadow: var(--shadow-card); }
+.eb-city-pin { flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50%; background: radial-gradient(circle at 30% 30%, rgba(199, 255, 69, 0.35), rgba(139, 92, 246, 0.28)); color: var(--color-accent); border: 1px solid rgba(199, 255, 69, 0.3); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 10px rgba(2, 6, 14, 0.4); }
 
 /* Event cards: the cover eases in on hover, and the place has a pin */
 .eb-event-card-media img { transition: transform 0.4s ease; }
@@ -807,6 +818,1866 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
 .eb-vendor-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
 .eb-ticket-sponsors { margin: 0; font-size: 0.85rem; color: var(--color-text-secondary); text-align: center; }
 
+
+/* ==========================================================================
+   FOOD ORDERING UPGRADE — 3D SOFT REALISM & DARK MODE ELEVATION
+   ========================================================================== */
+
+/* 1. Food Card 3D Elevation & Consistent Media Proportions */
+.eb-food-card {
+  position: relative;
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+  background-image: var(--gradient-surface-3d);
+  border: 1px solid var(--color-border);
+  border-top-color: rgba(255, 255, 255, 0.13);
+  box-shadow: var(--shadow-card);
+  transition:
+    transform var(--duration-normal, 220ms) var(--ease-out-quart, cubic-bezier(0.25, 1, 0.5, 1)),
+    border-color var(--duration-fast, 150ms) ease,
+    box-shadow var(--duration-normal, 220ms) ease;
+}
+
+.eb-food-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--color-border-strong);
+  border-top-color: rgba(199, 255, 69, 0.35);
+  box-shadow: var(--shadow-card-hover, 0 18px 38px rgba(2, 6, 14, 0.58));
+}
+
+.eb-food-card.is-selected {
+  border-color: rgba(199, 255, 69, 0.52);
+  border-top-color: rgba(199, 255, 69, 0.72);
+  box-shadow:
+    inset 0 1px 0 rgba(199, 255, 69, 0.22),
+    0 0 0 1px rgba(199, 255, 69, 0.25),
+    0 16px 36px rgba(2, 6, 14, 0.55);
+}
+
+.eb-food-card.is-sold-out,
+.eb-food-card[aria-disabled="true"] {
+  opacity: 0.68;
+}
+
+.eb-food-card-media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 25%, #16304C 0%, #091525 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.eb-food-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.45s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.25s ease;
+}
+
+.eb-food-card:hover .eb-food-card-media img {
+  transform: scale(1.045);
+}
+
+.eb-food-card-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(7, 17, 31, 0.48) 0%, transparent 38%, transparent 62%, rgba(7, 17, 31, 0.72) 100%);
+}
+
+.eb-food-card-illustrative {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  z-index: 2;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: rgba(7, 17, 31, 0.84);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--color-text-primary);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* Category-specific 3D placeholder when no dish photo exists */
+.eb-food-card-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: 0.76rem;
+  background:
+    radial-gradient(circle at 50% 25%, rgba(199, 255, 69, 0.08), transparent 62%),
+    linear-gradient(145deg, #10233A 0%, #091525 100%);
+}
+
+.eb-food-placeholder-emblem {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, rgba(199, 255, 69, 0.16), rgba(139, 92, 246, 0.14));
+  border: 1px solid rgba(199, 255, 69, 0.28);
+  color: var(--color-accent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 6px 16px rgba(2, 6, 14, 0.45);
+}
+
+/* Row layout inside food ordering builder: consistent 220px x 4:3 media column on desktop */
+@media (min-width: 680px) {
+  .eb-food-order .eb-food-card.eb-food-card-row {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .eb-food-order .eb-food-card.eb-food-card-row .eb-food-card-media {
+    width: 224px;
+    flex-shrink: 0;
+    aspect-ratio: 4 / 3;
+    min-height: 176px;
+    border-bottom: 0;
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
+  }
+}
+
+/* 2. Food Card Header, Price Pill, Portion Sizes & Dietary Well */
+.eb-food-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.eb-food-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.eb-food-card-inline-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.eb-food-price-pill {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, rgba(199, 255, 69, 0.16) 0%, rgba(199, 255, 69, 0.07) 100%);
+  border: 1px solid rgba(199, 255, 69, 0.34);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 4px 10px rgba(2, 6, 14, 0.32);
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.eb-food-price-prefix {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.eb-food-portions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.eb-food-portion-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-recessed, #07111F);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-3d-inset);
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.eb-food-portion-chip strong {
+  color: var(--color-text-primary);
+}
+
+.eb-badge-dietary {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(52, 211, 153, 0.32);
+  color: #6EE7B7;
+}
+
+.eb-food-dietary-well {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(7, 17, 31, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: var(--shadow-3d-inset);
+}
+
+.eb-food-dietary-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.eb-food-dietary-row .eb-icon {
+  flex-shrink: 0;
+  color: var(--color-accent);
+  transform: translateY(2px);
+}
+
+.eb-food-allergen-row {
+  color: var(--color-warning-text, #FBBF24);
+}
+
+.eb-food-allergen-row .eb-icon {
+  color: var(--color-warning, #F59E0B);
+}
+
+.eb-food-allergen-pill {
+  display: inline-block;
+  padding: 1px 7px;
+  margin-left: 3px;
+  border-radius: var(--radius-pill);
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #FDE68A;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.eb-food-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: var(--space-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* 3. Customization Blocks, Option Tiles & 3D Option Pills */
+.eb-food-options-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.eb-customization-block {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(7, 17, 31, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-3d-inset);
+}
+
+.eb-customization-legend {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  margin-bottom: var(--space-2);
+  padding: 0;
+  float: left;
+}
+
+.eb-customization-legend + * {
+  clear: both;
+}
+
+.eb-customization-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.eb-customization-title .eb-icon {
+  color: var(--color-accent);
+}
+
+.eb-customization-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  color: var(--color-text-secondary);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.eb-customization-badge.is-required {
+  background: rgba(199, 255, 69, 0.12);
+  border-color: rgba(199, 255, 69, 0.34);
+  color: var(--color-accent);
+}
+
+.eb-package-includes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.eb-package-include-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(19, 38, 64, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.eb-package-swap-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.eb-package-swap-label {
+  font-size: 0.74rem;
+  color: var(--color-text-secondary);
+}
+
+.eb-option-thumb {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: var(--color-background-secondary);
+  box-shadow: 0 3px 8px rgba(2, 6, 14, 0.38);
+}
+
+.eb-option-thumb-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, rgba(199, 255, 69, 0.14), rgba(139, 92, 246, 0.14));
+  border: 1px solid rgba(199, 255, 69, 0.25);
+  color: var(--color-accent);
+}
+
+.eb-option-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.eb-option-tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 11px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  background-image: var(--gradient-surface-3d);
+  border: 1px solid var(--color-border);
+  border-top-color: rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-subtle);
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.eb-option-tile:hover {
+  border-color: var(--color-border-strong);
+  transform: translateY(-1px);
+}
+
+.eb-option-tile.is-selected,
+.eb-option-tile:has(input:checked) {
+  border-color: var(--color-accent);
+  background: linear-gradient(165deg, rgba(199, 255, 69, 0.14) 0%, rgba(19, 38, 64, 0.92) 100%);
+  box-shadow: 0 0 0 1px rgba(199, 255, 69, 0.28), 0 6px 14px rgba(2, 6, 14, 0.4);
+}
+
+.eb-option-tile-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.eb-option-tile-name {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.eb-option-tile-price {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Interactive 3D single-choice option pills */
+.eb-option-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.eb-option-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-elevated);
+  background-image: var(--gradient-secondary-btn-3d);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.eb-option-pill:hover:not(:disabled) {
+  color: var(--color-text-primary);
+  border-color: rgba(199, 255, 69, 0.45);
+}
+
+.eb-option-pill.is-selected {
+  background: var(--color-accent);
+  background-image: var(--gradient-accent-3d);
+  border-color: var(--color-accent);
+  color: var(--color-accent-text);
+  box-shadow: var(--shadow-btn-primary);
+  font-weight: 700;
+}
+
+.eb-option-pill-price {
+  font-size: 0.72rem;
+  opacity: 0.88;
+}
+
+/* 4. Add-on & Side Selection Visual Cards */
+.eb-addons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.eb-addon-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  background-image: var(--gradient-surface-3d);
+  border: 1px solid var(--color-border);
+  border-top-color: rgba(255, 255, 255, 0.11);
+  box-shadow: var(--shadow-subtle);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.eb-addon-card:hover {
+  border-color: var(--color-border-strong);
+}
+
+.eb-addon-card.is-selected {
+  border-color: rgba(199, 255, 69, 0.5);
+  background: linear-gradient(165deg, rgba(199, 255, 69, 0.12) 0%, rgba(19, 38, 64, 0.94) 100%);
+  box-shadow: 0 0 0 1px rgba(199, 255, 69, 0.25);
+}
+
+.eb-addon-media {
+  flex-shrink: 0;
+}
+
+.eb-addon-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  display: block;
+}
+
+.eb-addon-thumb-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, rgba(199, 255, 69, 0.15), rgba(139, 92, 246, 0.15));
+  border: 1px solid rgba(199, 255, 69, 0.28);
+  color: var(--color-accent);
+}
+
+.eb-addon-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eb-addon-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.eb-addon-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.eb-addon-price {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.eb-addon-dietary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  color: #6EE7B7;
+  font-size: 0.68rem;
+}
+
+.eb-addon-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-recessed, #07111F);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-3d-inset);
+}
+
+.eb-addon-step-btn {
+  width: 1.85rem;
+  height: 1.85rem;
+  font-size: 0.95rem;
+}
+
+.eb-addon-input {
+  width: 2.4rem !important;
+  min-height: 1.85rem !important;
+  padding: 0 2px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+}
+
+.eb-addon-input::-webkit-outer-spin-button,
+.eb-addon-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 5. Action Bar & Quantity Control Active State */
+.eb-food-action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-top: var(--space-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.eb-food-unit-readout {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.eb-food-unit-price {
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+}
+
+.eb-qty.is-active {
+  border-color: rgba(199, 255, 69, 0.55);
+  box-shadow: inset 0 2px 4px rgba(2, 6, 14, 0.65), 0 0 0 2px rgba(199, 255, 69, 0.16);
+}
+
+/* 6. Section Headers & Category Navigation Pills */
+.eb-food-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.eb-food-section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+
+.eb-food-category-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
+  background: rgba(7, 17, 31, 0.55);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-3d-inset);
+}
+
+.eb-food-category-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  background-image: var(--gradient-surface-3d);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.eb-food-category-pill:hover {
+  border-color: var(--color-accent);
+  transform: translateY(-1px);
+}
+
+.eb-food-category-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: rgba(199, 255, 69, 0.14);
+  color: var(--color-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.eb-food-category-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.eb-food-category-rule {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-border-strong), transparent);
+}
+
+/* 7. Order Summary Panel & Receipt Graphics */
+@media (min-width: 960px) {
+  .eb-food-order {
+    grid-template-columns: minmax(0, 1fr) 350px;
+  }
+}
+
+.eb-food-summary {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background-color: var(--color-surface);
+  background-image: var(--gradient-surface-3d);
+  border: 1px solid var(--color-border-strong);
+  border-top-color: rgba(199, 255, 69, 0.32);
+  box-shadow: var(--shadow-elevated);
+}
+
+.eb-food-summary-hero {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(199, 255, 69, 0.16), transparent 60%),
+    radial-gradient(circle at 85% 80%, rgba(139, 92, 246, 0.18), transparent 60%),
+    rgba(7, 17, 31, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: var(--shadow-3d-inset);
+}
+
+.eb-food-summary-graphic {
+  width: 68px;
+  height: 54px;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #132842, #091525);
+  border: 1px solid rgba(199, 255, 69, 0.26);
+  box-shadow: 0 6px 14px rgba(2, 6, 14, 0.45);
+}
+
+.eb-food-summary-art {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.eb-food-summary-title-group {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eb-food-summary-fulfillment {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--color-text-secondary);
+}
+
+.eb-food-summary-fulfillment .eb-icon {
+  color: var(--color-accent);
+}
+
+.eb-food-summary-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  background: rgba(7, 17, 31, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eb-food-summary-line-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.eb-food-summary-line-name {
+  font-weight: 700;
+  color: var(--color-text-primary);
+  font-size: 0.86rem;
+}
+
+.eb-food-summary-line-detail {
+  font-size: 0.74rem;
+  color: var(--color-text-secondary);
+}
+
+.eb-food-summary-line-amount {
+  font-weight: 700;
+  color: var(--color-accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.eb-food-summary-divider {
+  border-top: 1.5px dashed var(--color-border-strong);
+  margin: var(--space-1) 0;
+}
+
+.eb-food-summary-totals {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.eb-food-summary-total {
+  padding-top: var(--space-2);
+  margin-top: var(--space-1);
+  border-top: 1px solid var(--color-border);
+}
+
+.eb-food-summary-total dd {
+  color: var(--color-accent);
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.eb-food-summary-footer {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(7, 17, 31, 0.48);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.eb-food-summary-footer .eb-icon {
+  flex-shrink: 0;
+  color: var(--color-accent);
+  margin-top: 2px;
+}
+
+/* Price summary graphic banner on Checkout Review */
+.eb-price-summary-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 15% 20%, rgba(199, 255, 69, 0.14), transparent 60%),
+    rgba(7, 17, 31, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-3d-inset);
+}
+
+.eb-price-summary-art {
+  width: 64px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  border: 1px solid rgba(199, 255, 69, 0.25);
+  background: #091525;
+}
+
+.eb-price-summary-banner-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eb-price-summary-banner-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+}
+
+.eb-price-summary-banner-sub {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   DIGITAL PASSES, UNOBSTRUCTED QR WELLS & PAYMENT EXPERIENCES (3D Soft Realism)
+   ========================================================================== */
+
+/* Strictly prevent any decorative graphic or scan line from overlaying QR modules */
+.eb-ticket-card .eb-ticket-qr-well::before,
+.eb-ticket-card .eb-ticket-qr-well::after {
+  display: none !important;
+  content: none !important;
+  animation: none !important;
+}
+
+.eb-digital-pass,
+.eb-ticket-pass-card {
+  position: relative;
+  border-radius: 22px;
+  border: 1px solid rgba(139, 179, 255, 0.24);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(199, 255, 69, 0.08), transparent 46%),
+    radial-gradient(circle at 88% 100%, rgba(56, 189, 248, 0.09), transparent 48%),
+    linear-gradient(170deg, rgba(16, 30, 52, 0.98) 0%, rgba(8, 17, 31, 0.99) 100%);
+  box-shadow:
+    0 24px 56px -16px rgba(2, 6, 14, 0.82),
+    0 10px 24px -8px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease, border-color 0.24s ease;
+}
+
+.eb-ticket-keepsake { margin: 0; padding: 0.75rem 1rem 0; }
+.eb-ticket-keepsake img { display: block; width: 100%; max-height: 220px; border-radius: var(--radius-md, 12px); object-fit: cover; }
+.eb-ticket-keepsake figcaption { padding-top: 0.4rem; color: var(--color-text-secondary); font-size: 0.8rem; }
+
+.eb-ticket-pass-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(199, 255, 69, 0.38);
+  box-shadow:
+    0 28px 64px -14px rgba(2, 6, 14, 0.9),
+    0 12px 28px -8px rgba(199, 255, 69, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* Ticket Cover Artwork Integration */
+.eb-ticket-card-head,
+.eb-pass-hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(139, 179, 255, 0.18);
+}
+
+.eb-ticket-head-backdrop {
+  position: absolute;
+  inset: -16px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) saturate(1.3) brightness(0.42);
+  opacity: 0.72;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.eb-ticket-head-media {
+  position: relative;
+  width: 100%;
+  height: 156px;
+  overflow: hidden;
+  background: #060E1A;
+  z-index: 1;
+}
+
+.eb-digital-pass .eb-ticket-head-media {
+  height: 210px;
+}
+
+.eb-ticket-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eb-ticket-pass-card:hover .eb-ticket-cover-img {
+  transform: scale(1.03);
+}
+
+.eb-ticket-head-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 13, 24, 0.18) 0%,
+    rgba(6, 13, 24, 0.55) 48%,
+    rgba(8, 17, 31, 0.96) 100%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+.eb-ticket-head-content {
+  position: relative;
+  z-index: 3;
+  padding: 1.15rem 1.35rem 1.25rem;
+  margin-top: -3.25rem;
+}
+
+.eb-digital-pass .eb-ticket-head-content {
+  padding: 1.35rem 1.65rem 1.45rem;
+  margin-top: -4rem;
+}
+
+.eb-pass-top-bar,
+.eb-ticket-pass-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  margin-bottom: 0.65rem;
+}
+
+.eb-pass-top-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.eb-ticket-type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.72rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #07111F;
+  background: linear-gradient(135deg, #D9FF7A 0%, #B4F536 100%);
+  box-shadow:
+    0 4px 12px rgba(199, 255, 69, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+
+.eb-ticket-admission-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.26rem 0.68rem;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: rgba(12, 25, 44, 0.85);
+  border: 1px solid rgba(139, 179, 255, 0.26);
+  color: var(--color-text-primary);
+  backdrop-filter: blur(8px);
+}
+
+.eb-ticket-admission-pill--ready {
+  border-color: rgba(52, 211, 153, 0.45);
+  color: #6EE7B7;
+  background: rgba(6, 78, 59, 0.45);
+}
+
+.eb-ticket-admission-pill--checked-in {
+  border-color: rgba(56, 189, 248, 0.48);
+  color: #7DD3FC;
+  background: rgba(12, 74, 110, 0.48);
+}
+
+.eb-ticket-admission-pill--pending {
+  border-color: rgba(251, 191, 36, 0.45);
+  color: #FCD34D;
+  background: rgba(120, 53, 15, 0.42);
+}
+
+.eb-ticket-admission-pill--void {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #FCA5A5;
+  background: rgba(127, 29, 29, 0.42);
+}
+
+/* Structured Date & Venue Metadata Grid */
+.eb-ticket-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.9rem;
+}
+
+.eb-ticket-meta-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 12px;
+  background: rgba(7, 15, 28, 0.68);
+  border: 1px solid rgba(139, 179, 255, 0.15);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.42);
+}
+
+.eb-ticket-meta-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.eb-ticket-meta-label svg {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+.eb-ticket-meta-val {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.35;
+}
+
+/* Dual Status Strip (Payment Status vs. Admission Status) */
+.eb-pass-status-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding: 0.95rem 1.65rem;
+  background: rgba(6, 13, 24, 0.72);
+  border-bottom: 1px solid rgba(139, 179, 255, 0.15);
+}
+
+.eb-pass-status-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.32rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(13, 25, 44, 0.75);
+  border: 1px solid rgba(139, 179, 255, 0.16);
+}
+
+.eb-pass-status-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+}
+
+.eb-pass-status-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.eb-pass-status-sub {
+  font-size: 0.76rem;
+  color: var(--color-text-secondary);
+}
+
+/* Seat Banner */
+.eb-pass-seat-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1.65rem;
+  background: linear-gradient(90deg, rgba(199, 255, 69, 0.12), rgba(56, 189, 248, 0.08));
+  border-bottom: 1px solid rgba(199, 255, 69, 0.22);
+  font-size: 0.85rem;
+  color: var(--color-text-primary);
+}
+
+.eb-pass-seat-banner svg {
+  color: var(--color-accent);
+  flex-shrink: 0;
+}
+
+/* Perforated Boarding-Pass Tear Line & Side Notches */
+.eb-ticket-card-tear {
+  position: relative;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+}
+
+.eb-ticket-card-tear::before {
+  content: "";
+  width: calc(100% - 36px);
+  height: 0;
+  border-top: 2px dashed rgba(139, 179, 255, 0.26);
+}
+
+.eb-ticket-notch {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #050B14;
+  border: 1px solid rgba(139, 179, 255, 0.24);
+  transform: translateY(-50%);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75);
+  z-index: 3;
+}
+
+.eb-ticket-notch-left {
+  left: -12px;
+}
+
+.eb-ticket-notch-right {
+  right: -12px;
+}
+
+/* Attendee Admission QR Presentation (Unobstructed High-Contrast Well) */
+.eb-pass-qr-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0.5rem 0 0.75rem;
+}
+
+.eb-pass-qr-header {
+  margin-bottom: 0.9rem;
+}
+
+.eb-pass-qr-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6EE7B7;
+  background: rgba(6, 78, 59, 0.55);
+  border: 1px solid rgba(52, 211, 153, 0.42);
+  margin-bottom: 0.4rem;
+}
+
+.eb-pass-qr-sub {
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.eb-ticket-qr-frame {
+  padding: 12px;
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(22, 39, 66, 0.95), rgba(9, 18, 33, 0.98));
+  border: 1px solid rgba(199, 255, 69, 0.32);
+  box-shadow:
+    0 16px 36px -10px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eb-ticket-qr-well[data-qr-type="admission"] {
+  background: #FFFFFF !important;
+  padding: 18px !important;
+  border-radius: 14px !important;
+  border: 2px solid #FFFFFF !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.eb-ticket-qr-well[data-qr-type="admission"] svg {
+  display: block;
+  width: 220px;
+  height: 220px;
+  max-width: 100%;
+  height: auto;
+  shape-rendering: crispEdges;
+}
+
+.eb-pass-qr-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.95rem;
+  padding: 1.15rem 1.25rem;
+  border-radius: 16px;
+  background: rgba(120, 53, 15, 0.22);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  margin-bottom: 0.75rem;
+}
+
+.eb-pass-qr-locked-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(251, 191, 36, 0.16);
+  border: 1px solid rgba(251, 191, 36, 0.38);
+  color: #FCD34D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.eb-pass-qr-locked-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #FDE68A;
+  margin: 0 0 0.25rem;
+}
+
+/* 3D Recessed Ticket Number / Serial Plate */
+.eb-ticket-serial-plate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  margin-top: 1rem;
+  padding: 0.9rem 1.15rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(5, 11, 20, 0.92) 0%, rgba(10, 20, 36, 0.92) 100%);
+  border: 1px solid rgba(139, 179, 255, 0.22);
+  box-shadow:
+    inset 0 2px 6px rgba(0, 0, 0, 0.75),
+    0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.eb-ticket-serial-main,
+.eb-ticket-serial-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.16rem;
+}
+
+.eb-ticket-serial-label {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--color-text-muted);
+}
+
+.eb-ticket-serial-code {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+  font-size: 1.08rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--color-accent);
+  text-shadow: 0 0 16px rgba(199, 255, 69, 0.24);
+}
+
+.eb-ticket-serial-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.eb-ticket-stub-facts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.eb-ticket-stub-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.eb-ticket-stub-block--right {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.eb-ticket-stub-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(139, 179, 255, 0.14);
+}
+
+/* Ticket Tier Pass Selection Rows (Checkout Step 1) */
+.eb-tier-pass-row {
+  position: relative;
+  border-radius: 16px;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(139, 179, 255, 0.2);
+  background: linear-gradient(165deg, rgba(16, 30, 52, 0.9), rgba(9, 18, 33, 0.95));
+  box-shadow:
+    0 10px 24px -10px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.eb-tier-pass-row:hover {
+  border-color: rgba(199, 255, 69, 0.35);
+}
+
+.eb-tier-pass-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem;
+}
+
+.eb-tier-category-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.58rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  color: #7DD3FC;
+}
+
+.eb-tier-earlybird-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.58rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(199, 255, 69, 0.16);
+  border: 1px solid rgba(199, 255, 69, 0.38);
+  color: var(--color-accent);
+}
+
+.eb-tier-price-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0.45rem 0.8rem;
+  border-radius: 12px;
+  background: rgba(7, 15, 28, 0.78);
+  border: 1px solid rgba(199, 255, 69, 0.25);
+}
+
+/* Recognizable Payment Method Emblems & Cards */
+.eb-payment-icon[data-method="bank"] {
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(14, 116, 144, 0.32));
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #7DD3FC;
+}
+
+.eb-payment-icon[data-method="zelle"] {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.26), rgba(107, 33, 168, 0.38));
+  border-color: rgba(192, 132, 252, 0.48);
+  color: #E9D5FF;
+}
+
+.eb-payment-icon[data-method="cashapp"] {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.25), rgba(21, 128, 61, 0.36));
+  border-color: rgba(74, 222, 128, 0.48);
+  color: #86EFAC;
+}
+
+.eb-payment-icon[data-method="cash"] {
+  background: linear-gradient(135deg, rgba(199, 255, 69, 0.22), rgba(101, 163, 13, 0.32));
+  border-color: rgba(199, 255, 69, 0.45);
+  color: var(--color-accent);
+}
+
+.eb-payment-method-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+}
+
+.eb-payment-method-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.16rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: rgba(139, 179, 255, 0.12);
+  border: 1px solid rgba(139, 179, 255, 0.24);
+  color: var(--color-text-secondary);
+}
+
+.eb-payment-instructions-card {
+  border-radius: 18px;
+  border: 1px solid rgba(139, 179, 255, 0.22);
+  background: linear-gradient(170deg, rgba(15, 29, 50, 0.95), rgba(8, 17, 31, 0.98));
+}
+
+.eb-payment-instructions-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.eb-payment-instructions-box {
+  padding: 0.95rem 1.1rem;
+  border-radius: 12px;
+  background: rgba(6, 13, 24, 0.78);
+  border: 1px solid rgba(139, 179, 255, 0.18);
+  margin-bottom: 0.85rem;
+}
+
+.eb-payment-due-callout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 1.05rem;
+  border-radius: 12px;
+  background: rgba(199, 255, 69, 0.08);
+  border: 1px solid rgba(199, 255, 69, 0.26);
+}
+
+/* Promotional Event QR vs. Admission Ticket QR Separation */
+.eb-promotional-qr-card {
+  border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.eb-promotional-qr-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #7DD3FC;
+  background: rgba(12, 74, 110, 0.55);
+  border: 1px solid rgba(56, 189, 248, 0.42);
+}
+
+/* Mobile Responsive Digital Pass Layout */
+@media (max-width: 640px) {
+  .eb-digital-pass .eb-ticket-head-media {
+    height: 168px;
+  }
+
+  .eb-digital-pass .eb-ticket-head-content,
+  .eb-ticket-head-content {
+    padding: 1rem 1.1rem 1.15rem;
+    margin-top: -2.75rem;
+  }
+
+  .eb-ticket-meta-grid,
+  .eb-pass-status-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .eb-pass-status-strip,
+  .eb-pass-seat-banner {
+    padding-left: 1.1rem;
+    padding-right: 1.1rem;
+  }
+
+  .eb-ticket-qr-well[data-qr-type="admission"] svg {
+    width: 196px;
+    height: 196px;
+  }
+
+  .eb-ticket-serial-plate {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .eb-ticket-serial-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .eb-ticket-serial-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+/* ==========================================================================
+   UNIFIED DASHBOARD SYSTEM (Attendee, Host, Staff, Admin, System Admin)
+   ========================================================================== */
+
+.eb-dashboard-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--layout-section-gap, 2rem);
+  width: 100%;
+}
+
+/* Unified Section Quick-Jump Navigation Pill Bar */
+.eb-dashboard-nav-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 16px;
+  background: linear-gradient(165deg, rgba(15, 29, 50, 0.92), rgba(8, 17, 31, 0.96));
+  border: 1px solid rgba(139, 179, 255, 0.18);
+  box-shadow:
+    0 12px 28px -12px rgba(2, 6, 14, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+.eb-dashboard-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.42rem 0.82rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  background: rgba(7, 15, 28, 0.55);
+  border: 1px solid rgba(139, 179, 255, 0.14);
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+}
+
+.eb-dashboard-nav-pill:hover,
+.eb-dashboard-nav-pill:focus-visible {
+  color: var(--color-text-primary);
+  background: rgba(22, 39, 66, 0.85);
+  border-color: rgba(199, 255, 69, 0.38);
+  transform: translateY(-1px);
+}
+
+.eb-dashboard-nav-pill svg {
+  color: var(--color-accent);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.eb-dashboard-nav-pill-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: rgba(199, 255, 69, 0.16);
+  color: var(--color-accent);
+}
+
+/* Unified 3D Visual Progress & Bar Charts */
+.eb-chart-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.eb-chart-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 0.95rem;
+  border-radius: 12px;
+  background: rgba(7, 15, 28, 0.65);
+  border: 1px solid rgba(139, 179, 255, 0.14);
+}
+
+.eb-chart-row-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.84rem;
+}
+
+.eb-chart-row-title {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.eb-chart-row-meta {
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.eb-progress-track {
+  width: 100%;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(4, 9, 18, 0.88);
+  border: 1px solid rgba(139, 179, 255, 0.16);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+.eb-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #84CC16 0%, #C7FF45 100%);
+  box-shadow: 0 0 10px rgba(199, 255, 69, 0.35);
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.eb-progress-fill--sky {
+  background: linear-gradient(90deg, #0284C7 0%, #38BDF8 100%);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+.eb-progress-fill--amber {
+  background: linear-gradient(90deg, #D97706 0%, #FBBF24 100%);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+}
+
+.eb-progress-fill--emerald {
+  background: linear-gradient(90deg, #059669 0%, #34D399 100%);
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+}
+
+/* Profile Completion & Checklist Items */
+.eb-profile-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.eb-profile-check-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(7, 15, 28, 0.68);
+  border: 1px solid rgba(139, 179, 255, 0.16);
+  font-size: 0.82rem;
+}
+
+.eb-profile-check-item.is-complete {
+  border-color: rgba(52, 211, 153, 0.32);
+}
+
+.eb-profile-check-item.is-pending {
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+/* Notification Feed List */
+.eb-notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.eb-notification-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(7, 15, 28, 0.68);
+  border: 1px solid rgba(139, 179, 255, 0.16);
+}
+
+.eb-notification-item-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.eb-notification-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(199, 255, 69, 0.12);
+  border: 1px solid rgba(199, 255, 69, 0.28);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Assigned Event Banner (Staff Terminal & Upcoming Event Rows) */
+.eb-assigned-event-banner {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1.15rem;
+  padding: 1.25rem 1.4rem;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(199, 255, 69, 0.08), transparent 48%),
+    linear-gradient(165deg, rgba(16, 30, 52, 0.96), rgba(8, 17, 31, 0.99));
+  border: 1px solid rgba(139, 179, 255, 0.24);
+  box-shadow: var(--shadow-card);
+}
+
+.eb-assigned-event-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(199, 255, 69, 0.3);
+  background: #060E1A;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .eb-assigned-event-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .eb-dashboard-nav-pills {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.65rem;
+  }
+
+  .eb-dashboard-nav-pill {
+    white-space: nowrap;
+  }
+}
+
 /* Phones: the homepage's event sections are swipeable rails (one card and a peek of the next), and the featured
    flyer or photo leads the hero, above the search. Tablets and desktops keep the grids. */
 @media (max-width: 767px) {
@@ -819,3 +2690,38 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
 /* The host's venue photos on the event page: a short row that scrolls sideways on phones. */
 .eb-venue-photos { display: flex; gap: var(--space-3); margin: 0; padding: 0 0 var(--space-2); list-style: none; overflow-x: auto; scroll-snap-type: x mandatory; }
 .eb-venue-photos > li { flex: 0 0 min(240px, 70%); scroll-snap-align: start; aspect-ratio: var(--ratio-photo); border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--color-border); }
+
+/* --------------------------------------------------------------------------
+   Ticket themes (App\Support\TicketTheme): each kind of event gets its own look on the EventBite palette, set by
+   --tt-accent / --tt-accent-2 on the ticket. Colour, type and a faint motif only; the QR well stays plain white,
+   and the host's ticket designer accent (data-accent) still colours the details it already did.
+   -------------------------------------------------------------------------- */
+.eb-ticket-theme { --tt-motif: none; border-top: 0; }
+.eb-ticket-theme .eb-ticket-card-head::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; z-index: 2; background: linear-gradient(90deg, var(--tt-accent), var(--tt-accent-2)); }
+.eb-ticket-theme .eb-ticket-card-body { background-image: var(--tt-motif); background-repeat: no-repeat; }
+.eb-ticket-theme-kicker { display: inline-block; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--tt-accent); }
+.eb-ticket-theme .eb-ticket-card-tear { border-top-color: color-mix(in srgb, var(--tt-accent) 55%, transparent); }
+.eb-ticket-theme .eb-ticket-type-pill { border-color: color-mix(in srgb, var(--tt-accent) 45%, transparent); }
+
+/* Caribbean: warm sunset glow and a quiet diagonal rhythm. */
+.eb-ticket-theme-island { --tt-motif: radial-gradient(120% 60% at 100% 0%, color-mix(in srgb, var(--tt-accent-2) 14%, transparent), transparent 60%), repeating-linear-gradient(135deg, color-mix(in srgb, var(--tt-accent) 5%, transparent) 0 2px, transparent 2px 22px); }
+/* Music and entertainment: stage light from above, bold uppercase title. */
+.eb-ticket-theme-stage { --tt-motif: radial-gradient(90% 55% at 50% 0%, color-mix(in srgb, var(--tt-accent) 20%, transparent), transparent 65%); }
+.eb-ticket-theme-stage .eb-pass-event-title, .eb-ticket-theme-stage .eb-ticket-pass-title { text-transform: uppercase; letter-spacing: 0.02em; font-weight: 900; }
+/* Food: warm, appetising glow. */
+.eb-ticket-theme-feast { --tt-motif: radial-gradient(100% 60% at 0% 0%, color-mix(in srgb, var(--tt-accent) 14%, transparent), transparent 60%); }
+/* Celebrations and weddings: refined serif title and a thin gold frame. */
+.eb-ticket-theme-celebration { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tt-accent) 55%, transparent); --tt-motif: radial-gradient(80% 50% at 50% 0%, color-mix(in srgb, var(--tt-accent) 10%, transparent), transparent 70%); }
+.eb-ticket-theme-celebration .eb-pass-event-title, .eb-ticket-theme-celebration .eb-ticket-pass-title { font-family: Georgia, 'Times New Roman', serif; font-weight: 600; letter-spacing: 0.01em; }
+.eb-ticket-theme-celebration .eb-ticket-theme-kicker { letter-spacing: 0.24em; }
+/* Professional: no motif, calm and clear. */
+.eb-ticket-theme-professional .eb-pass-event-title, .eb-ticket-theme-professional .eb-ticket-pass-title { font-weight: 700; letter-spacing: -0.01em; }
+/* Community: fresh green glow. */
+.eb-ticket-theme-community { --tt-motif: radial-gradient(100% 55% at 100% 0%, color-mix(in srgb, var(--tt-accent) 13%, transparent), transparent 62%); }
+/* Classic: the brand's lime-to-purple. */
+.eb-ticket-theme-classic { --tt-motif: radial-gradient(100% 55% at 100% 0%, color-mix(in srgb, var(--tt-accent-2) 14%, transparent), transparent 62%); }
+
+@media print { .eb-ticket-theme .eb-ticket-card-body { background-image: none; } }
+@media (forced-colors: active) { .eb-ticket-theme .eb-ticket-card-head::after { background: CanvasText; } }
+/* Keepsake: a past event's ticket (App\Support\TicketLifecycle). */
+.eb-badge-keepsake { background: rgba(231, 200, 115, 0.14); color: #E7C873; border: 1px solid rgba(231, 200, 115, 0.45); }

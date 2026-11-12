@@ -137,7 +137,7 @@ class EventController extends Controller
             return redirect()->guest(route('login'))->with('error', 'Please sign in to view this event.');
         }
 
-        $event = Event::with(['menuItems', 'mediaItems'])->findOrFail($id);
+        $event = Event::with(['menuItems', 'mediaItems', 'performers'])->findOrFail($id);
         // A promoter's link (?ref=CODE): remember them for this buyer's session, so their sale is credited.
         if ($request->filled('ref')) {
             $affiliate = \App\Models\Affiliate::where('event_id', $event->id)->where('is_active', true)

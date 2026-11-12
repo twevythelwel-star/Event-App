@@ -1,12 +1,14 @@
 {{--
     Order price breakdown. Shows amounts the pricing services already calculated; it never adds anything up.
     Props:
-      lines     list of ['label' => string, 'amount_minor' => int] (or legacy 'amount' in major units)
-      charges   list of ['kind' => platform_fee|host_fee|tax|discount, 'label' => string, 'amount_minor' => int]
-      subtotal  item subtotal in minor units (optional; shown when there are charges)
-      total     total in minor units (totalMinor) or, legacy, major units (total)
-      currency  ISO code; formatting comes from config/money.php
-      note      optional text under the total
+      lines        list of ['label' => string, 'amount_minor' => int] (or legacy 'amount' in major units)
+      charges      list of ['kind' => platform_fee|host_fee|tax|discount, 'label' => string, 'amount_minor' => int]
+      subtotal     item subtotal in minor units (optional; shown when there are charges)
+      total        total in minor units (totalMinor) or, legacy, major units (total)
+      currency     ISO code; formatting comes from config/money.php
+      note         optional text under the total
+      showGraphic  optional bool to render the order summary graphic header
+      graphicKey   optional VisualAssets::illustration key (default 'order-fulfillment')
     Legacy: fee (major units) shows one "Packaging fee" line when no charges are given.
 --}}
 @props([
@@ -18,6 +20,8 @@
     'total' => null,
     'currency' => null,
     'note' => null,
+    'showGraphic' => false,
+    'graphicKey' => 'food-order',
 ])
 
 @php
@@ -28,9 +32,19 @@
     $kindOrder = ['discount' => 0, 'host_fee' => 1, 'platform_fee' => 2, 'tax' => 3];
     $charges = collect($charges ?? [])->sortBy(fn ($c) => $kindOrder[$c['kind']] ?? 9)->values();
     $hasTax = $charges->contains(fn ($c) => $c['kind'] === 'tax');
+    $illustration = $showGraphic ? \App\Support\VisualAssets::illustration($graphicKey) : null;
 @endphp
 
-<div {{ $attributes }}>
+<div {{ $attributes->merge(['class' => 'eb-price-summary-wrap']) }}>
+    @if($showGraphic && $illustration)
+        <div class="eb-price-summary-banner" aria-hidden="true">
+            <img src="{{ $illustration['url'] }}" alt="" width="{{ $illustration['width'] ?? 72 }}" height="{{ $illustration['height'] ?? 54 }}" class="eb-price-summary-art" loading="lazy" decoding="async">
+            <div class="eb-price-summary-banner-copy">
+                <span class="eb-price-summary-banner-kicker">Verified EventBite Checkout</span>
+                <span class="eb-price-summary-banner-sub">{{ count($lines) }} {{ \Illuminate\Support\Str::plural('line item', count($lines)) }} · {{ $currency }}</span>
+            </div>
+        </div>
+    @endif
     <dl class="eb-price-summary">
         @foreach($lines as $line)
             <div class="eb-price-row">

@@ -1,0 +1,107 @@
+/*
+ * My Tickets collection, past-event keepsakes, and ticket motion.
+ * Loaded on the collection and the ticket page. Every animation sits inside prefers-reduced-motion: no-preference,
+ * and none holds back the ticket: content is readable and usable from the first frame.
+ */
+
+/* ---------- Collection tabs ---------- */
+.eb-collection-tabs .eb-tab { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+.eb-collection-count {
+  display: inline-flex; justify-content: center; min-width: 1.6em; padding: 0 6px; border-radius: 999px;
+  background: var(--color-surface-elevated); color: var(--color-text-secondary); font-size: 0.72rem; font-weight: 700;
+}
+.eb-tab.is-active .eb-collection-count { background: rgba(199, 255, 69, 0.16); color: #C7FF45; }
+
+/* ---------- Collectible cards: artwork first ---------- */
+.eb-collectible-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+.eb-collectible {
+  position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 18px;
+  background: var(--color-surface); border: 1px solid var(--color-border); color: inherit; text-decoration: none;
+  box-shadow: 0 10px 28px rgba(2, 8, 18, 0.35);
+}
+.eb-collectible::before {
+  content: ""; position: absolute; inset: 0 0 auto; height: 4px; z-index: 3;
+  background: linear-gradient(90deg, var(--tt-accent, #C7FF45), var(--tt-accent-2, #8B5CF6));
+}
+a.eb-collectible:focus-visible { outline: 3px solid #C7FF45; outline-offset: 3px; }
+.eb-collectible-art { position: relative; aspect-ratio: 4 / 5; overflow: hidden; background: #0B192B; }
+.eb-collectible-art picture, .eb-collectible-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.eb-collectible-art::after {
+  content: ""; position: absolute; inset: 45% 0 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(7, 17, 31, 0) 0%, rgba(7, 17, 31, 0.85) 100%);
+}
+.eb-collectible-stamp {
+  position: absolute; left: 12px; bottom: 12px; z-index: 2; padding: 4px 10px; border-radius: 999px;
+  background: var(--tt-accent, #C7FF45); color: #07111F; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.eb-collectible.is-pending .eb-collectible-stamp { background: #FBBF24; }
+.eb-collectible.is-keepsake .eb-collectible-stamp {
+  background: rgba(7, 17, 31, 0.72); color: #E7C873; border: 2px solid #E7C873; transform: rotate(-4deg);
+}
+.eb-collectible.is-void .eb-collectible-stamp { background: rgba(127, 29, 29, 0.85); color: #FECACA; }
+.eb-collectible.is-keepsake .eb-collectible-art img { filter: sepia(0.22) saturate(0.88); }
+.eb-collectible.is-void .eb-collectible-art img { filter: grayscale(0.85) brightness(0.7); }
+
+.eb-collectible-body {
+  flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px 16px;
+  border-top: 2px dashed rgba(168, 182, 200, 0.28);
+}
+.eb-collectible-title { margin: 2px 0 4px; font-size: 1.05rem; font-weight: 800; line-height: 1.25; color: var(--color-text-primary); }
+.eb-collectible-meta { margin: 0; display: flex; gap: 6px; align-items: center; font-size: 0.84rem; color: var(--color-text-secondary); }
+.eb-collectible-foot {
+  margin-top: auto; padding-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 0.78rem; color: var(--color-text-secondary);
+}
+.eb-collectible-category { display: inline-flex; gap: 4px; align-items: center; font-weight: 600; color: var(--color-text-primary); }
+.eb-collectible-code { font-family: var(--font-mono); letter-spacing: 0.06em; }
+
+/* ---------- Keepsake ticket page ---------- */
+.eb-digital-pass.is-keepsake .eb-ticket-card-head img { filter: sepia(0.2) saturate(0.9); }
+.eb-keepsake-panel {
+  display: grid; gap: var(--space-3); justify-items: center; text-align: center; padding: var(--space-4);
+  border: 1px dashed rgba(231, 200, 115, 0.55); border-radius: 16px; background: rgba(231, 200, 115, 0.06);
+}
+.eb-keepsake-stamp {
+  display: inline-block; padding: 6px 18px; border: 3px double #E7C873; border-radius: 8px; color: #E7C873;
+  font-weight: 900; letter-spacing: 0.18em; text-transform: uppercase; transform: rotate(-3deg);
+}
+.eb-keepsake-facts { display: grid; gap: var(--space-2) var(--space-4); grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); width: 100%; margin: 0; text-align: left; }
+.eb-keepsake-facts dt { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-text-secondary); }
+.eb-keepsake-facts dd { margin: 2px 0 0; font-weight: 600; color: var(--color-text-primary); overflow-wrap: anywhere; }
+.eb-keepsake-facts .eb-keepsake-code { font-family: var(--font-mono); letter-spacing: 0.06em; }
+
+.eb-confirm-tick { display: inline-flex; margin-left: 6px; color: #C7FF45; }
+
+@media print { .eb-keepsake-stamp { color: #000; border-color: #000; } }
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  /* The ticket's artwork carries over from its card in the collection to the open ticket (where supported). */
+  @view-transition { navigation: auto; }
+  ::view-transition-group(*) { animation-duration: 280ms; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+
+  .eb-collectible { transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 200ms ease, border-color 200ms ease; }
+  a.eb-collectible:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--tt-accent, #C7FF45) 45%, var(--color-border)); box-shadow: 0 16px 34px rgba(2, 8, 18, 0.45); }
+  a.eb-collectible:active { transform: translateY(-1px) scale(0.995); }
+
+  /* Cards settle in when a tab opens (they restart each time a panel is shown). Short and capped. */
+  .eb-collectible-grid > * { animation: eb-collectible-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .eb-collectible-grid > :nth-child(2) { animation-delay: 30ms; }
+  .eb-collectible-grid > :nth-child(3) { animation-delay: 60ms; }
+  .eb-collectible-grid > :nth-child(4) { animation-delay: 90ms; }
+  .eb-collectible-grid > :nth-child(n+5) { animation-delay: 120ms; }
+
+  /* Opening a ticket: a quick lift into place. Settled passes already have their own pop (animations.css). */
+  .eb-digital-pass:not(.is-settled) { animation: eb-ticket-open 280ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+  /* The QR code fades up as it is revealed: no delay, never hidden for longer than the fade. */
+  .eb-ticket-qr-well[data-qr-type="admission"] { animation: eb-qr-reveal 260ms ease-out both; }
+  .eb-keepsake-stamp { animation: eb-stamp-in 420ms cubic-bezier(0.34, 1.35, 0.64, 1) both; }
+  .eb-confirm-tick { animation: eb-confirm-pop 420ms cubic-bezier(0.34, 1.35, 0.64, 1) both; }
+}
+
+@keyframes eb-collectible-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes eb-ticket-open { from { opacity: 0.4; transform: translateY(8px) scale(0.985); } to { opacity: 1; transform: none; } }
+@keyframes eb-qr-reveal { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes eb-stamp-in { from { opacity: 0; transform: rotate(-3deg) scale(1.25); } to { opacity: 1; transform: rotate(-3deg) scale(1); } }
+@keyframes eb-confirm-pop { 0% { opacity: 0; transform: scale(0.4); } 60% { opacity: 1; transform: scale(1.2); } 100% { transform: scale(1); } }
+

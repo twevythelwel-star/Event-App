@@ -27,6 +27,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\NotificationWebhookController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\RoleSwitchController;
+use App\Http\Controllers\SavedEventsController;
 use App\Http\Controllers\StaffAssignmentController;
 use App\Http\Controllers\SystemAdminDashboardController;
 use App\Http\Controllers\WorkerTerminalController;
@@ -223,6 +224,10 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/attendee/dashboard', [AttendeeDashboardController::class, 'index'])->name('attendee.dashboard');
     Route::post('/attendee/orders/{orderId}/cancellation-requests', [AttendeeDashboardController::class, 'requestCancellation'])->name('attendee.cancellations.store')->middleware('throttle:10,1');
     Route::post('/attendee/retrieve-ticket', [AttendeeDashboardController::class, 'retrieveTicket'])->name('attendee.retrieve-ticket');
+
+    // Saved events (attendee bookmarks)
+    Route::get('/saved', [SavedEventsController::class, 'index'])->name('saved.index');
+    Route::post('/events/{event}/save', [SavedEventsController::class, 'toggle'])->name('events.save.toggle')->middleware('throttle:60,1');
 
     // 2. Event Host Command Center
     Route::get('/host/dashboard', [HostDashboardController::class, 'index'])->name('host.dashboard');

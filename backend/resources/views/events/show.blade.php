@@ -4,16 +4,29 @@
 @section('page-title', $event->title ?? 'Event Details')
 
 @section('content')
+@php
+    $currency ??= ($event->currency ?: \App\Support\Currency::defaultCode());
+    $tiers ??= \App\Services\Checkout\TicketTierCatalog::sellable($event);
+    $menu ??= $event->menuItems->where('is_active', true)->sortBy('sort_order')->values();
+    $availability ??= \App\Support\EventListing::availability($event);
+    $fromPriceText ??= \App\Support\EventListing::fromPriceText($event);
+    $canOrder ??= (in_array($availability['key'], ['on_sale', 'food'], true) || ($event->isOrderingAllowed() && $menu->isNotEmpty() && $event->supports_food_ordering));
+    $paymentMethods ??= \App\Services\Checkout\PaymentOptions::forEvent($event);
+    $chargeRules ??= (new \App\Services\Pricing\ChargeCalculator())->applicableRules($event);
+    $packagingFeeMinor ??= ($menu->isNotEmpty() ? (int) $event->packaging_fee_minor : 0);
+    $policy ??= \App\Models\HostPaymentPolicy::where('organizer_id', $event->organizer_id)->first();
+    $eventQr ??= null;
+@endphp
 @push('head')
     <x-preload-image :image="$event->coverImage()" sizes="100vw" />
 @endpush
 <style>
-    /* Premium Midnight-Navy Theme for Event Detail Screen */
+    /* 3D Soft Realism & Dark Mode Elevation for Event Details */
     .event-detail-root {
-        background-color: #0B132B;
+        background-color: var(--color-background);
         min-height: 100vh;
-        color: #FFFFFF;
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        color: var(--color-text-primary);
+        font-family: var(--font-sans);
         margin: calc(-1 * var(--layout-page-padding-y)) calc(-1 * var(--layout-page-padding-x)) 0;
         padding-bottom: 5rem;
         overflow-wrap: anywhere;
@@ -24,18 +37,21 @@
         position: relative;
         width: 100%;
         aspect-ratio: var(--ratio-banner, 21 / 9);
-        min-height: 240px;
+        min-height: 260px;
         max-height: 480px;
         overflow: hidden;
+        background-color: var(--color-surface-recessed);
+        border-bottom: 1px solid var(--color-border-strong);
     }
     @media (max-width: 639px) { .detail-hero { aspect-ratio: var(--ratio-event, 16 / 10); } }
 
     .detail-hero-img {
+        position: relative;
         width: 100%;
         height: 100%;
         object-fit: cover;
         object-position: center 30%;
-        filter: brightness(0.9);
+        filter: brightness(0.92);
     }
 
     .detail-hero-backdrop {
@@ -44,15 +60,15 @@
         width: calc(100% + 80px);
         height: calc(100% + 80px);
         object-fit: cover;
-        filter: blur(28px) saturate(1.3) brightness(0.7);
+        filter: blur(28px) saturate(1.3) brightness(0.68);
         transform: scale(1.1);
     }
-    .detail-hero-img { position: relative; }
 
     .detail-hero-overlay {
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, rgba(11, 19, 43, 0.55) 0%, rgba(11, 19, 43, 0.15) 45%, rgba(11, 19, 43, 0.95) 90%, #0B132B 100%);
+        background: linear-gradient(180deg, rgba(7, 17, 31, 0.58) 0%, rgba(7, 17, 31, 0.18) 45%, rgba(7, 17, 31, 0.94) 90%, var(--color-background) 100%);
+        pointer-events: none;
     }
 
     .detail-hero-nav {
@@ -73,22 +89,26 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background-color: rgba(15, 23, 42, 0.75);
+        background-color: rgba(13, 27, 45, 0.82);
+        background-image: var(--gradient-secondary-btn-3d);
         backdrop-filter: blur(12px);
-        color: #FFFFFF;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border-strong);
+        border-top-color: rgba(255, 255, 255, 0.18);
         border-radius: 9999px;
         padding: 8px 18px;
         font-size: 13px;
         font-weight: 700;
         text-decoration: none;
         cursor: pointer;
-        transition: all 0.2s ease;
+        box-shadow: var(--shadow-btn-secondary);
+        transition: transform 0.18s var(--ease-out-quart), border-color 0.18s ease, background-color 0.18s ease;
     }
 
     .btn-glass:hover {
-        background-color: rgba(255, 255, 255, 0.15);
-        color: #FFFFFF;
+        background-color: var(--color-surface-elevated);
+        border-color: var(--color-accent-border);
+        color: var(--color-text-primary);
         transform: translateY(-1px);
     }
 
@@ -96,21 +116,29 @@
         width: 42px;
         height: 42px;
         border-radius: 50%;
-        background-color: rgba(15, 23, 42, 0.75);
+        background-color: rgba(13, 27, 45, 0.82);
+        background-image: var(--gradient-secondary-btn-3d);
         backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: #FFFFFF;
+        border: 1px solid var(--color-border-strong);
+        border-top-color: rgba(255, 255, 255, 0.18);
+        color: var(--color-text-primary);
         display: flex;
         align-items: center;
         justify-content: center;
         cursor: pointer;
         font-size: 16px;
-        transition: all 0.2s ease;
+        box-shadow: var(--shadow-btn-secondary);
+        transition: transform 0.18s var(--ease-out-quart), border-color 0.18s ease;
+    }
+
+    .icon-glass-btn:hover {
+        border-color: var(--color-accent-border);
+        transform: translateY(-1px);
     }
 
     .detail-main-layout {
         max-width: 1200px;
-        margin: -40px auto 0;
+        margin: -44px auto 0;
         padding: 0 24px;
         position: relative;
         z-index: 5;
@@ -130,30 +158,73 @@
     }
 
     .card-navy {
-        background-color: #162038;
+        background-color: var(--color-surface);
+        background-image: var(--gradient-surface-3d);
         border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--color-border);
+        border-top-color: rgba(255, 255, 255, 0.13);
         padding: 24px;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--shadow-card);
+    }
+
+    .detail-well {
+        background-color: var(--color-surface-recessed);
+        border-radius: 14px;
+        border: 1px solid var(--color-border-strong);
+        box-shadow: var(--shadow-3d-inset);
+        padding: 16px;
+    }
+
+    .detail-highlights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+        gap: 10px;
+    }
+
+    .detail-highlight-pill {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 11px 14px;
+        border-radius: 12px;
+        background-color: var(--color-surface-recessed);
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-3d-inset);
+    }
+
+    .detail-highlight-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-muted);
+    }
+
+    .detail-highlight-value {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--color-text-primary);
     }
 
     .section-tab-nav {
-        background-color: #162038;
+        background-color: var(--color-surface-recessed);
         padding: 6px;
         border-radius: 16px;
         display: flex;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--color-border-strong);
+        box-shadow: var(--shadow-3d-inset);
         gap: 6px;
         margin-bottom: 24px;
+        overflow-x: auto;
     }
 
     .section-tab-btn {
         flex: 1;
         padding: 12px 16px;
         border-radius: 12px;
-        border: none;
+        border: 1px solid transparent;
         background-color: transparent;
-        color: #94A3B8;
+        color: var(--color-text-secondary);
         font-weight: 700;
         font-size: 14px;
         cursor: pointer;
@@ -161,13 +232,22 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
+        white-space: nowrap;
         transition: all 0.2s ease;
     }
 
+    .section-tab-btn:hover:not(.active) {
+        color: var(--color-text-primary);
+        background-color: rgba(255, 255, 255, 0.04);
+    }
+
     .section-tab-btn.active {
-        background-color: #4F46E5;
-        color: #FFFFFF;
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+        background-color: var(--color-surface-elevated);
+        background-image: var(--gradient-surface-elevated-3d);
+        color: var(--color-accent);
+        border-color: var(--color-accent-border);
+        border-top-color: rgba(199, 255, 69, 0.45);
+        box-shadow: var(--shadow-subtle);
     }
 
     .tab-pane {
@@ -188,23 +268,37 @@
     }
 
     .gallery-item {
-        width: 200px;
+        width: 220px;
         aspect-ratio: var(--ratio-photo, 4 / 3);
         border-radius: 14px;
         overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.12);
+        border: 1px solid var(--color-border-strong);
+        border-top-color: rgba(255, 255, 255, 0.14);
+        background-color: var(--color-surface-recessed);
+        box-shadow: var(--shadow-subtle);
         position: relative;
         flex-shrink: 0;
         cursor: pointer;
+        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .gallery-item:hover {
+        transform: translateY(-3px);
+        border-color: var(--color-accent-border);
+        box-shadow: var(--shadow-card);
     }
 
     .gallery-item img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        transition: transform 0.35s var(--ease-out-quart);
+    }
+    .gallery-item:hover img {
+        transform: scale(1.04);
     }
     .gallery-open { all: unset; display: block; width: 100%; height: 100%; cursor: zoom-in; }
-    .gallery-open:focus-visible { outline: 2px solid #C7FF45; outline-offset: -2px; }
+    .gallery-open:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
     .gallery-tag { display: block; font-size: 10px; font-weight: 600; color: #CBD5E1; }
 
     .gallery-caption {
@@ -212,39 +306,91 @@
         bottom: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(15,23,42,0.9) 100%);
-        padding: 8px 10px;
+        background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(7, 17, 31, 0.92) 100%);
+        padding: 10px 12px 8px;
         font-size: 11px;
         font-weight: 700;
         color: #FFFFFF;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        pointer-events: none;
     }
 
     .btn-gradient-purchase {
         width: 100%;
-        background: linear-gradient(135deg, #7C3AED 0%, #EC4899 50%, #F97316 100%);
-        border: none;
+        background-color: var(--color-accent);
+        background-image: var(--gradient-accent-3d);
+        border: 1px solid rgba(255, 255, 255, 0.3);
         border-radius: 14px;
-        padding: 16px 24px;
-        font-size: 16px;
+        padding: 15px 24px;
+        font-size: 15px;
         font-weight: 800;
-        color: #FFFFFF;
+        color: var(--color-accent-text);
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
-        box-shadow: 0 10px 25px rgba(236, 72, 153, 0.35);
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-btn-primary);
+        transition: transform 0.18s var(--ease-out-quart), box-shadow 0.18s ease, background-color 0.18s ease;
         text-decoration: none;
+        box-sizing: border-box;
     }
 
     .btn-gradient-purchase:hover {
+        background-color: var(--color-accent-hover);
         transform: translateY(-2px);
-        box-shadow: 0 14px 30px rgba(236, 72, 153, 0.45);
-        color: #FFFFFF;
+        box-shadow: var(--shadow-btn-primary-hover);
+        color: var(--color-accent-text);
+    }
+
+    .tier-option-card {
+        background-color: var(--color-surface);
+        background-image: var(--gradient-surface-3d);
+        border: 1px solid var(--color-border);
+        border-top-color: rgba(255, 255, 255, 0.13);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        box-shadow: var(--shadow-subtle);
+        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .tier-option-card:hover {
+        transform: translateY(-2px);
+        border-color: var(--color-border-strong);
+        border-top-color: rgba(199, 255, 69, 0.35);
+        box-shadow: var(--shadow-card);
+    }
+
+    .menu-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    @media (max-width: 767px) {
+        body:has(#event-detail-page) .eb-app-header { display: none !important; }
+        body:has(#event-detail-page) main.content-canvas { padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: calc(var(--layout-bottom-nav-height) + 84px + env(safe-area-inset-bottom, 0px)) !important; }
+        #event-detail-page .detail-hero { min-height: 0; height: auto; aspect-ratio: 4 / 5; max-height: 560px; border: 0; }
+        #event-detail-page .detail-hero-img { position: absolute; inset: 0; }
+        #event-detail-page .detail-hero-overlay { background: linear-gradient(180deg, rgba(7,17,31,.08) 35%, rgba(7,17,31,.45) 64%, rgba(7,17,31,.98) 100%); }
+        #event-detail-page .detail-hero-nav { top: max(14px, env(safe-area-inset-top, 0px)); padding: 0 14px; }
+        #event-detail-page .detail-hero-nav .btn-glass { width: 42px; height: 42px; padding: 0; justify-content: center; overflow: hidden; font-size: 0; }
+        #event-detail-page .detail-hero-nav .btn-glass span:first-child { font-size: 1.4rem; }
+        #event-detail-page .detail-hero-nav .btn-glass span:last-child { display: none; }
+        #event-detail-page .detail-main-layout { margin: -56px 0 0; padding: 0 14px; gap: 18px; }
+        #event-detail-page .card-navy { padding: 18px; border-radius: 18px; }
+        #event-detail-page .section-tab-nav { position: sticky; top: 0; z-index: 20; margin: 0 -14px 4px; border-radius: 0; border-left: 0; border-right: 0; padding: 6px 10px; }
+        #event-detail-page .section-tab-btn { min-height: 44px; padding: 8px 10px; font-size: .76rem; }
+        #event-detail-page .gallery-item { width: min(70vw, 260px); }
+        #event-detail-page .eb-buy-bar { bottom: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding: 9px 14px; }
+        #event-detail-page .eb-buy-bar .eb-btn { min-width: 52%; min-height: 48px; border-radius: 999px; }
+        .eb-customer-bottom-nav { height: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
     }
 </style>
 
@@ -268,7 +414,7 @@
         @endunless
         <x-responsive-image :image="$cover" :alt="$event->hasFlyer() ? ($event->flyer_alt_text ?: $event->title) : $cover->alt" class="detail-hero-img" sizes="100vw" :eager="true"
             :fit="$isPhoto ? 'cover' : 'contain'"
-            :style="$isPhoto ? '' : 'background: transparent; filter: drop-shadow(0 18px 40px rgba(0,0,0,.5));'" />
+            :style="$isPhoto ? ('object-position:' . e($event->flyer_position ?: '50% 35%')) : 'background: transparent; filter: drop-shadow(0 18px 40px rgba(0,0,0,.5));'" />
         <div class="detail-hero-overlay"></div>
         <x-image-label :image="$cover" corner="top-left" />
 
@@ -291,167 +437,292 @@
     <div class="detail-main-layout">
         <!-- LEFT COLUMN: Metadata, Tabs, Media Gallery & Organizer -->
         <div style="display: flex; flex-direction: column; gap: 28px;">
-            <!-- Event Title & Overview -->
-            <div class="card-navy" style="position: relative;">
-                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-                    <span style="background: rgba(99, 102, 241, 0.85); color: #FFFFFF; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase;">
-                        {{ $event->category ?: 'Event' }}
-                    </span>
-                    @foreach($event->traditionLabels() as $tradition)
-                        <a href="{{ route('events.index', ['q' => $tradition]) }}" style="border: 1px solid rgba(255, 255, 255, 0.28); color: #F8FAFC; font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 9999px; text-decoration: none;">{{ $tradition }}</a>
-                    @endforeach
-                    @if($event->is_ordering_open)
-                        <span style="background: rgba(16, 185, 129, 0.85); color: #FFFFFF; font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 9999px;">
-                            ✓ Taking orders
+            <!-- Event Title, Description, Highlights & Venue Information -->
+            <div class="card-navy" style="position: relative; display: flex; flex-direction: column; gap: 18px;">
+                <div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+                        <span class="eb-badge eb-badge-info" style="text-transform: uppercase; letter-spacing: 0.04em;">
+                            {{ $event->category ?: 'Event' }}
                         </span>
+                        @foreach($event->traditionLabels() as $tradition)
+                            <a href="{{ route('events.index', ['q' => $tradition]) }}" style="border: 1px solid rgba(255, 255, 255, 0.24); background: rgba(255, 255, 255, 0.05); color: #F8FAFC; font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 9999px; text-decoration: none;">{{ $tradition }}</a>
+                        @endforeach
+                        @php $heroTone = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$availability['tone']] ?? 'eb-badge-info'; @endphp
+                        <span class="eb-badge {{ $heroTone }}">
+                            <span class="eb-badge-dot" aria-hidden="true"></span>
+                            <span>{{ $availability['label'] }}</span>
+                        </span>
+                        @if($event->is_ordering_open)
+                            <span class="eb-badge eb-badge-accent">
+                                ✓ Taking orders
+                            </span>
+                        @endif
+                    </div>
+
+                    <h1 style="font-size: clamp(1.6rem, 2.5vw, 2.1rem); font-weight: 900; color: #FFFFFF; line-height: 1.2; margin: 0 0 8px; letter-spacing: -0.02em;">
+                        {{ $event->title }}
+                    </h1>
+
+                    @if(!empty($event->tagline))
+                        <p style="font-size: 15px; color: var(--color-text-secondary); line-height: 1.5; margin: 0; font-weight: 600;">
+                            {{ $event->tagline }}
+                        </p>
                     @endif
                 </div>
 
-                <h1 style="font-size: 28px; font-weight: 900; color: #FFFFFF; line-height: 1.25; margin: 0 0 10px; letter-spacing: -0.01em;">
-                    {{ $event->title }}
-                </h1>
-
-                @if(!empty($event->tagline))
-                    <p style="font-size: 15px; color: #94A3B8; line-height: 1.5; margin: 0 0 18px; font-weight: 500;">
-                        {{ $event->tagline }}
-                    </p>
-                @endif
-
-                <!-- Metadata Highlights Grid -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; padding: 16px; background-color: #0F172A; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.06);">
-                    <div style="display: flex; gap: 10px; align-items: flex-start;">
-                        <span style="font-size: 20px;">📅</span>
+                <!-- Date & Venue Primary Info -->
+                @php
+                    $fullAddress = trim(implode(', ', array_filter([
+                        $event->street_address,
+                        $event->city,
+                        trim(implode(' ', array_filter([$event->state_code, $event->zip_code]))),
+                    ]))) ?: $event->venue_address;
+                    $venueTypeLabel = $event->venue_type ? (\App\Models\Event::VENUE_TYPES[$event->venue_type] ?? $event->venue_type) : null;
+                @endphp
+                <div class="detail-well" id="venue-information" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <span style="font-size: 20px;" aria-hidden="true">📅</span>
                         <div>
-                            <div style="font-size: 10px; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Date & Time</div>
-                            <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">
+                            <div style="font-size: 10px; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; letter-spacing: 0.05em;">Date &amp; Time</div>
+                            <div style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">
                                 {{ $event->date_str ?? ($event->date ? (is_string($event->date) ? date('l, F j, Y', strtotime($event->date)) : $event->date->format('l, F j, Y')) : 'Date TBA') }}
                             </div>
-                            <div style="font-size: 11px; color: #94A3B8;">
+                            <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">
                                 {{ $event->time_str ?: 'Time to be announced' }}@if($event->timezone) ({{ $event->timezone }})@endif
                             </div>
+                            @if($event->doors_open_time)
+                                <div style="font-size: 11px; color: var(--color-accent); font-weight: 600; margin-top: 3px;">
+                                    Doors open: {{ $event->doors_open_time }}
+                                </div>
+                            @endif
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; align-items: flex-start;">
-                        <span style="font-size: 20px;">📍</span>
+                    <div style="display: flex; gap: 12px; align-items: flex-start;">
+                        <span style="font-size: 20px;" aria-hidden="true">📍</span>
                         <div>
-                            <div style="font-size: 10px; text-transform: uppercase; color: #94A3B8; font-weight: 700;">Venue & Location</div>
-                            <div style="font-size: 13px; font-weight: 700; color: #FFFFFF;">
+                            <div style="font-size: 10px; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; letter-spacing: 0.05em;">Venue &amp; Location</div>
+                            <div style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">
                                 {{ $event->venue_name ?: 'Venue to be announced' }}
+                                @if($event->venue_building_name)
+                                    <span style="font-weight: 600; color: var(--color-text-secondary);"> · {{ $event->venue_building_name }}</span>
+                                @endif
                             </div>
-                            <div style="font-size: 11px; color: #94A3B8;">
-                                {{ $event->venue_address }}
-                            </div>
+                            @if($fullAddress)
+                                <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">
+                                    {{ $fullAddress }}
+                                </div>
+                            @endif
+                            @if($venueTypeLabel)
+                                <div style="font-size: 11px; color: var(--color-text-muted); margin-top: 3px;">
+                                    {{ $venueTypeLabel }}
+                                </div>
+                            @endif
+                            @if($event->latitude !== null && $event->longitude !== null && $event->location_verified_at !== null)
+                                <div style="margin-top: 6px;">
+                                    <a href="https://www.openstreetmap.org/?mlat={{ urlencode((string) $event->latitude) }}&mlon={{ urlencode((string) $event->longitude) }}#map=16/{{ urlencode((string) $event->latitude) }}/{{ urlencode((string) $event->longitude) }}" target="_blank" rel="noopener" style="font-size: 11px; font-weight: 700; color: var(--color-accent); text-decoration: none;">
+                                        View verified map location ↗
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
+
+                @php $venuePhotos = $event->visiblePhotos('venue'); @endphp
+                @if($venuePhotos->isNotEmpty())
+                    {{-- The host's own photos of the venue: what the place looks like on arrival. --}}
+                    <ul class="eb-venue-photos" aria-label="Photos of the venue">
+                        @foreach($venuePhotos as $photo)
+                            <li><x-responsive-image :image="$photo->responsiveImage()" :alt="$photo->alt_text" sizes="(min-width: 768px) 240px, 70vw" /></li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                @if($event->venue_instructions || $event->parking_information || $event->accessibility_information)
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                        @if($event->venue_instructions)
+                            <div class="detail-highlight-pill">
+                                <span class="detail-highlight-label">Arrival &amp; Entry</span>
+                                <span class="detail-highlight-value" style="font-weight: 500; font-size: 12px;">{{ $event->venue_instructions }}</span>
+                            </div>
+                        @endif
+                        @if($event->parking_information)
+                            <div class="detail-highlight-pill">
+                                <span class="detail-highlight-label">Parking</span>
+                                <span class="detail-highlight-value" style="font-weight: 500; font-size: 12px;">{{ $event->parking_information }}</span>
+                            </div>
+                        @endif
+                        @if($event->accessibility_information)
+                            <div class="detail-highlight-pill">
+                                <span class="detail-highlight-label">Accessibility</span>
+                                <span class="detail-highlight-value" style="font-weight: 500; font-size: 12px;">{{ $event->accessibility_information }}</span>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                <!-- Event Description -->
+                @if($event->summary || $event->description)
+                    <div id="event-description" style="padding-top: 4px; border-top: 1px solid var(--color-border);">
+                        <h2 style="font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-secondary); margin: 0 0 8px;">Event Description</h2>
+                        @if($event->summary && $event->summary !== $event->description)
+                            <p style="font-size: 14px; font-weight: 600; color: var(--color-text-primary); line-height: 1.55; margin: 0 0 8px;">{{ $event->summary }}</p>
+                        @endif
+                        @if($event->description)
+                            <p style="font-size: 13.5px; color: var(--color-text-secondary); line-height: 1.65; margin: 0; white-space: pre-line;">{{ $event->description }}</p>
+                        @endif
+                    </div>
+                @endif
+
+                <!-- Event Highlights (derived strictly from populated event attributes) -->
+                @php
+                    $formatLabels = ['in_person' => 'In-Person Event', 'virtual' => 'Virtual / Online', 'hybrid' => 'Hybrid (In-Person + Online)'];
+                    $ageLabels = ['all_ages' => 'All Ages Welcome', '18_plus' => '18+ Only', '21_plus' => '21+ Only', 'family_friendly' => 'Family Friendly'];
+                    $dressLabels = ['casual' => 'Casual', 'smart_casual' => 'Smart Casual', 'island_chic' => 'Island Chic', 'semi_formal' => 'Semi-Formal', 'formal' => 'Formal / Black Tie', 'costume' => 'Themed / Costume'];
+                    $highlights = array_filter([
+                        'Format' => $event->event_format ? ($formatLabels[$event->event_format] ?? ucfirst(str_replace('_', ' ', (string) $event->event_format))) : null,
+                        'Category' => $event->category ?: null,
+                        'Traditions' => $event->traditionLabels() !== [] ? implode(', ', $event->traditionLabels()) : null,
+                        'Food Service' => ($event->food_service_start_time && $event->food_service_end_time)
+                            ? ($event->food_service_start_time . ' – ' . $event->food_service_end_time)
+                            : ($event->supports_food_ordering && $menu->isNotEmpty() ? ($menu->count() . ' menu items available') : null),
+                        'Age Policy' => $event->age_restriction ? ($ageLabels[$event->age_restriction] ?? ucfirst(str_replace('_', ' ', (string) $event->age_restriction))) : null,
+                        'Dress Code' => $event->dress_code ? ($dressLabels[$event->dress_code] ?? ucfirst(str_replace('_', ' ', (string) $event->dress_code))) : null,
+                        'Alcohol Service' => $event->serves_alcohol ? 'Served (21+ valid ID required)' : null,
+                        'Starting Price' => $fromPriceText ?: null,
+                    ]);
+                @endphp
+                @if($highlights !== [])
+                    <div id="event-highlights" style="padding-top: 4px; border-top: 1px solid var(--color-border);">
+                        <h2 style="font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-secondary); margin: 0 0 10px;">Event Highlights</h2>
+                        <div class="detail-highlights-grid">
+                            @foreach($highlights as $hLabel => $hValue)
+                                <div class="detail-highlight-pill">
+                                    <span class="detail-highlight-label">{{ $hLabel }}</span>
+                                    <span class="detail-highlight-value">{{ $hValue }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
             </div>
 
-            @php $venuePhotos = $event->visiblePhotos('venue'); @endphp
-            @if($venuePhotos->isNotEmpty())
-                {{-- The host's own photos of the venue: what the place looks like on arrival. --}}
-                <ul class="eb-venue-photos" aria-label="Photos of the venue">
-                    @foreach($venuePhotos as $photo)
-                        <li><x-responsive-image :image="$photo->responsiveImage()" :alt="$photo->alt_text" sizes="(min-width: 768px) 240px, 70vw" /></li>
-                    @endforeach
-                </ul>
-            @endif
             <!-- 3. Section Switcher Tabs (Tickets · Food · Details) -->
             <div>
                 <div class="section-tab-nav" role="tablist">
                     <button type="button" class="section-tab-btn active" id="tab-tickets-btn" onclick="switchSection('tickets')">
                         <span>🎟️</span>
-                        <span>Tickets & Passes</span>
+                        <span>Tickets &amp; Passes</span>
                     </button>
                     <button type="button" class="section-tab-btn" id="tab-food-btn" onclick="switchSection('food')">
                         <span>🍲</span>
-                        <span>Food & Dining ({{ $menu->count() }})</span>
+                        <span>Food &amp; Dining ({{ $menu->count() }})</span>
                     </button>
                     <button type="button" class="section-tab-btn" id="tab-details-btn" onclick="switchSection('details')">
                         <span>ℹ️</span>
-                        <span>Event Guide</span>
+                        <span>Event Guide &amp; Policies</span>
                     </button>
                 </div>
 
-                <!-- TAB 1: TICKETS (host-configured types from TicketTierCatalog) -->
+                <!-- TAB 1: TICKETS & MENU PREVIEW (host-configured types from TicketTierCatalog + dish previews) -->
                 <div class="tab-pane active" id="pane-tickets">
                     @if(empty($tiers))
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
                             <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No tickets on sale</h3>
-                            <p style="font-size: 13px; color: #94A3B8; margin: 0;">
+                            <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">
                                 {{ $menu->isNotEmpty() ? 'This event sells food only. See the Food tab.' : 'The organizer hasn’t put tickets on sale yet.' }}
                             </p>
                         </div>
                     @else
                         <div style="display: flex; flex-direction: column; gap: 14px;">
                             @foreach($tiers as $tier)
-                                <div class="card-navy" style="padding: 20px; display: flex; justify-content: space-between; gap: 16px; align-items: flex-start;">
+                                <div class="tier-option-card">
                                     <div style="min-width: 0;">
-                                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $tier['name'] }}</h3>
-                                        @if($tier['description'])<p style="font-size: 13px; color: #94A3B8; margin: 4px 0 0;">{{ $tier['description'] }}</p>@endif
-                                        <div style="margin-top: 8px;"><x-tier-availability :tier="$tier" /></div>
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $tier['name'] }}</h3>
+                                            @if(!empty($tier['category']))
+                                                <span class="eb-badge eb-badge-purple">{{ $tier['category'] }}</span>
+                                            @endif
+                                        </div>
+                                        @if($tier['description'])<p style="font-size: 13px; color: var(--color-text-secondary); margin: 6px 0 0; line-height: 1.45;">{{ $tier['description'] }}</p>@endif
+                                        <div style="margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                                            <x-tier-availability :tier="$tier" />
+                                            @if(!empty($tier['max_per_order']))
+                                                <span style="font-size: 11px; color: var(--color-text-muted);">Up to {{ (int) $tier['max_per_order'] }} per order</span>
+                                            @endif
+                                        </div>
                                     </div>
-                                    <div style="text-align: right; flex-shrink: 0;">
-                                        <div style="font-size: 20px; font-weight: 900; color: #FFFFFF;">{{ \App\Support\Money::formatMinor($tier['price_minor'], $tier['currency']) }}</div>
-                                        <div style="font-size: 11px; color: #94A3B8;">per ticket</div>
+                                    <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                                        <div style="font-size: 21px; font-weight: 900; color: #FFFFFF; font-variant-numeric: tabular-nums;">{{ \App\Support\Money::formatMinor($tier['price_minor'], $tier['currency']) }}</div>
+                                        <div style="font-size: 11px; color: var(--color-text-muted);">per ticket</div>
+                                        @if($canOrder && !empty($tier['on_sale']))
+                                            <a href="{{ auth()->check() ? route('checkout.tickets', $event) : route('login') }}" class="eb-btn eb-btn-secondary eb-btn-sm" style="margin-top: 4px; font-size: 12px; padding: 6px 12px;">
+                                                Select
+                                            </a>
+                                        @endif
                                     </div>
                                 </div>
                             @endforeach
                         </div>
                     @endif
+
+                    @if($menu->isNotEmpty())
+                        <div class="card-navy" id="menu-preview" style="margin-top: 22px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
+                                <div>
+                                    <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">Menu Preview</h3>
+                                    <p style="font-size: 12px; color: var(--color-text-secondary); margin: 2px 0 0;">
+                                        {{ $menu->count() }} {{ \Illuminate\Support\Str::plural('item', $menu->count()) }} prepared for this event
+                                    </p>
+                                </div>
+                                <button type="button" onclick="switchSection('food')" class="btn-glass" style="font-size: 12px; padding: 7px 14px;">
+                                    <span>🍲</span>
+                                    <span>View full menu ({{ $menu->count() }})</span>
+                                </button>
+                            </div>
+                            <div class="menu-grid">
+                                @foreach($menu->take(4) as $previewItem)
+                                    <x-food-card :item="$previewItem" :currency="$currency" />
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
-                <!-- TAB 2: FOOD & DINING (active menu items only, as the organizer wrote them) -->
+                <!-- TAB 2: FOOD & DINING (active menu items with dish photography) -->
                 <div class="tab-pane" id="pane-food">
                     @if($menu->isEmpty())
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
                             <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No food menu</h3>
-                            <p style="font-size: 13px; color: #94A3B8; margin: 0;">This event has no food to order in advance.</p>
+                            <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">This event has no food to order in advance.</p>
                         </div>
                     @else
-                        <p style="font-size: 13px; color: #94A3B8; margin: 0 0 12px;">
+                        <div class="card-navy" style="margin-bottom: 16px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                            <div>
+                                <p style="font-size: 13px; color: var(--color-text-primary); font-weight: 600; margin: 0;">
+                                    @if($canOrder && $event->supports_food_ordering)
+                                        Order food with your tickets or on its own, and collect it at the event with your order QR code.
+                                    @else
+                                        Food ordering is closed for this event. The menu is shown for reference.
+                                    @endif
+                                </p>
+                                @if($event->food_service_start_time && $event->food_service_end_time)
+                                    <p style="font-size: 12px; color: var(--color-text-secondary); margin: 4px 0 0;">
+                                        Service hours: <strong style="color: #FFFFFF;">{{ $event->food_service_start_time }} – {{ $event->food_service_end_time }}</strong>
+                                    </p>
+                                @endif
+                            </div>
                             @if($canOrder && $event->supports_food_ordering)
-                                Order food with your tickets or on its own, and collect it at the event with your order QR code.
-                            @else
-                                Food ordering is closed for this event. The menu is shown for reference.
+                                <a href="{{ auth()->check() ? route('checkout.tickets', $event) : route('login') }}" class="eb-btn eb-btn-primary eb-btn-sm">
+                                    Order Food
+                                </a>
                             @endif
-                        </p>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
+                        </div>
+
+                        <div class="menu-grid">
                             @foreach($menu as $item)
-                                <div class="card-navy" style="padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
-                                    <div>
-                                        @if($item->category)<div style="font-size: 10px; text-transform: uppercase; color: #818CF8; font-weight: 700;">{{ $item->category }}</div>@endif
-                                        <h4 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 4px 0 6px;">{{ $item->name }}</h4>
-                                        @if($item->description)<p style="font-size: 12px; color: #94A3B8; margin: 0 0 8px; line-height: 1.4;">{{ $item->description }}</p>@endif
-                                        @if(!empty($item->dietary_tags) && is_array($item->dietary_tags))
-                                            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px;">
-                                                @foreach($item->dietary_tags as $tag)
-                                                    <span style="font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; background: rgba(16, 185, 129, 0.18); color: #6EE7B7;">{{ \App\Models\MenuItem::DIETARY_TAGS[$tag] ?? $tag }}</span>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                        @if(!empty($item->allergens) && is_array($item->allergens))
-                                            <div style="font-size: 11px; color: #FCD34D; margin-bottom: 6px; font-weight: 600;">
-                                                Allergens: {{ implode(', ', array_map(fn ($a) => \App\Models\MenuItem::ALLERGENS[$a] ?? $a, $item->allergens)) }}
-                                            </div>
-                                        @endif
-                                        @if($item->pricing_type === 'customizable' && !empty($item->custom_option_groups))
-                                            <span class="eb-badge eb-badge-info" style="margin-bottom: 8px;">Choose options</span>
-                                        @endif
-                                        @if($item->available_stock !== null && (int) $item->available_stock <= 0)
-                                            <span class="eb-badge eb-badge-error" style="margin-bottom: 8px;">Sold out</span>
-                                        @endif
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
-                                        <span style="font-size: 16px; font-weight: 800; color: #FFFFFF;">
-                                            @if($item->pricing_type === 'custom_amount')
-                                                You choose the amount
-                                            @else
-                                                {{ $item->priceMoney()->display() }}
-                                            @endif
-                                        </span>
-                                    </div>
-                                </div>
+                                <x-food-card :item="$item" :currency="$currency" />
                             @endforeach
                         </div>
                     @endif
@@ -473,15 +744,27 @@
                         @endif
 
                         <div id="payment-methods">
-                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Accepted payment methods</h3>
+                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 8px;">Accepted payment methods</h3>
                             @if($paymentMethods === [])
                                 <p style="font-size: 13px; color: #94A3B8; margin: 0;">The organizer has not set up a payment method yet, so orders can't be paid for at the moment.</p>
                             @else
-                                <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #CBD5E1; line-height: 1.6;">
+                                <div class="eb-stack" style="gap: 8px;">
                                     @foreach($paymentMethods as $method)
-                                        <li><strong style="color: #FFFFFF;">{{ $method['label'] }}</strong>: {{ $method['description'] }}</li>
+                                        @php
+                                            $pmVal = $method['value'] ?? '';
+                                            $pmIcon = ['bank' => 'bank', 'zelle' => 'phone', 'cashapp' => 'phone', 'cash_app_pay' => 'phone', 'cash' => 'cash', 'card' => 'credit-card', 'paypal' => 'globe'][$pmVal] ?? ($method['icon'] ?? 'payment');
+                                        @endphp
+                                        <div class="eb-payment-card" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px;">
+                                            <span class="eb-payment-icon" data-method="{{ $pmVal }}" aria-hidden="true">
+                                                <x-icon :name="$pmIcon" size="md" />
+                                            </span>
+                                            <div style="min-width: 0; flex: 1;">
+                                                <strong style="color: #FFFFFF; font-size: 13px; display: block;">{{ $method['label'] }}</strong>
+                                                <span style="font-size: 12px; color: #CBD5E1;">{{ $method['description'] }}</span>
+                                            </div>
+                                        </div>
                                     @endforeach
-                                </ul>
+                                </div>
                                 <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Transfers and cash are marked paid only after the organizer confirms them.</p>
                             @endif
                         </div>
@@ -597,12 +880,15 @@
                         </div>
 
                         @if($eventQr)
-                            <div id="event-qr" style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap;">
-                                <img src="{{ $eventQr['image'] }}" alt="QR code linking to this event page" width="120" height="120" style="background: #FFFFFF; border-radius: 8px; padding: 6px;">
-                                <div>
+                            <div id="event-qr" class="eb-promotional-qr-card" data-qr-type="promotional">
+                                <div class="eb-promotional-qr-well">
+                                    <img src="{{ $eventQr['image'] }}" alt="QR code linking to this event page" width="120" height="120" style="background: #FFFFFF; border-radius: 8px; padding: 6px; display: block;">
+                                </div>
+                                <div style="min-width: 0; flex: 1;">
+                                    <span class="eb-badge eb-badge-info" style="margin-bottom: 6px;">Promotional Share Code · Not an Admission Ticket</span>
                                     <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 4px;">Share this event</h3>
-                                    <p style="font-size: 12px; color: #94A3B8; margin: 0;">Scan to open this page. This code is for sharing only and is not a ticket.</p>
-                                    <a href="{{ $eventQr['link'] }}" style="font-size: 12px; color: #C7FF45;">{{ $eventQr['link'] }}</a>
+                                    <p style="font-size: 12px; color: #94A3B8; margin: 0 0 4px;">Scan to open this page. This code is for sharing only and is not a ticket.</p>
+                                    <a href="{{ $eventQr['link'] }}" style="font-size: 12px; color: #C7FF45; word-break: break-all;">{{ $eventQr['link'] }}</a>
                                 </div>
                             </div>
                         @endif
@@ -637,8 +923,9 @@
                 // Each photo says what it is: the event's own, or a sample image labelled as illustrative.
                 $photos = $event->visibleGallery()->toBase()->map(fn ($media) => ['image' => $media->responsiveImage(), 'caption' => $media->alt_text, 'kind' => 'event'])
                     ->when($event->hasFlyer(), fn ($c) => $c->push(['image' => $event->coverImage(), 'caption' => $event->flyer_alt_text ?: $event->title . ' flyer', 'kind' => 'flyer']))
+                    ->merge($event->performers->filter(fn ($performer) => \App\Services\MediaStorageService::isStoredPath($performer->photo_path))->map(fn ($performer) => ['image' => \App\Support\ResponsiveImage::forPerformer($performer), 'caption' => $performer->photo_alt_text ?: 'Photo of ' . $performer->name, 'kind' => 'performer']))
                     ->merge($event->menuItems->where('is_active', true)->map(fn ($item) => ['item' => $item, 'image' => $item->responsiveImage()])
-                        ->filter(fn ($row) => $row['image'] !== null)
+                        ->filter(fn ($row) => $row['image'] !== null && (!$row['image']->illustrative || \App\Support\ImageSubjects::sampleFitsMenuItem($row['item']->display_image_url, $row['item'])))
                         ->map(fn ($row) => ['image' => $row['image'], 'caption' => $row['item']->name, 'kind' => $row['image']->illustrative ? 'illustrative' : 'dish']))
                     ->unique(fn ($photo) => $photo['image']->src)->take(9)->values();
             @endphp
@@ -683,16 +970,17 @@
             @endif
 
             <!-- 5. Host / Organizer Information -->
-            <div class="card-navy">
-                <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 14px;">
-                    <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: #FFFFFF;">
-                        {{ mb_substr($event->organizer_name ?: 'EventBite', 0, 1) }}
-                    </div>
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $event->organizer_name ?? 'EventBite Host' }}</h3>
+            <div class="card-navy" id="host-information">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;">
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(199, 255, 69, 0.22) 0%, rgba(139, 92, 246, 0.28) 100%); border: 1px solid var(--color-accent-border); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(2, 6, 14, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: var(--color-accent);">
+                            {{ mb_substr($event->organizer_name ?: 'EventBite', 0, 1) }}
                         </div>
-                        <div style="font-size: 11px; color: #94A3B8; font-weight: 600;">Event organizer</div>
+                        <div>
+                            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 700;">Host Information</div>
+                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 2px 0 0;">{{ $event->organizer_name ?? 'EventBite Host' }}</h3>
+                            <div style="font-size: 11px; color: var(--color-text-secondary); font-weight: 600;">Event organizer</div>
+                        </div>
                     </div>
                 </div>
 
@@ -704,7 +992,7 @@
                         </a>
                     @endif
                     @if(!empty($event->organizer_whatsapp))
-                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $event->organizer_whatsapp) }}" target="_blank" class="btn-glass" style="font-size: 12px; padding: 6px 14px; color: #34D399;">
+                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $event->organizer_whatsapp) }}" target="_blank" rel="noopener" class="btn-glass" style="font-size: 12px; padding: 6px 14px; color: #34D399;">
                             <span>💬</span>
                             <span>WhatsApp Host</span>
                         </a>
@@ -717,44 +1005,107 @@
                     @endif
                 </div>
             </div>
+
+            <!-- 6. Cancellation & Refund Information Overview -->
+            @php
+                $overviewRefundNotes = $event->refund_policy_notes ?: $policy?->refund_policy_notes;
+                $overviewRefundHours = $event->refund_policy_deadline_hours ?? $policy?->refund_policy_deadline_hours;
+                $overviewRefundMode = $event->refund_policy_mode ?? $policy?->refund_policy_mode ?? 'manual_full_and_partial';
+            @endphp
+            <div class="card-navy" id="cancellation-refund-overview">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <div>
+                        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 700;">Policy Summary</div>
+                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 2px 0 0;">Cancellation &amp; Refund Information</h3>
+                    </div>
+                    <button type="button" onclick="switchSection('details'); document.getElementById('refund-policy')?.scrollIntoView({behavior:'smooth'});" class="btn-glass" style="font-size: 11px; padding: 5px 12px;">
+                        Full policy details &rarr;
+                    </button>
+                </div>
+                <p style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.55; margin: 0;">
+                    @if(trim((string) $overviewRefundNotes) !== '')
+                        {{ $overviewRefundNotes }}
+                    @else
+                        The organizer has not published a refund policy. Contact them before you buy if you may need a refund.
+                    @endif
+                </p>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;">
+                    @if($overviewRefundHours !== null)
+                        <span class="eb-badge eb-badge-info">Cutoff: {{ (int) $overviewRefundHours }}h before start</span>
+                    @endif
+                    <span class="eb-badge {{ $overviewRefundMode === 'non_refundable' ? 'eb-badge-error' : 'eb-badge-info' }}">
+                        @if($overviewRefundMode === 'non_refundable') Non-refundable
+                        @elseif($overviewRefundMode === 'manual_full_only') Full manual refunds only
+                        @else Full or partial manual refunds
+                        @endif
+                    </span>
+                </div>
+            </div>
         </div>
 
         <!-- RIGHT COLUMN: Sticky Ticket Reservation Panel -->
         <div style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px;">
-            <div class="card-navy" style="box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.12);">
+            <div class="card-navy" style="box-shadow: var(--shadow-elevated); border-color: var(--color-border-strong); border-top-color: rgba(255, 255, 255, 0.16);">
                 <div style="margin-bottom: 14px;">
                     @if($fromPriceText)
-                        <div style="font-size: 26px; font-weight: 900; color: #FFFFFF;">{{ $fromPriceText }}</div>
-                        <div style="font-size: 11px; color: #94A3B8; font-weight: 700;">Ticket prices; fees and taxes are shown before you pay</div>
+                        <div style="font-size: 28px; font-weight: 900; color: #FFFFFF; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">{{ $fromPriceText }}</div>
+                        <div style="font-size: 11px; color: var(--color-text-secondary); font-weight: 700;">Ticket prices; fees and taxes are shown before you pay</div>
                     @endif
                     @php $tone = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$availability['tone']] ?? 'eb-badge-info'; @endphp
-                    <span class="eb-badge {{ $tone }}" style="margin-top: 6px;">{{ $availability['label'] }}</span>
+                    <span class="eb-badge {{ $tone }}" style="margin-top: 8px;">
+                        <span class="eb-badge-dot" aria-hidden="true"></span>
+                        <span>{{ $availability['label'] }}</span>
+                    </span>
                 </div>
+
+                @if(!empty($tiers))
+                    <div class="detail-well" style="margin-bottom: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                        @foreach(array_slice($tiers, 0, 3) as $summaryTier)
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 12px;">
+                                <span style="color: var(--color-text-primary); font-weight: 600;" class="eb-clamp-2">{{ $summaryTier['name'] }}</span>
+                                <span style="color: var(--color-accent); font-weight: 800; font-variant-numeric: tabular-nums; flex-shrink: 0;">{{ \App\Support\Money::formatMinor($summaryTier['price_minor'], $summaryTier['currency']) }}</span>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
 
                 @if($canOrder)
                     @auth
                         <a href="{{ route('checkout.tickets', $event) }}" class="btn-gradient-purchase" id="btn-blade-purchase-tickets">
                             <span>{{ collect($tiers)->contains('on_sale', true) ? 'Get tickets' : 'Order food' }}</span>
+                            <span aria-hidden="true">&rarr;</span>
                         </a>
                     @else
                         <a href="{{ route('login') }}" class="btn-gradient-purchase" id="btn-blade-signin-purchase">
                             <span>Sign in to get tickets</span>
+                            <span aria-hidden="true">&rarr;</span>
                         </a>
                     @endauth
                 @else
                     <p style="font-size: 13px; color: #CBD5E1; margin: 0;">{{ $availability['label'] }}. Tickets can't be bought right now.</p>
                 @endif
 
+                @auth
+                    @php $isSaved = \App\Models\SavedEvent::where('user_id', auth()->id())->where('event_id', $event->id)->exists(); @endphp
+                    <form method="POST" action="{{ route('events.save.toggle', $event->id) }}" style="margin-top: 10px;">
+                        @csrf
+                        <button type="submit" class="btn-glass" style="width: 100%; justify-content: center; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
+                            <x-icon name="heart" size="sm" />
+                            <span>{{ $isSaved ? 'Saved — tap to remove' : 'Save event' }}</span>
+                        </button>
+                    </form>
+                @endauth
+
                 <!-- Jump to Food Ordering -->
                 @if($menu->isNotEmpty())
                     <button type="button" onclick="switchSection('food')" class="btn-glass" style="width: 100%; justify-content: center; margin-top: 10px; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
                         <span>🍲</span>
-                        <span>View the menu</span>
+                        <span>View the menu ({{ $menu->count() }})</span>
                     </button>
                 @endif
 
-                <div style="margin-top: 14px; font-size: 11px; color: #94A3B8; text-align: center; line-height: 1.4;">
-                    Your ticket QR code appears in My tickets once your payment is confirmed. <a href="#payment-methods" onclick="switchSection('details')" style="color: #C7FF45;">Payment, fees and refunds</a>
+                <div style="margin-top: 14px; font-size: 11px; color: var(--color-text-secondary); text-align: center; line-height: 1.4;">
+                    Your ticket QR code appears in My tickets once your payment is confirmed. <a href="#payment-methods" onclick="switchSection('details')" style="color: var(--color-accent); font-weight: 700;">Payment, fees and refunds</a>
                 </div>
             </div>
         </div>

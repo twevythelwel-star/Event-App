@@ -330,7 +330,7 @@ class CheckoutController extends Controller
         // Someone else's order is "not found", not "forbidden": don't confirm it exists.
         abort_unless($this->orders->isUserAuthorizedForOrder($order, $request->user()), 404);
 
-        $order->load(['items', 'charges', 'event' => fn ($q) => $q->withoutGlobalScopes()]);
+        $order->load(['items', 'charges', 'event' => fn ($q) => $q->withoutGlobalScopes()->with('mediaItems')]);
 
         return view('checkout.ticket', [
             'order' => $order,
@@ -354,6 +354,46 @@ class CheckoutController extends Controller
         }
 
         return back()->with('success', 'Thanks. Your ticket now shows Confirmation submitted until the organizer checks the payment.');
+    }
+
+    /**
+     * Controlled QR replacement / reissue: generates a new 256-bit token + SHA-256 hash and invalidates the old QR.
+     */
+    public function reissueTicket(Request $request, Order $order): RedirectResponse
+    {
+        $user = $request->user();
+        $canManage = app(\App\Services\OrderOperationsService::class)->capabilities($user, $order)['verify'] ?? false;
+        abort_unless($this->orders->isUserAuthorizedForOrder($order, $user) || $canManage, 404);
+
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        try {
+            $order->reissueTicketToken($user, trim((string) ($data['reason'] ?? '')) ?: 'Ticket holder requested QR replacement');
+        } catch (OrderPlacementException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', 'Your ticket QR code has been replaced. Any previous screenshots or copies of the old QR code are now permanently deactivated.');
+    }
+
+    /**
+     * Immediate server-side ticket QR revocation by the event host or system administrator.
+     */
+    public function revokeTicket(Request $request, Order $order): RedirectResponse
+    {
+        $user = $request->user();
+        $canManage = app(\App\Services\OrderOperationsService::class)->capabilities($user, $order)['verify'] ?? false;
+        abort_unless($canManage, 403);
+
+        $data = $request->validate([
+            'reason' => ['nullable', 'string', 'max:200'],
+        ]);
+
+        $order->revokeTicketToken($user, trim((string) ($data['reason'] ?? '')) ?: 'Revoked by event organizer');
+
+        return back()->with('success', 'Ticket QR authorization has been revoked on the server.');
     }
 
     /** Stop the flow for events that can't take orders, with the reason. */

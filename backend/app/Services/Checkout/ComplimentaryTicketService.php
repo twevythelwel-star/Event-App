@@ -66,7 +66,7 @@ final class ComplimentaryTicketService
                 'ticket_code' => $ticketCode, 'order_number' => $orderNumber, 'customer_name' => $recipient->name,
                 'customer_phone' => $recipient->phone ?? '', 'email' => $recipient->email, 'method' => 'complimentary',
                 'currency' => $currency, 'subtotal_minor' => 0, 'total_minor' => 0, 'amount_paid_minor' => 0,
-                'status' => 'paid', 'fulfillment_status' => 'unprepared', 'secure_ticket_token' => 'tok_' . Str::random(32),
+                'status' => 'paid', 'fulfillment_status' => 'unprepared', 'secure_ticket_token' => Order::generateSecureTicketToken(),
                 'all_handed_over' => false, 'verified_at' => now(), 'is_complimentary' => true, 'issued_by' => $host->id,
                 'complimentary_reason' => mb_substr($reason, 0, 200),
             ]);

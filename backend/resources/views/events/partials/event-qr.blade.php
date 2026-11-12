@@ -5,8 +5,11 @@
     $ready = $qr->isReady();
     $presetLabel = \App\Services\EventQr\QrDesignCatalog::label((string) $qr->preset);
 @endphp
-<section id="event-qr" class="card eb-event-qr" aria-labelledby="event-qr-heading">
+<section id="event-qr" class="card eb-event-qr eb-promotional-qr-card" aria-labelledby="event-qr-heading" data-qr-type="promotional">
     <div class="card-header">
+        <div class="eb-promotional-qr-badge-row" style="margin-bottom:0.5rem;">
+            <span class="eb-promotional-qr-badge">Promotional Event QR &middot; Not an Admission Ticket</span>
+        </div>
         <h2 id="event-qr-heading" class="card-title">Event QR code</h2>
         <p class="card-subtitle">For flyers, posters and social posts. Scanning it opens this event's public page. It is not a ticket and does not admit anyone; each ticket has its own code.</p>
     </div>

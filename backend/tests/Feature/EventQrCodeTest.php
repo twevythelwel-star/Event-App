@@ -109,7 +109,9 @@ class EventQrCodeTest extends TestCase
         $this->assertNull($order->fresh()->checked_in_at);
 
         $event->forceFill(['status' => 'unpublished'])->save();
-        $this->get(route('event-qr.resolve', $qr->public_code))->assertNotFound();
+        $this->get(route('event-qr.resolve', $qr->public_code))
+            ->assertOk()
+            ->assertSee('This event is no longer listed');
         $this->assertNull($order->fresh()->checked_in_at);
     }
 
@@ -197,7 +199,7 @@ class EventQrCodeTest extends TestCase
         $this->get('/e/ZZZZZZZZZZ')->assertNotFound();
 
         Event::withoutGlobalScopes()->whereKey($event->id)->update(['status' => 'cancelled']);
-        $this->get("/e/{$code}")->assertNotFound();
+        $this->get("/e/{$code}")->assertOk()->assertSee('This event was cancelled');
     }
 
     // 9, 10

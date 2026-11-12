@@ -18,7 +18,7 @@ export type PaymentStatus =
   | "pending_verification"; // Backward-compatible alias for payment_submitted
 
 // Separate Order Fulfillment / Kitchen Status
-export type FulfillmentStatus = "unprepared" | "preparing" | "ready_for_pickup" | "collected";
+export type FulfillmentStatus = "unprepared" | "accepted" | "preparing" | "ready_for_pickup" | "collected";
 
 export type HandoverStatus = "pending" | "collected";
 
@@ -48,6 +48,8 @@ export type MenuCategory =
   | "Desserts"
   | "Drinks"
   | "Snacks"
+  | "Cultural Specialties"
+  | "Meal Packages"
   | "Sauces and Condiments"
   | "Extras"
   | "Community Donations"
@@ -119,6 +121,32 @@ export type MenuItem = {
   isAvailable?: boolean;
   // Service mode: preorder only, event-day only, or both
   serviceMode?: "preorder" | "eventDay" | "both";
+  // Vendor operating under a multi-vendor event
+  vendorId?: string;
+  vendorName?: string;
+  // Daily time-of-day availability window (HH:MM 24h, e.g. "07:00" to "11:00" for Breakfast)
+  availableFromTime?: string;
+  availableUntilTime?: string;
+  // Item-specific preorder cutoff timestamp
+  preorderCutoffIso?: string;
+  // Multi-select dietary tags for filtering (e.g. ["vegetarian", "halal", "glutenFree"])
+  dietaryTags?: (
+    | "vegetarian"
+    | "vegan"
+    | "pescatarian"
+    | "halal"
+    | "kosher"
+    | "glutenFree"
+    | "dairyFree"
+    | "nutFree"
+  )[];
+  // Portion size options with immediate price delta
+  portionSizes?: {
+    id: string;
+    label: string;
+    extraPriceUSD: number;
+    extraPriceJMD: number;
+  }[];
   customOptionGroups?: CustomOptionGroup[];
   customAmountConfig?: CustomAmountConfig;
   allowSpecialInstructions?: boolean;
@@ -229,8 +257,10 @@ export type OrderItem = {
   remainingQuantity?: number; // Portions not yet handed over
   // Per-item statuses so items can be fulfilled independently (Section 7.7)
   paymentStatus?: PaymentStatus | "unpaid" | "cancelled" | "unknown";
-  preparationStatus?: "pending" | "preparing" | "ready";
+  preparationStatus?: "pending" | "accepted" | "preparing" | "ready" | "collected";
   pickupStatus?: "pending" | "partlyCollected" | "collected";
+  vendorName?: string;
+  portionSizeLabel?: string;
   lineType?: "item" | "ticket" | "package" | "component";
   packageLineId?: string;
   category?: MenuCategory;
@@ -278,6 +308,9 @@ export type TicketOrder = {
   currency: Currency;
   status: PaymentStatus;
   fulfillmentStatus?: FulfillmentStatus; // Separate from payment status
+  pickupNumber?: string; // Queue number for food pickup (e.g. "PU-104")
+  pickupWindow?: string; // Scheduled collection window (e.g. "12:00 PM – 12:30 PM")
+  readyNotificationSentAt?: string; // Timestamp when attendee was notified order is ready
   paymentReference?: string; // Reference number or transaction ID provided by customer/staff
   senderName?: string; // Name on sender's Zelle/Cash App/bank account
   verifiedAt?: string;
@@ -392,6 +425,223 @@ export type EventTicketTier = {
   isActive?: boolean;
 };
 
+export type EventOperationStationType =
+  | "ticket_checking"
+  | "food_station"
+  | "payment_desk"
+  | "supervisor"
+  | "custom";
+
+export type EventOperationStation = {
+  id: string;
+  stationName: string; // e.g., "Entrance A", "VIP Entrance", "Food Station 1", "Food Station 2", "Payment Desk", "Supervisor"
+  stationType: EventOperationStationType;
+  assignedResponsibility: string; // e.g., "Ticket verification", "VIP ticket verification", "Main meals", "Drinks and desserts", "Authorized cash/payment verification", "Event-wide oversight"
+  assignedStaffIds?: string[];
+  assignedStaffNames?: string[];
+  operatingHours?: string;
+  notes?: string;
+};
+
+export type EventWorkerRoleKey =
+  | "payment_clerk"
+  | "ticket_checker"
+  | "food_station_worker"
+  | "supervisor"
+  | "custom_restricted_worker";
+
+export type StaffCheckInStatus =
+  | "not_checked_in"
+  | "checked_in"
+  | "on_break"
+  | "checked_out";
+
+export type EventStaffMemberAssignment = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  phone?: string;
+  claimCode?: string;
+  roleOnEvent: EventWorkerRoleKey;
+  stationId: string;
+  stationName: string;
+  assignedResponsibility: string;
+  individualPermissions: string[];
+  shiftStartsAt: string; // ISO or datetime-local
+  shiftExpiresAt: string; // ISO or datetime-local
+  timezone: string;
+  status: "active" | "scheduled" | "pending_acceptance" | "expired" | "revoked";
+  checkInStatus: StaffCheckInStatus;
+  checkedInAt?: string;
+  checkedOutAt?: string;
+  assignedBy?: string;
+};
+
+export type EventStaffShiftSchedule = {
+  id: string;
+  shiftName: string; // e.g., "Shift 1 — Gate Setup & Early Admission"
+  startTime: string; // HH:MM
+  endTime: string; // HH:MM
+  stationName: string;
+  assignedStaffName: string;
+  roleOnEvent: EventWorkerRoleKey;
+  responsibility: string;
+};
+
+export type EventStaffActivityEntry = {
+  id: string;
+  timestamp: string;
+  staffId: string;
+  staffName: string;
+  roleOnEvent: EventWorkerRoleKey;
+  stationName: string;
+  actionType:
+    | "staff_invited"
+    | "staff_check_in"
+    | "staff_check_out"
+    | "station_assigned"
+    | "ticket_verified"
+    | "food_collected"
+    | "payment_verified"
+    | "escalation_logged"
+    | "access_revoked";
+  summary: string;
+};
+
+export type EventEmergencyContact = {
+  id: string;
+  label: string; // e.g., "On-Site Medical / First Aid Lead", "Venue Security Dispatch"
+  contactName: string;
+  phone: string;
+  locationOrPost: string;
+  notes?: string;
+};
+
+export type EventEscalationContact = {
+  id: string;
+  tierLevel: 1 | 2 | 3;
+  roleTitle: string; // e.g., "Tier 1 — Event Supervisor", "Tier 2 — Box Office & Payment Lead", "Tier 3 — Event Host / Owner"
+  contactName: string;
+  phone: string;
+  email?: string;
+  triggerScenarios: string; // e.g., "Duplicate QR scan disputes, VIP gate overrides"
+};
+
+export type EventOperationsConfig = {
+  enabled: boolean;
+  stations: EventOperationStation[];
+  staffAssignments: EventStaffMemberAssignment[];
+  schedules: EventStaffShiftSchedule[];
+  activityLogs: EventStaffActivityEntry[];
+  emergencyContacts: EventEmergencyContact[];
+  escalationContacts: EventEscalationContact[];
+  assemblyPoint?: string;
+  medicalPostLocation?: string;
+};
+
+export type EventFaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+  category?: "general" | "tickets" | "food" | "parking" | "accessibility";
+};
+
+export type AttendeeRegistrationQuestionType =
+  | "text"
+  | "single_select"
+  | "multi_select"
+  | "yes_no";
+
+export type AttendeeRegistrationQuestionCategory =
+  | "dietary"
+  | "group"
+  | "accessibility"
+  | "general";
+
+export type AttendeeRegistrationQuestion = {
+  id: string;
+  prompt: string;
+  fieldType: AttendeeRegistrationQuestionType;
+  required: boolean;
+  category: AttendeeRegistrationQuestionCategory;
+  options?: string[];
+  placeholder?: string;
+  privacyPurpose: string;
+};
+
+export type AttendeeQuestionResponse = {
+  questionId: string;
+  prompt: string;
+  value: string | string[];
+};
+
+export type AttendeePrivacyRetentionPolicy = {
+  retentionDaysAfterEvent: number;
+  allowAttendeeDeletionRequest: boolean;
+  restrictStaffVisibilityToRole: boolean;
+  purposeSummary: string;
+  encryptedAtRest: boolean;
+};
+
+export type EventGroupRegistrationConfig = {
+  enabled: boolean;
+  minGroupSize: number;
+  maxGroupSize: number;
+  groupDiscountPercent?: number;
+  allowSharedCheckInPass: boolean;
+};
+
+export type EventReminderChannel = "sms" | "email" | "whatsapp";
+
+export type EventReminderConfig = {
+  enabled: boolean;
+  channels: EventReminderChannel[];
+  scheduleOffsets: string[];
+  customReminderMessage?: string;
+};
+
+export type EventAnnouncementItem = {
+  id: string;
+  title: string;
+  message: string;
+  publishedAt: string;
+  priority: "info" | "important" | "urgent";
+  authorName?: string;
+};
+
+export type EventFeedbackSubmission = {
+  id: string;
+  attendeeName: string;
+  overallRating: number;
+  foodRating: number;
+  operationsRating: number;
+  comment: string;
+  submittedAt: string;
+  verifiedAttendee?: boolean;
+};
+
+export type EventAttendeeExperienceConfig = {
+  faqs: EventFaqItem[];
+  guestInstructions: string;
+  parkingAndTransitInfo: string;
+  accessibilityInfo: string;
+  eventRules: string[];
+  dressCode: string;
+  ageRequirement: string;
+  registrationQuestions: AttendeeRegistrationQuestion[];
+  dietaryPreferenceOptions: string[];
+  enableDietaryPreferencePrompt: boolean;
+  privacyRetentionPolicy: AttendeePrivacyRetentionPolicy;
+  groupRegistration: EventGroupRegistrationConfig;
+  reminders: EventReminderConfig;
+  calendarIntegrationEnabled: boolean;
+  announcements: EventAnnouncementItem[];
+  feedbackEnabled: boolean;
+  feedbackPrompt: string;
+  feedbackSubmissions: EventFeedbackSubmission[];
+};
+
 export type EventMediaAsset = {
   id: string;
   mediaType: "gallery" | "organization_logo" | "sponsor_logo";
@@ -484,6 +734,8 @@ export type EventDetails = {
   ticketSalesEndIso?: string; // event-local datetime-local value
   supportsFoodOrdering?: boolean;
   foodServiceConfig?: FoodServiceConfig;
+  operationsConfig?: EventOperationsConfig;
+  attendeeExperienceConfig?: EventAttendeeExperienceConfig;
   packages?: MenuPackage[];
   ticketTiers?: EventTicketTier[];
   refundPolicyDeadlineHours?: number;

@@ -104,6 +104,11 @@ export async function registerAccount(data: {
   password: string;
   password_confirmation: string;
   agree_terms: boolean;
+  accept_platform_terms?: boolean;
+  accept_food_safety_disclaimer?: boolean;
+  accept_alcohol_policy?: boolean;
+  accept_host_responsibility?: boolean;
+  enforce_policy_acknowledgements?: boolean;
 }): Promise<SessionUser> {
   await fetchSession();
   const body = await request<{ user: SessionUser }>("/register", {

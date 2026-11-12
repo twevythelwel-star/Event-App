@@ -21,7 +21,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/checkout', [CheckoutController::class, 'place'])->name('place')->middleware('throttle:15,1');
     });
 
+    Route::get('/my-tickets', [\App\Http\Controllers\TicketCollectionController::class, 'index'])->name('tickets.collection');
     Route::get('/tickets/{order}', [CheckoutController::class, 'ticket'])->name('tickets.show');
+    Route::get('/tickets/{order}/calendar.ics', [\App\Http\Controllers\TicketCalendarController::class, 'show'])->name('tickets.calendar')->middleware('throttle:30,1');
+    Route::post('/tickets/{order}/reissue', [CheckoutController::class, 'reissueTicket'])->name('tickets.reissue')->middleware('throttle:10,1');
+    Route::post('/tickets/{order}/revoke', [CheckoutController::class, 'revokeTicket'])->name('tickets.revoke')->middleware('throttle:10,1');
     Route::post('/tickets/{order}/transfer', [\App\Http\Controllers\TicketTransferController::class, 'start'])->name('tickets.transfer.start')->middleware('throttle:10,1');
     Route::post('/ticket-transfers/{transferId}/cancel', [\App\Http\Controllers\TicketTransferController::class, 'cancel'])->name('tickets.transfer.cancel');
     Route::get('/ticket-transfers/accept/{token}', [\App\Http\Controllers\TicketTransferController::class, 'show'])->name('tickets.transfer.accept');

@@ -1,309 +1,258 @@
 /**
- * EventBite Animation Utilities
- * Provides accessible, performance-optimized animations with reduced motion support
+ * EventBite Motion & Interactive Graphics Utilities
+ * Laravel-compatible progressive enhancement (Vanilla JS, zero framework overhead)
+ *
+ * Guarantees:
+ * - Respects prefers-reduced-motion (including live OS setting changes)
+ * - Every form, link, drawer, and button works 100% if JS or CSS animations are disabled
+ * - Dark-mode 3D Soft Realism toast notifications & flash alert dismissal
  */
 
+const reducedMotionQuery = window.matchMedia
+    ? window.matchMedia('(prefers-reduced-motion: reduce)')
+    : { matches: false, addEventListener: null };
+
+function prefersReducedMotion() {
+    return Boolean(reducedMotionQuery.matches);
+}
+
 class EventBiteAnimations {
-    constructor() {
-        this.respectsReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        this.toastContainer = null;
-        this.init();
-    }
+    /**
+     * Trigger a one-shot animation class on an element
+     */
+    static animate(element, animationClass, duration = 360) {
+        if (!element || prefersReducedMotion()) {
+            return Promise.resolve();
+        }
 
-    init() {
-        this.createToastContainer();
-        this.setupGlobalListeners();
+        return new Promise((resolve) => {
+            element.classList.remove(animationClass);
+            // Force reflow only when triggering a one-shot state feedback class
+            void element.offsetWidth;
+            element.classList.add(animationClass);
+
+            window.setTimeout(() => {
+                element.classList.remove(animationClass);
+                resolve();
+            }, duration);
+        });
     }
 
     /**
-     * Create a container for toast notifications
+     * Show a loading skeleton inside a container
      */
-    createToastContainer() {
-        this.toastContainer = document.createElement('div');
-        this.toastContainer.id = 'toast-container';
-        this.toastContainer.style.cssText = `
-            position: fixed;
-            top: 24px;
-            right: 24px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            pointer-events: none;
-        `;
-        document.body.appendChild(this.toastContainer);
+    static showSkeleton(container, type = 'card', count = 3) {
+        if (!container) return;
+
+        const safeCount = Math.max(1, Math.min(12, Number(count) || 1));
+        const items = [];
+
+        for (let i = 0; i < safeCount; i++) {
+            if (type === 'ticket') {
+                items.push(`
+                    <div class="eb-skeleton-ticket">
+                        <div class="eb-skeleton-ticket__main">
+                            <div class="eb-skeleton eb-skeleton-kicker"></div>
+                            <div class="eb-skeleton eb-skeleton-title"></div>
+                            <div class="eb-skeleton eb-skeleton-line eb-skeleton-line--short"></div>
+                        </div>
+                        <div class="eb-skeleton eb-skeleton-ticket__qr"></div>
+                    </div>
+                `);
+            } else if (type === 'metric') {
+                items.push(`
+                    <div class="eb-skeleton-metric">
+                        <div class="eb-skeleton eb-skeleton-kicker"></div>
+                        <div class="eb-skeleton eb-skeleton-metric__value"></div>
+                        <div class="eb-skeleton eb-skeleton-line eb-skeleton-line--short"></div>
+                    </div>
+                `);
+            } else if (type === 'text') {
+                items.push(`<div class="eb-skeleton eb-skeleton-line"></div>`);
+            } else {
+                items.push(`
+                    <div class="eb-skeleton-card">
+                        <div class="eb-skeleton eb-skeleton-media"></div>
+                        <div class="eb-skeleton-body">
+                            <div class="eb-skeleton eb-skeleton-kicker"></div>
+                            <div class="eb-skeleton eb-skeleton-title"></div>
+                            <div class="eb-skeleton eb-skeleton-line"></div>
+                        </div>
+                    </div>
+                `);
+            }
+        }
+
+        container.innerHTML = `<div class="eb-skeleton-group" role="status" aria-busy="true" aria-label="Loading content">${items.join('')}</div>`;
     }
 
     /**
-     * Setup global event listeners
+     * Replace skeleton with content
      */
-    setupGlobalListeners() {
-        // Listen for save events
-        document.addEventListener('save-success', (e) => this.onSaveSuccess(e.detail));
-        document.addEventListener('save-error', (e) => this.onSaveError(e.detail));
-        
-        // Listen for validation events
-        document.addEventListener('validation-error', (e) => this.onValidationError(e.detail));
-        
-        // Listen for loading events
-        document.addEventListener('loading-start', (e) => this.onLoadingStart(e.detail));
-        document.addEventListener('loading-end', (e) => this.onLoadingEnd(e.detail));
+    static hideSkeleton(container, content) {
+        if (!container) return;
+        container.innerHTML = content;
+        if (!prefersReducedMotion()) {
+            container.classList.add('fade-in');
+        }
     }
 
     /**
-     * Show a toast notification
+     * Show or clear inline button loading state without breaking native form submit
      */
-    toast(message, type = 'info', duration = 3000) {
-        if (!this.toastContainer) return;
+    static setButtonLoading(button, isLoading = true, loadingText = null) {
+        if (!button) return;
 
+        if (isLoading) {
+            if (button.dataset.loading === 'true') return;
+            button.dataset.loading = 'true';
+            button.setAttribute('aria-busy', 'true');
+            button.dataset.originalHtml = button.innerHTML;
+
+            const label = loadingText || button.dataset.loadingText || button.textContent.trim() || 'Processing...';
+            button.innerHTML = `<span class="eb-btn-spinner" aria-hidden="true"></span><span>${label}</span>`;
+        } else {
+            button.dataset.loading = 'false';
+            button.removeAttribute('aria-busy');
+            if (button.dataset.originalHtml) {
+                button.innerHTML = button.dataset.originalHtml;
+                delete button.dataset.originalHtml;
+            }
+        }
+    }
+
+    /**
+     * Dark-mode 3D elevated toast notification
+     */
+    static showToast(message, type = 'info', duration = 3500) {
+        if (!message) return;
+
+        const palette = {
+            success: {
+                bg: 'rgba(6, 78, 59, 0.94)',
+                border: 'rgba(16, 185, 129, 0.45)',
+                text: '#ecfdf5',
+                accent: '#34d399',
+            },
+            error: {
+                bg: 'rgba(127, 29, 29, 0.94)',
+                border: 'rgba(248, 113, 113, 0.45)',
+                text: '#fef2f2',
+                accent: '#f87171',
+            },
+            warning: {
+                bg: 'rgba(120, 53, 15, 0.94)',
+                border: 'rgba(251, 191, 36, 0.45)',
+                text: '#fffbeb',
+                accent: '#fbbf24',
+            },
+            info: {
+                bg: 'rgba(15, 23, 42, 0.95)',
+                border: 'rgba(129, 140, 248, 0.42)',
+                text: '#f8fafc',
+                accent: '#818cf8',
+            },
+        };
+
+        const tone = palette[type] || palette.info;
         const toast = document.createElement('div');
-        const bgColors = {
-            success: '#dcfce7',
-            error: '#fee2e2',
-            info: '#dbeafe',
-            warning: '#fef3c7'
-        };
-        const textColors = {
-            success: '#166534',
-            error: '#991b1b',
-            info: '#1e40af',
-            warning: '#92400e'
-        };
+        toast.className = `eb-toast eb-toast--${type}`;
+        toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+        toast.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
 
-        toast.style.cssText = `
-            background: ${bgColors[type] || bgColors.info};
-            color: ${textColors[type] || textColors.info};
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            pointer-events: auto;
-            ${this.respectsReducedMotion ? '' : 'animation: toastEnter 0.3s ease-out;'}
-        `;
-        toast.textContent = message;
+        Object.assign(toast.style, {
+            position: 'fixed',
+            bottom: '1.25rem',
+            right: '1.25rem',
+            padding: '0.85rem 1.1rem',
+            borderRadius: '0.75rem',
+            backgroundColor: tone.bg,
+            color: tone.text,
+            border: `1px solid ${tone.border}`,
+            boxShadow: '0 14px 28px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.10)',
+            zIndex: '9999',
+            maxWidth: '24rem',
+            fontSize: '0.875rem',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.65rem',
+        });
 
-        this.toastContainer.appendChild(toast);
+        const dot = document.createElement('span');
+        Object.assign(dot.style, {
+            width: '0.5rem',
+            height: '0.5rem',
+            borderRadius: '9999px',
+            backgroundColor: tone.accent,
+            flexShrink: '0',
+        });
 
-        setTimeout(() => {
-            toast.style.animation = 'toastExit 0.3s ease-in forwards';
-            setTimeout(() => toast.remove(), 300);
+        const textSpan = document.createElement('span');
+        textSpan.textContent = message;
+
+        toast.appendChild(dot);
+        toast.appendChild(textSpan);
+        document.body.appendChild(toast);
+
+        window.setTimeout(() => {
+            toast.classList.add('is-dismissing');
+            window.setTimeout(() => toast.remove(), prefersReducedMotion() ? 10 : 200);
         }, duration);
     }
 
     /**
-     * Show save confirmation animation
+     * Pulse a live price counter when options or quantities change
      */
-    onSaveSuccess(detail) {
-        const message = detail.message || 'Changes saved successfully';
-        this.toast(message, 'success');
-        
-        // Add visual confirmation to save button if provided
-        if (detail.buttonId) {
-            const button = document.getElementById(detail.buttonId);
-            if (button) {
-                button.classList.add('success-checkmark');
-                setTimeout(() => button.classList.remove('success-checkmark'), 500);
-            }
-        }
+    static pulsePrice(element) {
+        if (!element || prefersReducedMotion()) return;
+        this.animate(element, 'eb-price-updated', 320);
     }
 
     /**
-     * Show save error animation
+     * Shake an element on validation error
      */
-    onSaveError(detail) {
-        const message = detail.message || 'Failed to save changes';
-        this.toast(message, 'error');
-        
-        if (detail.buttonId) {
-            const button = document.getElementById(detail.buttonId);
-            if (button) {
-                button.classList.add('error-shake');
-                setTimeout(() => button.classList.remove('error-shake'), 400);
-            }
-        }
-    }
-
-    /**
-     * Show validation error with animation
-     */
-    onValidationError(detail) {
-        const field = detail.fieldId ? document.getElementById(detail.fieldId) : null;
-        if (field) {
-            field.classList.add('error-shake');
-            setTimeout(() => field.classList.remove('error-shake'), 400);
-            
-            // Focus the field after animation
-            field.focus();
-        }
-        
-        this.toast(detail.message || 'Please check the highlighted fields', 'error');
-    }
-
-    /**
-     * Show loading indicator
-     */
-    onLoadingStart(detail) {
-        const target = detail.targetId ? document.getElementById(detail.targetId) : null;
-        if (target) {
-            const spinner = document.createElement('span');
-            spinner.className = 'spinner';
-            spinner.id = 'loading-spinner-' + Date.now();
-            target.appendChild(spinner);
-            target.dataset.loadingSpinner = spinner.id;
-        }
-    }
-
-    /**
-     * Hide loading indicator
-     */
-    onLoadingEnd(detail) {
-        const target = detail.targetId ? document.getElementById(detail.targetId) : null;
-        if (target && target.dataset.loadingSpinner) {
-            const spinner = document.getElementById(target.dataset.loadingSpinner);
-            if (spinner) spinner.remove();
-            delete target.dataset.loadingSpinner;
-        }
-    }
-
-    /**
-     * Animate progress bar
-     */
-    updateProgress(progressId, percent) {
-        const progress = document.getElementById(progressId);
-        if (progress) {
-            const fill = progress.querySelector('.progress-fill');
-            if (fill) {
-                fill.style.setProperty('--progress', percent + '%');
-                fill.style.width = percent + '%';
-            }
-        }
-    }
-
-    /**
-     * Show skeleton loading state
-     */
-    showSkeleton(containerId, type = 'text') {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        const skeleton = document.createElement('div');
-        skeleton.className = 'skeleton';
-        
-        if (type === 'text') {
-            skeleton.classList.add('skeleton-text');
-        } else if (type === 'avatar') {
-            skeleton.classList.add('skeleton-avatar');
-        } else if (type === 'image') {
-            skeleton.classList.add('skeleton-image');
-        }
-
-        container.appendChild(skeleton);
-        return skeleton;
-    }
-
-    /**
-     * Hide skeleton and show content
-     */
-    hideSkeleton(skeleton, content) {
-        if (skeleton && content) {
-            skeleton.style.display = 'none';
-            content.classList.add('fade-in');
-        }
-    }
-
-    /**
-     * Animate image loading
-     */
-    animateImageLoad(imgElement) {
-        if (!this.respectsReducedMotion) {
-            imgElement.classList.add('image-loading');
-            
-            imgElement.onload = () => {
-                imgElement.classList.remove('image-loading');
-                imgElement.classList.add('image-loaded');
-            };
-        }
-    }
-
-    /**
-     * Add hover effects to cards
-     */
-    addCardHoverEffect(cardId, effect = 'lift') {
-        const card = document.getElementById(cardId);
-        if (!card) return;
-
-        const effects = {
-            lift: 'hover-lift',
-            glow: 'hover-glow',
-            scale: 'hover-scale'
-        };
-
-        card.classList.add(effects[effect] || effects.lift);
-    }
-
-    /**
-     * Smooth tab transition
-     */
-    switchTab(tabId) {
-        const tabs = document.querySelectorAll('[data-tab]');
-        const contents = document.querySelectorAll('.tab-content');
-
-        tabs.forEach(tab => {
-            const isActive = tab.dataset.tab === tabId;
-            tab.classList.toggle('is-active', isActive);
-            tab.setAttribute('aria-selected', isActive);
-        });
-
-        contents.forEach(content => {
-            const isActive = content.id === tabId;
-            content.classList.toggle('is-hidden', !isActive);
-            content.classList.toggle('is-visible', isActive);
-        });
-    }
-
-    /**
-     * Animate section completion
-     */
-    markSectionComplete(sectionId, complete = true) {
-        const status = document.getElementById(sectionId + '-status');
-        if (status) {
-            status.className = 'section-status ' + (complete ? 'complete' : 'incomplete');
-        }
-    }
-
-    /**
-     * Collapse/expand card with animation
-     */
-    toggleCardExpand(cardId, expanded) {
-        const content = document.getElementById(cardId + '-content');
-        if (content) {
-            content.classList.toggle('is-expanded', expanded);
-        }
-    }
-
-    /**
-     * Disable animations for a specific element
-     */
-    disableAnimations(elementId) {
-        const element = document.getElementById(elementId);
-        if (element) {
-            element.style.animation = 'none';
-            element.style.transition = 'none';
-        }
+    static shakeError(element) {
+        if (!element) return;
+        this.animate(element, 'shake', 380);
     }
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        window.EventBiteAnimations = new EventBiteAnimations();
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Progressive image loading: remove skeleton once image finishes loading
+    const images = document.querySelectorAll('img[loading="lazy"], .eb-event-card__media img, .eb-food-card__media img');
+    images.forEach((img) => {
+        if (img.complete) {
+            img.classList.remove('eb-skeleton', 'skeleton');
+        } else {
+            img.addEventListener('load', () => {
+                img.classList.remove('eb-skeleton', 'skeleton');
+            }, { once: true });
+            img.addEventListener('error', () => {
+                img.classList.remove('eb-skeleton', 'skeleton');
+            }, { once: true });
+        }
     });
-} else {
-    window.EventBiteAnimations = new EventBiteAnimations();
-}
 
-// Export for module usage
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = EventBiteAnimations;
-}
+    // 2. Opt-in button loading feedback on forms with [data-loading-form] or buttons with [data-loading-text]
+    document.querySelectorAll('form').forEach((form) => {
+        form.addEventListener('submit', () => {
+            const submitter = form.querySelector('button[type="submit"][data-loading-text], button[type="submit"].eb-btn-primary');
+            if (submitter && !submitter.hasAttribute('data-no-loading')) {
+                EventBiteAnimations.setButtonLoading(submitter, true);
+            }
+        });
+    });
+
+    // 3. Accessible flash alert dismiss support
+    document.querySelectorAll('.flash-alert [data-dismiss-alert], .ac-alert [data-dismiss-alert]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const alertBox = btn.closest('.flash-alert, .ac-alert');
+            if (!alertBox) return;
+            alertBox.classList.add('is-dismissing');
+            window.setTimeout(() => alertBox.remove(), prefersReducedMotion() ? 10 : 180);
+        });
+    });
+});
+
+window.EventBiteAnimations = EventBiteAnimations;

@@ -670,7 +670,7 @@
             <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-preview-device="tablet">Tablet</button>
             <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-preview-device="mobile">Mobile</button>
         </div>
-        <div id="event-preview-container" style="border: 1px solid var(--color-border); border-radius: var(--radius-md); overflow: hidden; background: white; transition: width 0.3s ease, height 0.3s ease;">
+        <div id="event-preview-container" style="border: 1px solid var(--color-border-strong); border-radius: var(--radius-md); overflow: hidden; background: var(--color-surface); background-image: var(--gradient-surface-3d); box-shadow: var(--shadow-card); transition: width 0.3s ease, height 0.3s ease;">
             <div id="event-preview-desktop" style="width: 100%; padding: var(--space-4);">
                 <img id="preview-flyer-desktop" src="{{ $e?->flyer_path ? $e->display_image_url : '/images/event-placeholder.svg' }}" alt="Desktop preview" style="width: 100%; max-height: 400px; object-fit: contain; border-radius: var(--radius-md);">
                 <h2 style="margin-top: var(--space-3);">{{ $e?->title ?? 'Event Title' }}</h2>

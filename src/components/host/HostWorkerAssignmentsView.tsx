@@ -13,6 +13,7 @@ import {
   verifyStaffClaimCode,
 } from "../../lib/api";
 import { HostRolePermissions, HostWorkerAssignmentItem } from "./types";
+import { EventOperationsSetupSection } from "./EventOperationsSetupSection";
 
 type Props = {
   eventDetails: EventDetails;
@@ -20,6 +21,8 @@ type Props = {
   tenantUsers: TenantUserMember[];
   permissions: HostRolePermissions;
   onSwitchRolePerspective: (role: TenantRole) => void;
+  onUpdateEventDetails?: (updated: EventDetails) => void;
+  onSaveToast?: (msg: string) => void;
 };
 
 export function HostWorkerAssignmentsView({
@@ -28,6 +31,8 @@ export function HostWorkerAssignmentsView({
   tenantUsers,
   permissions,
   onSwitchRolePerspective,
+  onUpdateEventDetails,
+  onSaveToast,
 }: Props) {
   const initialLocalWorkers: HostWorkerAssignmentItem[] = tenantUsers
     .filter((u) => u.organizerId === activeOrganizerId)
@@ -694,6 +699,16 @@ export function HostWorkerAssignmentsView({
           })}
         </div>
       </section>
+
+      <EventOperationsSetupSection
+        eventDetails={eventDetails}
+        tenantUsers={tenantUsers}
+        permissions={permissions}
+        mode="dashboard"
+        onUpdateEventDetails={onUpdateEventDetails || (() => {})}
+        onSwitchRolePerspective={onSwitchRolePerspective}
+        onSaveToast={onSaveToast}
+      />
     </div>
   );
 }

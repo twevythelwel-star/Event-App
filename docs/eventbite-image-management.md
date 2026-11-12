@@ -180,6 +180,23 @@ A host uploading a replacement starts that new image as visible.
   - the image component renders correctly.
 - `tests/Feature/MediaUploadsApiTest.php`: the same rules through the API.
 
+## Host image controls and verified scope (11 November 2026)
+
+- Hosts upload a flyer through the event form, gallery photographs through the gallery manager, and individual menu photos through the menu studio or API. The gallery manager accepts up to 12 photos, previews them, requires alt text, lets the host set horizontal/vertical focal points, change order and remove a photo. Flyer management includes aspect previews and crop/focal controls. Menu photo fields include a preview, alt text, focal position and an explicit illustrative-sample checkbox.
+- Performer portraits are uploaded through the event schedule and stored in the same private, per-organizer storage, with responsive variants and event-scoped access checks. Partner/vendor presentation uses the partners flow; uploaded brand logos are event-scoped.
+- Validation currently accepts JPEG, PNG and WebP up to 5 MB, then re-encodes the source and strips metadata. Responsive upload derivatives are 400/800/1600 px WebP and AVIF where GD supports AVIF. Browsers use `<picture>`, `srcset`, intrinsic dimensions and lazy loading; the first hero is eager/high priority.
+- Cropping/focal point controls are available in host forms. The image host can set a focal point and preview the result; independent drag-to-crop polygon editing is not implemented. Upload validation does not promise HEIC or SVG support.
+- Host upload authorization is enforced by the event-management service and tenant ownership; public reads go through media routes, which check publication/moderation visibility. A generated category image can never replace an uploaded flyer.
+- The administrator photo library requires source, licence, subject, alt text, person/release declaration and rights confirmation. It re-encodes and resizes library images, requires minimum dimensions, labels approved photos illustrative, and requires review by another system administrator before use. This library currently has no committed starter photography assets.
+- Event details now include uploaded performer portraits in the listing-specific gallery. The attendee dashboard and full ticket view show a gallery keepsake when a host has uploaded one; otherwise only the event's own cover/artwork is shown.
+
+## Known gaps
+
+- No verified, licensed photo set is shipped for the wider cuisines, dishes, venues, vendors, host profiles or community/lifestyle moments described in the product brief. The photo-library admin workflow is ready for curated uploads; photos must carry real provenance before approval.
+- Some screens with no event-specific image (such as vendor application and staff workflows) remain primarily operational interfaces. Photos are not added where they would distract from scanning, money handling or access controls.
+- CDN/object-storage configuration is supported by the private media disk setting and cache headers, but production CDN behavior was not verified as part of this code review.
+- The separate React/Vite client is not the Laravel production surface and its image resolver/catalog is not covered by this Blade management guide.
+
 ## Regression test results
 
 Full PHPUnit suite, 5 November 2026, after the image work: **405 tests, 391 passed, 14 failed** (5,025 assertions, 11.6 minutes).

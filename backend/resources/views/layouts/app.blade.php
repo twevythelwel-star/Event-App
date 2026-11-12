@@ -36,32 +36,13 @@
 
     <style>
         :focus-visible {
-            outline: 3px solid #005fcc !important;
-            outline-offset: 3px !important;
-            box-shadow: 0 0 0 2px #fff !important;
+            outline: 2px solid var(--color-border-focus, #C7FF45) !important;
+            outline-offset: 2px !important;
+            box-shadow: var(--shadow-focus, 0 0 0 3px rgba(199, 255, 69, 0.28)) !important;
         }
 
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-        }
-
-        :root {
-            --color-background: #07111F;
-            --color-background-secondary: #0B192B;
-            --color-surface: #10243A;
-            --color-surface-elevated: #152C45;
-            --color-accent: #C7FF45;
-            --color-accent-hover: #D7FF77;
-            --color-accent-text: #14210A;
-            --color-purple: #8B5CF6;
-            --color-purple-text: #C4B5FD;
-            --color-text-primary: #F8FAFC;
-            --color-text-secondary: #A8B6C8;
-            --color-text-muted: #8494A8;
-            --color-border: #26384D;
-            --color-success: #22C55E;
-            --color-warning: #F59E0B;
-            --color-error: #EF4444;
         }
 
         .brand-text-wrap {
@@ -87,9 +68,10 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: var(--color-accent-subtle);
+            background: linear-gradient(145deg, rgba(199, 255, 69, 0.22), rgba(139, 92, 246, 0.2));
             color: var(--color-accent);
             border: 1px solid var(--color-accent-border);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 8px rgba(2, 6, 14, 0.45);
             font-size: 0.82rem;
             font-weight: 800;
             display: flex;
@@ -131,8 +113,10 @@
 
         .mobile-menu-toggle {
             display: none;
-            background: var(--color-background-secondary);
-            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+            background-image: var(--gradient-secondary-btn-3d);
+            border: 1px solid var(--color-border-strong);
+            box-shadow: var(--shadow-btn-secondary);
             border-radius: var(--radius-sm);
             width: 44px;
             height: 44px;

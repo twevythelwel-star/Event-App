@@ -18,13 +18,27 @@
 <div class="eb-food-order" data-food-builder data-currency="{{ $currency }}">
     <div class="eb-stack" style="gap: var(--space-6);">
         @if($windows !== [] || $delivery)
-            <fieldset class="eb-panel" style="margin: 0;">
+            <fieldset class="eb-panel eb-food-fulfillment-panel" style="margin: 0;">
                 <legend class="eb-text-section-title" style="padding: 0;">How you'll get your food</legend>
                 @if($event->pickup_instructions)<p class="eb-text-supporting" style="margin: 0 0 var(--space-3);">{{ $event->pickup_instructions }}</p>@endif
                 @if($delivery)
-                    <div class="eb-cluster" style="gap: var(--space-4); margin-bottom: var(--space-3);">
-                        <label class="eb-choice-label"><input type="radio" name="food[method]" value="pickup" @checked(($food['method'] ?? 'pickup') !== 'delivery') data-food-method> <span>Pick up</span></label>
-                        <label class="eb-choice-label"><input type="radio" name="food[method]" value="delivery" @checked(($food['method'] ?? '') === 'delivery') data-food-method> <span>Deliver to my table or area</span></label>
+                    <div class="eb-option-tiles-grid" style="margin-bottom: var(--space-3);">
+                        <label class="eb-choice-label eb-option-tile {{ ($food['method'] ?? 'pickup') !== 'delivery' ? 'is-selected' : '' }}">
+                            <input type="radio" name="food[method]" value="pickup" @checked(($food['method'] ?? 'pickup') !== 'delivery') data-food-method>
+                            <span class="eb-option-thumb-icon" aria-hidden="true"><x-icon name="utensils" :size="16" /></span>
+                            <span class="eb-option-tile-copy">
+                                <span class="eb-option-tile-name">Pick up</span>
+                                <span class="eb-help-text" style="font-size: 0.75rem;">Collect at the event counter</span>
+                            </span>
+                        </label>
+                        <label class="eb-choice-label eb-option-tile {{ ($food['method'] ?? '') === 'delivery' ? 'is-selected' : '' }}">
+                            <input type="radio" name="food[method]" value="delivery" @checked(($food['method'] ?? '') === 'delivery') data-food-method>
+                            <span class="eb-option-thumb-icon" aria-hidden="true"><x-icon name="pin" :size="16" /></span>
+                            <span class="eb-option-tile-copy">
+                                <span class="eb-option-tile-name">Deliver to my table or area</span>
+                                <span class="eb-help-text" style="font-size: 0.75rem;">Brought directly to your spot</span>
+                            </span>
+                        </label>
                     </div>
                     <div data-delivery-fields @if(($food['method'] ?? '') !== 'delivery') hidden @endif>
                         <x-form-field name="food[delivery_location]" id="food-delivery-location" label="Table number or area" :value="$food['delivery_location'] ?? ''" placeholder="e.g. Table 12, or the blue tent" />
@@ -47,10 +61,14 @@
         @endif
 
         @if($packages->isNotEmpty())
-            <section aria-labelledby="packages-heading" class="eb-stack" style="gap: var(--space-3);">
-                <div>
-                    <h2 id="packages-heading" class="eb-text-section-title" style="margin: 0;">Meal packages</h2>
-                    <p class="eb-text-supporting" style="margin: 2px 0 0;">Combinations put together by the host. Make your choices, swap what's allowed and add extras.</p>
+            <section aria-labelledby="packages-heading" class="eb-stack" style="gap: var(--space-4);">
+                <div class="eb-food-section-header">
+                    <div>
+                        <span class="eb-food-section-kicker"><x-icon name="package" :size="13" /> Chef & Host Combinations</span>
+                        <h2 id="packages-heading" class="eb-text-section-title" style="margin: 2px 0 0;">Meal packages</h2>
+                        <p class="eb-text-supporting" style="margin: 2px 0 0;">Combinations put together by the host. Make your choices, swap what's allowed and add extras.</p>
+                    </div>
+                    <span class="eb-badge eb-badge-neutral">{{ $packages->count() }} {{ \Illuminate\Support\Str::plural('package', $packages->count()) }}</span>
                 </div>
                 @foreach($packages as $package)
                     @php $entries = $savedPackages->where('menu_item_id', $package->id)->values(); @endphp
@@ -58,104 +76,89 @@
                         @foreach($entries->isEmpty() ? [null] : $entries as $entry)
                             @include('checkout._package-card', ['package' => $package, 'entry' => $entry, 'index' => $packageIndex++])
                         @endforeach
-                        <button type="button" class="eb-btn eb-btn-ghost eb-btn-sm" data-package-another style="align-self: flex-start; white-space: normal; text-align: left; max-width: 100%;">＋ Add another {{ $package->name }}, built differently</button>
+                        <button type="button" class="eb-btn eb-btn-ghost eb-btn-sm eb-package-another-btn" data-package-another style="align-self: flex-start; white-space: normal; text-align: left; max-width: 100%;">＋ Add another {{ $package->name }}, built differently</button>
                     </div>
                 @endforeach
             </section>
         @endif
 
         @if($menu->isNotEmpty())
-            <section aria-labelledby="food-heading" class="eb-stack" style="gap: var(--space-3);">
-                <div>
-                    <h2 id="food-heading" class="eb-text-section-title" style="margin: 0;">{{ $packages->isNotEmpty() ? 'Build your own meal' : 'Food & drinks' }}</h2>
-                    <p class="eb-text-supporting" style="margin: 2px 0 0;">Choose individual items in any combination. Collect at the event with your ticket code.</p>
+            <section aria-labelledby="food-heading" class="eb-stack" style="gap: var(--space-4);">
+                <div class="eb-food-section-header">
+                    <div>
+                        <span class="eb-food-section-kicker"><x-icon name="utensils" :size="13" /> À La Carte Menu</span>
+                        <h2 id="food-heading" class="eb-text-section-title" style="margin: 2px 0 0;">{{ $packages->isNotEmpty() ? 'Build your own meal' : 'Food & drinks' }}</h2>
+                        <p class="eb-text-supporting" style="margin: 2px 0 0;">Choose individual items in any combination. Collect at the event with your ticket code.</p>
+                    </div>
+                    <span class="eb-badge eb-badge-neutral">{{ $menu->count() }} {{ \Illuminate\Support\Str::plural('dish', $menu->count()) }}</span>
                 </div>
+
+                @if($sections->count() > 1)
+                    <nav class="eb-food-category-nav" aria-label="Menu categories">
+                        @foreach($sections as $section => $items)
+                            <a href="#menu-cat-{{ \Illuminate\Support\Str::slug($section) }}" class="eb-food-category-pill">
+                                <span>{{ $section }}</span>
+                                <span class="eb-food-category-count">{{ $items->count() }}</span>
+                            </a>
+                        @endforeach
+                    </nav>
+                @endif
+
                 @foreach($sections as $section => $items)
-                    <h3 class="eb-text-label" style="margin: var(--space-2) 0 0;">{{ $section }}</h3>
-                    @foreach($items as $item)
-                        @php
-                            $saved = $cart['items'][$item->id] ?? [];
-                            $soldOut = $item->available_stock !== null && (int) $item->available_stock <= 0;
-                            $cap = $item->max_per_order ? min(20, (int) $item->max_per_order) : 20;
-                            $max = $item->available_stock === null ? $cap : max(0, min($cap, (int) $item->available_stock));
-                            $groups = $item->pricing_type === 'customizable' && is_array($item->custom_option_groups) ? $item->custom_option_groups : [];
-                        @endphp
-                        <x-food-card :item="$item" :currency="$currency" layout="row" data-food-line data-name="{{ $item->name }}" data-unit-minor="{{ $item->priceMinorIn($currency) }}">
-                            <div class="eb-stack" style="gap: var(--space-2); align-items: flex-end; width: 100%;">
-                                @foreach($groups as $group)
-                                    @php
-                                        $groupId = $group['id'] ?? ('g' . $loop->index);
-                                        $groupMax = max(1, (int) ($group['max'] ?? 1));
-                                        $required = (bool) ($group['required'] ?? true);
-                                        $savedChoice = old("items.{$item->id}.choices.{$groupId}", $saved['choices'][$groupId] ?? ($required ? 0 : ''));
-                                    @endphp
-                                    @if($groupMax > 1)
-                                        <fieldset class="eb-food-options" data-max="{{ $groupMax }}">
-                                            <legend class="eb-text-label">{{ $group['title'] ?? 'Options' }} <span class="eb-help-text">({{ $required ? 'choose 1 to ' . $groupMax : 'up to ' . $groupMax }})</span></legend>
-                                            @foreach($group['choices'] ?? [] as $index => $choice)
-                                                @php $extra = $minor($currency === 'USD' ? ($choice['extraPriceUSD'] ?? 0) : ($choice['extraPriceJMD'] ?? 0)); @endphp
-                                                <label class="eb-choice-label">
-                                                    <input type="checkbox" name="items[{{ $item->id }}][choices][{{ $groupId }}][]" value="{{ $index }}" data-extra-minor="{{ $extra }}" data-label="{{ $choice['label'] ?? '' }}"
-                                                           @checked(in_array($index, array_map('intval', (array) $savedChoice), true) && $savedChoice !== '') @disabled($soldOut)>
-                                                    <span>{{ $choice['label'] ?? 'Choice' }}{{ $extra > 0 ? ' (+' . $fmt($extra) . ')' : '' }}</span>
-                                                </label>
-                                            @endforeach
-                                        </fieldset>
-                                    @else
-                                        <label class="eb-text-label" style="width: 100%;">
-                                            {{ $group['title'] ?? 'Option' }}{{ $required ? '' : ' (optional)' }}
-                                            <select name="items[{{ $item->id }}][choices][{{ $groupId }}]" class="eb-select eb-input" style="width: 100%; margin-top: 2px;" @disabled($soldOut)>
-                                                @unless($required)<option value="" data-extra-minor="0">None</option>@endunless
-                                                @foreach($group['choices'] ?? [] as $index => $choice)
-                                                    @php $extra = $minor($currency === 'USD' ? ($choice['extraPriceUSD'] ?? 0) : ($choice['extraPriceJMD'] ?? 0)); @endphp
-                                                    <option value="{{ $index }}" data-extra-minor="{{ $extra }}" data-label="{{ $choice['label'] ?? '' }}" @selected((string) $savedChoice !== '' && (int) $savedChoice === $index)>
-                                                        {{ $choice['label'] ?? 'Choice' }}{{ $extra > 0 ? ' (+' . $fmt($extra) . ')' : '' }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                        </label>
-                                    @endif
-                                @endforeach
-                                @if($item->pricing_type === 'custom_amount')
-                                    <label class="eb-text-label" style="width: 100%;">
-                                        Your amount ({{ $currency }})
-                                        <input type="number" name="items[{{ $item->id }}][amount]" min="0" step="0.01" inputmode="decimal" class="eb-input" data-custom-amount
-                                               value="{{ old("items.{$item->id}.amount", $saved['amount'] ?? '') }}" style="width: 100%; margin-top: 2px;" @disabled($soldOut)>
-                                    </label>
-                                @endif
-                                @if($item->allow_special_instructions)
-                                    <label class="eb-text-label" style="width: 100%;">
-                                        Special instructions (optional)
-                                        <input type="text" name="items[{{ $item->id }}][instructions]" maxlength="300" class="eb-input" value="{{ old("items.{$item->id}.instructions", $saved['instructions'] ?? '') }}" style="width: 100%; margin-top: 2px;" @disabled($soldOut)>
-                                    </label>
-                                @endif
-                                <x-quantity-control
-                                    :name="'items[' . $item->id . '][quantity]'"
-                                    :value="old('items.' . $item->id . '.quantity', $saved['quantity'] ?? 0)"
-                                    :max="$max"
-                                    :disabled="$soldOut"
-                                    :label="'Quantity of ' . $item->name"
-                                    data-line-qty />
-                                @if($item->max_per_order)<p class="eb-help-text" style="margin: 0;">Limit {{ $item->max_per_order }} per customer</p>@endif
-                            </div>
-                        </x-food-card>
-                    @endforeach
+                    <div id="menu-cat-{{ \Illuminate\Support\Str::slug($section) }}" class="eb-food-category-group eb-stack" style="gap: var(--space-3);">
+                        <div class="eb-food-category-heading">
+                            <h3 class="eb-text-label" style="margin: 0;">{{ $section }}</h3>
+                            <span class="eb-food-category-rule" aria-hidden="true"></span>
+                            <span class="eb-help-text">{{ $items->count() }} {{ \Illuminate\Support\Str::plural('item', $items->count()) }}</span>
+                        </div>
+                        @foreach($items as $item)
+                            @php
+                                $saved = $cart['items'][$item->id] ?? [];
+                                $soldOut = $item->available_stock !== null && (int) $item->available_stock <= 0;
+                                $cap = $item->max_per_order ? min(20, (int) $item->max_per_order) : 20;
+                                $max = $item->available_stock === null ? $cap : max(0, min($cap, (int) $item->available_stock));
+                                $initItemQty = (int) old('items.' . $item->id . '.quantity', $saved['quantity'] ?? 0);
+                            @endphp
+                            <x-food-card :item="$item" :currency="$currency" layout="row" :class="$initItemQty > 0 ? 'is-selected' : ''"
+                                         data-food-line data-name="{{ $item->name }}" data-unit-minor="{{ $item->priceMinorIn($currency) }}">
+                                <div class="eb-stack" style="gap: var(--space-3); width: 100%;">
+                                    <x-food-item-options
+                                        :item="$item"
+                                        mode="item"
+                                        :saved="$saved"
+                                        :currency="$currency"
+                                        :sold-out="$soldOut" />
+
+                                    <div class="eb-food-action-bar">
+                                        <div class="eb-food-unit-readout">
+                                            @if($item->max_per_order)
+                                                <span class="eb-help-text">Limit {{ $item->max_per_order }} per customer</span>
+                                            @else
+                                                <span class="eb-help-text">Select quantity</span>
+                                            @endif
+                                        </div>
+                                        <x-quantity-control
+                                            :name="'items[' . $item->id . '][quantity]'"
+                                            :value="$initItemQty"
+                                            :max="$max"
+                                            :disabled="$soldOut"
+                                            :label="'Quantity of ' . $item->name"
+                                            data-line-qty />
+                                    </div>
+                                </div>
+                            </x-food-card>
+                        @endforeach
+                    </div>
                 @endforeach
             </section>
         @endif
     </div>
 
-    <aside class="eb-panel eb-food-summary" aria-labelledby="food-summary-heading">
-        <h2 id="food-summary-heading" class="eb-text-card-title" style="margin: 0;">Your food</h2>
-        <ul class="eb-food-summary-lines" data-summary-lines aria-live="polite"><li class="eb-text-supporting">Nothing chosen yet.</li></ul>
-        <dl class="eb-food-summary-totals">
-            <div><dt>Food</dt><dd data-summary-items>{{ $fmt(0) }}</dd></div>
-            @if((int) $event->packaging_fee_minor > 0)<div><dt>Packaging fee (per order)</dt><dd data-summary-fee data-fee-minor="{{ (int) $event->packaging_fee_minor }}">{{ $fmt((int) $event->packaging_fee_minor) }}</dd></div>@endif
-            @if((int) $event->food_service_fee_minor > 0)<div><dt>Food service fee (per order)</dt><dd data-summary-fee data-fee-minor="{{ (int) $event->food_service_fee_minor }}">{{ $fmt((int) $event->food_service_fee_minor) }}</dd></div>@endif
-            <div class="eb-food-summary-total"><dt>Estimated food total</dt><dd data-summary-total>{{ $fmt(0) }}</dd></div>
-        </dl>
-        <p class="eb-help-text" style="margin: 0;">Any taxes and platform fees are added on the next page, where you see the full total before you pay.</p>
-    </aside>
+    <x-food-order-summary
+        :event="$event"
+        :currency="$currency"
+        :delivery-available="$delivery"
+        :method="$food['method'] ?? 'pickup'" />
 </div>
 
 
@@ -163,92 +166,196 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-food-builder]').forEach(function (form) {
-        var currency = form.dataset.currency;
-        var money = function (minor) {
-            return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(minor / 100);
-        };
-        var toMinor = function (value) { var n = parseFloat(value); return isFinite(n) && n > 0 ? Math.round(n * 100) : 0; };
-        var qty = function (input) { var n = parseInt(input && input.value || '0', 10); return isFinite(n) && n > 0 ? n : 0; };
-        var lines = form.querySelector('[data-summary-lines]');
+            var currency = form.dataset.currency;
+            var money = function (minor) {
+                return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(minor / 100);
+            };
+            var toMinor = function (value) { var n = parseFloat(value); return isFinite(n) && n > 0 ? Math.round(n * 100) : 0; };
+            var qty = function (input) { var n = parseInt(input && input.value || '0', 10); return isFinite(n) && n > 0 ? n : 0; };
+            var lines = form.querySelector('[data-summary-lines]');
+            var countBadge = form.querySelector('[data-summary-count]');
+            var methodLabel = form.querySelector('[data-summary-method-label]');
 
-        // Checkbox groups never take more choices than the host allows.
-        form.addEventListener('change', function (event) {
-            var box = event.target;
-            var group = box.closest && box.closest('[data-max]');
-            if (box.type === 'checkbox' && group) {
-                var checked = group.querySelectorAll('input[type=checkbox]:checked');
-                if (checked.length > parseInt(group.dataset.max, 10)) { box.checked = false; }
+            function syncOptionTiles(scope) {
+                (scope || form).querySelectorAll('.eb-option-tile').forEach(function (tile) {
+                    var input = tile.querySelector('input[type=radio], input[type=checkbox]');
+                    if (input) tile.classList.toggle('is-selected', input.checked);
+                });
             }
-            if (box.matches('[data-food-method]')) {
-                var delivery = box.value === 'delivery';
-                var d = form.querySelector('[data-delivery-fields]'); if (d) d.hidden = !delivery;
-                var p = form.querySelector('[data-pickup-fields]'); if (p) p.hidden = delivery;
+
+            // Checkbox groups never take more choices than the host allows.
+            form.addEventListener('change', function (event) {
+                var box = event.target;
+                var group = box.closest && box.closest('[data-max]');
+                if (box.type === 'checkbox' && group) {
+                    var checked = group.querySelectorAll('input[type=checkbox]:checked');
+                    if (checked.length > parseInt(group.dataset.max, 10)) { box.checked = false; }
+                }
+                if (box.matches('[data-food-method]')) {
+                    var delivery = box.value === 'delivery';
+                    var d = form.querySelector('[data-delivery-fields]'); if (d) d.hidden = !delivery;
+                    var p = form.querySelector('[data-pickup-fields]'); if (p) p.hidden = delivery;
+                    if (methodLabel) methodLabel.textContent = delivery ? 'Table / area delivery' : 'Event pickup';
+                }
+                if (box.matches('[data-option-select]')) {
+                    var pillGroup = form.querySelector('[data-option-pills="' + box.dataset.optionSelect + '"]');
+                    if (pillGroup) {
+                        pillGroup.querySelectorAll('[data-option-pill]').forEach(function (pill) {
+                            var active = pill.dataset.value === box.value;
+                            pill.classList.toggle('is-selected', active);
+                            pill.setAttribute('aria-pressed', active ? 'true' : 'false');
+                        });
+                    }
+                }
+                syncOptionTiles(form);
+                update();
+            });
+            form.addEventListener('input', update);
+
+            // Interactive option pills and add-on steppers + "Add another, built differently"
+            var nextIndex = form.querySelectorAll('[data-package-card]').length;
+            form.addEventListener('click', function (event) {
+                var pill = event.target.closest('[data-option-pill]');
+                if (pill && !pill.disabled) {
+                    var groupEl = pill.closest('[data-option-pills]');
+                    var selectKey = groupEl && groupEl.dataset.optionPills;
+                    var selectEl = selectKey && form.querySelector('[data-option-select="' + selectKey + '"]');
+                    if (selectEl && !selectEl.disabled) {
+                        selectEl.value = pill.dataset.value;
+                        selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    return;
+                }
+
+                var addonBtn = event.target.closest('[data-addon-step]');
+                if (addonBtn && !addonBtn.disabled) {
+                    var stepper = addonBtn.closest('[data-addon-stepper]');
+                    var addonInput = stepper && stepper.querySelector('input[data-addon]');
+                    if (addonInput && !addonInput.disabled) {
+                        var min = parseInt(addonInput.min || '0', 10);
+                        var max = parseInt(addonInput.max || '10', 10);
+                        var nextVal = Math.max(min, Math.min(max, parseInt(addonInput.value || '0', 10) + (addonBtn.dataset.addonStep === 'up' ? 1 : -1)));
+                        addonInput.value = nextVal;
+                        stepper.querySelectorAll('[data-addon-step]').forEach(function (b) {
+                            b.disabled = b.dataset.addonStep === 'down' ? nextVal <= min : nextVal >= max;
+                        });
+                        var addonCard = stepper.closest('[data-addon-card]');
+                        if (addonCard) addonCard.classList.toggle('is-selected', nextVal > 0);
+                        addonInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        addonInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    return;
+                }
+
+                var button = event.target.closest('[data-package-another]');
+                if (!button) return;
+                var group = button.closest('[data-package-group]');
+                var source = group.querySelector('[data-package-card]');
+                var copy = source.cloneNode(true);
+                var from = source.dataset.index, to = String(nextIndex++);
+                copy.dataset.index = to;
+                copy.querySelectorAll('[name]').forEach(function (field) {
+                    field.name = field.name.replace('packages[' + from + ']', 'packages[' + to + ']');
+                    if (field.id) { field.id = field.id + '-' + to; }
+                    if (field.type === 'checkbox' || field.type === 'radio') { field.checked = field.defaultChecked; }
+                    else if (field.matches('[data-line-qty] input, input[data-line-qty]')) { field.value = 1; }
+                    else if (field.tagName === 'INPUT' && field.type !== 'hidden') { field.value = field.type === 'number' ? 0 : ''; }
+                });
+                copy.querySelectorAll('label[for]').forEach(function (label) { label.htmlFor = label.htmlFor + '-' + to; });
+                var qtyControl = copy.querySelector('[data-qty-control]');
+                var qtyInput = copy.querySelector('[data-line-qty] input, input[data-line-qty]');
+                if (qtyInput) qtyInput.value = 1;
+                if (qtyControl && window.ebSyncQtyControl) window.ebSyncQtyControl(qtyControl);
+                syncOptionTiles(copy);
+                button.before(copy);
+                update();
+            });
+
+            function update() {
+                var rows = [], items = 0, totalCount = 0;
+                form.querySelectorAll('[data-package-card]').forEach(function (card) {
+                    var count = qty(card.querySelector('[data-line-qty] input, input[data-line-qty]'));
+                    var unit = parseInt(card.dataset.baseMinor, 10);
+                    var details = [];
+                    card.querySelectorAll('select[data-priced] option:checked, input[data-priced]:checked').forEach(function (o) {
+                        unit += parseInt(o.dataset.extraMinor || '0', 10);
+                        if (o.dataset.choiceLabel) details.push(o.dataset.choiceLabel);
+                        else if (o.tagName === 'OPTION' && o.value !== '') details.push(o.textContent.trim().replace(/\s*\(\+[^)]+\)$/, ''));
+                    });
+                    card.querySelectorAll('input[data-addon]').forEach(function (a) {
+                        var aq = qty(a);
+                        unit += aq * parseInt(a.dataset.priceMinor, 10);
+                        if (aq > 0 && a.dataset.addonLabel) details.push('+' + aq + ' ' + a.dataset.addonLabel);
+                    });
+                    var out = card.querySelector('[data-package-unit]');
+                    if (out) out.textContent = money(unit);
+                    if (count > 0) {
+                        totalCount += count;
+                        rows.push({ title: count + ' × ' + card.dataset.name, amount: unit * count, detail: details.join(' · ') });
+                        items += unit * count;
+                    }
+                });
+                form.querySelectorAll('[data-food-line]').forEach(function (line) {
+                    var count = qty(line.querySelector('[data-line-qty] input, input[data-line-qty]'));
+                    line.classList.toggle('is-selected', count > 0);
+                    if (count === 0) return;
+                    totalCount += count;
+                    var custom = line.querySelector('[data-custom-amount]');
+                    var unit = custom ? toMinor(custom.value) : parseInt(line.dataset.unitMinor, 10);
+                    var details = [];
+                    line.querySelectorAll('select option:checked, input[type=checkbox]:checked').forEach(function (o) {
+                        unit += parseInt(o.dataset.extraMinor || '0', 10);
+                        if (o.dataset.label) details.push(o.dataset.label);
+                    });
+                    rows.push({ title: count + ' × ' + line.dataset.name, amount: unit * count, detail: details.join(' · ') });
+                    items += unit * count;
+                });
+                if (countBadge) {
+                    countBadge.textContent = totalCount + (totalCount === 1 ? ' item' : ' items');
+                }
+                lines.innerHTML = '';
+                if (rows.length === 0) {
+                    var empty = document.createElement('li');
+                    empty.className = 'eb-food-summary-empty eb-text-supporting';
+                    empty.textContent = 'Nothing chosen yet.';
+                    lines.appendChild(empty);
+                }
+                rows.forEach(function (row) {
+                    var li = document.createElement('li');
+                    li.className = 'eb-food-summary-line';
+                    var left = document.createElement('div');
+                    left.className = 'eb-food-summary-line-info';
+                    var name = document.createElement('span');
+                    name.className = 'eb-food-summary-line-name';
+                    name.textContent = row.title;
+                    left.appendChild(name);
+                    if (row.detail) {
+                        var sub = document.createElement('span');
+                        sub.className = 'eb-food-summary-line-detail';
+                        sub.textContent = row.detail;
+                        left.appendChild(sub);
+                    }
+                    var amount = document.createElement('span');
+                    amount.className = 'eb-food-summary-line-amount';
+                    amount.textContent = money(row.amount);
+                    li.append(left, amount);
+                    lines.appendChild(li);
+                });
+                var fees = 0;
+                form.querySelectorAll('[data-summary-fee]').forEach(function (fee) { fees += items > 0 ? parseInt(fee.dataset.feeMinor, 10) : 0; });
+                form.querySelector('[data-summary-items]').textContent = money(items);
+                var totalEl = form.querySelector('[data-summary-total]');
+                var nextTotalText = money(items + fees);
+                if (totalEl) {
+                    var prevText = totalEl.textContent;
+                    totalEl.textContent = nextTotalText;
+                    if (prevText && prevText !== nextTotalText && window.EventBiteAnimations) {
+                        window.EventBiteAnimations.pulsePrice(totalEl);
+                    }
+                }
             }
             update();
         });
-        form.addEventListener('input', update);
-
-        // "Add another, built differently": a copy of the package card with its own index.
-        var nextIndex = form.querySelectorAll('[data-package-card]').length;
-        form.addEventListener('click', function (event) {
-            var button = event.target.closest('[data-package-another]');
-            if (!button) return;
-            var group = button.closest('[data-package-group]');
-            var source = group.querySelector('[data-package-card]');
-            var copy = source.cloneNode(true);
-            var from = source.dataset.index, to = String(nextIndex++);
-            copy.dataset.index = to;
-            copy.querySelectorAll('[name]').forEach(function (field) {
-                field.name = field.name.replace('packages[' + from + ']', 'packages[' + to + ']');
-                if (field.id) { field.id = field.id + '-' + to; }
-                if (field.type === 'checkbox' || field.type === 'radio') { field.checked = field.defaultChecked; }
-                else if (field.matches('[data-line-qty] input, input[data-line-qty]')) { field.value = 1; }
-                else if (field.tagName === 'INPUT' && field.type !== 'hidden') { field.value = field.type === 'number' ? 0 : ''; }
-            });
-            copy.querySelectorAll('label[for]').forEach(function (label) { label.htmlFor = label.htmlFor + '-' + to; });
-            var qtyInput = copy.querySelector('[data-line-qty] input, input[data-line-qty]');
-            if (qtyInput) qtyInput.value = 1;
-            button.before(copy);
-            update();
-        });
-
-        function update() {
-            var rows = [], items = 0;
-            form.querySelectorAll('[data-package-card]').forEach(function (card) {
-                var count = qty(card.querySelector('[data-line-qty] input, input[data-line-qty]'));
-                var unit = parseInt(card.dataset.baseMinor, 10);
-                card.querySelectorAll('select[data-priced] option:checked, input[data-priced]:checked').forEach(function (o) { unit += parseInt(o.dataset.extraMinor || '0', 10); });
-                card.querySelectorAll('input[data-addon]').forEach(function (a) { unit += qty(a) * parseInt(a.dataset.priceMinor, 10); });
-                var out = card.querySelector('[data-package-unit]');
-                if (out) out.textContent = money(unit);
-                if (count > 0) { rows.push([count + ' × ' + card.dataset.name, unit * count]); items += unit * count; }
-            });
-            form.querySelectorAll('[data-food-line]').forEach(function (line) {
-                var count = qty(line.querySelector('[data-line-qty] input, input[data-line-qty]'));
-                if (count === 0) return;
-                var custom = line.querySelector('[data-custom-amount]');
-                var unit = custom ? toMinor(custom.value) : parseInt(line.dataset.unitMinor, 10);
-                line.querySelectorAll('select option:checked, input[type=checkbox]:checked').forEach(function (o) { unit += parseInt(o.dataset.extraMinor || '0', 10); });
-                rows.push([count + ' × ' + line.dataset.name, unit * count]);
-                items += unit * count;
-            });
-            lines.innerHTML = '';
-            if (rows.length === 0) {
-                var empty = document.createElement('li'); empty.className = 'eb-text-supporting'; empty.textContent = 'Nothing chosen yet.'; lines.appendChild(empty);
-            }
-            rows.forEach(function (row) {
-                var li = document.createElement('li');
-                var name = document.createElement('span'); name.textContent = row[0];
-                var amount = document.createElement('span'); amount.textContent = money(row[1]);
-                li.append(name, amount); lines.appendChild(li);
-            });
-            var fees = 0;
-            form.querySelectorAll('[data-summary-fee]').forEach(function (fee) { fees += items > 0 ? parseInt(fee.dataset.feeMinor, 10) : 0; });
-            form.querySelector('[data-summary-items]').textContent = money(items);
-            form.querySelector('[data-summary-total]').textContent = money(items + fees);
-        }
-        update();
-    });
     });
 </script>
 @endonce

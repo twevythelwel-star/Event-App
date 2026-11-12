@@ -44,7 +44,7 @@ class EventWorkerPolicy
      */
     public function recordPayment(User $user, Order $order): bool
     {
-        $assignment = $this->getActiveAssignment($user, $order->event_id);
+        $assignment = $this->getActiveAssignment($user, $order->event_id, $order->organizer_id);
 
         if (!$assignment) {
             return $user->hasRole(AccountType::EVENT_HOST);
@@ -60,7 +60,7 @@ class EventWorkerPolicy
      */
     public function scanTicket(User $user, Order $order): bool
     {
-        $assignment = $this->getActiveAssignment($user, $order->event_id);
+        $assignment = $this->getActiveAssignment($user, $order->event_id, $order->organizer_id);
 
         if (!$assignment) {
             return $user->hasRole(AccountType::EVENT_HOST);
@@ -76,7 +76,7 @@ class EventWorkerPolicy
      */
     public function collectFoodItem(User $user, OrderItem $item, Order $order): bool
     {
-        $assignment = $this->getActiveAssignment($user, $order->event_id);
+        $assignment = $this->getActiveAssignment($user, $order->event_id, $order->organizer_id);
 
         if (!$assignment) {
             return $user->hasRole(AccountType::EVENT_HOST);
@@ -110,7 +110,7 @@ class EventWorkerPolicy
             return true;
         }
 
-        $assignment = $this->getActiveAssignment($user, $event->id);
+        $assignment = $this->getActiveAssignment($user, $event->id, $event->organizer_id);
 
         if (!$assignment) {
             return false;
@@ -128,9 +128,12 @@ class EventWorkerPolicy
      * Retrieve the active worker assignment for a user on a specific event.
      * Enforces active status and time-bound boundaries in real-time.
      */
-    protected function getActiveAssignment(User $user, string $eventId): ?EventWorkerAssignment
+    protected function getActiveAssignment(User $user, string $eventId, ?string $organizerId = null): ?EventWorkerAssignment
     {
         $assignment = EventWorkerAssignment::where('user_id', $user->id)
+            // An org-wide assignment (event_id NULL) only counts for events of its own organizer;
+            // without this an org-wide staff member could act on another organizer's event.
+            ->when($organizerId !== null && $organizerId !== '', fn ($q) => $q->where('organizer_id', $organizerId))
             ->where(function ($query) use ($eventId) {
                 $query->where('event_id', $eventId)
                     ->orWhereNull('event_id');

@@ -26,7 +26,16 @@ class AuditLogService
     ): SecurityAuditLog {
         $actorRole = $actor ? $actor->getActiveRole()->value : 'system';
         // The standalone test runner (tests/run_backend_tests.php) has no application container.
-        $request = function_exists('app') && !app()->runningInConsole() ? request() : null;
+        // A bound request exists for real HTTP traffic and HTTP feature tests; in pure console it is
+        // an empty request whose headers simply yield no scanner session.
+        $request = function_exists('app') && app()->bound('request') ? request() : null;
+
+        // Scanner terminals send a per-device session UUID (X-EventBite-Scanner-Session); correlate it
+        // into the record so repeated suspicious scans from one device are visible to investigators.
+        $scannerSession = $request?->header('X-EventBite-Scanner-Session');
+        if (is_string($scannerSession) && preg_match('/^[a-f0-9-]{36}$/i', $scannerSession)) {
+            $details .= ' [scanner_session:' . strtolower($scannerSession) . ']';
+        }
 
         return SecurityAuditLog::create([
             'id' => (string) Str::uuid(),

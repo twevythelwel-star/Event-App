@@ -35,14 +35,36 @@ class EventQrController extends Controller
      * each ticket's own secure token (orders.secure_ticket_token). Never use this QR code to authenticate
      * admission or fulfill food orders.
      */
-    public function resolve(string $code): RedirectResponse
+    public function resolve(string $code): Response|RedirectResponse
     {
         $qr = EventQrCode::where('public_code', strtoupper($code))->first();
         $event = $qr ? Event::withoutGlobalScopes()->whereNull('deleted_at')->find($qr->event_id) : null;
 
-        abort_if(!$event || $event->status !== 'published', 404);
+        abort_if(!$event, 404);
 
-        return redirect()->route('events.show', $event->id);
+        // A draft was never public: keep it indistinguishable from a missing code.
+        abort_if($event->status === 'draft', 404);
+
+        if ($event->status === 'published' && $event->visibility !== 'private') {
+            return redirect()->route('events.show', $event->id);
+        }
+
+        // Cancelled, unpublished or private events get an honest status page — the printed
+        // code keeps working, it just tells the truth about the event's current state.
+        // Titles are shown only for events that were once public (cancelled/unpublished);
+        // private events reveal nothing beyond their status.
+        $statusPage = match (true) {
+            $event->status === 'cancelled' => ['title' => 'This event was cancelled', 'message' => 'The organizer has cancelled this event. If you purchased tickets or placed food orders, watch your email and My tickets for refund and cancellation updates.', 'badge' => 'Cancelled'],
+            $event->status === 'unpublished' => ['title' => 'This event is no longer listed', 'message' => 'This event is not currently open for discovery. It may return later — check back or browse other events.', 'badge' => 'Unavailable'],
+            default => ['title' => 'This event is not available', 'message' => 'This event is private or not open to the public. If you were invited, use the link from your invitation.', 'badge' => 'Private'],
+        };
+
+        return response()->view('event-qr.status', [
+            'eventTitle' => in_array($event->status, ['cancelled', 'unpublished'], true) ? $event->title : null,
+            'badge' => $statusPage['badge'],
+            'title' => $statusPage['title'],
+            'message' => $statusPage['message'],
+        ], 200);
     }
 
     /** Public artwork for a published event, e.g. for sharing. */

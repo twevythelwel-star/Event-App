@@ -11,32 +11,58 @@
     <form method="POST" action="{{ route('checkout.tickets.save', $event) }}" class="eb-checkout-body">
         @csrf
         <section aria-labelledby="tickets-heading" class="eb-stack" style="gap: var(--space-3);">
-            <h2 id="tickets-heading" class="eb-text-section-title" style="margin: 0;">Tickets</h2>
+            <div class="eb-food-section-header">
+                <div>
+                    <span class="eb-food-section-kicker"><x-icon name="ticket" :size="13" /> Digital Event Passes</span>
+                    <h2 id="tickets-heading" class="eb-text-section-title" style="margin: 2px 0 0;">Tickets</h2>
+                </div>
+                <span class="eb-badge eb-badge-neutral">{{ count($tiers) }} {{ \Illuminate\Support\Str::plural('tier', count($tiers)) }}</span>
+            </div>
+
             @foreach($tiers as $tier)
-                <div class="eb-checkout-row" @unless($tier['on_sale']) aria-disabled="true" @endunless>
-                    <div style="min-width: 0;">
-                        <h3 class="eb-text-card-title" style="margin: 0;">{{ $tier['name'] }}</h3>
-                        @if($tier['description'])<p class="eb-text-supporting eb-clamp-2" style="margin: 2px 0 0;">{{ $tier['description'] }}</p>@endif
-                        <p style="margin: 4px 0 0;">
-                            <span class="eb-text-price">{{ \App\Support\Money::formatMinor($tier['price_minor'], $tier['currency']) }}</span>
-                            @if($tier['early_bird'] ?? false)<span class="eb-badge eb-badge-success">Early-bird price</span>@endif
+                @php
+                    $rawTier = collect(is_array($event->ticket_tiers) ? $event->ticket_tiers : [])->firstWhere('id', $tier['id']) ?? [];
+                    $tierAccent = $rawTier['accentColor'] ?? 'indigo';
+                    $tierCategory = $tier['category'] ?? ($rawTier['category'] ?? null);
+                @endphp
+                <div class="eb-checkout-row eb-tier-pass-row" data-accent="{{ $tierAccent }}" @unless($tier['on_sale']) aria-disabled="true" @endunless>
+                    <div class="eb-tier-pass-info" style="min-width: 0; flex: 1;">
+                        <div class="eb-cluster" style="gap: var(--space-2); align-items: center;">
+                            <h3 class="eb-text-card-title" style="margin: 0;">{{ $tier['name'] }}</h3>
+                            @if($tierCategory)
+                                <span class="eb-badge eb-badge-purple">{{ $tierCategory }}</span>
+                            @endif
+                            @if($tier['early_bird'] ?? false)
+                                <span class="eb-badge eb-badge-success">Early-bird price</span>
+                            @endif
+                        </div>
+
+                        @if($tier['description'])
+                            <p class="eb-text-supporting eb-clamp-2" style="margin: 4px 0 0;">{{ $tier['description'] }}</p>
+                        @endif
+
+                        <div class="eb-tier-price-row" style="margin: 8px 0 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+                            <span class="eb-food-price-pill">
+                                <span class="eb-text-price">{{ \App\Support\Money::formatMinor($tier['price_minor'], $tier['currency']) }}</span>
+                            </span>
                             <x-tier-availability :tier="$tier" />
-                        </p>
+                        </div>
+
                         {{-- Smarter ticketing, said plainly: price steps, group prices, bundles, releases, holds. --}}
                         @if(!empty($tier['price_step']) && !$tier['price_step']['is_last'])
-                            <p class="eb-help-text" style="margin: 2px 0 0;">{{ $tier['price_step']['left_at_price'] }} left at this price; the price goes up after that.</p>
+                            <p class="eb-help-text" style="margin: 4px 0 0;">{{ $tier['price_step']['left_at_price'] }} left at this price; the price goes up after that.</p>
                         @endif
                         @foreach($tier['group_discounts'] ?? [] as $rule)
-                            <p class="eb-help-text" style="margin: 2px 0 0;">Buy {{ $rule['min_quantity'] }} or more: {{ $rule['percent'] }}% off each.</p>
+                            <p class="eb-help-text" style="margin: 4px 0 0;">Buy {{ $rule['min_quantity'] }} or more: {{ $rule['percent'] }}% off each.</p>
                         @endforeach
                         @if(!empty($tier['bundle_items']))
-                            <p class="eb-help-text" style="margin: 2px 0 0;">Includes food, collected with your ticket's QR code.</p>
+                            <p class="eb-help-text" style="margin: 4px 0 0;">Includes food, collected with your ticket's QR code.</p>
                         @endif
                         @if(!empty($tier['next_release']) && $tier['next_release']['opens'])
-                            <p class="eb-help-text" style="margin: 2px 0 0;">{{ $tier['next_release']['quantity'] }} more released {{ \Illuminate\Support\Carbon::createFromTimestamp($tier['next_release']['opens'])->setTimezone($event->timezone ?: config('app.timezone'))->format('M j, g:i A T') }}.</p>
+                            <p class="eb-help-text" style="margin: 4px 0 0;">{{ $tier['next_release']['quantity'] }} more released {{ \Illuminate\Support\Carbon::createFromTimestamp($tier['next_release']['opens'])->setTimezone($event->timezone ?: config('app.timezone'))->format('M j, g:i A T') }}.</p>
                         @endif
                         @if(isset($holds[$tier['id']]))
-                            <p class="eb-help-text" style="margin: 2px 0 0; color: var(--color-accent);">
+                            <p class="eb-help-text" style="margin: 4px 0 0; color: var(--color-accent);">
                                 {{ $holds[$tier['id']]['quantity'] }} held for you until {{ $holds[$tier['id']]['expires_at']->copy()->setTimezone($event->timezone ?: config('app.timezone'))->format('g:i A') }}{{ $holds[$tier['id']]['source'] === 'waitlist' ? ' (from the waitlist)' : '' }}.</p>
                         @endif
                         @if(($tier['sold_out'] ?? false) && $event->waitlist_enabled && $tier['sale_window'] === 'open' && !isset($holds[$tier['id']]))
@@ -44,7 +70,7 @@
                                 <p class="eb-help-text" style="margin: 4px 0 0;">You're on the waitlist for {{ $entry->quantity }}.
                                     <button type="submit" form="leave-wl-{{ $entry->id }}" class="eb-btn eb-btn-ghost eb-btn-sm">Leave</button></p>
                             @else
-                                <div class="eb-cluster" style="margin-top: 4px;">
+                                <div class="eb-cluster" style="margin-top: 6px;">
                                     <label class="sr-only" for="wl-qty-{{ $tier['id'] }}">Tickets wanted</label>
                                     <input type="number" min="1" max="{{ $tier['max_per_order'] ?: 10 }}" value="1" id="wl-qty-{{ $tier['id'] }}" form="join-wl-{{ $tier['id'] }}" name="quantity" class="eb-input" style="width: 5rem;">
                                     <button type="submit" form="join-wl-{{ $tier['id'] }}" class="eb-btn eb-btn-secondary eb-btn-sm">Join the waitlist</button>

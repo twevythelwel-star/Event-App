@@ -47,7 +47,7 @@ const DEMO_PRESETS: DemoPreset[] = [
     roleName: "Event Host",
     badge: "Organizer",
     email: "host@islandevents.example",
-    password: "secret-demo-password",
+    password: "IslandDemo2026!",
     description: "Caribbean kitchen prep, menus & cash receipts",
     icon: <Store size={14} />,
     accentColor: "#d97706",
@@ -58,7 +58,7 @@ const DEMO_PRESETS: DemoPreset[] = [
     roleName: "Attendee",
     badge: "Guest",
     email: "attendee@islandevents.example",
-    password: "secret-demo-password",
+    password: "IslandDemo2026!",
     description: "Digital QR passes & meal pre-orders",
     icon: <User size={14} />,
     accentColor: "#059669",
@@ -69,7 +69,7 @@ const DEMO_PRESETS: DemoPreset[] = [
     roleName: "Operations Admin",
     badge: "Ops Desk",
     email: "admin@islandevents.example",
-    password: "secret-demo-password",
+    password: "IslandDemo2026!",
     description: "Dispute resolution & host approval desk",
     icon: <Briefcase size={14} />,
     accentColor: "#2563eb",
@@ -80,7 +80,7 @@ const DEMO_PRESETS: DemoPreset[] = [
     roleName: "System Administrator",
     badge: "Root",
     email: "superadmin@islandevents.example",
-    password: "secret-demo-password",
+    password: "IslandDemo2026!",
     description: "Platform telemetry, health & audit logs",
     icon: <Shield size={14} />,
     accentColor: "#7e22ce",
@@ -111,6 +111,10 @@ export const SignInModal: React.FC<Props> = ({ onClose, onSignedIn }) => {
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
   const [signUpCurrency, setSignUpCurrency] = useState<"USD" | "JMD">("USD");
   const [agreeTerms, setAgreeTerms] = useState(true);
+  const [acceptPlatformTerms, setAcceptPlatformTerms] = useState(true);
+  const [acceptFoodSafetyDisclaimer, setAcceptFoodSafetyDisclaimer] = useState(true);
+  const [acceptAlcoholPolicy, setAcceptAlcoholPolicy] = useState(true);
+  const [acceptHostResponsibility, setAcceptHostResponsibility] = useState(true);
 
   // Forgot Password state
   const [forgotEmail, setForgotEmail] = useState("");
@@ -140,8 +144,10 @@ export const SignInModal: React.FC<Props> = ({ onClose, onSignedIn }) => {
       setError("Passwords do not match. Please re-enter.");
       return;
     }
-    if (!agreeTerms) {
-      setError("Please agree to the Terms of Service to continue.");
+    if (!acceptPlatformTerms || !acceptFoodSafetyDisclaimer || !acceptAlcoholPolicy || !agreeTerms) {
+      setError(
+        "Please accept all mandatory platform policies (Platform Terms, Food Safety Disclaimer, and Alcohol Policy) to complete registration."
+      );
       return;
     }
 
@@ -154,7 +160,12 @@ export const SignInModal: React.FC<Props> = ({ onClose, onSignedIn }) => {
         phone: signUpPhone.trim() || undefined,
         password: signUpPassword,
         password_confirmation: signUpConfirmPassword,
-        agree_terms: agreeTerms,
+        agree_terms: agreeTerms && acceptPlatformTerms && acceptFoodSafetyDisclaimer && acceptAlcoholPolicy,
+        accept_platform_terms: acceptPlatformTerms,
+        accept_food_safety_disclaimer: acceptFoodSafetyDisclaimer,
+        accept_alcohol_policy: acceptAlcoholPolicy,
+        accept_host_responsibility: acceptHostResponsibility,
+        enforce_policy_acknowledgements: true,
       }).catch((err) => {
         if (err instanceof ApiError && err.status >= 400 && err.status < 500) {
           throw err;
@@ -872,17 +883,76 @@ export const SignInModal: React.FC<Props> = ({ onClose, onSignedIn }) => {
                 </div>
               </div>
 
-              {/* Agree Terms */}
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", margin: "4px 0" }}>
-                <input
-                  type="checkbox"
-                  id="reg-agree"
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                  style={{ width: "15px", height: "15px", marginTop: "2px", accentColor: "#059669" }}
-                />
-                <label htmlFor="reg-agree" style={{ fontSize: "11px", color: "#475569", lineHeight: 1.4, cursor: "pointer" }}>
-                  I agree to the <span style={{ color: "#059669", fontWeight: 600 }}>Terms</span> and collection policies.
+              {/* Mandatory Policy Acknowledgements (Sections A, B, C & D) */}
+              <div
+                id="signup-mandatory-policies-box"
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "12px",
+                  padding: "12px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px",
+                }}
+              >
+                <div style={{ fontSize: "10px", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.05em", color: "#0f172a" }}>
+                  Mandatory Policy Acknowledgements (v2026.11-v1)
+                </div>
+
+                <label htmlFor="reg-accept-platform-terms" style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "11px", color: "#334155", lineHeight: 1.4, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    id="reg-accept-platform-terms"
+                    checked={acceptPlatformTerms}
+                    onChange={(e) => setAcceptPlatformTerms(e.target.checked)}
+                    style={{ width: "14px", height: "14px", marginTop: "2px", accentColor: "#059669" }}
+                  />
+                  <span>
+                    <strong>A. Platform Terms &amp; Conditions *</strong> — I accept EventBite&apos;s Terms of Service, understand EventBite&apos;s role as a discovery, ticketing and ordering platform, acknowledge hosts are independently responsible for event legality and safety, and agree not to facilitate unlawful activities.
+                  </span>
+                </label>
+
+                <label htmlFor="reg-accept-food-safety" style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "11px", color: "#334155", lineHeight: 1.4, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    id="reg-accept-food-safety"
+                    checked={acceptFoodSafetyDisclaimer}
+                    onChange={(e) => setAcceptFoodSafetyDisclaimer(e.target.checked)}
+                    style={{ width: "14px", height: "14px", marginTop: "2px", accentColor: "#059669" }}
+                  />
+                  <span>
+                    <strong>B. Food Safety Disclaimer *</strong> — Anyone preparing, handling, transporting or serving food must comply with food-safety laws (cooking/holding temperatures, refrigeration, cross-contamination prevention, handwashing/sanitation, allergen disclosure, permits/inspections, and waste disposal).
+                  </span>
+                </label>
+
+                <label htmlFor="reg-accept-alcohol-policy" style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "11px", color: "#334155", lineHeight: 1.4, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    id="reg-accept-alcohol-policy"
+                    checked={acceptAlcoholPolicy}
+                    onChange={(e) => setAcceptAlcoholPolicy(e.target.checked)}
+                    style={{ width: "14px", height: "14px", marginTop: "2px", accentColor: "#059669" }}
+                  />
+                  <span>
+                    <strong>C. Alcohol Policy *</strong> — Alcohol may only be sold or served when legally authorized with valid state/local licences, strict age/ID verification, responsible service, and host insurance; purchasing a ticket does not authorize alcohol consumption or imply EventBite grants an alcohol licence.
+                  </span>
+                </label>
+
+                <label htmlFor="reg-agree" style={{ display: "flex", alignItems: "flex-start", gap: "8px", fontSize: "11px", color: "#334155", lineHeight: 1.4, cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    id="reg-agree"
+                    checked={agreeTerms}
+                    onChange={(e) => {
+                      setAgreeTerms(e.target.checked);
+                      setAcceptHostResponsibility(e.target.checked);
+                    }}
+                    style={{ width: "14px", height: "14px", marginTop: "2px", accentColor: "#059669" }}
+                  />
+                  <span>
+                    <strong>D. Host Responsibility &amp; Auditable Consent *</strong> — Prospective Event Hosts must complete separate individual compliance acknowledgements and identity verification; my acceptance status, version, UTC timestamp, IP, and context are recorded for auditability.
+                  </span>
                 </label>
               </div>
 

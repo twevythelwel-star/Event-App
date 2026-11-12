@@ -34,7 +34,7 @@ class AttendeeDashboardController extends Controller
                     $q->orWhere('customer_phone', $user->phone);
                 }
             })
-            ->with(['items', 'event' => fn ($q) => $q->withoutGlobalScopes()])
+            ->with(['items', 'event' => fn ($q) => $q->withoutGlobalScopes()->with(['mediaItems', 'menuItems'])])
             ->orderByDesc('created_at')
             ->get();
 
@@ -80,6 +80,101 @@ class AttendeeDashboardController extends Controller
             ->latest()
             ->first();
 
+        // Upcoming events from the attendee's active orders, plus featured upcoming published events
+        $activeOrders = $orders->reject(fn (Order $o) => in_array($o->status, ['refunded', 'cancelled', 'rejected', 'expired'], true));
+        $upcomingBookedEvents = $activeOrders
+            ->map(fn (Order $o) => $o->event)
+            ->filter()
+            ->unique('id')
+            ->values();
+
+        // Discovery follows the same rules as public event browsing: published, public, not ended,
+        // soonest first — never drafts, private or past events.
+        $upcomingDiscoverEvents = \App\Models\Event::allTenants()
+            ->where('status', 'published')
+            ->where('visibility', 'public')
+            ->where(fn ($q) => $q->whereNull('event_date_iso')->orWhereDate('event_date_iso', '>=', now()->toDateString()))
+            ->whereNotIn('id', $upcomingBookedEvents->pluck('id')->all())
+            ->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')
+            ->take(8)
+            ->get()
+            ->reject(fn (\App\Models\Event $event) => \App\Support\EventListing::hasEnded($event))
+            ->values();
+
+        // Quick discovery links into the public catalog, one per event kind group.
+        $discoverGroups = collect((array) config('photo_library.groups', []))
+            ->map(fn ($label, $key) => ['key' => (string) $key, 'label' => (string) $label])
+            ->values();
+
+        // Advance food orders across all attendee orders (excluding ticket lines and package grouping lines)
+        $foodOrderLines = collect();
+        foreach ($orders as $order) {
+            foreach (($order->items ?? []) as $item) {
+                if ($item->category !== 'Tickets' && $item->line_type !== \App\Models\OrderItem::PACKAGE) {
+                    $foodOrderLines->push([
+                        'order' => $order,
+                        'item' => $item,
+                        'event_title' => $order->event?->title ?? 'Event',
+                        'pickup_number' => $order->pickup_number,
+                    ]);
+                }
+            }
+        }
+
+        // Recent notifications for this attendee's orders or recipient address
+        $orderIds = $orders->pluck('id')->all();
+        $notifications = \App\Models\NotificationLog::withoutGlobalScopes()
+            ->where(function ($q) use ($user, $orderIds) {
+                if ($orderIds !== []) {
+                    $q->whereIn('order_id', $orderIds);
+                }
+                if (!empty($user->email)) {
+                    $q->orWhere('recipient', $user->email);
+                }
+                if (!empty($user->phone)) {
+                    $q->orWhere('recipient', $user->phone);
+                }
+            })
+            ->latest('created_at')
+            ->take(8)
+            ->get();
+
+        // Profile completion checklist
+        $profileChecks = [
+            [
+                'label' => 'Full name on pass',
+                'done' => !empty(trim((string) ($user->name ?? ''))),
+                'detail' => $user->name ?: 'Add your name in Account Settings',
+                'href' => route('settings.show'),
+            ],
+            [
+                'label' => 'Email address verified',
+                'done' => !empty($user->email_verified_at) || !empty($user->email),
+                'detail' => $user->email ?: 'Verify your email address',
+                'href' => route('settings.show'),
+            ],
+            [
+                'label' => 'Mobile phone for SMS alerts',
+                'done' => !empty(trim((string) ($user->phone ?? ''))),
+                'detail' => $user->phone ?: 'Add a mobile number for gate & food alerts',
+                'href' => route('settings.show'),
+            ],
+            [
+                'label' => 'Preferred display currency',
+                'done' => !empty($user->preferred_display_currency),
+                'detail' => $displayCurrency,
+                'href' => route('settings.show') . '#currency',
+            ],
+            [
+                'label' => 'Platform terms acknowledged',
+                'done' => !empty($user->agreed_to_terms_at) || $user->status === 'active',
+                'detail' => 'Active & compliant',
+                'href' => route('legal.index'),
+            ],
+        ];
+        $completedProfileCount = collect($profileChecks)->where('done', true)->count();
+        $profileCompletionPercent = (int) round(($completedProfileCount / count($profileChecks)) * 100);
+
         $data = [
             'dashboard' => 'Attendee Digital Ticket Wallet',
             'attendee_name' => $user->name,
@@ -91,6 +186,13 @@ class AttendeeDashboardController extends Controller
             'pendingAssignments' => $pendingAssignments,
             'myStaffAssignments' => $myStaffAssignments,
             'hostApplication' => $hostApplication,
+            'upcomingBookedEvents' => $upcomingBookedEvents,
+            'upcomingDiscoverEvents' => $upcomingDiscoverEvents,
+            'discoverGroups' => $discoverGroups,
+            'foodOrderLines' => $foodOrderLines,
+            'notifications' => $notifications,
+            'profileChecks' => $profileChecks,
+            'profileCompletionPercent' => $profileCompletionPercent,
             'user' => $user,
         ];
 

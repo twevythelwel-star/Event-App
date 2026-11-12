@@ -29,6 +29,8 @@ class NotificationService
         'refund_completed',
         'pickup_instructions',   // "Food ready for pickup"
         'order_collection_completed',
+        'ticket_reissued',       // "Your ticket QR was replaced"
+        'ticket_revoked',        // "Your ticket QR was deactivated"
     ];
 
     /** Messages that say money was received. They are only ever sent for an order whose payment is settled. */
@@ -290,6 +292,17 @@ class NotificationService
             'order_collection_completed' => [
                 'Order collected',
                 "EventBite: all items for ticket {$code} have been handed over. Enjoy {$event}!",
+            ],
+            'ticket_reissued' => [
+                'Ticket QR replaced',
+                "EventBite: the QR code for ticket {$code} ({$event}) was replaced for security. "
+                    . "Any old screenshots or copies no longer work. Open My tickets for the new QR.",
+            ],
+            'ticket_revoked' => [
+                'Ticket QR deactivated',
+                "EventBite: ticket {$code} for {$event} has been deactivated"
+                    . (isset($context['reason']) && $context['reason'] !== '' ? " ({$context['reason']})" : '')
+                    . '. If you believe this is a mistake, contact the event organizer.',
             ],
         };
     }

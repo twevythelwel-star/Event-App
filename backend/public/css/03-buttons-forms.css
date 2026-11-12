@@ -45,55 +45,70 @@
 .eb-btn:active:not(:disabled):not([aria-disabled="true"]),
 .btn:active:not(:disabled):not([aria-disabled="true"]) {
   transform: translateY(1px);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* Variant 1: Primary (Electric Lime with #14210A contrast-verified text) */
+/* Variant 1: Primary (3D Soft Realism Electric Lime Pillow Button with #14210A contrast-verified text) */
 .eb-btn-primary,
 .btn-primary,
 .primary-button {
   background-color: var(--color-accent);
+  background-image: var(--gradient-accent-3d);
   color: var(--color-accent-text);
   border-color: var(--color-accent);
-  box-shadow: 0 4px 14px rgba(199, 255, 69, 0.18);
+  box-shadow: var(--shadow-btn-primary);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .eb-btn-primary:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-primary:hover:not(:disabled):not([aria-disabled="true"]),
 .primary-button:hover:not(:disabled):not([aria-disabled="true"]) {
   background-color: var(--color-accent-hover);
+  background-image: var(--gradient-accent-hover-3d);
   border-color: var(--color-accent-hover);
   color: var(--color-accent-text);
-  box-shadow: 0 6px 20px rgba(199, 255, 69, 0.28);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-btn-primary-hover);
 }
 
-/* Variant 2: Secondary (Elevated Dark Surface) */
+/* Variant 2: Secondary (Elevated 3D Dark Surface) */
 .eb-btn-secondary,
 .btn-secondary {
   background-color: var(--color-surface);
+  background-image: var(--gradient-secondary-btn-3d);
   color: var(--color-text-primary);
-  border-color: var(--color-border);
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-btn-secondary);
 }
 
 .eb-btn-secondary:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-secondary:hover:not(:disabled):not([aria-disabled="true"]) {
   background-color: var(--color-surface-elevated);
-  border-color: var(--color-border-strong);
+  background-image: var(--gradient-secondary-btn-hover-3d);
+  border-color: #496688;
   color: var(--color-text-primary);
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.45),
+    0 6px 14px rgba(2, 6, 14, 0.55);
 }
 
 /* Variant 3: Outline */
 .eb-btn-outline,
 .btn-outline {
-  background-color: transparent;
+  background-color: rgba(16, 36, 58, 0.35);
   color: var(--color-text-primary);
   border-color: var(--color-border-strong);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .eb-btn-outline:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-outline:hover:not(:disabled):not([aria-disabled="true"]) {
-  background-color: rgba(168, 182, 200, 0.08);
+  background-color: rgba(199, 255, 69, 0.08);
   border-color: var(--color-accent);
   color: var(--color-accent);
+  transform: translateY(-1px);
 }
 
 /* Variant 4: Ghost */
@@ -108,7 +123,7 @@
 .eb-btn-ghost:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-ghost:hover:not(:disabled):not([aria-disabled="true"]),
 .text-button:hover:not(:disabled):not([aria-disabled="true"]) {
-  background-color: rgba(168, 182, 200, 0.08);
+  background-color: rgba(168, 182, 200, 0.1);
   color: var(--color-text-primary);
   text-decoration: none;
 }
@@ -117,15 +132,20 @@
 .eb-btn-destructive,
 .btn-danger {
   background-color: var(--color-error-bg);
+  background-image: linear-gradient(180deg, rgba(248, 113, 113, 0.22) 0%, rgba(239, 68, 68, 0.14) 100%);
   color: var(--color-error-text);
   border-color: var(--color-error-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 3px 10px rgba(0, 0, 0, 0.35);
 }
 
 .eb-btn-destructive:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-danger:hover:not(:disabled):not([aria-disabled="true"]) {
   background-color: var(--color-error);
+  background-image: linear-gradient(180deg, #F87171 0%, #DC2626 100%);
   color: #FFFFFF;
   border-color: var(--color-error);
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 6px 16px rgba(239, 68, 68, 0.35);
 }
 
 /* Variant 6: Icon-Only (44x44px minimum touch target) */
@@ -137,19 +157,29 @@
   min-height: 44px;
   padding: 0;
   border-radius: var(--radius-md);
-  background-color: var(--color-background-secondary);
+  background-color: var(--color-surface);
+  background-image: var(--gradient-secondary-btn-3d);
   color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-btn-secondary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
 }
 
 .eb-btn-icon:hover:not(:disabled):not([aria-disabled="true"]),
 .header-action-btn:hover:not(:disabled):not([aria-disabled="true"]) {
   background-color: var(--color-surface-elevated);
+  background-image: var(--gradient-secondary-btn-hover-3d);
   color: var(--color-text-primary);
-  border-color: var(--color-border-strong);
+  border-color: #496688;
+  transform: translateY(-1px);
 }
 
 /* Size Modifiers */
@@ -224,7 +254,7 @@
   font-weight: 700;
 }
 
-/* Text, Search, Numeric, Date/Time, Select, and Textarea Controls */
+/* Text, Search, Numeric, Date/Time, Select, and Textarea Controls (Recessed 3D Wells) */
 .eb-input,
 .eb-select,
 .eb-textarea,
@@ -233,10 +263,12 @@
   width: 100%;
   min-height: 44px;
   padding: 0.625rem 0.875rem;
-  background-color: var(--color-background-secondary);
+  background-color: var(--color-surface-recessed);
+  background-image: var(--gradient-surface-recessed-3d);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3d-inset);
   font-family: var(--font-sans);
   font-size: 0.9375rem;
   line-height: 1.4;
@@ -267,7 +299,8 @@
   outline: none;
   border-color: var(--color-border-focus);
   box-shadow: var(--shadow-focus);
-  background-color: var(--color-surface);
+  background-color: var(--color-background-secondary);
+  background-image: none;
 }
 
 .eb-input:disabled,
@@ -275,7 +308,7 @@
 .eb-textarea:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background-color: rgba(11, 25, 43, 0.5);
+  background-color: rgba(5, 12, 23, 0.55);
 }
 
 .eb-textarea {
@@ -357,19 +390,22 @@ input[type="number"].eb-input {
 .eb-toggle-track {
   width: 44px;
   height: 24px;
-  background-color: var(--color-background-secondary);
+  background-color: var(--color-surface-recessed);
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-3d-inset);
   position: relative;
-  transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
   flex-shrink: 0;
 }
 
 .eb-toggle-thumb {
   width: 18px;
   height: 18px;
-  background-color: var(--color-text-secondary);
+  background-color: var(--color-text-primary);
+  background-image: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 100%);
   border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   position: absolute;
   top: 2px;
   left: 2px;
@@ -378,12 +414,16 @@ input[type="number"].eb-input {
 
 .eb-toggle-input:checked + .eb-toggle-track {
   background-color: var(--color-accent);
+  background-image: var(--gradient-accent-3d);
   border-color: var(--color-accent);
+  box-shadow: inset 0 1px 2px rgba(20, 33, 10, 0.25), 0 0 12px rgba(199, 255, 69, 0.25);
 }
 
 .eb-toggle-input:checked + .eb-toggle-track .eb-toggle-thumb {
   transform: translateX(20px);
   background-color: var(--color-accent-text);
+  background-image: linear-gradient(180deg, #1E3210 0%, #0D1606 100%);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .eb-toggle-input:focus-visible + .eb-toggle-track {
@@ -391,7 +431,7 @@ input[type="number"].eb-input {
   outline-offset: 2px;
 }
 
-/* File Upload Dropzone */
+/* File Upload Dropzone (Recessed 3D Well) */
 .eb-file-upload {
   display: flex;
   flex-direction: column;
@@ -399,19 +439,22 @@ input[type="number"].eb-input {
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-6);
-  background-color: var(--color-background-secondary);
+  background-color: var(--color-surface-recessed);
+  background-image: var(--gradient-surface-recessed-3d);
   border: 1.5px dashed var(--color-border-strong);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3d-inset);
   color: var(--color-text-secondary);
   text-align: center;
   cursor: pointer;
-  transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
+  transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
 }
 
 .eb-file-upload:hover,
 .eb-file-upload:focus-within {
   border-color: var(--color-accent);
-  background-color: var(--color-surface);
+  background-color: var(--color-background-secondary);
+  box-shadow: inset 0 1px 0 rgba(199, 255, 69, 0.14), 0 4px 14px rgba(2, 6, 14, 0.45);
 }
 
 /* Help Text & Accessible Field Validation Errors (Icon + Text, never color alone) */

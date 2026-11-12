@@ -70,11 +70,46 @@ class WorkerTerminalController extends Controller
         $assignment = $request->attributes->get('worker_assignment');
         $code = trim((string) $request->input('ticket_code'));
 
-        $isToken = str_starts_with($code, 'tok_');
-        if (!$isToken && $assignment->worker_role !== EventWorkerRole::EVENT_SUPERVISOR) {
+        // Architecture A vs B guardrail: Public Event QR codes are promotional only and must NEVER admit anyone
+        if (\App\Services\EventQr\EventQrService::isPromotionalEventQrPayload($code)) {
+            $reason = 'Promotional Event QR scanned — DO NOT ADMIT. Public event QR codes only open the event page and cannot admit guests.';
+            \App\Services\AuditLogService::log(
+                action: 'ticket_redemption_rejected',
+                targetEntity: 'events',
+                targetId: (string) $event->id,
+                details: "Public promotional event QR scanned at gate by {$user->email} ({$code}). Reason: {$reason}",
+                actor: $user,
+                organizerId: (string) $event->organizer_id,
+                eventId: (string) $event->id
+            );
+
             return response()->json([
                 'success' => false,
                 'valid' => false,
+                'already_admitted' => false,
+                'promotional_qr_rejected' => true,
+                'reason_code' => 'promotional_qr',
+                'rejection_reason' => $reason,
+                'error' => $reason,
+            ], 422);
+        }
+
+        $isToken = str_starts_with($code, 'tok_');
+        if (!$isToken && $assignment->worker_role !== EventWorkerRole::EVENT_SUPERVISOR) {
+            \App\Services\AuditLogService::log(
+                action: 'ticket_redemption_rejected',
+                targetEntity: 'events',
+                targetId: (string) $event->id,
+                details: "Manual non-QR code entry attempted by non-supervisor {$user->email} at event {$event->id}.",
+                actor: $user,
+                organizerId: (string) $event->organizer_id,
+                eventId: (string) $event->id
+            );
+
+            return response()->json([
+                'success' => false,
+                'valid' => false,
+                'reason_code' => 'unauthorized_manual_entry',
                 'error' => 'Scan the QR code on the ticket. A typed ticket code or order number needs a supervisor.',
             ], 403);
         }
@@ -82,14 +117,25 @@ class WorkerTerminalController extends Controller
         $order = Order::withoutGlobalScopes()->whereNull('deleted_at')
             ->where('event_id', $event->id)
             ->when($isToken,
-                fn ($q) => $q->where('secure_ticket_token', $code),
+                fn ($q) => $q->whereTicketToken($code),
                 fn ($q) => $q->where(fn ($w) => $w->where('ticket_code', $code)->orWhere('order_number', $code)))
             ->first();
 
         if (!$order) {
+            \App\Services\AuditLogService::log(
+                action: 'ticket_redemption_rejected',
+                targetEntity: 'events',
+                targetId: (string) $event->id,
+                details: "Unrecognized, fake, or replaced ticket code/token rejected at gate by {$user->email}.",
+                actor: $user,
+                organizerId: (string) $event->organizer_id,
+                eventId: (string) $event->id
+            );
+
             return response()->json([
                 'success' => false,
                 'valid' => false,
+                'reason_code' => 'invalid_ticket',
                 'error' => 'No ticket for this event matches that code.',
             ], 404);
         }
@@ -99,7 +145,7 @@ class WorkerTerminalController extends Controller
                 manual: !$isToken, requestId: $request->validated('scan_request_id'));
             return response()->json($scanResult);
         } catch (SecurityException $e) {
-            return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
+            return response()->json(['success' => false, 'reason_code' => 'unauthorized_scanner', 'error' => $e->getMessage()], 403);
         }
     }
 
@@ -210,8 +256,29 @@ class WorkerTerminalController extends Controller
                 'station' => $station,
             ]);
         } catch (SecurityException $e) {
+            \App\Services\AuditLogService::log(
+                action: 'food_handover_rejected',
+                targetEntity: 'orders',
+                targetId: (string) $order->id,
+                details: "Food handover denied for item {$item->id} on order {$order->order_number} by {$user->email}: {$e->getMessage()}",
+                actor: $user,
+                organizerId: (string) $event->organizer_id,
+                eventId: (string) $event->id,
+                outcome: 'denied'
+            );
             return response()->json(['success' => false, 'error' => $e->getMessage()], 403);
         } catch (\InvalidArgumentException $e) {
+            // Includes over-quantity attempts and unpaid-order handovers: a fraud signal worth auditing.
+            \App\Services\AuditLogService::log(
+                action: 'food_handover_rejected',
+                targetEntity: 'orders',
+                targetId: (string) $order->id,
+                details: "Food handover rejected for item {$item->id} on order {$order->order_number} by {$user->email}: {$e->getMessage()}",
+                actor: $user,
+                organizerId: (string) $event->organizer_id,
+                eventId: (string) $event->id,
+                outcome: 'rejected'
+            );
             return response()->json(['success' => false, 'error' => $e->getMessage()], 422);
         }
 
@@ -224,7 +291,7 @@ class WorkerTerminalController extends Controller
 
         return Order::withoutGlobalScopes()->whereNull('deleted_at')
             ->where('event_id', $event->id)
-            ->where(fn ($q) => $q->where('secure_ticket_token', $code)
+            ->where(fn ($q) => $q->whereTicketToken($code)
                 ->orWhere('ticket_code', $code)
                 ->orWhere('order_number', $code))
             ->with('items')

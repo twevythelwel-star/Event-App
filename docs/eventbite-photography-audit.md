@@ -1,6 +1,6 @@
 # EventBite photography audit
 
-Audit date: 5 November 2026. The production frontend is the Laravel Blade application (`backend/`). The React app in `/src` is a separate client that Laravel does not serve; it is noted where relevant but was not changed. Findings come from reading the code, running the app, the database on this machine, and `php artisan images:audit`.
+Audit date: 11 November 2026. The production frontend is the Laravel Blade application (`backend/`). The React app in `/src` is a separate client that Laravel does not serve. This update is a code and asset inventory plus implementation review; no test suite or browser-width verification was run for this update. The earlier dated local database and test findings below are retained as historical context, not re-claimed as current measurements.
 
 ## 1. What photography exists
 
@@ -12,6 +12,8 @@ Audit date: 5 November 2026. The production frontend is the Laravel Blade applic
 | React client photos (repository root `public/images/`) | `cuisine_*`, `dish_jm_*`, `event_*` | 13 | Unknown source and licence; not available to the Blade app |
 
 There is **no licensed photography** for African, Latin American, Asian, American, Mediterranean, vegetarian/vegan or dessert food, and **no real event photography** beyond what hosts upload. This audit does not fill those gaps with generic or generated photos: every gap shows a clearly labelled fallback (section 4), and the catalogue records it as a gap.
+
+The checked-in Laravel photo library has prompts and approval infrastructure, but no approved starter photo records or files. Runtime database coverage varies by deployment and was not queried during this update. Provenance and commercial licence for the 10 bundled food JPEGs are not present in `visual_assets.php`; their UI treatment is illustrative and subject-matched, but provenance remains to be confirmed.
 
 ## 2. What was wrong before
 
@@ -62,3 +64,33 @@ The following are fallbacks, not completed photography, and are reported as such
 - **Seed data from the other tool** (`us_cultural_events.json`, `CulturalCatalogSeeder.php`, uncommitted): points dishes and countries at files that only exist in the React client, and gives "Jerk Pork Plate" a photo, which `InclusiveIdentityTest` forbids. The Blade app no longer shows any of them; the seed itself should be corrected before it is committed.
 - **React client** (`src/lib/imageResolver.ts`, uncommitted): falls back to bundled stock event photos for events without a flyer. It labels them as category images, but it is a separate client and was not changed here.
 - **Existing mismatched data** (section 4) is left in the database; the guard makes it harmless. Clearing those `image_url` values is a data clean-up you may want to approve separately.
+
+## 7. Update on 11 November 2026
+
+### Surfaces verified in the code
+
+| Surface | Implemented behavior |
+|---|---|
+| Home/discovery and event search | Host flyer, approved photo for host-selected event subject, or generated event artwork; original SVG category art is presented as artwork. Responsive component labels illustrative photographs. |
+| Event details | Host flyer/cover, event gallery, menu photos, schedule and partner/vendor section. Uploaded performer portraits are now included in the event listing gallery. A sample food image is admitted to the gallery only if its configured match list truthfully matches that dish. |
+| Food ordering | Individual host photos, matching bundled samples, and category-specific no-photo placeholders. Bundled sample lookup now honors the full explicit `matches` list rather than only the display dish label. |
+| Host image management | Flyer crop/focal previews, gallery preview/alt/focal/order/removal controls, menu photo preview/alt/focal selection, performer photos in the schedule workflow, partner image flow. |
+| Attendee dashboard | Booked events retain their event cover and show the first host-uploaded gallery photo as an additional keepsake when present. |
+| Ticket collection and full ticket | Event's own cover/artwork remains the pass header; the full pass now includes a captioned host-gallery keepsake when present. QR and order controls remain in their existing authorization flow. |
+| Admin photo library | Provenance, licence, alt text, focal point, people/release declaration and standards review; a different system administrator must approve before a category photo can appear. |
+
+### Changes made in this update
+
+- Fixed bundled sample metadata resolution so the configured dish match list is honored, while a mismatch remains hidden and falls back.
+- Added host-uploaded performer portraits to the event's listing gallery, loading the relation with the event.
+- Added a host-gallery keepsake image to booked-event cards and the full ticket view, keeping the event's true cover artwork and ticket security flow intact.
+- Catalogued photo coverage, image placement, provenance gaps and host/admin controls in `eventbite-image-library-catalog.md` and `eventbite-image-management.md`.
+
+### Remaining gaps and verification limits
+
+- There are 10 checked-in bundled food sample photographs, 4 event stock photos that the Blade app blocks as event covers, and original SVG artwork. There are no committed approved library photos. Runtime host uploads and the deployed database were not inspected in this update.
+- No verified image sets cover African, Latin American, Asian, American, Mediterranean, plant-based or dessert dishes, or vendor/venue/community/host profile imagery. Event flyers, menu photos, gallery images and performer portraits must be supplied by hosts. Unknown-source React JPGs are still outside the Laravel catalogue.
+- Avatar/profile photo upload for host and vendor profile pages is not established by the inspected UI; avoid implying that feature exists.
+- Responsive WebP/AVIF generation, intrinsic image dimensions, `srcset` and lazy/high-priority loading are present. AVIF output depends on server GD support. Production CDN configuration and actual mobile/desktop browser behavior were not exercised in this update.
+- Alt text fields exist for uploads and illustrative/category labels. A full screen-reader and keyboard accessibility audit was not run now. Existing code includes a keyboard-operated native photo dialog on event details.
+- Tests and Laravel lint were not run for this update. Existing historical regression results above refer to the earlier audit date.

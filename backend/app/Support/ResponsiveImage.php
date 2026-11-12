@@ -115,8 +115,9 @@ final class ResponsiveImage
         }
         $illustrative = $item->photoIsIllustrative();
         // A catalogued sample: its optimized WebP/AVIF copies (images:optimize-samples) instead of the ~1 MB original.
-        $sources = ImageSubjects::isBundled($src) ? ImageSubjects::optimizedSources($src) : [];
-        [$w, $h] = ImageSubjects::isBundled($src) ? self::bundledSize($src) : [null, null];
+        $cataloguedSample = ImageSubjects::sample($src) !== null;
+        $sources = $cataloguedSample ? ImageSubjects::optimizedSources($src) : [];
+        [$w, $h] = $cataloguedSample ? self::bundledSize($src) : [null, null];
 
         return new self($src, $sources, $w, $h, alt: $illustrative ? 'Illustrative photo' : $alt, focalX: $x, focalY: $y, illustrative: $illustrative);
     }

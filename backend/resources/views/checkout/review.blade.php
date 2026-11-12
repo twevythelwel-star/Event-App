@@ -33,7 +33,7 @@
                 :action-href="route($backRoute, $event)" action-label="Choose items" />
         @else
             <x-price-summary :lines="$lines" :charges="$totals->charges" :subtotal-minor="$totals->subtotalMinor"
-                :total-minor="$totals->totalMinor()" :currency="$currency"
+                :total-minor="$totals->totalMinor()" :currency="$currency" :show-graphic="true"
                 note="This is the full price you will pay. Prices come from the organizer and are checked again when you place the order." />
             <a href="{{ route($backRoute, $event) }}" class="eb-text-label" style="display: inline-block; margin-top: var(--space-3);">Change order</a>
 

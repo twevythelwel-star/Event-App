@@ -102,6 +102,23 @@ class StaffAssignmentController extends Controller
                 'success' => true,
                 'event' => $event,
                 'assignments' => $assignments,
+                'operations_plan' => [
+                    ['station' => 'Entrance A', 'responsibility' => 'Ticket verification', 'type' => 'ticket_checking'],
+                    ['station' => 'VIP Entrance', 'responsibility' => 'VIP ticket verification', 'type' => 'ticket_checking'],
+                    ['station' => 'Food Station 1', 'responsibility' => 'Main meals', 'type' => 'food_station'],
+                    ['station' => 'Food Station 2', 'responsibility' => 'Drinks and desserts', 'type' => 'food_station'],
+                    ['station' => 'Payment Desk', 'responsibility' => 'Authorized cash/payment verification', 'type' => 'payment_desk'],
+                    ['station' => 'Supervisor', 'responsibility' => 'Event-wide oversight', 'type' => 'supervisor'],
+                ],
+                'emergency_contacts' => [
+                    ['label' => 'On-Site Medical & First Aid Station', 'contact_name' => 'Dr. Nadine Clarke', 'phone' => '+1 (305) 555-0911'],
+                    ['label' => 'Venue Security & Crowd Safety Dispatch', 'contact_name' => 'Capt. Winston Reid', 'phone' => '+1 (305) 555-0844'],
+                ],
+                'escalation_contacts' => [
+                    ['tier' => 1, 'role' => 'Event Supervisor', 'scenarios' => 'Duplicate QR scan disputes, VIP gate overrides'],
+                    ['tier' => 2, 'role' => 'Payment & Box Office Lead', 'scenarios' => 'Unverified transfer references, cash discrepancies'],
+                    ['tier' => 3, 'role' => 'Event Host / Organizer Executive', 'scenarios' => 'Emergency venue incidents, refund authorizations'],
+                ],
             ]);
         }
 

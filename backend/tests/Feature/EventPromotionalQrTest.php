@@ -84,7 +84,8 @@ class EventPromotionalQrTest extends TestCase
         ]);
 
         $this->get(route('event-qr.resolve', $qr->public_code))
-            ->assertNotFound();
+            ->assertOk()
+            ->assertSee('This event is no longer listed');
     }
 
     public function test_promotional_qr_public_artwork_only_for_published(): void

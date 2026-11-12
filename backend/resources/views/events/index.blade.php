@@ -5,26 +5,27 @@
 
 @section('content')
 <style>
-    /* Midnight Navy Theme Overrides for Discovery Experience */
+    /* 3D Soft Realism & Dark Mode Elevation for Event Discovery */
     .discovery-root {
-        background-color: #0B132B;
-        color: #F8FAFC;
+        background-color: var(--color-background);
+        color: var(--color-text-primary);
         /* Bleed to the edges of the page padding, whatever it is at this width */
         margin: calc(-1 * var(--layout-page-padding-y)) calc(-1 * var(--layout-page-padding-x));
         padding: 0 0 100px;
         min-height: calc(100vh - 68px);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: var(--font-sans);
     }
 
     /* Discovery Top Header */
     .discovery-header {
-        background: linear-gradient(180deg, #101B37 0%, #0B132B 100%);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: linear-gradient(180deg, rgba(19, 36, 58, 0.94) 0%, rgba(7, 17, 31, 0.94) 100%);
+        border-bottom: 1px solid var(--color-border);
+        box-shadow: 0 10px 30px rgba(2, 6, 14, 0.45);
         padding: 24px 32px 20px;
         position: sticky;
         top: 0;
         z-index: 30;
-        backdrop-filter: blur(14px);
+        backdrop-filter: blur(16px);
     }
 
     .discovery-header-inner {
@@ -41,41 +42,44 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: rgba(129, 140, 248, 0.15);
-        border: 1px solid rgba(129, 140, 248, 0.3);
+        background: var(--color-accent-subtle);
+        border: 1px solid var(--color-accent-border);
         border-radius: 9999px;
         padding: 4px 12px;
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: #818CF8;
+        color: var(--color-accent);
         margin-bottom: 6px;
     }
 
     .discovery-title {
-        font-size: 1.65rem;
+        font-family: var(--font-display);
+        font-size: clamp(1.45rem, 2.2vw, 1.85rem);
         font-weight: 800;
-        color: #FFFFFF;
-        letter-spacing: -0.02em;
-        line-height: 1.25;
+        color: var(--color-text-primary);
+        letter-spacing: -0.025em;
+        line-height: 1.2;
         margin: 0 0 4px;
     }
 
     .discovery-subtitle {
-        font-size: 0.88rem;
-        color: #94A3B8;
+        font-size: 0.9rem;
+        color: var(--color-text-secondary);
         line-height: 1.45;
         margin: 0;
     }
 
-    /* Search & Filter Controls */
+    /* Search & Filter Controls (3D Elevated Beveled Panel + Recessed Inputs) */
     .discovery-search-card {
-        background: #162038;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: var(--color-surface);
+        background-image: var(--gradient-surface-3d);
+        border: 1px solid var(--color-border-strong);
+        border-top-color: rgba(255, 255, 255, 0.14);
         border-radius: 20px;
-        padding: 16px 20px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        padding: 18px 22px;
+        box-shadow: var(--shadow-card);
         margin-bottom: 32px;
     }
 
@@ -86,20 +90,21 @@
 
     .discovery-search-input-wrap input {
         width: 100%;
-        background-color: #0F172A;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background-color: var(--color-surface-recessed);
+        border: 1px solid var(--color-border-strong);
         border-radius: 9999px;
         padding: 13px 44px 13px 46px;
-        color: #FFFFFF;
+        color: var(--color-text-primary);
         font-size: 0.92rem;
         outline: none;
         box-sizing: border-box;
+        box-shadow: var(--shadow-3d-inset);
         transition: border-color 0.2s, box-shadow 0.2s;
     }
 
     .discovery-search-input-wrap input:focus {
-        border-color: #818CF8;
-        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+        border-color: var(--color-accent);
+        box-shadow: var(--shadow-3d-inset), 0 0 0 3px var(--color-accent-subtle);
     }
 
     .discovery-search-icon {
@@ -107,9 +112,9 @@
         left: 18px;
         top: 50%;
         transform: translateY(-50%);
-        color: #818CF8;
+        color: var(--color-accent);
         pointer-events: none;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
     }
 
     .discovery-clear-search {
@@ -119,7 +124,7 @@
         transform: translateY(-50%);
         background: none;
         border: none;
-        color: #94A3B8;
+        color: var(--color-text-secondary);
         cursor: pointer;
         padding: 4px;
         font-size: 0.85rem;
@@ -143,28 +148,37 @@
 
     .discovery-select {
         max-width: 100%;
-        background-color: #0F172A;
-        color: #F8FAFC;
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        background-color: var(--color-surface-recessed);
+        color: var(--color-text-primary);
+        border: 1px solid var(--color-border-strong);
         border-radius: 10px;
         padding: 8px 14px;
         font-size: 0.82rem;
         font-weight: 600;
         cursor: pointer;
         outline: none;
+        box-shadow: var(--shadow-3d-inset);
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
     }
 
-    /* Category Shortcuts (4 prominent circular buttons) */
+    .discovery-select:focus {
+        border-color: var(--color-accent);
+        box-shadow: var(--shadow-3d-inset), 0 0 0 2px var(--color-accent-subtle);
+    }
+
+    /* Category Shortcuts (4 prominent tactile 3D tiles) */
     .category-shortcuts-grid {
         display: grid;
-        grid-templateColumns: repeat(auto-fit, minmax(130px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
         gap: 16px;
         margin-bottom: 38px;
     }
 
     .category-btn {
-        background: #162038;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background-color: var(--color-surface);
+        background-image: var(--gradient-surface-3d);
+        border: 1px solid var(--color-border);
+        border-top-color: rgba(255, 255, 255, 0.12);
         border-radius: 18px;
         padding: 16px 12px;
         display: flex;
@@ -172,61 +186,77 @@
         align-items: center;
         gap: 10px;
         cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: var(--shadow-subtle);
+        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease, box-shadow 0.2s ease;
         text-decoration: none;
-        color: #E2E8F0;
+        color: var(--color-text-primary);
         border-bottom: 3px solid transparent;
     }
 
-    .category-btn:hover {
-        background: #1E293B;
-        transform: translateY(-2px);
+    .category-btn:hover,
+    .category-btn:focus-visible {
+        background-color: var(--color-surface-elevated);
+        border-color: var(--color-border-strong);
+        border-top-color: rgba(199, 255, 69, 0.35);
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-card);
     }
 
     .category-btn.active {
-        background: rgba(99, 102, 241, 0.25);
-        border-color: #818CF8;
-        border-bottom-color: #818CF8;
-        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
+        background-color: var(--color-surface-elevated);
+        background-image: linear-gradient(180deg, rgba(199, 255, 69, 0.14) 0%, rgba(19, 36, 58, 0.95) 100%);
+        border-color: var(--color-accent-border);
+        border-bottom-color: var(--color-accent);
+        box-shadow: var(--shadow-card);
     }
 
     .category-icon-circle {
-        width: 58px;
-        height: 58px;
+        width: 56px;
+        height: 56px;
         border-radius: 50%;
         display: flex;
         align-items: center;
-        justifyContent: center;
-        font-size: 1.55rem;
-        transition: transform 0.2s;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(2, 6, 14, 0.38);
+        transition: transform 0.2s var(--ease-out-quart);
     }
 
     .category-btn:hover .category-icon-circle {
         transform: scale(1.08);
     }
 
-    .cat-music .category-icon-circle { background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.35); }
-    .cat-food .category-icon-circle { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.35); }
-    .cat-sports .category-icon-circle { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.35); }
-    .cat-culture .category-icon-circle { background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.35); }
+    .cat-music .category-icon-circle { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.38); }
+    .cat-food .category-icon-circle { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.38); }
+    .cat-sports .category-icon-circle { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.38); }
+    .cat-culture .category-icon-circle { background: rgba(199, 255, 69, 0.18); border: 1px solid rgba(199, 255, 69, 0.35); }
 
-    /* Featured Event (Large image-led card) */
+    /* Featured Event (Large image-led 3D card) */
     .featured-event-card {
-        background: #162038;
+        background-color: var(--color-surface);
+        background-image: var(--gradient-surface-3d);
         border-radius: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+        border: 1px solid var(--color-border-strong);
+        border-top-color: rgba(255, 255, 255, 0.15);
+        box-shadow: var(--shadow-elevated);
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         overflow: hidden;
         margin-bottom: 42px;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.25s var(--ease-out-quart), border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .featured-event-card:hover {
+        transform: translateY(-3px);
+        border-top-color: rgba(199, 255, 69, 0.42);
     }
 
     .featured-event-img-wrap {
         position: relative;
+        aspect-ratio: var(--ratio-event, 16 / 10);
         min-height: 280px;
-        max-height: 400px;
+        background-color: var(--color-background-secondary);
+        overflow: hidden;
     }
 
     .featured-event-img-wrap img {
@@ -234,68 +264,82 @@
         height: 100%;
         object-fit: cover;
         display: block;
+        transition: transform 0.45s var(--ease-out-quart);
+    }
+
+    .featured-event-card:hover .featured-event-img-wrap img {
+        transform: scale(1.03);
     }
 
     .featured-event-overlay {
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, rgba(15,23,42,0.15) 0%, rgba(15,23,42,0.85) 100%);
+        background: linear-gradient(180deg, rgba(7, 17, 31, 0.15) 0%, rgba(7, 17, 31, 0.3) 50%, rgba(7, 17, 31, 0.9) 100%);
+        pointer-events: none;
     }
 
     .featured-badge-pill {
         position: absolute;
-        top: 18px;
-        left: 18px;
+        top: 16px;
+        left: 16px;
+        right: 16px;
         display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
         gap: 8px;
+        z-index: 2;
     }
 
     .featured-badge-tag {
-        background: rgba(15, 23, 42, 0.85);
+        background: rgba(7, 17, 31, 0.85);
         backdrop-filter: blur(8px);
-        color: #FFFFFF;
+        color: var(--color-text-primary);
         padding: 4px 12px;
         border-radius: 9999px;
         font-size: 0.72rem;
         font-weight: 700;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.18);
     }
 
     .featured-event-body {
-        padding: 30px;
+        padding: 28px 30px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        gap: 18px;
     }
 
     .btn-gradient-cta {
-        background: linear-gradient(135deg, #7c3aed 0%, #ec4899 50%, #f97316 100%);
-        border: none;
+        background-color: var(--color-accent);
+        background-image: var(--gradient-accent-3d);
+        border: 1px solid rgba(255, 255, 255, 0.28);
         border-radius: 12px;
         padding: 12px 22px;
         font-size: 0.92rem;
         font-weight: 800;
-        color: #FFFFFF;
+        color: var(--color-accent-text);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
         text-decoration: none;
-        box-shadow: 0 4px 14px rgba(236, 72, 153, 0.35);
-        transition: opacity 0.18s, transform 0.18s;
+        box-shadow: var(--shadow-btn-primary);
+        transition: transform 0.18s var(--ease-out-quart), box-shadow 0.18s ease, background-color 0.18s ease;
     }
 
     .btn-gradient-cta:hover {
-        opacity: 0.95;
+        background-color: var(--color-accent-hover);
         transform: translateY(-1px);
-        color: #FFFFFF;
+        box-shadow: var(--shadow-btn-primary-hover);
+        color: var(--color-accent-text);
     }
 
-    /* Trending Near You (Horizontal Scroll) */
+    /* Coming Up (Horizontal Collection with consistent 16:10 proportions & 3D hover) */
     .trending-scroll-container {
         display: flex;
-        gap: 16px;
+        gap: 18px;
         overflow-x: auto;
         padding-bottom: 14px;
         scroll-snap-type: x mandatory;
@@ -304,23 +348,49 @@
     }
 
     .trending-card {
-        min-width: 260px;
-        max-width: 280px;
+        min-width: 280px;
+        max-width: 300px;
         flex-shrink: 0;
         scroll-snap-align: start;
-        background-color: #162038;
+        background-color: var(--color-surface);
+        background-image: var(--gradient-surface-3d);
         border-radius: 18px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid var(--color-border);
+        border-top-color: rgba(255, 255, 255, 0.12);
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.25);
-        transition: transform 0.2s, border-color 0.2s;
+        box-shadow: var(--shadow-subtle);
+        transition: transform 0.22s var(--ease-out-quart), border-color 0.22s ease, box-shadow 0.22s ease;
     }
 
-    .trending-card:hover {
-        transform: translateY(-3px);
-        border-color: rgba(129, 140, 248, 0.4);
+    .trending-card:hover,
+    .trending-card:focus-within {
+        transform: translateY(-4px);
+        border-color: var(--color-border-strong);
+        border-top-color: rgba(199, 255, 69, 0.4);
+        box-shadow: var(--shadow-elevated);
+    }
+
+    .trending-card-media {
+        position: relative;
+        width: 100%;
+        aspect-ratio: var(--ratio-event, 16 / 10);
+        background-color: var(--color-background-secondary);
+        overflow: hidden;
+    }
+
+    .trending-card-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.4s var(--ease-out-quart);
+    }
+
+    .trending-card:hover .trending-card-media img,
+    .trending-card:focus-within .trending-card-media img {
+        transform: scale(1.035);
     }
 
     /* All Events Grid */
@@ -341,8 +411,8 @@
         bottom: 0;
         left: 0;
         right: 0;
-        background-color: #0B132B;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        background-color: rgba(7, 17, 31, 0.94);
+        border-top: 1px solid var(--color-border);
         padding: 8px 16px;
         display: flex;
         justify-content: space-around;
@@ -355,7 +425,7 @@
     .bottom-nav-link {
         background: none;
         border: none;
-        color: #94A3B8;
+        color: var(--color-text-secondary);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -365,19 +435,51 @@
         border-radius: 12px;
         text-decoration: none;
         font-size: 0.74rem;
-        font-weight: 500;
-        transition: all 0.15s;
+        font-weight: 600;
+        transition: color 0.15s ease;
     }
 
     .bottom-nav-link.active, .bottom-nav-link:hover {
-        color: #818CF8;
+        color: var(--color-accent);
     }
 
     .bottom-nav-link.active .nav-dot {
         width: 4px;
         height: 4px;
         border-radius: 50%;
-        background-color: #818CF8;
+        background-color: var(--color-accent);
+    }
+
+    @media (max-width: 767px) {
+        #event-discovery-page .discovery-header { padding: 10px 16px 16px; position: relative; }
+        #event-discovery-page .discovery-header-inner { align-items: flex-start; gap: 10px; }
+        #event-discovery-page .discovery-greeting-badge { display: none; }
+        #event-discovery-page .discovery-title { font-size: 1.45rem; margin-bottom: 3px; }
+        #event-discovery-page .discovery-subtitle { font-size: .78rem; }
+        #event-discovery-page .discovery-header-inner > div:last-child { display: none !important; }
+        #event-discovery-page .discovery-search-card { padding: 0; margin: 14px 0 22px; border: 0; background: transparent; box-shadow: none; }
+        #event-discovery-page .discovery-search-input-wrap { margin: 0; }
+        #event-discovery-page .discovery-search-input-wrap input { min-height: 48px; background: var(--color-accent); color: var(--color-accent-text); border: 0; box-shadow: var(--shadow-btn-primary); }
+        #event-discovery-page .discovery-search-input-wrap input::placeholder { color: #35451B; }
+        #event-discovery-page .discovery-search-icon { color: var(--color-accent-text); }
+        #event-discovery-page .discovery-selectors-bar { gap: 8px; }
+        #event-discovery-page .discovery-selectors-bar > div:first-child { display: none !important; }
+        #event-discovery-page .category-shortcuts-grid { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px 24px; padding: 2px 16px 8px; scroll-snap-type: x mandatory; }
+        #event-discovery-page .category-btn { flex: 0 0 auto; min-width: 0; flex-direction: row; gap: 6px; padding: 8px 12px; border-radius: 999px; }
+        #event-discovery-page .category-btn > div:last-child { display: none; }
+        #event-discovery-page .category-icon-circle { width: auto; height: auto; background: transparent !important; border: 0 !important; box-shadow: none; font-size: .95rem; }
+        #event-discovery-page .featured-event-card { display: block; margin-bottom: 28px; border-radius: 18px; }
+        #event-discovery-page .featured-event-img-wrap { min-height: 0; aspect-ratio: 16 / 10; }
+        #event-discovery-page .featured-event-img-wrap img { position: absolute; inset: 0; }
+        #event-discovery-page .featured-event-overlay { background: linear-gradient(180deg, rgba(7,17,31,.05) 10%, rgba(7,17,31,.18) 40%, rgba(7,17,31,.94) 100%); }
+        #event-discovery-page .featured-event-body { padding: 14px; gap: 12px; }
+        #event-discovery-page .trending-scroll-container { gap: 12px; margin: 0 -16px 30px; padding: 0 16px 12px; }
+        #event-discovery-page .trending-card { min-width: 248px; max-width: 248px; border-radius: 16px; }
+        #event-discovery-page .discovery-grid { grid-template-columns: 1fr; gap: 12px; }
+        #event-discovery-page .discovery-bottom-nav { display: none; }
+        .eb-app-header { display: none !important; }
+        main.content-canvas { padding-top: 0 !important; padding-bottom: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem) !important; }
+        .eb-customer-bottom-nav { height: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
     }
 </style>
 
@@ -536,22 +638,36 @@
             $featuredEvent = $events->first();
         @endphp
         @if($featuredEvent)
+        @php
+            $featuredCover = $featuredEvent->coverImage();
+            $featuredAvailability = \App\Support\EventListing::availability($featuredEvent);
+            $featuredPrice = \App\Support\EventListing::fromPriceText($featuredEvent);
+            $featuredLocation = \App\Support\EventListing::location($featuredEvent);
+            $featuredBadgeTone = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$featuredAvailability['tone']] ?? 'eb-badge-info';
+        @endphp
         <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.1rem;">🔥</span>
+            <span style="font-size: 1.1rem;" aria-hidden="true">🔥</span>
             <h2 style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">Featured Event</h2>
         </div>
 
         <div class="featured-event-card" id="primary-featured-card">
             <div class="featured-event-img-wrap">
-                <img src="{{ $featuredEvent->display_thumbnail_url }}" alt="{{ $featuredEvent->flyer_alt_text ?: $featuredEvent->title }}" style="object-position: {{ (int) ($featuredEvent->flyer_position_x ?? 50) }}% {{ (int) ($featuredEvent->flyer_position_y ?? 50) }}%;">
+                <x-responsive-image :image="$featuredCover" :style="'object-position:' . e($featuredEvent->flyer_position ?: '50% 50%')" sizes="(min-width: 1024px) 600px, 100vw" />
                 <div class="featured-event-overlay"></div>
+                <x-image-label :image="$featuredCover" />
                 <div class="featured-badge-pill">
-                    <span class="featured-badge-tag">★ FEATURED</span>
-                    @if($featuredEvent->category)
-                        <span class="featured-badge-tag" style="background: rgba(99, 102, 241, 0.85);">{{ $featuredEvent->category }}</span>
-                    @endif
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <span class="featured-badge-tag">★ FEATURED</span>
+                        @if($featuredEvent->category)
+                            <span class="eb-badge eb-badge-info">{{ $featuredEvent->category }}</span>
+                        @endif
+                    </div>
+                    <span class="eb-badge {{ $featuredBadgeTone }}">
+                        <span class="eb-badge-dot" aria-hidden="true"></span>
+                        <span>{{ $featuredAvailability['label'] }}</span>
+                    </span>
                 </div>
-                <div style="position: absolute; bottom: 16px; left: 18px; right: 18px;">
+                <div style="position: absolute; bottom: 16px; left: 18px; right: 18px; z-index: 2;">
                     @if($featuredEvent->tagline)
                         <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #CBD5E1;">Highlight</div>
                         <div style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF;">{{ $featuredEvent->tagline }}</div>
@@ -561,87 +677,133 @@
 
             <div class="featured-event-body">
                 <div>
-                    <div style="display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: #818CF8; font-weight: 600; margin-bottom: 8px;">
-                        <span>📅 {{ $featuredEvent->date_str ?? 'Sunday, Nov 22, 2026' }}</span>
-                        <span>&bull;</span>
-                        <span>⏰ {{ $featuredEvent->time_str ?? '12:00 PM – 8:00 PM' }}</span>
+                    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--color-accent); font-weight: 700; margin-bottom: 8px;">
+                        @if($featuredEvent->date_str)
+                            <span>📅 {{ $featuredEvent->date_str }}</span>
+                        @endif
+                        @if($featuredEvent->date_str && $featuredEvent->time_str)
+                            <span aria-hidden="true">&bull;</span>
+                        @endif
+                        @if($featuredEvent->time_str)
+                            <span>⏰ {{ $featuredEvent->time_str }}</span>
+                        @endif
                     </div>
 
-                    <h3 style="font-size: 1.35rem; font-weight: 800; color: #FFFFFF; line-height: 1.3; margin-bottom: 10px;">
+                    <h3 style="font-size: 1.45rem; font-weight: 800; color: #FFFFFF; line-height: 1.25; margin: 0 0 10px;">
                         {{ $featuredEvent->title }}
                     </h3>
 
-                    <p style="font-size: 0.85rem; color: #94A3B8; line-height: 1.55; margin-bottom: 16px;">
-                        {{ $featuredEvent->description ?? $featuredEvent->tagline }}
-                    </p>
+                    @if($featuredEvent->summary || $featuredEvent->description || $featuredEvent->tagline)
+                        <p class="eb-clamp-2" style="font-size: 0.88rem; color: var(--color-text-secondary); line-height: 1.55; margin: 0 0 16px;">
+                            {{ $featuredEvent->summary ?: ($featuredEvent->description ?: $featuredEvent->tagline) }}
+                        </p>
+                    @endif
 
-                    <div style="display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #CBD5E1; margin-bottom: 18px;">
-                        <span style="color: #EC4899;">📍</span>
-                        <span style="font-weight: 600;">{{ $featuredEvent->venue_name ?? 'Victoria Pier' }}</span>
-                        <span style="color: #64748B;">({{ $featuredEvent->venue_address ?? 'United States' }})</span>
-                    </div>
+                    @if($featuredEvent->venue_name || $featuredLocation !== '')
+                        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.84rem; color: var(--color-text-secondary); margin-bottom: 16px;">
+                            <span aria-hidden="true">📍</span>
+                            @if($featuredEvent->venue_name)
+                                <span style="font-weight: 700; color: var(--color-text-primary);">{{ $featuredEvent->venue_name }}</span>
+                            @endif
+                            @if($featuredLocation !== '')
+                                <span>({{ $featuredLocation }})</span>
+                            @elseif($featuredEvent->venue_address)
+                                <span>({{ $featuredEvent->venue_address }})</span>
+                            @endif
+                        </div>
+                    @endif
+
+                    @if($featuredEvent->organizer_name)
+                        <div style="font-size: 0.78rem; color: var(--color-text-muted); margin-bottom: 12px;">
+                            Hosted by <strong style="color: var(--color-text-secondary);">{{ $featuredEvent->organizer_name }}</strong>
+                        </div>
+                    @endif
                 </div>
 
                 <div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: rgba(15, 23, 42, 0.6); border-radius: 12px; margin-bottom: 16px; border: 1px solid rgba(255, 255, 255, 0.08);">
-                        <div style="font-size: 0.75rem; color: #10B981; font-weight: 700;">
-                            {{ $featuredEvent->supports_food_ordering ? 'Order food in advance' : 'Tickets on EventBite' }}
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; background: var(--color-surface-recessed); border-radius: 14px; margin-bottom: 16px; border: 1px solid var(--color-border-strong); box-shadow: var(--shadow-3d-inset);">
+                        <div>
+                            <div style="font-size: 0.72rem; color: var(--color-text-secondary); font-weight: 600;">Tickets</div>
+                            <div style="font-size: 1.05rem; font-weight: 800; color: var(--color-text-primary); font-variant-numeric: tabular-nums;">
+                                {{ $featuredPrice ?? $featuredAvailability['label'] }}
+                            </div>
                         </div>
-                        <div style="font-size: 0.85rem; font-weight: 800; color: #FFFFFF;">
-                            Digital QR Pass Included
+                        <div style="text-align: right;">
+                            <span class="eb-badge {{ $featuredBadgeTone }}">
+                                <span class="eb-badge-dot" aria-hidden="true"></span>
+                                <span>{{ $featuredAvailability['label'] }}</span>
+                            </span>
+                            @if($featuredEvent->supports_food_ordering)
+                                <div style="font-size: 0.72rem; color: var(--color-accent); font-weight: 700; margin-top: 4px;">
+                                    🍲 Advance food menu available
+                                </div>
+                            @endif
                         </div>
                     </div>
 
                     <a href="{{ route('events.show', $featuredEvent->id) }}" class="btn-gradient-cta" style="width: 100%; box-sizing: border-box;" id="btn-featured-view-cta">
-                        <span>View Event & Menu</span>
-                        <span>&rarr;</span>
+                        <span>View Event &amp; Menu</span>
+                        <span aria-hidden="true">&rarr;</span>
                     </a>
                 </div>
             </div>
         </div>
         @endif
 
-        <!-- 5. Trending Near You (Horizontal Collection) -->
+        <!-- 5. Coming Up (Horizontal Collection) -->
         <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.1rem;">📅</span>
+                <span style="font-size: 1.1rem;" aria-hidden="true">📅</span>
                 <h2 style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">Coming Up</h2>
             </div>
-            <span style="font-size: 0.78rem; color: #94A3B8;">Next on the calendar</span>
+            <span style="font-size: 0.78rem; color: var(--color-text-secondary);">Next on the calendar</span>
         </div>
 
         <div class="trending-scroll-container" id="trending-container">
             @foreach($events->take(6) as $idx => $trend)
                 @php
-                    $trendImg = $trend->display_thumbnail_url;
+                    $trendCover = $trend->coverImage();
+                    $trendAvailability = \App\Support\EventListing::availability($trend);
+                    $trendPrice = \App\Support\EventListing::fromPriceText($trend);
+                    $trendLocation = \App\Support\EventListing::location($trend);
+                    $trendBadge = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$trendAvailability['tone']] ?? 'eb-badge-info';
                 @endphp
-                <div class="trending-card">
-                    <div style="height: 130px; position: relative;">
-                        <img src="{{ $trendImg }}" alt="{{ $trend->flyer_alt_text ?: $trend->title }}" style="width: 100%; height: 100%; object-fit: cover; object-position: {{ (int) ($trend->flyer_position_x ?? 50) }}% {{ (int) ($trend->flyer_position_y ?? 50) }}%;">
-                        <span style="position: absolute; top: 8px; left: 8px; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(6px); color: #fff; padding: 2px 8px; border-radius: 9999px; font-size: 0.65rem; font-weight: 700;">
-                            UPCOMING
-                        </span>
-                    </div>
-                    <div style="padding: 14px; display: flex; flex-direction: column; flex: 1; justify-content: space-between;">
-                        <div>
-                            <div style="font-size: 0.72rem; color: #818CF8; font-weight: 600; margin-bottom: 3px;">
-                                📅 {{ explode(',', $trend->date_str ?? '')[0] ?: $trend->date_str }}
-                            </div>
-                            <h4 style="font-size: 0.88rem; font-weight: 700; color: #FFFFFF; line-height: 1.3; margin: 0 0 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                {{ $trend->title }}
-                            </h4>
-                            <div style="font-size: 0.72rem; color: #94A3B8; margin-bottom: 8px;">
-                                📍 {{ $trend->venue_name ?? $trend->venue }}
-                            </div>
+                <article class="trending-card">
+                    <a href="{{ route('events.show', $trend->id) }}" class="eb-card-link" style="display: flex; flex-direction: column; height: 100%;" aria-label="{{ $trend->title }}: view event details">
+                        <div class="trending-card-media">
+                            <x-responsive-image :image="$trendCover" alt="" :style="'object-position:' . e($trend->flyer_position ?: '50% 50%')" sizes="300px" />
+                            <div class="eb-event-card-scrim"></div>
+                            <x-image-label :image="$trendCover" />
+                            @if($trend->category)
+                                <span class="eb-card-chip eb-badge eb-badge-info">{{ $trend->category }}</span>
+                            @endif
+                            <span class="eb-card-chip eb-card-chip-end eb-badge {{ $trendBadge }}">
+                                <span class="eb-badge-dot" aria-hidden="true"></span>
+                                <span>{{ $trendAvailability['label'] }}</span>
+                            </span>
                         </div>
+                        <div style="padding: 16px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; gap: 10px;">
+                            <div>
+                                <div style="font-size: 0.75rem; color: var(--color-accent); font-weight: 700; margin-bottom: 4px;">
+                                    📅 {{ $trend->date_str }}
+                                </div>
+                                <h3 style="font-size: 0.96rem; font-weight: 800; color: #FFFFFF; line-height: 1.3; margin: 0 0 6px;" class="eb-clamp-2">
+                                    {{ $trend->title }}
+                                </h3>
+                                @if($trend->venue_name || $trendLocation !== '')
+                                    <div style="font-size: 0.78rem; color: var(--color-text-secondary);" class="eb-clamp-2">
+                                        📍 {{ implode(' · ', array_filter([$trend->venue_name, $trendLocation])) }}
+                                    </div>
+                                @endif
+                            </div>
 
-                        <div>
-                            <a href="{{ route('events.show', $trend->id) }}" style="display: block; text-align: center; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 7px; color: #fff; font-size: 0.75rem; font-weight: 700; text-decoration: none;">
-                                View Event
-                            </a>
+                            <div class="eb-event-card-footer">
+                                <span class="eb-text-price">{{ $trendPrice ?? 'Tickets not on sale' }}</span>
+                                <span class="eb-event-card-cta" aria-hidden="true">Details <span class="eb-event-card-cta-arrow">→</span></span>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </a>
+                </article>
             @endforeach
         </div>
 
@@ -723,6 +885,16 @@
             </a>
         @endauth
     </nav>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const bar = document.querySelector('.eb-customer-bottom-nav');
+            if (!bar) return;
+            bar.querySelectorAll('.eb-customer-nav-item').forEach(link => {
+                const label = link.querySelector('span')?.textContent?.trim();
+                if (label === 'Explore') link.addEventListener('click', event => { event.preventDefault(); focusSearch(); });
+            });
+        });
+    </script>
 </div>
 
 <script>

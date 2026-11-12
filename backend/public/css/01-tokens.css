@@ -1,16 +1,36 @@
 /* ==========================================================================
    EVENTBITE DESIGN SYSTEM — MODULE 01: CENTRALIZED DESIGN TOKENS
-   Aesthetic Direction: Cinematic Dark + Premium Minimal + Warm Editorial
+   Aesthetic Direction: 3D Soft Realism & Dark Mode Elevation
    ========================================================================== */
 
 :root {
   /* ------------------------------------------------------------------------
-     1. Core Color System (WCAG 2.1 Contrast Verified)
+     1. Core Dark Mode Elevation Hierarchy (WCAG 2.1 AA/AAA Contrast Verified)
      ------------------------------------------------------------------------ */
-  --color-background: #07111F;           /* Primary canvas (L = 0.0080) */
-  --color-background-secondary: #0B192B; /* Secondary surface / sidebar / inputs (L = 0.0144) */
-  --color-surface: #10243A;              /* Standard cards / panels / tables (L = 0.0232) */
-  --color-surface-elevated: #152C45;     /* Modals / hover cards / sticky bars (L = 0.0319) */
+  --color-surface-recessed: #050C17;     /* Tier 0: Sunken wells, inputs, tracks (L = 0.0052) */
+  --color-background: #07111F;           /* Tier 1: Primary abyssal canvas (L = 0.0080) */
+  --color-background-secondary: #0B192B; /* Tier 2: Secondary surface / sidebar / rails (L = 0.0144) */
+  --color-surface: #10243A;              /* Tier 3: Standard elevated cards / panels / tables (L = 0.0232) */
+  --color-surface-elevated: #152C45;     /* Tier 4: Hover cards / modals / sticky bars (L = 0.0319) */
+  --color-surface-floating: #1B3756;     /* Tier 5: Highest elevation popovers / active pills (L = 0.0435) */
+
+  /* 3D Soft Realism Surface Gradients & Specular Lighting */
+  --gradient-canvas-ambient:
+    radial-gradient(ellipse 80% 50% at 15% -10%, rgba(199, 255, 69, 0.055), transparent 60%),
+    radial-gradient(ellipse 70% 50% at 88% 12%, rgba(139, 92, 246, 0.065), transparent 62%),
+    linear-gradient(180deg, #07111F 0%, #060E1A 100%);
+  --gradient-surface-3d: linear-gradient(165deg, rgba(24, 49, 77, 0.92) 0%, rgba(14, 32, 52, 0.98) 100%);
+  --gradient-surface-elevated-3d: linear-gradient(165deg, rgba(31, 61, 94, 0.95) 0%, rgba(18, 39, 63, 0.98) 100%);
+  --gradient-surface-recessed-3d: linear-gradient(180deg, #050C17 0%, #091525 100%);
+  --gradient-accent-3d: linear-gradient(180deg, #DAFF6B 0%, #C7FF45 52%, #AFE928 100%);
+  --gradient-accent-hover-3d: linear-gradient(180deg, #E5FF8F 0%, #D7FF77 52%, #C0F63E 100%);
+  --gradient-secondary-btn-3d: linear-gradient(180deg, #18324F 0%, #10243A 100%);
+  --gradient-secondary-btn-hover-3d: linear-gradient(180deg, #1E3D5F 0%, #152C45 100%);
+
+  /* Specular Rim Highlights (Top-Lit 3D Soft Realism) */
+  --rim-light-subtle: rgba(255, 255, 255, 0.07);
+  --rim-light-strong: rgba(255, 255, 255, 0.14);
+  --rim-shade-bottom: rgba(0, 0, 0, 0.45);
 
   /* Primary Electric Lime Accent (16.51:1 on #07111F, 11.42:1 on #14210A) */
   --color-accent: #C7FF45;
@@ -53,6 +73,7 @@
   --color-error-text: #FCA5A5;           /* 9.35:1 on #152C45 for small validation text */
   --color-error-bg: rgba(239, 68, 68, 0.14);
   --color-error-border: rgba(239, 68, 68, 0.42);
+  --color-danger: #EF4444;
 
   --color-info: #38BDF8;
   --color-info-text: #7DD3FC;
@@ -115,26 +136,62 @@
   --table-cell-padding-x: 1rem;
 
   /* ------------------------------------------------------------------------
-     4. Radii, Borders & Elevation Shadows
+     4. Radii, Borders & 3D Soft Realism Elevation Shadows
      ------------------------------------------------------------------------ */
   --radius-xs: 6px;
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-pill: 9999px;
 
   /* Image ratios: one shape per kind of image, everywhere it appears */
   --ratio-banner: 21 / 9;   /* wide headers: event page banner, ticket header */
   --ratio-event: 16 / 10;   /* event covers: cards, the homepage feature, review */
   --ratio-photo: 4 / 3;     /* food and gallery photos */
   --ratio-square: 1 / 1;    /* thumbnails */
-  --radius-xl: 22px;
-  --radius-pill: 9999px;
 
-  --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.28);
-  --shadow-card: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
-  --shadow-elevated: 0 18px 40px -10px rgba(0, 0, 0, 0.65);
-  --shadow-modal: 0 24px 56px -12px rgba(0, 0, 0, 0.82);
-  --shadow-focus: 0 0 0 3px rgba(199, 255, 69, 0.32);
+  /* Multi-layered 3D Soft Realism Shadows (Top Specular Bevel + Bottom Contact + Ambient Depth) */
+  --shadow-3d-inset:
+    inset 0 2px 5px rgba(2, 6, 14, 0.65),
+    inset 0 1px 2px rgba(2, 6, 14, 0.45),
+    0 1px 0 rgba(255, 255, 255, 0.05);
+  --shadow-subtle:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 6px 18px -4px rgba(2, 6, 14, 0.52),
+    0 2px 6px -1px rgba(2, 6, 14, 0.38);
+  --shadow-card:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    0 12px 30px -6px rgba(2, 6, 14, 0.65),
+    0 4px 10px -2px rgba(2, 6, 14, 0.48);
+  --shadow-elevated:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 20px 44px -10px rgba(2, 6, 14, 0.76),
+    0 8px 18px -4px rgba(2, 6, 14, 0.55);
+  --shadow-modal:
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 28px 64px -12px rgba(2, 6, 14, 0.88),
+    0 10px 24px -6px rgba(2, 6, 14, 0.65);
+  --shadow-btn-primary:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.58),
+    inset 0 -2px 0 rgba(20, 33, 10, 0.28),
+    0 6px 18px -3px rgba(199, 255, 69, 0.28),
+    0 2px 5px rgba(2, 6, 14, 0.45);
+  --shadow-btn-primary-hover:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.68),
+    inset 0 -2px 0 rgba(20, 33, 10, 0.32),
+    0 10px 24px -4px rgba(199, 255, 69, 0.38),
+    0 4px 8px rgba(2, 6, 14, 0.5);
+  --shadow-btn-secondary:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.42),
+    0 4px 12px -2px rgba(2, 6, 14, 0.48);
+  --shadow-focus:
+    0 0 0 3px rgba(199, 255, 69, 0.34),
+    inset 0 1px 2px rgba(0, 0, 0, 0.35);
 
   /* ------------------------------------------------------------------------
      5. Motion & Interaction Timing
@@ -168,6 +225,8 @@
   --color-bg-card: var(--color-surface);
   --color-bg-card-hover: var(--color-surface-elevated);
   --color-white: var(--color-surface);
+  --surface-subtle: var(--color-background-secondary);
+  --border-default: var(--color-border);
   --color-navy: var(--color-text-primary);
   --color-charcoal: var(--color-text-secondary);
   --color-indigo: var(--color-accent);

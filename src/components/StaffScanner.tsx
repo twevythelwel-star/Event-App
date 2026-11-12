@@ -39,6 +39,7 @@ import {
 import {
   CashPaymentRecord,
   Currency,
+  FulfillmentStatus,
   HandoverAuditEntry,
   HandoverStatus,
   OrderItem,
@@ -46,6 +47,12 @@ import {
   StaffStation,
   TicketOrder,
 } from "../types";
+import {
+  KDS_STAGES,
+  getKdsStageMeta,
+  getOrderPickupNumber,
+  getOrderPickupWindow,
+} from "../lib/foodCommerce";
 
 type Props = {
   orders: TicketOrder[];
@@ -109,6 +116,7 @@ export const StaffScanner: React.FC<Props> = ({
   // Staff identity & station setup
   const [activeStaffName, setActiveStaffName] = useState("Worker Jerome");
   const [activeStation, setActiveStation] = useState<StaffStation>("all");
+  const [workerKdsStatusByOrder, setWorkerKdsStatusByOrder] = useState<Record<string, FulfillmentStatus>>({});
 
   // Ticket selection & search
   const [searchInput, setSearchInput] = useState("");
@@ -985,6 +993,115 @@ export const StaffScanner: React.FC<Props> = ({
                         <span className="worker-attribution">Logged by: {activeStaffName}</span>
                       </div>
                     </div>
+
+                    {/* 5-Stage Kitchen Preparation Status & Pickup Queue Bar */}
+                    {(() => {
+                      const currentStage =
+                        workerKdsStatusByOrder[activeOrder.id] ||
+                        (activeOrder.allHandedOver
+                          ? "collected"
+                          : activeOrder.fulfillmentStatus || "unprepared");
+                      const stageMeta = getKdsStageMeta(currentStage);
+                      const pickupNum = getOrderPickupNumber(activeOrder);
+                      const pickupWin = getOrderPickupWindow(activeOrder);
+
+                      return (
+                        <div
+                          id="scanner-kds-status-bar"
+                          style={{
+                            background: "rgba(15, 23, 42, 0.85)",
+                            border: `1px solid ${stageMeta.border}`,
+                            borderRadius: "12px",
+                            padding: "12px 16px",
+                            marginBottom: "14px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "10px",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              flexWrap: "wrap",
+                              gap: "8px",
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                              <span
+                                style={{
+                                  background: stageMeta.bg,
+                                  color: stageMeta.color,
+                                  border: `1px solid ${stageMeta.border}`,
+                                  padding: "4px 10px",
+                                  borderRadius: "8px",
+                                  fontWeight: 900,
+                                  fontSize: "13px",
+                                }}
+                              >
+                                Queue #{pickupNum}
+                              </span>
+                              <span style={{ fontSize: "12px", color: "#CBD5E1" }}>
+                                Collection Window: <strong style={{ color: "#38BDF8" }}>{pickupWin}</strong>
+                              </span>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: "11px",
+                                fontWeight: 800,
+                                color: stageMeta.color,
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Kitchen Status: {stageMeta.label}
+                            </span>
+                          </div>
+
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns: "repeat(5, 1fr)",
+                              gap: "6px",
+                            }}
+                          >
+                            {KDS_STAGES.map((st) => {
+                              const active = currentStage === st.id;
+                              return (
+                                <button
+                                  key={st.id}
+                                  type="button"
+                                  id={`scanner-kds-btn-${st.id}`}
+                                  onClick={() => {
+                                    setWorkerKdsStatusByOrder((prev) => ({
+                                      ...prev,
+                                      [activeOrder.id]: st.id,
+                                    }));
+                                    showToast(
+                                      `Queue #${pickupNum} kitchen status updated to "${st.label}"`
+                                    );
+                                  }}
+                                  style={{
+                                    padding: "7px 8px",
+                                    borderRadius: "8px",
+                                    fontSize: "11px",
+                                    fontWeight: active ? 800 : 600,
+                                    background: active ? st.bg : "rgba(30, 41, 59, 0.7)",
+                                    color: active ? st.color : "#94A3B8",
+                                    border: active
+                                      ? `1.5px solid ${st.color}`
+                                      : "1px solid rgba(148, 163, 184, 0.2)",
+                                    cursor: "pointer",
+                                  }}
+                                >
+                                  {st.stepNumber}. {st.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     {/* Requirement A: Exact Breakdown Table as shown in prompt */}
                     <div className="breakdown-table-wrapper">

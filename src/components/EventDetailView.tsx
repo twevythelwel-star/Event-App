@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FoodPhoto } from "./FoodPhoto";
 import { resolveEventImage } from "../lib/imageResolver";
+import { AttendeeExperienceHub } from "./AttendeeExperienceHub";
 import { refundPolicyPreviewLines } from "../lib/refundPolicy";
 import {
   ArrowLeft,
@@ -1547,6 +1548,9 @@ export const EventDetailView: React.FC<EventDetailViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Attendee Experience Hub: FAQs, Guest Instructions, Parking, Accessibility, Rules, Dress Code, Age, Custom Registration Questions, Group Registration, Calendar, Reminders & Feedback */}
+        <AttendeeExperienceHub event={event} />
       </main>
 
       {/* Mobile sticky action bar: the total lives on the button */}

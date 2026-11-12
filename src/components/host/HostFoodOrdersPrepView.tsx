@@ -1,19 +1,33 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
   Ban,
+  BarChart3,
+  Bell,
   CheckCircle2,
   ChefHat,
+  Clock,
   Edit3,
+  ListChecks,
   Plus,
   ShieldCheck,
+  Store,
   Trash2,
   UtensilsCrossed,
 } from "lucide-react";
-import { Currency, MenuItem } from "../../types";
+import { Currency, FulfillmentStatus, MenuItem, TicketOrder } from "../../types";
 import { FoodPhoto } from "../FoodPhoto";
 import { HostRolePermissions } from "./types";
+import {
+  KDS_STAGES,
+  computeFoodWasteAndInventoryReport,
+  getEnrichedFoodMeta,
+  getKdsStageMeta,
+  getNextKdsStatus,
+  getOrderPickupNumber,
+  getOrderPickupWindow,
+} from "../../lib/foodCommerce";
 
 export type MenuStatItem = MenuItem & {
   totalOrdered: number;
@@ -34,6 +48,9 @@ type Props = {
   onDeleteDish: (id: string) => void;
   formatMoney: (amount: number, currency: Currency) => string;
   onUpdateMenu?: (nextMenu: MenuItem[]) => void;
+  orders?: TicketOrder[];
+  onUpdateFulfillmentStatus?: (orderId: string, status: FulfillmentStatus) => void;
+  onNotifyOrderReady?: (order: TicketOrder, pickupNumber: string) => void;
 };
 
 export function HostFoodOrdersPrepView({
@@ -47,15 +64,90 @@ export function HostFoodOrdersPrepView({
   onDeleteDish,
   formatMoney,
   onUpdateMenu,
+  orders = [],
+  onUpdateFulfillmentStatus,
+  onNotifyOrderReady,
 }: Props) {
-  const [activeSubView, setActiveSubView] = useState<"prep_sheet" | "menu_studio">(
-    "prep_sheet"
-  );
+  const [activeSubView, setActiveSubView] = useState<
+    "prep_sheet" | "kds_queue" | "waste_report" | "menu_studio"
+  >("prep_sheet");
   const [prepFilter, setPrepFilter] = useState<string>("all");
   const [menuCategoryFilter, setMenuCategoryFilter] = useState<string>("all");
   const [localMenuOverride, setLocalMenuOverride] = useState<MenuItem[] | null>(null);
 
+  // KDS & Pickup Queue state
+  const [kdsStageFilter, setKdsStageFilter] = useState<"all" | FulfillmentStatus>("all");
+  const [kdsVendorFilter, setKdsVendorFilter] = useState<string>("all");
+  const [kdsWindowFilter, setKdsWindowFilter] = useState<string>("all");
+  const [localStatusOverrides, setLocalStatusOverrides] = useState<Record<string, FulfillmentStatus>>({});
+  const [notifiedOrders, setNotifiedOrders] = useState<Record<string, string>>({});
+
   const effectiveMenu = localMenuOverride ?? menu;
+
+  const foodOrders = useMemo(() => {
+    return orders
+      .filter((o) => o.status !== "rejected" && o.status !== "refunded" && !o.isReversed)
+      .map((o, idx) => {
+        const effectiveStatus = localStatusOverrides[o.id] || o.fulfillmentStatus || "unprepared";
+        return {
+          ...o,
+          fulfillmentStatus: effectiveStatus,
+          pickupNumber: getOrderPickupNumber(o),
+          pickupWindow: getOrderPickupWindow(o, idx),
+        };
+      });
+  }, [orders, localStatusOverrides]);
+
+  const handleSetOrderKdsStatus = (order: TicketOrder & { pickupNumber: string }, nextStatus: FulfillmentStatus) => {
+    setLocalStatusOverrides((prev) => ({ ...prev, [order.id]: nextStatus }));
+    if (onUpdateFulfillmentStatus) {
+      onUpdateFulfillmentStatus(order.id, nextStatus);
+    }
+    if (nextStatus === "ready_for_pickup" && !notifiedOrders[order.id]) {
+      const nowLabel = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+      setNotifiedOrders((prev) => ({ ...prev, [order.id]: nowLabel }));
+      if (onNotifyOrderReady) {
+        onNotifyOrderReady(order, order.pickupNumber);
+      }
+    }
+  };
+
+  const wasteReport = useMemo(
+    () => computeFoodWasteAndInventoryReport(effectiveMenu, foodOrders, currency),
+    [effectiveMenu, foodOrders, currency]
+  );
+
+  const distinctVendors = useMemo(() => {
+    const s = new Set<string>();
+    effectiveMenu.forEach((m) => s.add(getEnrichedFoodMeta(m).vendorName));
+    return ["all", ...Array.from(s)];
+  }, [effectiveMenu]);
+
+  const distinctPickupWindows = useMemo(() => {
+    const s = new Set<string>();
+    foodOrders.forEach((o) => s.add(o.pickupWindow));
+    return ["all", ...Array.from(s)];
+  }, [foodOrders]);
+
+  const filteredKdsOrders = useMemo(() => {
+    return foodOrders.filter((order) => {
+      if (kdsStageFilter !== "all" && order.fulfillmentStatus !== kdsStageFilter) {
+        return false;
+      }
+      if (kdsWindowFilter !== "all" && order.pickupWindow !== kdsWindowFilter) {
+        return false;
+      }
+      if (kdsVendorFilter !== "all") {
+        const hasVendorItem = order.items.some((oi) => {
+          const matchedDish = effectiveMenu.find((m) => m.id === oi.menuItemId || m.name === oi.name);
+          if (!matchedDish) return false;
+          return getEnrichedFoodMeta(matchedDish).vendorName === kdsVendorFilter;
+        });
+        if (!hasVendorItem) return false;
+      }
+      return true;
+    });
+  }, [foodOrders, kdsStageFilter, kdsWindowFilter, kdsVendorFilter, effectiveMenu]);
 
   const applyMenuUpdate = (nextMenu: MenuItem[]) => {
     setLocalMenuOverride(nextMenu);
@@ -174,6 +266,60 @@ export function HostFoodOrdersPrepView({
             >
               <ChefHat size={14} />
               <span>Kitchen Prep Sheet ({totalPortionsOrdered})</span>
+            </button>
+
+            <button
+              type="button"
+              id="btn-kds-queue-view"
+              onClick={() => setActiveSubView("kds_queue")}
+              style={{
+                padding: "8px 14px",
+                borderRadius: "9px",
+                background:
+                  activeSubView === "kds_queue"
+                    ? "#4F46E5"
+                    : "rgba(30, 41, 59, 0.8)",
+                border:
+                  activeSubView === "kds_queue"
+                    ? "1px solid #818CF8"
+                    : "1px solid rgba(148, 163, 184, 0.25)",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <ListChecks size={14} />
+              <span>Kitchen KDS & Pickup Queue ({foodOrders.length})</span>
+            </button>
+
+            <button
+              type="button"
+              id="btn-waste-inventory-view"
+              onClick={() => setActiveSubView("waste_report")}
+              style={{
+                padding: "8px 14px",
+                borderRadius: "9px",
+                background:
+                  activeSubView === "waste_report"
+                    ? "#4F46E5"
+                    : "rgba(30, 41, 59, 0.8)",
+                border:
+                  activeSubView === "waste_report"
+                    ? "1px solid #818CF8"
+                    : "1px solid rgba(148, 163, 184, 0.25)",
+                color: "#FFFFFF",
+                fontSize: "12px",
+                fontWeight: 700,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <BarChart3 size={14} />
+              <span>Inventory & Waste Report</span>
             </button>
 
             <button
@@ -494,6 +640,586 @@ export function HostFoodOrdersPrepView({
                       <strong style={{ fontSize: "13px", color: "#A5B4FC" }}>
                         {item.remainingToCook} portions
                       </strong>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : activeSubView === "kds_queue" ? (
+        <section
+          id="host-kds-pickup-queue-panel"
+          style={{
+            background: "#0B1120",
+            border: "1px solid rgba(148, 163, 184, 0.18)",
+            borderRadius: "16px",
+            padding: "20px 22px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "18px",
+          }}
+        >
+          {/* Live Pickup Queue Call Board */}
+          <div
+            id="pickup-queue-call-board"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: "14px",
+            }}
+          >
+            <div
+              style={{
+                background: "rgba(168, 85, 247, 0.1)",
+                border: "1px solid rgba(168, 85, 247, 0.35)",
+                borderRadius: "14px",
+                padding: "14px 16px",
+              }}
+            >
+              <div style={{ fontSize: "11px", fontWeight: 800, color: "#C084FC", letterSpacing: "0.06em" }}>
+                PREPARING IN KITCHEN ({foodOrders.filter((o) => o.fulfillmentStatus === "accepted" || o.fulfillmentStatus === "preparing").length})
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                {foodOrders
+                  .filter((o) => o.fulfillmentStatus === "accepted" || o.fulfillmentStatus === "preparing")
+                  .map((o) => (
+                    <span
+                      key={o.id}
+                      style={{
+                        padding: "5px 11px",
+                        borderRadius: "8px",
+                        background: "rgba(15, 23, 42, 0.9)",
+                        border: "1px solid rgba(168, 85, 247, 0.45)",
+                        color: "#E9D5FF",
+                        fontSize: "13px",
+                        fontWeight: 800,
+                      }}
+                    >
+                      #{o.pickupNumber}
+                    </span>
+                  ))}
+                {foodOrders.filter((o) => o.fulfillmentStatus === "accepted" || o.fulfillmentStatus === "preparing")
+                  .length === 0 && (
+                  <span style={{ fontSize: "12px", color: "#94A3B8" }}>No orders currently in active prep</span>
+                )}
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "rgba(182, 240, 58, 0.1)",
+                border: "1px solid rgba(182, 240, 58, 0.4)",
+                borderRadius: "14px",
+                padding: "14px 16px",
+              }}
+            >
+              <div style={{ fontSize: "11px", fontWeight: 800, color: "#B6F03A", letterSpacing: "0.06em" }}>
+                READY FOR PICKUP — CALLING NOW ({foodOrders.filter((o) => o.fulfillmentStatus === "ready_for_pickup").length})
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "10px" }}>
+                {foodOrders
+                  .filter((o) => o.fulfillmentStatus === "ready_for_pickup")
+                  .map((o) => (
+                    <span
+                      key={o.id}
+                      style={{
+                        padding: "5px 11px",
+                        borderRadius: "8px",
+                        background: "#B6F03A",
+                        color: "#090D16",
+                        fontSize: "13px",
+                        fontWeight: 900,
+                      }}
+                    >
+                      #{o.pickupNumber} · {o.customerName.split(" ")[0]}
+                    </span>
+                  ))}
+                {foodOrders.filter((o) => o.fulfillmentStatus === "ready_for_pickup").length === 0 && (
+                  <span style={{ fontSize: "12px", color: "#94A3B8" }}>No orders waiting at pickup counter</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* KDS 5-Stage Filter & Multi-Vendor / Collection Window Controls */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              paddingBottom: "12px",
+              borderBottom: "1px solid rgba(148, 163, 184, 0.15)",
+            }}
+          >
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                id="kds-stage-filter-all"
+                onClick={() => setKdsStageFilter("all")}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  background: kdsStageFilter === "all" ? "#4F46E5" : "rgba(30, 41, 59, 0.8)",
+                  color: "#FFFFFF",
+                  border: kdsStageFilter === "all" ? "1px solid #818CF8" : "1px solid rgba(148,163,184,0.2)",
+                  cursor: "pointer",
+                }}
+              >
+                All Stages ({foodOrders.length})
+              </button>
+              {KDS_STAGES.map((stage) => {
+                const count = foodOrders.filter((o) => o.fulfillmentStatus === stage.id).length;
+                const active = kdsStageFilter === stage.id;
+                return (
+                  <button
+                    key={stage.id}
+                    type="button"
+                    id={`kds-stage-filter-${stage.id}`}
+                    onClick={() => setKdsStageFilter(stage.id)}
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      background: active ? stage.bg : "rgba(30, 41, 59, 0.75)",
+                      color: active ? stage.color : "#CBD5E1",
+                      border: active ? `1px solid ${stage.border}` : "1px solid rgba(148,163,184,0.2)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {stage.stepNumber}. {stage.label} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", alignItems: "center" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Store size={13} color="#38BDF8" />
+                <select
+                  aria-label="Filter KDS by Vendor"
+                  value={kdsVendorFilter}
+                  onChange={(e) => setKdsVendorFilter(e.target.value)}
+                  style={{
+                    background: "#0F172A",
+                    color: "#F8FAFC",
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                    borderRadius: "8px",
+                    padding: "5px 10px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {distinctVendors.map((v) => (
+                    <option key={v} value={v}>
+                      {v === "all" ? "All Event Vendors" : v}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                <Clock size={13} color="#34D399" />
+                <select
+                  aria-label="Filter KDS by Pickup Window"
+                  value={kdsWindowFilter}
+                  onChange={(e) => setKdsWindowFilter(e.target.value)}
+                  style={{
+                    background: "#0F172A",
+                    color: "#F8FAFC",
+                    border: "1px solid rgba(148, 163, 184, 0.25)",
+                    borderRadius: "8px",
+                    padding: "5px 10px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                  }}
+                >
+                  {distinctPickupWindows.map((w) => (
+                    <option key={w} value={w}>
+                      {w === "all" ? "All Pickup Windows" : w}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* KDS Tickets Grid */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(min(340px, 100%), 1fr))",
+              gap: "14px",
+            }}
+          >
+            {filteredKdsOrders.map((order) => {
+              const stageMeta = getKdsStageMeta(order.fulfillmentStatus);
+              const nextStatus = getNextKdsStatus(order.fulfillmentStatus);
+              const notifiedAt = notifiedOrders[order.id];
+
+              return (
+                <div
+                  key={order.id}
+                  id={`kds-ticket-${order.id}`}
+                  style={{
+                    background: "#0F172A",
+                    border: `1px solid ${stageMeta.border}`,
+                    borderRadius: "14px",
+                    padding: "16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    gap: "12px",
+                  }}
+                >
+                  <div>
+                    {/* Queue Number & Collection Window Header */}
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: "8px",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span
+                          style={{
+                            background: stageMeta.bg,
+                            color: stageMeta.color,
+                            border: `1px solid ${stageMeta.border}`,
+                            fontWeight: 900,
+                            fontSize: "14px",
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                          }}
+                        >
+                          #{order.pickupNumber}
+                        </span>
+                        <div>
+                          <div style={{ fontSize: "13px", fontWeight: 800, color: "#FFFFFF" }}>
+                            {order.customerName}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#94A3B8" }}>
+                            {order.orderNumber} · {order.ticketCode}
+                          </div>
+                        </div>
+                      </div>
+
+                      <span
+                        style={{
+                          fontSize: "10px",
+                          fontWeight: 800,
+                          padding: "4px 8px",
+                          borderRadius: "999px",
+                          background: stageMeta.bg,
+                          color: stageMeta.color,
+                          border: `1px solid ${stageMeta.border}`,
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {stageMeta.label}
+                      </span>
+                    </div>
+
+                    {/* Collection Window Pill */}
+                    <div
+                      style={{
+                        fontSize: "11px",
+                        color: "#38BDF8",
+                        background: "rgba(56, 189, 248, 0.1)",
+                        border: "1px solid rgba(56, 189, 248, 0.25)",
+                        borderRadius: "8px",
+                        padding: "5px 10px",
+                        marginBottom: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <span>
+                        <Clock size={11} style={{ display: "inline", marginRight: "5px" }} />
+                        Window: <strong>{order.pickupWindow}</strong>
+                      </span>
+                      <span style={{ color: order.status === "paid" ? "#34D399" : "#FBBF24", fontWeight: 700 }}>
+                        {order.status === "paid" ? "PAID" : order.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    {/* 5-Stage Progress Bar */}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(5, 1fr)",
+                        gap: "4px",
+                        marginBottom: "10px",
+                      }}
+                    >
+                      {KDS_STAGES.map((st) => {
+                        const isReached = st.stepNumber <= stageMeta.stepNumber;
+                        const isCurrent = st.id === order.fulfillmentStatus;
+                        return (
+                          <button
+                            key={st.id}
+                            type="button"
+                            onClick={() => handleSetOrderKdsStatus(order, st.id)}
+                            title={`Set stage to ${st.label}`}
+                            style={{
+                              padding: "4px 2px",
+                              borderRadius: "6px",
+                              fontSize: "9px",
+                              fontWeight: isCurrent ? 800 : 600,
+                              background: isReached ? st.bg : "rgba(30, 41, 59, 0.6)",
+                              color: isReached ? st.color : "#64748B",
+                              border: isCurrent
+                                ? `1px solid ${st.color}`
+                                : "1px solid rgba(148, 163, 184, 0.15)",
+                              cursor: "pointer",
+                              textAlign: "center",
+                            }}
+                          >
+                            {st.shortLabel}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Order Items List */}
+                    <div
+                      style={{
+                        background: "rgba(2, 6, 23, 0.55)",
+                        borderRadius: "8px",
+                        padding: "8px 10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "6px",
+                      }}
+                    >
+                      {order.items.map((item, iIdx) => {
+                        const dish = effectiveMenu.find((m) => m.id === item.menuItemId || m.name === item.name);
+                        const vendor = dish ? getEnrichedFoodMeta(dish).vendorName : "Event Kitchen";
+                        return (
+                          <div
+                            key={`${item.menuItemId}-${iIdx}`}
+                            style={{
+                              fontSize: "12px",
+                              color: "#E2E8F0",
+                              borderBottom:
+                                iIdx < order.items.length - 1
+                                  ? "1px solid rgba(148, 163, 184, 0.1)"
+                                  : "none",
+                              paddingBottom: iIdx < order.items.length - 1 ? "5px" : 0,
+                            }}
+                          >
+                            <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700 }}>
+                              <span>
+                                {item.quantity}x {item.name}
+                              </span>
+                              <span style={{ fontSize: "10px", color: "#38BDF8" }}>{vendor}</span>
+                            </div>
+                            {item.selectedOptionsSummary && item.selectedOptionsSummary.length > 0 && (
+                              <div style={{ fontSize: "10px", color: "#94A3B8", marginTop: "2px" }}>
+                                {item.selectedOptionsSummary.join(" · ")}
+                              </div>
+                            )}
+                            {item.specialInstructions && (
+                              <div style={{ fontSize: "10px", color: "#FBBF24", marginTop: "2px", fontStyle: "italic" }}>
+                                Note: {item.specialInstructions}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Action Footer: Advance KDS Stage & Notify Attendee */}
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "4px" }}>
+                    {nextStatus && (
+                      <button
+                        type="button"
+                        id={`btn-advance-kds-${order.id}`}
+                        onClick={() => handleSetOrderKdsStatus(order, nextStatus)}
+                        style={{
+                          flex: 1,
+                          padding: "8px 12px",
+                          borderRadius: "8px",
+                          background: "#10B981",
+                          color: "#052E16",
+                          border: "none",
+                          fontSize: "11px",
+                          fontWeight: 800,
+                          cursor: "pointer",
+                        }}
+                      >
+                        {stageMeta.actionLabel} →
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      id={`btn-notify-ready-${order.id}`}
+                      onClick={() => {
+                        const nowLabel = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+                        setNotifiedOrders((prev) => ({ ...prev, [order.id]: nowLabel }));
+                        if (onNotifyOrderReady) {
+                          onNotifyOrderReady(order, order.pickupNumber);
+                        }
+                      }}
+                      style={{
+                        padding: "8px 10px",
+                        borderRadius: "8px",
+                        background: notifiedAt
+                          ? "rgba(52, 211, 153, 0.16)"
+                          : "rgba(56, 189, 248, 0.16)",
+                        color: notifiedAt ? "#34D399" : "#38BDF8",
+                        border: notifiedAt
+                          ? "1px solid rgba(52, 211, 153, 0.35)"
+                          : "1px solid rgba(56, 189, 248, 0.35)",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                      }}
+                    >
+                      <Bell size={12} />
+                      <span>{notifiedAt ? `Notified (${notifiedAt})` : "Notify Attendee"}</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : activeSubView === "waste_report" ? (
+        <section
+          id="host-food-waste-inventory-panel"
+          style={{
+            background: "#0B1120",
+            border: "1px solid rgba(148, 163, 184, 0.18)",
+            borderRadius: "16px",
+            padding: "20px 22px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "18px",
+          }}
+        >
+          <div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800, color: "#F8FAFC" }}>
+              Food Waste, Inventory Utilization & Multi-Vendor Accounting
+            </h3>
+            <p style={{ margin: "4px 0 0", fontSize: "12px", color: "#94A3B8" }}>
+              Monitor stock utilization, compare recommended cook targets against collected portions, and identify uncollected portions to minimize event food waste.
+            </p>
+          </div>
+
+          {/* Vendor Summary Cards */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "12px",
+            }}
+          >
+            {Object.values(wasteReport.byVendor).map((v) => (
+              <div
+                key={v.vendorName}
+                style={{
+                  background: "#0F172A",
+                  border: "1px solid rgba(56, 189, 248, 0.25)",
+                  borderRadius: "12px",
+                  padding: "12px 14px",
+                }}
+              >
+                <div style={{ fontSize: "11px", fontWeight: 800, color: "#38BDF8" }}>{v.vendorName}</div>
+                <div style={{ fontSize: "18px", fontWeight: 800, color: "#FFFFFF", marginTop: "4px" }}>
+                  {v.soldPortions} Sold · {v.collectedPortions} Collected
+                </div>
+                <div style={{ fontSize: "11px", color: "#94A3B8", marginTop: "3px" }}>
+                  {v.dishCount} Dishes · {v.remainingStock} Remaining Stock · {v.uncollectedPortions} Uncollected
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Dish-Level Waste & Inventory Table */}
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+              <thead>
+                <tr style={{ borderBottom: "1px solid rgba(148, 163, 184, 0.2)" }}>
+                  <th style={{ padding: "10px 12px", fontSize: "10px", color: "#94A3B8", textTransform: "uppercase" }}>
+                    Dish & Vendor
+                  </th>
+                  <th style={{ padding: "10px 12px", fontSize: "10px", color: "#94A3B8", textTransform: "uppercase" }}>
+                    Initial Stock
+                  </th>
+                  <th style={{ padding: "10px 12px", fontSize: "10px", color: "#94A3B8", textTransform: "uppercase" }}>
+                    Cook Target (+10%)
+                  </th>
+                  <th style={{ padding: "10px 12px", fontSize: "10px", color: "#94A3B8", textTransform: "uppercase" }}>
+                    Sold
+                  </th>
+                  <th style={{ padding: "10px 12px", fontSize: "10px", color: "#94A3B8", textTransform: "uppercase" }}>
+                    Collected
+                  </th>
+                  <th style={{ padding: "10px 12px", fontSize: "10px", color: "#94A3B8", textTransform: "uppercase" }}>
+                    Remaining Stock
+                  </th>
+                  <th style={{ padding: "10px 12px", fontSize: "10px", color: "#94A3B8", textTransform: "uppercase" }}>
+                    Uncollected / Est. Waste
+                  </th>
+                  <th style={{ padding: "10px 12px", fontSize: "10px", color: "#94A3B8", textTransform: "uppercase" }}>
+                    Utilization
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {wasteReport.rows.map((r) => (
+                  <tr key={r.itemId} style={{ borderBottom: "1px solid rgba(148, 163, 184, 0.12)" }}>
+                    <td style={{ padding: "11px 12px" }}>
+                      <strong style={{ fontSize: "12px", color: "#F8FAFC", display: "block" }}>{r.itemName}</strong>
+                      <span style={{ fontSize: "10px", color: "#38BDF8" }}>{r.vendorName}</span>
+                    </td>
+                    <td style={{ padding: "11px 12px", fontSize: "12px", color: "#CBD5E1" }}>{r.configuredStock}</td>
+                    <td style={{ padding: "11px 12px", fontSize: "12px", color: "#A5B4FC", fontWeight: 700 }}>
+                      {r.cookTargetWithBuffer}
+                    </td>
+                    <td style={{ padding: "11px 12px", fontSize: "12px", color: "#34D399", fontWeight: 700 }}>
+                      {r.soldPortions}
+                    </td>
+                    <td style={{ padding: "11px 12px", fontSize: "12px", color: "#38BDF8", fontWeight: 700 }}>
+                      {r.collectedPortions}
+                    </td>
+                    <td style={{ padding: "11px 12px", fontSize: "12px", color: "#E2E8F0" }}>
+                      {r.remainingUnsoldStock}
+                    </td>
+                    <td style={{ padding: "11px 12px" }}>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          background:
+                            r.estimatedWastePortions > 3
+                              ? "rgba(245, 158, 11, 0.18)"
+                              : "rgba(16, 185, 129, 0.15)",
+                          color: r.estimatedWastePortions > 3 ? "#FBBF24" : "#34D399",
+                        }}
+                      >
+                        {r.estimatedWastePortions} portions ({r.wasteRatePercent}%)
+                      </span>
+                    </td>
+                    <td style={{ padding: "11px 12px", fontSize: "12px", fontWeight: 800, color: "#FFFFFF" }}>
+                      {r.utilizationPercent}%
                     </td>
                   </tr>
                 ))}

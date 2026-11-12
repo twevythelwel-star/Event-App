@@ -119,6 +119,7 @@ class EventWorkerService
         // 6. Authorized redemption check
         $scanningEventId = $expectedEventId ?? $order->event_id;
         $assignment = EventWorkerAssignment::where('user_id', $worker->id)
+            ->where('organizer_id', (string) $order->organizer_id)
             ->where(fn($q) => $q->where('event_id', $scanningEventId)->orWhereNull('event_id'))
             ->where('is_active', true)
             ->first();
@@ -148,6 +149,8 @@ class EventWorkerService
                 $order->checked_in_by = $locked->checked_in_by;
                 $order->status = $locked->status;
                 $order->check_in_request_id = $locked->check_in_request_id;
+                $order->token_revoked_at = $locked->token_revoked_at;
+                $order->revocation_reason = $locked->revocation_reason;
             }
 
             $locked ??= $order;
@@ -179,11 +182,13 @@ class EventWorkerService
         // 1. Authenticity check: Genuine ticket code & order number must exist
         $isAuthentic = !empty($order->ticket_code) && !empty($order->order_number);
         $rejectionReason = null;
+        $reasonCode = null;
 
         // 2. Event association check
         $isEventMatched = true;
         if ($expectedEventId !== null && (string) $order->event_id !== (string) $expectedEventId) {
             $isEventMatched = false;
+            $reasonCode = 'wrong_event';
             $rejectionReason = "Event association mismatch: Ticket belongs to event {$order->event_id}, not {$expectedEventId}.";
         }
 
@@ -191,13 +196,56 @@ class EventWorkerService
         $isPeriodValid = true;
         if ($order->status === 'expired' || ($order->closed_at && $order->all_handed_over)) {
             $isPeriodValid = false;
+            $reasonCode = $reasonCode ?? 'ticket_expired';
             $rejectionReason = $rejectionReason ?? "Ticket validity window has expired or event is closed.";
         }
 
-        // 4. Ticket status check (must be paid or confirmed)
-        $isStatusValid = in_array($order->status, ['paid', 'confirmed'], true);
+        // 3b. Admission window: the gate opens at doors_open_time (or the event start) and closes at the event end.
+        $admissionEvent = $order->event ?? Event::withoutGlobalScopes()->find($order->event_id);
+        if ($admissionEvent) {
+            $tz = (string) ($admissionEvent->timezone ?: 'America/New_York');
+            $localDate = $admissionEvent->starts_at?->copy()->setTimezone($tz)->format('Y-m-d')
+                ?? ($admissionEvent->event_date_iso ? \Illuminate\Support\Carbon::parse((string) $admissionEvent->event_date_iso)->format('Y-m-d') : null);
+            $gateOpensAt = null;
+            if ($localDate && $admissionEvent->doors_open_time) {
+                $gateOpensAt = \Illuminate\Support\Carbon::createFromFormat('Y-m-d H:i', "{$localDate} {$admissionEvent->doors_open_time}", $tz);
+            }
+            $gateOpensAt ??= $admissionEvent->starts_at;
+
+            if ($gateOpensAt && now()->lt($gateOpensAt)) {
+                $isPeriodValid = false;
+                $reasonCode = $reasonCode ?? 'event_not_open';
+                $rejectionReason = $rejectionReason ?? 'Admission has not opened yet — doors open at ' . $gateOpensAt->copy()->setTimezone($tz)->format('g:i A T') . '.';
+            } elseif ($admissionEvent->ends_at && now()->gt($admissionEvent->ends_at)) {
+                $isPeriodValid = false;
+                $reasonCode = $reasonCode ?? 'event_not_open';
+                $rejectionReason = $rejectionReason ?? 'This event has ended; admission is closed.';
+            }
+        }
+
+        // 4. Revocation and Ticket status check (must not be revoked, and must be paid or confirmed)
+        $isNotRevoked = $order->token_revoked_at === null && !in_array($order->status, ['refunded', 'rejected', 'cancelled', 'expired'], true);
+        if (!$isNotRevoked) {
+            $revReason = $order->revocation_reason ?: "status: {$order->status}";
+            $reasonCode = $reasonCode ?? 'ticket_revoked';
+            // A revoked QR says so; a refunded, cancelled or rejected order names its status.
+            $rejectionReason = $rejectionReason ?? ($order->token_revoked_at !== null
+                ? "Ticket has been revoked ({$revReason})."
+                : "Invalid ticket status: {$order->status}. This ticket is no longer valid for entry.");
+        }
+
+        $isStatusValid = $isNotRevoked && in_array($order->status, ['paid', 'confirmed'], true);
         if (!$isStatusValid) {
+            $reasonCode = $reasonCode ?? 'payment_pending';
             $rejectionReason = $rejectionReason ?? "Invalid ticket status: {$order->status}. Must be confirmed or paid.";
+        }
+
+        // 4b. A finished event with no end time set still closes (App\Support\TicketLifecycle): its tickets are
+        // keepsakes now and never admit anyone. Checked after the ticket's own status, which is the more specific reason.
+        if ($admissionEvent && !$admissionEvent->ends_at && \App\Support\TicketLifecycle::eventIsOver($admissionEvent)) {
+            $isPeriodValid = false;
+            $reasonCode = $reasonCode ?? 'event_not_open';
+            $rejectionReason = $rejectionReason ?? 'This event has ended; admission is closed.';
         }
 
         // 5. Duplicate-redemption prevention check
@@ -206,6 +254,7 @@ class EventWorkerService
             $checkInStr = $order->checked_in_at instanceof \DateTimeInterface
                 ? $order->checked_in_at->format('Y-m-d H:i:s')
                 : (string) $order->checked_in_at;
+            $reasonCode = $reasonCode ?? 'already_admitted';
             $rejectionReason = $rejectionReason ?? "Duplicate redemption prevented: Ticket was already admitted at {$checkInStr}.";
         }
 
@@ -266,6 +315,7 @@ class EventWorkerService
             'replayed' => false,
             'already_admitted' => $isAlreadyAdmitted,
             'valid' => $isSuccess,
+            'reason_code' => $isSuccess ? null : ($reasonCode ?? 'invalid_ticket'),
             'rejection_reason' => $rejectionReason,
             'ticket' => $sanitizedData,
         ];

@@ -5,7 +5,7 @@
 @section('content')
 <style>
     /* ==========================================================================
-       Dribbble-Inspired Enterprise Sign Up Experience
+       3D Soft Realism & Dark Mode Elevation — Sign Up Experience
        ========================================================================== */
     .auth-wrapper {
         max-width: 540px;
@@ -14,13 +14,16 @@
     }
 
     .auth-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background-color: var(--color-surface);
+        background-image: var(--gradient-surface-elevated-3d);
+        border: 1px solid var(--color-border-strong);
+        border-top-color: rgba(255, 255, 255, 0.16);
         border-radius: 24px;
-        box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.07), 0 0 0 1px rgba(15, 23, 42, 0.03);
+        box-shadow: var(--shadow-elevated);
         padding: 2.25rem 2.25rem 2rem;
         position: relative;
         overflow: hidden;
+        color: var(--color-text-primary);
     }
 
     .auth-card::before {
@@ -30,28 +33,29 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, #10b981 0%, #06b6d4 50%, #4f46e5 100%);
+        background: linear-gradient(90deg, var(--color-accent) 0%, #38BDF8 50%, var(--color-purple) 100%);
     }
 
-    /* Segmented Top Pill Switcher (Dribbble Signature) */
+    /* Segmented Top Pill Switcher (Recessed 3D Well) */
     .auth-switcher {
         display: flex;
-        background: #f1f5f9;
-        padding: 4px;
+        background: var(--color-surface-recessed);
+        padding: 5px;
         border-radius: 9999px;
         margin-bottom: 1.85rem;
-        border: 1px solid #e2e8f0;
+        border: 1px solid var(--color-border);
+        box-shadow: var(--shadow-3d-inset);
     }
 
     .auth-switch-btn {
         flex: 1;
         text-align: center;
-        padding: 8px 16px;
+        padding: 9px 16px;
         font-size: 0.86rem;
         font-weight: 700;
         border-radius: 9999px;
         text-decoration: none;
-        color: #64748b;
+        color: var(--color-text-secondary);
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         display: flex;
         align-items: center;
@@ -60,13 +64,15 @@
     }
 
     .auth-switch-btn.active {
-        background: #ffffff;
-        color: #0f172a;
-        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+        background-color: var(--color-surface-elevated);
+        background-image: var(--gradient-secondary-btn-3d);
+        color: var(--color-accent);
+        border: 1px solid var(--color-accent-border);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 4px 12px rgba(2, 6, 14, 0.55);
     }
 
     .auth-switch-btn:hover:not(.active) {
-        color: #1e293b;
+        color: var(--color-text-primary);
     }
 
     /* Header */
@@ -85,25 +91,26 @@
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        background: #ecfdf5;
-        color: #059669;
-        border: 1px solid #a7f3d0;
+        background: var(--color-accent-subtle);
+        color: var(--color-accent);
+        border: 1px solid var(--color-accent-border);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
         margin-bottom: 0.85rem;
     }
 
-
     .auth-title {
+        font-family: var(--font-display);
         font-size: 1.75rem;
         font-weight: 800;
         letter-spacing: -0.03em;
-        color: #0f172a;
+        color: var(--color-text-primary);
         margin: 0 0 6px;
         line-height: 1.2;
     }
 
     .auth-subtitle {
         font-size: 0.86rem;
-        color: #64748b;
+        color: var(--color-text-secondary);
         line-height: 1.5;
         margin: 0;
     }
@@ -122,22 +129,23 @@
         justify-content: center;
         gap: 8px;
         padding: 10px 14px;
-        border: 1px solid #cbd5e1;
+        border: 1px solid var(--color-border-strong);
         border-radius: 12px;
-        background: #ffffff;
+        background-color: var(--color-surface);
+        background-image: var(--gradient-secondary-btn-3d);
+        box-shadow: var(--shadow-btn-secondary);
         font-size: 0.84rem;
         font-weight: 600;
-        color: #334155;
+        color: var(--color-text-primary);
         text-decoration: none;
         cursor: pointer;
         transition: all 0.15s ease;
     }
 
     .btn-social:hover {
-        background: #f8fafc;
-        border-color: #94a3b8;
+        background-color: var(--color-surface-elevated);
+        border-color: #496688;
         transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
     }
 
     /* Modern Divider */
@@ -145,7 +153,7 @@
         display: flex;
         align-items: center;
         margin: 1.25rem 0 1.5rem;
-        color: #94a3b8;
+        color: var(--color-text-muted);
         font-size: 0.76rem;
         font-weight: 600;
         text-transform: uppercase;
@@ -157,7 +165,7 @@
         content: "";
         flex: 1;
         height: 1px;
-        background: #e2e8f0;
+        background: var(--color-border);
     }
 
     .auth-divider span {
@@ -189,13 +197,13 @@
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: #334155;
+        color: var(--color-text-primary);
         display: block;
         margin-bottom: 0.45rem;
     }
 
     .form-label .required {
-        color: #e11d48;
+        color: var(--color-error-text);
     }
 
     .input-wrapper {
@@ -207,7 +215,7 @@
     .input-icon-left {
         position: absolute;
         left: 14px;
-        color: #94a3b8;
+        color: var(--color-text-muted);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -217,20 +225,27 @@
     .auth-input, .auth-select {
         width: 100%;
         padding: 11px 14px 11px 42px;
-        background: #f8fafc;
-        border: 1px solid #cbd5e1;
+        background-color: var(--color-surface-recessed);
+        background-image: var(--gradient-surface-recessed-3d);
+        border: 1px solid var(--color-border);
         border-radius: 12px;
+        box-shadow: var(--shadow-3d-inset);
         font-size: 0.92rem;
-        color: #0f172a;
+        color: var(--color-text-primary);
         outline: none;
         transition: all 0.15s ease;
         box-sizing: border-box;
     }
 
+    .auth-input::placeholder {
+        color: var(--color-text-muted);
+    }
+
     .auth-input:focus, .auth-select:focus {
-        background: #ffffff;
-        border-color: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        background-color: var(--color-background-secondary);
+        background-image: none;
+        border-color: var(--color-border-focus);
+        box-shadow: var(--shadow-focus);
     }
 
     .input-toggle-btn {
@@ -239,7 +254,7 @@
         background: transparent;
         border: none;
         padding: 4px;
-        color: #64748b;
+        color: var(--color-text-secondary);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -248,12 +263,12 @@
     }
 
     .input-toggle-btn:hover {
-        color: #0f172a;
+        color: var(--color-text-primary);
     }
 
     .field-hint {
         font-size: 0.72rem;
-        color: #64748b;
+        color: var(--color-text-muted);
         margin-top: 0.35rem;
     }
 
@@ -269,20 +284,24 @@
         width: 17px;
         height: 17px;
         margin-top: 2px;
-        accent-color: #10b981;
+        accent-color: var(--color-accent);
         cursor: pointer;
         flex-shrink: 0;
     }
 
     .terms-label {
         font-size: 0.8rem;
-        color: #475569;
+        color: var(--color-text-secondary);
         line-height: 1.5;
         cursor: pointer;
         user-select: none;
     }
 
-    /* Submit CTA */
+    .terms-label strong {
+        color: var(--color-text-primary);
+    }
+
+    /* Submit CTA (3D Soft Realism Electric Lime Pillow) */
     .btn-submit-signup {
         width: 100%;
         display: flex;
@@ -291,33 +310,36 @@
         gap: 8px;
         padding: 13px 20px;
         font-size: 0.95rem;
-        font-weight: 700;
-        color: #ffffff;
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        border: none;
+        font-weight: 800;
+        color: var(--color-accent-text);
+        background-color: var(--color-accent);
+        background-image: var(--gradient-accent-3d);
+        border: 1px solid var(--color-accent);
         border-radius: 12px;
         cursor: pointer;
-        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28);
+        box-shadow: var(--shadow-btn-primary);
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
         transition: all 0.15s ease;
     }
 
     .btn-submit-signup:hover {
-        background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+        background-color: var(--color-accent-hover);
+        background-image: var(--gradient-accent-hover-3d);
         transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+        box-shadow: var(--shadow-btn-primary-hover);
     }
 
     .btn-submit-signup:active {
-        transform: translateY(0);
+        transform: translateY(1px);
     }
 
     /* Error Alert */
     .alert-danger {
         padding: 0.85rem 1rem;
         border-radius: 12px;
-        background-color: #fee2e2;
-        border: 1px solid #fecaca;
-        color: #b91c1c;
+        background-color: var(--color-error-bg);
+        border: 1px solid var(--color-error-border);
+        color: var(--color-error-text);
         font-size: 0.84rem;
         margin-bottom: 1.35rem;
         display: flex;
@@ -557,11 +579,14 @@
 
             <!-- Mandatory Platform Policy Acknowledgements (Sections A, B, C & D) -->
             <input type="hidden" name="enforce_policy_acknowledgements" value="1">
-            <div class="form-group" id="mandatory-policy-acknowledgements" style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 16px; padding: 14px 16px;">
-                <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #0f172a; margin-bottom: 10px;">
+            <div class="form-group" id="mandatory-policy-acknowledgements" style="background: var(--color-surface-recessed); background-image: var(--gradient-surface-recessed-3d); border: 1px solid var(--color-border); box-shadow: var(--shadow-3d-inset); border-radius: 16px; padding: 14px 16px;">
+                <div style="font-size: 0.78rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-primary); margin-bottom: 10px;">
                     Mandatory Platform Policy Acknowledgements
                 </div>
-                <p style="font-size: 0.8rem; color: #334155; margin: 0 0 10px;">Read the full <a href="{{ route('legal.show', 'terms') }}" target="_blank" rel="noopener" style="color: #1d4ed8;">Terms of Service</a>, <a href="{{ route('legal.show', 'food-safety') }}" target="_blank" rel="noopener" style="color: #1d4ed8;">Food Safety Policy</a>, <a href="{{ route('legal.show', 'alcohol') }}" target="_blank" rel="noopener" style="color: #1d4ed8;">Alcohol Policy</a> and <a href="{{ route('legal.show', 'privacy') }}" target="_blank" rel="noopener" style="color: #1d4ed8;">Privacy Policy</a>.</p>
+                <p style="font-size: 0.8rem; color: var(--color-text-secondary); margin: 0 0 10px;">Read the full <a href="{{ route('legal.show', 'terms') }}" target="_blank" rel="noopener" style="color: var(--color-accent); text-decoration: underline;">Terms of Service</a>, <a href="{{ route('legal.show', 'food-safety') }}" target="_blank" rel="noopener" style="color: var(--color-accent); text-decoration: underline;">Food Safety Policy</a>, <a href="{{ route('legal.show', 'alcohol') }}" target="_blank" rel="noopener" style="color: var(--color-accent); text-decoration: underline;">Alcohol Policy</a> and <a href="{{ route('legal.show', 'privacy') }}" target="_blank" rel="noopener" style="color: var(--color-accent); text-decoration: underline;">Privacy Policy</a>.</p>
+                @unless(\App\Support\LegalPages::counselReviewed())
+                    <p style="font-size: 0.75rem; color: var(--color-warning-text); margin: 0 0 10px;">These policies are draft wording pending review by qualified US legal counsel; they are not yet legally approved.</p>
+                @endunless
 
                 <!-- A. Platform Terms and Conditions -->
                 <div class="terms-row" style="margin-bottom: 10px;">

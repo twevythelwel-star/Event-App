@@ -13,9 +13,22 @@ import {
   Sparkles,
   UtensilsCrossed,
   Filter,
+  Clock,
+  Store,
+  Leaf,
+  AlertTriangle,
+  Package,
+  Users,
 } from "lucide-react";
 import { Currency, EventDetails, MenuItem, Settings } from "../types";
 import { FoodPhoto } from "./FoodPhoto";
+import {
+  DEFAULT_PICKUP_WINDOWS,
+  DIETARY_FILTERS,
+  DietaryFilterKey,
+  ServiceTimeMode,
+  getEnrichedFoodMeta,
+} from "../lib/foodCommerce";
 
 export type CartItem = {
   menuItemId: string;
@@ -50,6 +63,8 @@ type Props = {
   onBack: () => void;
   onProceedToCheckout: () => void;
   formatMoney: (amount: number, currency: Currency) => string;
+  selectedPickupWindow?: string;
+  onSelectPickupWindow?: (windowLabel: string) => void;
 };
 
 export const FoodAndDrinksScreen: React.FC<Props> = ({
@@ -65,8 +80,23 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
   onBack,
   onProceedToCheckout,
   formatMoney,
+  selectedPickupWindow: externalPickupWindow,
+  onSelectPickupWindow,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [selectedDietary, setSelectedDietary] = useState<DietaryFilterKey>("all");
+  const [selectedVendor, setSelectedVendor] = useState<string>("All Vendors");
+  const [serviceTimeMode, setServiceTimeMode] = useState<ServiceTimeMode>("all_day");
+  const [localPickupWindow, setLocalPickupWindow] = useState<string>(
+    externalPickupWindow || DEFAULT_PICKUP_WINDOWS[2].label
+  );
+  const activePickupWindow = externalPickupWindow || localPickupWindow;
+  const handlePickupWindowChange = (winLabel: string) => {
+    setLocalPickupWindow(winLabel);
+    if (onSelectPickupWindow) onSelectPickupWindow(winLabel);
+  };
+  const [selectedPortionSizeIdx, setSelectedPortionSizeIdx] = useState<number>(0);
+  const [selectedSmartExtras, setSelectedSmartExtras] = useState<string[]>([]);
   const [customizingItem, setCustomizingItem] = useState<MenuItem | null>(null);
   const [chosenOptionChoices, setChosenOptionChoices] = useState<Record<string, number>>({});
   const [itemSpecialInstructions, setItemSpecialInstructions] = useState("");
@@ -77,12 +107,30 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
   const [donationItem, setDonationItem] = useState<MenuItem | null>(null);
   const [donationAmount, setDonationAmount] = useState<number>(10);
 
-  // Derive categories dynamically from actual host-configured menu items
+  // Derive interactive categories (Mains, Seafood, Sides, Desserts, Drinks, Cultural Specialties, Meal Packages, etc.)
   const categories = useMemo(() => {
-    const rawCategories = Array.from(new Set(menu.map((m) => m.category))).filter(Boolean);
-    // Order standard categories logically if present, followed by any custom categories
-    const priority = ["Food", "Mains", "Drinks", "Beverages", "Sides", "Sides & Extras", "Snacks", "Desserts", "Community Donations"];
-    const sorted = [...rawCategories].sort((a, b) => {
+    const rawCategories = new Set<string>();
+    menu.forEach((m) => {
+      if (m.category) rawCategories.add(m.category);
+      const meta = getEnrichedFoodMeta(m);
+      if (meta.interactiveSection) rawCategories.add(meta.interactiveSection);
+    });
+    const priority = [
+      "Mains",
+      "Main Dishes",
+      "Food",
+      "Seafood",
+      "Cultural Specialties",
+      "Sides",
+      "Sides & Extras",
+      "Desserts",
+      "Drinks",
+      "Beverages",
+      "Snacks",
+      "Meal Packages",
+      "Community Donations",
+    ];
+    const sorted = Array.from(rawCategories).sort((a, b) => {
       const idxA = priority.indexOf(a);
       const idxB = priority.indexOf(b);
       if (idxA !== -1 && idxB !== -1) return idxA - idxB;
@@ -93,11 +141,36 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
     return ["All", ...sorted];
   }, [menu]);
 
-  // Filter real menu items
+  // Derive distinct vendors operating under this event
+  const vendors = useMemo(() => {
+    const set = new Set<string>();
+    menu.forEach((m) => {
+      const meta = getEnrichedFoodMeta(m);
+      if (meta.vendorName) set.add(meta.vendorName);
+    });
+    return ["All Vendors", ...Array.from(set)];
+  }, [menu]);
+
+  // Filter real menu items by Category, Vendor, and Dietary Filter
   const filteredMenu = useMemo(() => {
-    if (selectedCategory === "All") return menu;
-    return menu.filter((item) => item.category === selectedCategory);
-  }, [menu, selectedCategory]);
+    return menu.filter((item) => {
+      const meta = getEnrichedFoodMeta(item);
+      if (
+        selectedCategory !== "All" &&
+        item.category !== selectedCategory &&
+        meta.interactiveSection !== selectedCategory
+      ) {
+        return false;
+      }
+      if (selectedVendor !== "All Vendors" && meta.vendorName !== selectedVendor) {
+        return false;
+      }
+      if (selectedDietary !== "all" && !meta.dietaryTags.includes(selectedDietary)) {
+        return false;
+      }
+      return true;
+    });
+  }, [menu, selectedCategory, selectedVendor, selectedDietary]);
 
   const getItemBasePrice = (item: MenuItem): number =>
     settings.currency === "JMD" ? item.priceJMD : item.priceUSD;
@@ -115,6 +188,17 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
   const grandTotal = cartSubtotal + (cart.length > 0 ? packagingFee : 0);
 
   // Customization helpers
+  const smartExtraCatalog = useMemo(
+    () => [
+      { id: "ext-scotch-bonnet", label: "Extra Scotch Bonnet Pepper Sauce", usd: 1.5, jmd: 250 },
+      { id: "ext-plantain", label: "Sweet Fried Plantain Side", usd: 3.5, jmd: 550 },
+      { id: "ext-festival-2pc", label: "2pc Golden Festival Dumplings", usd: 3.0, jmd: 450 },
+      { id: "ext-avocado", label: "Sliced Pear (Avocado)", usd: 2.5, jmd: 400 },
+      { id: "sub-callaloo", label: "Sub Rice for Steamed Callaloo (No Extra Charge)", usd: 0, jmd: 0 },
+    ],
+    []
+  );
+
   function openCustomization(item: MenuItem) {
     const initialChoices: Record<string, number> = {};
     if (item.customOptionGroups) {
@@ -123,6 +207,8 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
       });
     }
     setChosenOptionChoices(initialChoices);
+    setSelectedPortionSizeIdx(0);
+    setSelectedSmartExtras([]);
     setItemSpecialInstructions("");
     setCustomizingQuantity(1);
     setCustomizingItem(item);
@@ -130,16 +216,74 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
 
   function handleSaveCustomization() {
     if (!customizingItem) return;
+    const meta = getEnrichedFoodMeta(customizingItem);
+    const portionChoice = meta.portionSizes[selectedPortionSizeIdx];
+
+    if (selectedPortionSizeIdx === 0 && selectedSmartExtras.length === 0) {
+      onAddCustomizedItem(
+        customizingItem,
+        chosenOptionChoices,
+        itemSpecialInstructions.trim(),
+        customizingQuantity
+      );
+      setCustomizingItem(null);
+      return;
+    }
+
+    const extraGroups = [...(customizingItem.customOptionGroups || [])];
+    const effectiveChoices: Record<string, number> = { ...chosenOptionChoices };
+
+    if (portionChoice && selectedPortionSizeIdx > 0) {
+      const grpId = "__portion_size__";
+      extraGroups.push({
+        id: grpId,
+        title: "Portion Size",
+        required: true,
+        choices: [
+          {
+            label: portionChoice.label,
+            extraPriceUSD: portionChoice.extraPriceUSD,
+            extraPriceJMD: portionChoice.extraPriceJMD,
+          },
+        ],
+      });
+      effectiveChoices[grpId] = 0;
+    }
+
+    selectedSmartExtras.forEach((extId) => {
+      const found = smartExtraCatalog.find((e) => e.id === extId);
+      if (found) {
+        const grpId = `__extra_${extId}__`;
+        extraGroups.push({
+          id: grpId,
+          title: "Add-on / Substitution",
+          required: false,
+          choices: [
+            {
+              label: found.label,
+              extraPriceUSD: found.usd,
+              extraPriceJMD: found.jmd,
+            },
+          ],
+        });
+        effectiveChoices[grpId] = 0;
+      }
+    });
+
     onAddCustomizedItem(
-      customizingItem,
-      chosenOptionChoices,
+      {
+        ...customizingItem,
+        pricingType: "customizable",
+        customOptionGroups: extraGroups,
+      },
+      effectiveChoices,
       itemSpecialInstructions.trim(),
       customizingQuantity
     );
     setCustomizingItem(null);
   }
 
-  // Calculate live price of customizing item
+  // Calculate live price of customizing item (including Portion Size & Smart Extras)
   const customizationPriceSummary = useMemo(() => {
     if (!customizingItem) return { base: 0, extras: 0, totalPerUnit: 0, total: 0 };
     const base = getItemBasePrice(customizingItem);
@@ -153,6 +297,17 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
         }
       });
     }
+    const meta = getEnrichedFoodMeta(customizingItem);
+    const portion = meta.portionSizes[selectedPortionSizeIdx];
+    if (portion) {
+      extras += settings.currency === "JMD" ? portion.extraPriceJMD : portion.extraPriceUSD;
+    }
+    selectedSmartExtras.forEach((extId) => {
+      const found = smartExtraCatalog.find((e) => e.id === extId);
+      if (found) {
+        extras += settings.currency === "JMD" ? found.jmd : found.usd;
+      }
+    });
     const totalPerUnit = base + extras;
     return {
       base,
@@ -160,7 +315,15 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
       totalPerUnit,
       total: totalPerUnit * customizingQuantity,
     };
-  }, [customizingItem, chosenOptionChoices, customizingQuantity, settings.currency]);
+  }, [
+    customizingItem,
+    chosenOptionChoices,
+    selectedPortionSizeIdx,
+    selectedSmartExtras,
+    smartExtraCatalog,
+    customizingQuantity,
+    settings.currency,
+  ]);
 
   return (
     <div
@@ -354,7 +517,7 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
         </div>
 
         {/* 2. CATEGORIES FILTER TABS */}
-        <section style={{ marginBottom: "28px" }} aria-label="Menu categories">
+        <section style={{ marginBottom: "18px" }} aria-label="Menu categories">
           <div
             style={{
               display: "flex",
@@ -370,7 +533,10 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
               <Filter size={14} />
             </div>
             {categories.map((cat) => {
-              const count = cat === "All" ? menu.length : menu.filter((m) => m.category === cat).length;
+              const count =
+                cat === "All"
+                  ? menu.length
+                  : menu.filter((m) => m.category === cat || getEnrichedFoodMeta(m).interactiveSection === cat).length;
               const isActive = selectedCategory === cat;
               return (
                 <button
@@ -417,6 +583,377 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
           </div>
         </section>
 
+        {/* 2B. ADVANCED FOOD COMMERCE CONTROLS: TIME-OF-DAY AVAILABILITY, MULTI-VENDOR & DIETARY FILTERS, SCHEDULED PICKUP */}
+        <section
+          aria-label="Dietary, Vendor, Service Time, and Pickup Window Controls"
+          id="food-commerce-filter-bar"
+          style={{
+            background: "rgba(15, 23, 42, 0.65)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "16px",
+            padding: "16px 18px",
+            marginBottom: "24px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "14px",
+          }}
+        >
+          {/* Row 1: Time-of-Day Menu Availability & Scheduled Pickup Window */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "12px",
+              paddingBottom: "12px",
+              borderBottom: "1px solid rgba(255, 255, 255, 0.06)",
+            }}
+          >
+            {/* Menu Availability by Time of Day (e.g., Breakfast ends 11 AM, Lunch opens 11 AM) */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "var(--att-text-2)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                }}
+              >
+                <Clock size={13} style={{ color: "var(--att-accent)" }} />
+                Menu Service Time:
+              </span>
+              {(
+                [
+                  { id: "all_day", label: "All-Day Preview" },
+                  { id: "breakfast_before_11", label: "Morning / Breakfast (Until 11:00 AM)" },
+                  { id: "lunch_after_11", label: "Lunch & Dinner (11:00 AM Onwards)" },
+                ] as { id: ServiceTimeMode; label: string }[]
+              ).map((tm) => {
+                const active = serviceTimeMode === tm.id;
+                return (
+                  <button
+                    key={tm.id}
+                    type="button"
+                    id={`service-time-${tm.id}`}
+                    onClick={() => setServiceTimeMode(tm.id)}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: "9999px",
+                      fontSize: "11px",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      background: active ? "rgba(182, 240, 58, 0.18)" : "rgba(255, 255, 255, 0.04)",
+                      color: active ? "var(--att-accent)" : "var(--att-text-2)",
+                      border: active
+                        ? "1px solid rgba(182, 240, 58, 0.45)"
+                        : "1px solid rgba(255, 255, 255, 0.08)",
+                    }}
+                  >
+                    {tm.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Scheduled Food Pickup Collection Window */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+              <label
+                htmlFor="scheduled-pickup-window-select"
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "var(--att-text-2)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.05em",
+                }}
+              >
+                Scheduled Pickup Window:
+              </label>
+              <select
+                id="scheduled-pickup-window-select"
+                value={activePickupWindow}
+                onChange={(e) => handlePickupWindowChange(e.target.value)}
+                style={{
+                  background: "rgba(10, 15, 22, 0.9)",
+                  color: "#FFFFFF",
+                  border: "1px solid rgba(182, 240, 58, 0.35)",
+                  borderRadius: "10px",
+                  padding: "6px 12px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {(eventDetails.foodServiceConfig?.pickupWindows &&
+                eventDetails.foodServiceConfig.pickupWindows.length > 0
+                  ? eventDetails.foodServiceConfig.pickupWindows
+                  : DEFAULT_PICKUP_WINDOWS
+                ).map((w) => (
+                  <option key={w.id} value={w.label}>
+                    {w.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Row 2: Multi-Vendor Filter Tabs */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "var(--att-text-2)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              <Store size={13} style={{ color: "#38BDF8" }} />
+              Event Food Vendors:
+            </span>
+            {vendors.map((vendor) => {
+              const active = selectedVendor === vendor;
+              return (
+                <button
+                  key={vendor}
+                  type="button"
+                  id={`vendor-tab-${vendor.toLowerCase().replace(/[^a-z0-9]/g, "-")}`}
+                  onClick={() => setSelectedVendor(vendor)}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: active ? "rgba(56, 189, 248, 0.18)" : "rgba(255, 255, 255, 0.04)",
+                    color: active ? "#38BDF8" : "var(--att-text-2)",
+                    border: active
+                      ? "1px solid rgba(56, 189, 248, 0.45)"
+                      : "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  {vendor}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Row 3: Dietary Filter Pills (Vegetarian, Vegan, Halal, Pescatarian, Gluten-Free, etc.) */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 700,
+                color: "var(--att-text-2)",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "5px",
+              }}
+            >
+              <Leaf size={13} style={{ color: "#22C55E" }} />
+              Dietary Filters:
+            </span>
+            {DIETARY_FILTERS.map((df) => {
+              const active = selectedDietary === df.id;
+              return (
+                <button
+                  key={df.id}
+                  type="button"
+                  id={`dietary-pill-${df.id}`}
+                  onClick={() => setSelectedDietary(df.id)}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    background: active ? "rgba(34, 197, 94, 0.18)" : "rgba(255, 255, 255, 0.04)",
+                    color: active ? "#4ADE80" : "var(--att-text-2)",
+                    border: active
+                      ? "1px solid rgba(34, 197, 94, 0.45)"
+                      : "1px solid rgba(255, 255, 255, 0.08)",
+                  }}
+                >
+                  {df.label}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 2C. FAMILY & GROUP MEAL PACKAGES SHOWCASE */}
+        {(selectedCategory === "All" || selectedCategory === "Meal Packages") && menu.length > 0 && (
+          <section
+            aria-label="Family and Group Meal Packages"
+            id="family-meal-packages-section"
+            style={{
+              marginBottom: "28px",
+              background: "linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%)",
+              border: "1px solid rgba(168, 85, 247, 0.28)",
+              borderRadius: "18px",
+              padding: "18px 20px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "10px",
+                marginBottom: "14px",
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div
+                  style={{
+                    width: "34px",
+                    height: "34px",
+                    borderRadius: "10px",
+                    background: "rgba(168, 85, 247, 0.2)",
+                    color: "#C084FC",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Users size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: "15px", fontWeight: 800, color: "#FFFFFF", margin: 0 }}>
+                    Family & Group Meal Packages
+                  </h3>
+                  <p style={{ fontSize: "12px", color: "var(--att-text-2)", margin: "2px 0 0" }}>
+                    Bundled multi-course festival platters for families and groups with express pickup priority.
+                  </p>
+                </div>
+              </div>
+              <span
+                style={{
+                  fontSize: "11px",
+                  fontWeight: 700,
+                  color: "#C084FC",
+                  background: "rgba(168, 85, 247, 0.16)",
+                  border: "1px solid rgba(168, 85, 247, 0.35)",
+                  padding: "4px 10px",
+                  borderRadius: "9999px",
+                }}
+              >
+                Save up to 15% · Express Window
+              </span>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(min(280px, 100%), 1fr))",
+                gap: "14px",
+              }}
+            >
+              {[
+                {
+                  id: "pkg-family-feast",
+                  name: "Harbour Family Feast Package (Serves 4)",
+                  desc: "Includes 2 Mains (Escovitch Snapper + Jerk Chicken), 4x Festival Dumplings, 2x Bammy, Rice & Peas, and 4x Tropical Smoothies.",
+                  priceUSD: 64,
+                  priceJMD: 9600,
+                  vendor: "Yard Smoke & Jerk Grill + Harbour Catch",
+                },
+                {
+                  id: "pkg-vip-crew",
+                  name: "Island Crew VIP Platter (Serves 6)",
+                  desc: "Full group spread: Whole Snapper, Jerk Chicken, Jerk Pork, 6x Festivals, 4x Bammy, Plantains & 6x Island Drinks.",
+                  priceUSD: 92,
+                  priceJMD: 13800,
+                  vendor: "Multi-Vendor Express Bundle",
+                },
+              ].map((pkg) => {
+                const pkgPrice = settings.currency === "JMD" ? pkg.priceJMD : pkg.priceUSD;
+                const anchorDish = menu[0];
+                return (
+                  <div
+                    key={pkg.id}
+                    id={`meal-package-card-${pkg.id}`}
+                    style={{
+                      background: "rgba(10, 15, 22, 0.78)",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      borderRadius: "14px",
+                      padding: "14px 16px",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      gap: "10px",
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "8px" }}>
+                        <div style={{ fontSize: "14px", fontWeight: 800, color: "#FFFFFF" }}>{pkg.name}</div>
+                        <div style={{ fontSize: "15px", fontWeight: 800, color: "var(--att-accent)", whiteSpace: "nowrap" }}>
+                          {formatMoney(pkgPrice, settings.currency)}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: "11px", color: "#38BDF8", fontWeight: 600, marginTop: "3px" }}>
+                        <Package size={11} style={{ display: "inline", marginRight: "4px" }} />
+                        {pkg.vendor}
+                      </div>
+                      <p style={{ fontSize: "12px", color: "var(--att-text-2)", margin: "6px 0 0", lineHeight: 1.45 }}>
+                        {pkg.desc}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      id={`btn-add-package-${pkg.id}`}
+                      onClick={() => {
+                        if (!anchorDish) return;
+                        onAddCustomizedItem(
+                          {
+                            ...anchorDish,
+                            name: pkg.name,
+                            priceUSD: pkg.priceUSD,
+                            priceJMD: pkg.priceJMD,
+                            pricingType: "customizable",
+                            customOptionGroups: [],
+                          },
+                          {},
+                          `Family Package (${activePickupWindow})`,
+                          1
+                        );
+                      }}
+                      style={{
+                        padding: "9px 14px",
+                        borderRadius: "10px",
+                        background: "rgba(182, 240, 58, 0.18)",
+                        border: "1px solid rgba(182, 240, 58, 0.4)",
+                        color: "var(--att-accent)",
+                        fontSize: "12px",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      <Plus size={14} />
+                      <span>Add Family Package to Cart</span>
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* 3. MENU CARDS GRID */}
         <section aria-label="Menu items grid">
           {filteredMenu.length === 0 ? (
@@ -451,6 +988,8 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                 const basePrice = getItemBasePrice(item);
                 const isCustomizable = item.pricingType === "customizable";
                 const isCustomAmount = item.pricingType === "custom_amount";
+                const itemMeta = getEnrichedFoodMeta(item);
+                const isWindowClosed = !itemMeta.isAvailableForTimeMode(serviceTimeMode);
                 const isSoldOut = item.availableStock !== undefined && item.availableStock <= 0;
                 const isLowStock =
                   item.availableStock !== undefined && item.availableStock > 0 && item.availableStock <= 10;
@@ -473,7 +1012,7 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                       display: "flex",
                       flexDirection: "column",
                       transition: "transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease",
-                      opacity: isSoldOut ? 0.65 : 1,
+                      opacity: isSoldOut || isWindowClosed ? 0.68 : 1,
                     }}
                   >
                     {/* Food Photograph */}
@@ -513,9 +1052,32 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                         {item.category}
                       </span>
 
+                      {/* Time-of-Day Window Overlay Badge */}
+                      <span
+                        style={{
+                          position: "absolute",
+                          bottom: "10px",
+                          left: "12px",
+                          background: "rgba(10, 15, 22, 0.86)",
+                          backdropFilter: "blur(8px)",
+                          color: isWindowClosed ? "#F59E0B" : "var(--att-accent)",
+                          fontSize: "10px",
+                          fontWeight: 700,
+                          padding: "3px 9px",
+                          borderRadius: "9999px",
+                          border: "1px solid rgba(255, 255, 255, 0.14)",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <Clock size={11} />
+                        {itemMeta.timeWindowBadge}
+                      </span>
+
                       {/* Availability Tag */}
                       <span
-                        className={`att-menu-stock${isSoldOut || isLowStock ? "" : " is-available"}`}
+                        className={`att-menu-stock${isSoldOut || isLowStock || isWindowClosed ? "" : " is-available"}`}
                         style={{
                           position: "absolute",
                           top: "12px",
@@ -529,6 +1091,8 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                           gap: "5px",
                           background: isSoldOut
                             ? "rgba(239, 68, 68, 0.9)"
+                            : isWindowClosed
+                            ? "rgba(245, 158, 11, 0.92)"
                             : isLowStock
                             ? "rgba(245, 158, 11, 0.9)"
                             : "rgba(34, 197, 94, 0.85)",
@@ -546,6 +1110,10 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                         />
                         {isSoldOut
                           ? "Sold Out"
+                          : isWindowClosed
+                          ? serviceTimeMode === "breakfast_before_11"
+                            ? "Opens 11:00 AM"
+                            : "Ended 11:00 AM"
                           : isLowStock
                           ? `${item.availableStock} left`
                           : "Available"}
@@ -564,6 +1132,34 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                       }}
                     >
                       <div>
+                        {/* Vendor & Prep Time Row */}
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "8px",
+                            marginBottom: "6px",
+                            fontSize: "11px",
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: "#38BDF8",
+                              fontWeight: 700,
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                            }}
+                          >
+                            <Store size={12} />
+                            {itemMeta.vendorName}
+                          </span>
+                          <span style={{ color: "var(--att-text-3)", fontWeight: 600 }}>
+                            ~{itemMeta.prepTimeMinutes}m prep
+                          </span>
+                        </div>
+
                         {/* Name and Price Header */}
                         <div
                           className="att-menu-head"
@@ -619,11 +1215,79 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                             fontSize: "13px",
                             color: "var(--att-text-2)",
                             lineHeight: 1.5,
-                            margin: "0 0 14px",
+                            margin: "0 0 10px",
                           }}
                         >
                           {item.description}
                         </p>
+
+                        {/* Dietary Tags & Preorder Cutoff Badges */}
+                        <div
+                          style={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: "5px",
+                            marginBottom: "10px",
+                          }}
+                        >
+                          {itemMeta.dietaryTags.slice(0, 3).map((tag) => {
+                            const found = DIETARY_FILTERS.find((d) => d.id === tag);
+                            return (
+                              <span
+                                key={tag}
+                                style={{
+                                  fontSize: "10px",
+                                  fontWeight: 700,
+                                  padding: "2px 8px",
+                                  borderRadius: "9999px",
+                                  background: "rgba(34, 197, 94, 0.14)",
+                                  border: "1px solid rgba(34, 197, 94, 0.3)",
+                                  color: "#4ADE80",
+                                }}
+                              >
+                                {found?.shortBadge || tag}
+                              </span>
+                            );
+                          })}
+                          <span
+                            style={{
+                              fontSize: "10px",
+                              fontWeight: 600,
+                              padding: "2px 8px",
+                              borderRadius: "9999px",
+                              background: "rgba(255, 255, 255, 0.05)",
+                              border: "1px solid rgba(255, 255, 255, 0.1)",
+                              color: "var(--att-text-3)",
+                            }}
+                          >
+                            {itemMeta.preorderCutoffLabel}
+                          </span>
+                        </div>
+
+                        {/* Ingredient & Allergen Disclosures */}
+                        <div
+                          style={{
+                            background: "rgba(10, 15, 22, 0.55)",
+                            border: "1px solid rgba(255, 255, 255, 0.06)",
+                            borderRadius: "8px",
+                            padding: "7px 10px",
+                            marginBottom: "12px",
+                            fontSize: "11px",
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          <div style={{ color: "var(--att-text-2)", marginBottom: "3px" }}>
+                            <strong style={{ color: "var(--att-text-1)" }}>Ingredients:</strong>{" "}
+                            {itemMeta.ingredients}
+                          </div>
+                          <div style={{ color: "#FBBF24", fontWeight: 600 }}>
+                            <AlertTriangle
+                              size={11}
+                              style={{ display: "inline", marginRight: "4px", verticalAlign: "text-bottom" }}
+                            />
+                            Allergens: {itemMeta.allergens.join(", ")}
+                          </div>
+                        </div>
 
                         {/* Customization Feature Badges */}
                         {isCustomizable && item.customOptionGroups && (
@@ -669,6 +1333,26 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                             }}
                           >
                             Sold out
+                          </button>
+                        ) : isWindowClosed ? (
+                          <button
+                            type="button"
+                            disabled
+                            style={{
+                              width: "100%",
+                              padding: "11px 16px",
+                              borderRadius: "12px",
+                              background: "rgba(245, 158, 11, 0.1)",
+                              color: "#FBBF24",
+                              border: "1px solid rgba(245, 158, 11, 0.3)",
+                              fontSize: "12px",
+                              fontWeight: 700,
+                              cursor: "not-allowed",
+                            }}
+                          >
+                            {serviceTimeMode === "breakfast_before_11"
+                              ? "Lunch Item · Available at 11:00 AM"
+                              : "Breakfast Item · Ended at 11:00 AM"}
                           </button>
                         ) : isCustomizable ? (
                           <button
@@ -796,32 +1480,56 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
                             </button>
                           </div>
                         ) : (
-                          /* Initial Add to Cart */
-                          <button
-                            type="button"
-                            id={`btn-add-item-${item.id}`}
-                            onClick={() => onAddToCart(item)}
-                            style={{
-                              width: "100%",
-                              padding: "11px 16px",
-                              borderRadius: "12px",
-                              background: "var(--att-accent)",
-                              color: "var(--att-on-accent)",
-                              border: "none",
-                              fontSize: "13px",
-                              fontWeight: 700,
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: "8px",
-                              boxShadow: "none",
-                              transition: "all 0.2s ease",
-                            }}
-                          >
-                            <Plus size={15} />
-                            <span>Add</span>
-                          </button>
+                          /* Initial Add to Cart + Portion/Extras Option */
+                          <div style={{ display: "flex", gap: "8px" }}>
+                            <button
+                              type="button"
+                              id={`btn-add-item-${item.id}`}
+                              onClick={() => onAddToCart(item)}
+                              style={{
+                                flex: 1,
+                                padding: "11px 14px",
+                                borderRadius: "12px",
+                                background: "var(--att-accent)",
+                                color: "var(--att-on-accent)",
+                                border: "none",
+                                fontSize: "13px",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                gap: "6px",
+                                boxShadow: "none",
+                                transition: "all 0.2s ease",
+                              }}
+                            >
+                              <Plus size={15} />
+                              <span>Add</span>
+                            </button>
+                            <button
+                              type="button"
+                              id={`btn-smart-customize-${item.id}`}
+                              onClick={() => openCustomization(item)}
+                              title="Customize portion size, sides & extras"
+                              style={{
+                                padding: "11px 12px",
+                                borderRadius: "12px",
+                                background: "rgba(255, 255, 255, 0.06)",
+                                color: "var(--att-text-1)",
+                                border: "1px solid rgba(255, 255, 255, 0.12)",
+                                fontSize: "12px",
+                                fontWeight: 600,
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "5px",
+                              }}
+                            >
+                              <Sliders size={14} />
+                              <span>Portion / Extras</span>
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -947,6 +1655,148 @@ export const FoodAndDrinksScreen: React.FC<Props> = ({
 
             {/* Modal Body */}
             <div style={{ padding: "20px" }}>
+              {/* Ingredient & Allergen Disclosure inside Modal */}
+              {(() => {
+                const modalMeta = getEnrichedFoodMeta(customizingItem);
+                return (
+                  <div
+                    style={{
+                      background: "rgba(10, 15, 22, 0.65)",
+                      border: "1px solid rgba(255, 255, 255, 0.08)",
+                      borderRadius: "12px",
+                      padding: "10px 12px",
+                      marginBottom: "18px",
+                      fontSize: "11px",
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    <div style={{ color: "#38BDF8", fontWeight: 700, marginBottom: "3px" }}>
+                      {modalMeta.vendorName} · {modalMeta.timeWindowBadge}
+                    </div>
+                    <div style={{ color: "var(--att-text-2)" }}>
+                      <strong style={{ color: "#FFFFFF" }}>Ingredients:</strong> {modalMeta.ingredients}
+                    </div>
+                    <div style={{ color: "#FBBF24", fontWeight: 700, marginTop: "3px" }}>
+                      Allergens: {modalMeta.allergens.join(", ")}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Portion Size Selector */}
+              {(() => {
+                const modalMeta = getEnrichedFoodMeta(customizingItem);
+                if (modalMeta.portionSizes.length === 0) return null;
+                return (
+                  <div style={{ marginBottom: "20px" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--att-text-1)" }}>
+                        Portion Size
+                      </label>
+                      <span style={{ fontSize: "11px", color: "var(--att-text-3)" }}>Choose 1</span>
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
+                      {modalMeta.portionSizes.map((ps, pIdx) => {
+                        const isSelected = selectedPortionSizeIdx === pIdx;
+                        const extra = settings.currency === "JMD" ? ps.extraPriceJMD : ps.extraPriceUSD;
+                        return (
+                          <button
+                            key={ps.id}
+                            type="button"
+                            id={`portion-size-${ps.id}`}
+                            onClick={() => setSelectedPortionSizeIdx(pIdx)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "9px 13px",
+                              borderRadius: "10px",
+                              background: isSelected
+                                ? "rgba(182, 240, 58, 0.18)"
+                                : "rgba(255, 255, 255, 0.04)",
+                              border: isSelected
+                                ? "1.5px solid var(--att-accent)"
+                                : "1px solid rgba(255, 255, 255, 0.08)",
+                              color: isSelected ? "#FFFFFF" : "var(--att-text-2)",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              fontWeight: isSelected ? 700 : 500,
+                            }}
+                          >
+                            <span>{ps.label}</span>
+                            <span style={{ color: extra > 0 ? "var(--att-accent)" : "var(--att-ok)", fontWeight: 700 }}>
+                              {extra > 0 ? `+${formatMoney(extra, settings.currency)}` : "Included"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Smart Sauces, Extras & Substitutions */}
+              <div style={{ marginBottom: "20px" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <label style={{ fontSize: "13px", fontWeight: 700, color: "var(--att-text-1)" }}>
+                    Sauces, Extras & Substitutions
+                  </label>
+                  <span style={{ fontSize: "11px", color: "var(--att-text-3)" }}>Optional Add-ons</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                  {smartExtraCatalog.map((ext) => {
+                    const checked = selectedSmartExtras.includes(ext.id);
+                    const extraAmt = settings.currency === "JMD" ? ext.jmd : ext.usd;
+                    return (
+                      <button
+                        key={ext.id}
+                        type="button"
+                        id={`smart-extra-${ext.id}`}
+                        onClick={() =>
+                          setSelectedSmartExtras((prev) =>
+                            prev.includes(ext.id) ? prev.filter((x) => x !== ext.id) : [...prev, ext.id]
+                          )
+                        }
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "8px 12px",
+                          borderRadius: "10px",
+                          background: checked ? "rgba(56, 189, 248, 0.16)" : "rgba(255, 255, 255, 0.03)",
+                          border: checked
+                            ? "1px solid rgba(56, 189, 248, 0.45)"
+                            : "1px solid rgba(255, 255, 255, 0.07)",
+                          color: checked ? "#FFFFFF" : "var(--att-text-2)",
+                          cursor: "pointer",
+                          fontSize: "12px",
+                          textAlign: "left",
+                        }}
+                      >
+                        <span>{ext.label}</span>
+                        <span style={{ fontWeight: 700, color: extraAmt > 0 ? "#38BDF8" : "var(--att-ok)" }}>
+                          {extraAmt > 0 ? `+${formatMoney(extraAmt, settings.currency)}` : "Free Sub"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Option Groups (Portion, Sides, Substitutions, Add-ons) */}
               {customizingItem.customOptionGroups?.map((group) => {
                 const selectedIdx = chosenOptionChoices[group.id] ?? 0;

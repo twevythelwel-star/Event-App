@@ -80,13 +80,18 @@ final class TicketTransferService
             }
             $this->assertTransferable($order);
 
+            $newToken = Order::generateSecureTicketToken();
             $order->forceFill([
                 'user_id' => $recipient->id,
                 'customer_name' => $recipient->name,
                 'email' => $recipient->email,
-                'customer_phone' => $recipient->phone ?: $order->customer_phone,
-                // A new QR token: the sender's copy of the old QR code stops working.
-                'secure_ticket_token' => 'tok_' . Str::random(32),
+                // The recipient's phone only: keeping the sender's would still let the sender open the ticket and its new QR.
+                'customer_phone' => (string) ($recipient->phone ?? ''),
+                // A new 256-bit QR token + hash: the sender's copy of the old QR code stops working immediately.
+                'secure_ticket_token' => $newToken,
+                'secure_ticket_token_hash' => Order::hashTicketToken($newToken),
+                'token_version' => max(1, (int) $order->token_version) + 1,
+                'token_reissued_at' => now(),
             ])->save();
             $transfer->forceFill(['status' => 'accepted', 'to_user_id' => $recipient->id, 'accepted_at' => now()])->save();
             $this->audit($recipient, $order, 'ticket_transfer_accepted', "Tickets {$order->ticket_code} transferred to {$recipient->email}.");
@@ -100,6 +105,9 @@ final class TicketTransferService
         $event = Event::withoutGlobalScopes()->find($order->event_id);
         if (!$event || !$event->allow_ticket_transfers) {
             throw new OrderPlacementException('The host does not allow ticket transfers for this event.');
+        }
+        if (\App\Support\TicketLifecycle::eventIsOver($event)) {
+            throw new OrderPlacementException('This event is over; its tickets are keepsakes now and can’t be transferred.');
         }
         if (!in_array($order->status, ['paid', 'partially_refunded'], true)) {
             throw new OrderPlacementException('Only paid tickets can be transferred.');

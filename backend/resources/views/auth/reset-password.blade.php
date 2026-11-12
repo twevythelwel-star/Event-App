@@ -5,7 +5,7 @@
 @section('content')
 <style>
     /* ==========================================================================
-       Dribbble-Inspired Reset Password Experience
+       3D Soft Realism & Dark Mode Elevation — Reset Password Experience
        ========================================================================== */
     .auth-wrapper {
         max-width: 480px;
@@ -14,13 +14,16 @@
     }
 
     .auth-card {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
+        background-color: var(--color-surface);
+        background-image: var(--gradient-surface-elevated-3d);
+        border: 1px solid var(--color-border-strong);
+        border-top-color: rgba(255, 255, 255, 0.16);
         border-radius: 24px;
-        box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.07), 0 0 0 1px rgba(15, 23, 42, 0.03);
+        box-shadow: var(--shadow-elevated);
         padding: 2.5rem 2.25rem 2rem;
         position: relative;
         overflow: hidden;
+        color: var(--color-text-primary);
     }
 
     .auth-card::before {
@@ -30,7 +33,7 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, #10b981 0%, #06b6d4 50%, #4f46e5 100%);
+        background: linear-gradient(90deg, var(--color-accent) 0%, #38BDF8 50%, var(--color-purple) 100%);
     }
 
     .auth-header {
@@ -48,24 +51,25 @@
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
-        background: #ecfdf5;
-        color: #059669;
-        border: 1px solid #a7f3d0;
+        background: var(--color-accent-subtle);
+        color: var(--color-accent);
+        border: 1px solid var(--color-accent-border);
         margin-bottom: 0.85rem;
     }
 
     .auth-title {
+        font-family: var(--font-display);
         font-size: 1.75rem;
         font-weight: 800;
         letter-spacing: -0.03em;
-        color: #0f172a;
+        color: var(--color-text-primary);
         margin: 0 0 6px;
         line-height: 1.2;
     }
 
     .auth-subtitle {
         font-size: 0.86rem;
-        color: #64748b;
+        color: var(--color-text-secondary);
         line-height: 1.5;
         margin: 0;
     }
@@ -79,7 +83,7 @@
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: #334155;
+        color: var(--color-text-primary);
         display: block;
         margin-bottom: 0.45rem;
     }
@@ -93,7 +97,7 @@
     .input-icon-left {
         position: absolute;
         left: 14px;
-        color: #94a3b8;
+        color: var(--color-text-muted);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -103,20 +107,23 @@
     .auth-input {
         width: 100%;
         padding: 12px 14px 12px 42px;
-        background: #f8fafc;
-        border: 1px solid #cbd5e1;
+        background-color: var(--color-surface-recessed);
+        background-image: var(--gradient-surface-recessed-3d);
+        border: 1px solid var(--color-border);
         border-radius: 12px;
+        box-shadow: var(--shadow-3d-inset);
         font-size: 0.92rem;
-        color: #0f172a;
+        color: var(--color-text-primary);
         outline: none;
         transition: all 0.15s ease;
         box-sizing: border-box;
     }
 
     .auth-input:focus {
-        background: #ffffff;
-        border-color: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+        background-color: var(--color-background-secondary);
+        background-image: none;
+        border-color: var(--color-border-focus);
+        box-shadow: var(--shadow-focus);
     }
 
     .input-toggle-btn {
@@ -125,7 +132,7 @@
         background: transparent;
         border: none;
         padding: 4px;
-        color: #64748b;
+        color: var(--color-text-secondary);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -134,7 +141,7 @@
     }
 
     .input-toggle-btn:hover {
-        color: #0f172a;
+        color: var(--color-text-primary);
     }
 
     .btn-submit-reset {
@@ -145,28 +152,31 @@
         gap: 8px;
         padding: 13px 20px;
         font-size: 0.95rem;
-        font-weight: 700;
-        color: #ffffff;
-        background: linear-gradient(135deg, #059669 0%, #047857 100%);
-        border: none;
+        font-weight: 800;
+        color: var(--color-accent-text);
+        background-color: var(--color-accent);
+        background-image: var(--gradient-accent-3d);
+        border: 1px solid var(--color-accent);
         border-radius: 12px;
         cursor: pointer;
-        box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28);
+        box-shadow: var(--shadow-btn-primary);
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
         transition: all 0.15s ease;
     }
 
     .btn-submit-reset:hover {
-        background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+        background-color: var(--color-accent-hover);
+        background-image: var(--gradient-accent-hover-3d);
         transform: translateY(-1px);
-        box-shadow: 0 6px 18px rgba(5, 150, 105, 0.35);
+        box-shadow: var(--shadow-btn-primary-hover);
     }
 
     .alert-danger {
         padding: 0.85rem 1rem;
         border-radius: 12px;
-        background-color: #fee2e2;
-        border: 1px solid #fecaca;
-        color: #b91c1c;
+        background-color: var(--color-error-bg);
+        border: 1px solid var(--color-error-border);
+        color: var(--color-error-text);
         font-size: 0.84rem;
         margin-bottom: 1.35rem;
         display: flex;

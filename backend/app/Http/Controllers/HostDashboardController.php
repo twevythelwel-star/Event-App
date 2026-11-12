@@ -153,6 +153,77 @@ class HostDashboardController extends Controller
         // Money per currency from the integer *_minor columns; currencies are never added together.
         $financials = \App\Services\Pricing\RevenueSummary::byCurrency($orders, $cashRecords);
 
+        // Event performance & ticket sales chart data (strictly from real orders and order items)
+        $allOrderIds = $orders->pluck('id')->all();
+        $allOrderItems = $allOrderIds !== []
+            ? \App\Models\OrderItem::whereIn('order_id', $allOrderIds)->get()->groupBy('order_id')
+            : collect();
+
+        $eventPerformance = [];
+        $ticketSalesByTier = [];
+        $totalTicketsSold = 0;
+
+        foreach ($events as $ev) {
+            $evOrders = $orders->where('event_id', $ev->id);
+            $evSettledOrders = $evOrders->whereIn('status', ['paid', 'partially_refunded']);
+            $evTicketsSold = 0;
+            $evFoodPortions = 0;
+
+            foreach ($evSettledOrders as $sOrder) {
+                foreach (($allOrderItems->get($sOrder->id) ?? []) as $line) {
+                    if ($line->ticket_tier_id !== null || $line->category === 'Tickets') {
+                        $evTicketsSold += (int) $line->quantity;
+                        $tierKey = $ev->id . '|' . ($line->ticket_tier_id ?: $line->name);
+                        $ticketSalesByTier[$tierKey] ??= [
+                            'event_title' => $ev->title,
+                            'tier_name' => $line->name,
+                            'sold' => 0,
+                        ];
+                        $ticketSalesByTier[$tierKey]['sold'] += (int) $line->quantity;
+                    } elseif ($line->line_type !== \App\Models\OrderItem::PACKAGE) {
+                        $evFoodPortions += (int) $line->quantity;
+                    }
+                }
+            }
+
+            $totalTicketsSold += $evTicketsSold;
+            $evCurrency = $ev->currency ?: 'USD';
+            $evConfirmedMinor = (int) $evSettledOrders->where('currency', $evCurrency)->sum('total_minor')
+                + (int) $evOrders->where('currency', $evCurrency)->where('status', 'partially_paid')->sum('amount_paid_minor');
+
+            $eventPerformance[$ev->id] = [
+                'orders_count' => $evOrders->count(),
+                'paid_orders_count' => $evSettledOrders->count(),
+                'tickets_sold' => $evTicketsSold,
+                'food_portions' => $evFoodPortions,
+                'confirmed_revenue_formatted' => \App\Support\Money::formatMinor($evConfirmedMinor, $evCurrency),
+            ];
+        }
+
+        // Order analytics: status breakdown & payment method distribution
+        $totalOrdersCount = max(1, $orders->count());
+        $orderStatusBreakdown = [
+            ['label' => 'Verified / Paid', 'count' => $orders->whereIn('status', ['paid', 'partially_refunded'])->count(), 'tone' => 'emerald'],
+            ['label' => 'Awaiting verification', 'count' => $orders->whereIn('status', ['payment_submitted', 'under_verification'])->count(), 'tone' => 'amber'],
+            ['label' => 'Pending payment / Partial', 'count' => $orders->whereIn('status', ['pending', 'awaiting_payment', 'partially_paid'])->count(), 'tone' => 'sky'],
+            ['label' => 'Refunded / Cancelled / Rejected', 'count' => $orders->whereIn('status', ['refunded', 'cancelled', 'rejected', 'expired'])->count(), 'tone' => 'neutral'],
+        ];
+        foreach ($orderStatusBreakdown as &$sRow) {
+            $sRow['percent'] = $orders->isEmpty() ? 0 : (int) round(($sRow['count'] / $totalOrdersCount) * 100);
+        }
+        unset($sRow);
+
+        $paymentMethodBreakdown = $orders
+            ->groupBy(fn ($o) => (string) ($o->method ?: 'other'))
+            ->map(fn ($group, $method) => [
+                'method' => $method,
+                'label' => \App\Support\PaymentStatusPresenter::methodLabel($method),
+                'count' => $group->count(),
+                'percent' => (int) round(($group->count() / $totalOrdersCount) * 100),
+            ])
+            ->values()
+            ->all();
+
         // USD financial metrics for U.S. operations
         $usd = $orders->where('currency', 'USD');
         $usdPaid = $paidOrders->where('currency', 'USD');
@@ -266,6 +337,11 @@ class HostDashboardController extends Controller
             'cancellation_requests' => CancellationRequest::with(['order.event'])->whereIn('order_id', $orders->pluck('id'))
                 ->whereIn('status', ['pending', 'approved', 'partially_refunded'])->latest('requested_at')->limit(100)->get(),
             'workers' => $workers,
+            'total_tickets_sold' => $totalTicketsSold,
+            'event_performance' => $eventPerformance,
+            'ticket_sales_by_tier' => array_values($ticketSalesByTier),
+            'order_status_breakdown' => $orderStatusBreakdown,
+            'payment_method_breakdown' => $paymentMethodBreakdown,
         ];
 
         // Compliance and verification summary for the host's own account (the full page is host.compliance).

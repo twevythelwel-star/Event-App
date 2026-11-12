@@ -16,19 +16,56 @@
 @endpush
 
 @section('content')
-<div class="eb-stack" style="gap: var(--layout-section-gap);">
+<div class="eb-dashboard-shell eb-stack" style="gap: var(--layout-section-gap);">
     <x-page-header
         title="Host dashboard"
         badge="Event host"
         description="Your events, orders waiting on you, food to prepare and the staff working your events.">
         <x-slot:actions>
-            <x-button variant="primary" icon="plus" :href="route('events.create')">Create event</x-button>
+            <div class="eb-cluster" style="gap: var(--space-2); flex-wrap: wrap;">
+                <x-button variant="secondary" size="sm" icon="payment" href="#review">Payments to review ({{ $pending_verification_count ?? 0 }})</x-button>
+                <x-button variant="secondary" size="sm" icon="utensils" href="#forecast">Food forecast</x-button>
+                <x-button variant="secondary" size="sm" icon="staff" href="#workers">Staff</x-button>
+                <x-button variant="primary" icon="plus" :href="route('events.create')">Create event</x-button>
+            </div>
         </x-slot:actions>
     </x-page-header>
 
+    {{-- Unified Quick-Jump Section Pill Navigation --}}
+    <nav class="eb-dashboard-nav-pills" aria-label="Host dashboard sections">
+        <a href="#events" class="eb-dashboard-nav-pill">
+            <x-icon name="events" size="sm" />
+            <span>Event Performance &amp; Management</span>
+            <span class="eb-dashboard-nav-pill-count">{{ $total_events ?? 0 }}</span>
+        </a>
+        <a href="#analytics" class="eb-dashboard-nav-pill">
+            <x-icon name="reports" size="sm" />
+            <span>Ticket Sales Charts &amp; Order Analytics</span>
+        </a>
+        <a href="#finances" class="eb-dashboard-nav-pill">
+            <x-icon name="payment" size="sm" />
+            <span>Revenue Summaries</span>
+        </a>
+        <a href="#review" class="eb-dashboard-nav-pill">
+            <x-icon name="check" size="sm" />
+            <span>Payments to Review</span>
+            <span class="eb-dashboard-nav-pill-count">{{ $pending_verification_count ?? 0 }}</span>
+        </a>
+        <a href="#forecast" class="eb-dashboard-nav-pill">
+            <x-icon name="utensils" size="sm" />
+            <span>Food Fulfillment</span>
+            <span class="eb-dashboard-nav-pill-count">{{ $prep_with_buffer ?? 0 }}</span>
+        </a>
+        <a href="#workers" class="eb-dashboard-nav-pill">
+            <x-icon name="staff" size="sm" />
+            <span>Staff</span>
+            <span class="eb-dashboard-nav-pill-count">{{ $active_workers_count ?? 0 }}</span>
+        </a>
+    </nav>
+
     <section class="eb-grid-4" aria-label="Summary">
         <x-metric-card label="Events" :value="$total_events ?? 0" note="All your events, any status" href="#events" />
-        <x-metric-card label="Orders" :value="$total_orders ?? 0" :note="($paid_orders_count ?? 0) . ' paid'" href="#orders" />
+        <x-metric-card label="Orders" :value="$total_orders ?? 0" :note="($paid_orders_count ?? 0) . ' paid · ' . ($total_tickets_sold ?? 0) . ' tickets sold'" href="#orders" />
         <x-metric-card label="Payments to review" :value="$pending_verification_count ?? 0" note="Transfers and confirmations waiting on you" href="#review" />
         <x-metric-card label="Food portions to prepare" :value="$prep_with_buffer ?? 0" :note="'Paid portions not yet handed over, plus ' . ($buffer_percent ?? 10) . '% buffer'" href="#forecast" />
     </section>
@@ -77,17 +114,26 @@
         </section>
     @endif
 
-    {{-- Events --}}
+    {{-- Event Performance & Management --}}
     <section id="events" class="eb-stack">
         <div class="eb-section-header">
             <div>
-                <h2 class="eb-text-section-title" style="margin: 0;">Your events</h2>
-                <p class="eb-text-supporting" style="margin: 0;">Edit details, tickets and menus, manage staff, or open the on-site terminal.</p>
+                <h2 class="eb-text-section-title" style="margin: 0;">Your events &amp; performance</h2>
+                <p class="eb-text-supporting" style="margin: 0;">Track ticket sales, food portions, and confirmed revenue per event, or edit details, menus, and staff.</p>
             </div>
         </div>
-        <x-data-table caption="Your events" :columns="['Event', 'Where', 'When', 'Status', 'Ordering', ['label' => 'Actions', 'numeric' => true]]"
+        <x-data-table caption="Your events" :columns="['Event', 'Where & When', 'Status', 'Ordering', ['label' => 'Performance', 'numeric' => true], ['label' => 'Actions', 'numeric' => true]]"
                       :empty="collect($events ?? [])->isEmpty()" empty-title="No events yet" empty-text="Create your first event to start selling tickets and taking food orders.">
             @foreach($events ?? [] as $event)
+                @php
+                    $perf = $event_performance[$event->id] ?? [
+                        'orders_count' => 0,
+                        'paid_orders_count' => 0,
+                        'tickets_sold' => 0,
+                        'food_portions' => 0,
+                        'confirmed_revenue_formatted' => \App\Support\Money::formatMinor(0, $event->currency ?: 'USD'),
+                    ];
+                @endphp
                 <tr>
                     <td>
                         <div class="eb-cluster" style="flex-wrap: nowrap;">
@@ -96,20 +142,23 @@
                                     <x-responsive-image :image="$event->coverImage()" alt="" sizes="44px" style="width: 100%; height: 100%;" />
                                 @endif
                             </div>
-                            <a href="{{ route('events.show', $event->id) }}" style="font-weight: 600; color: var(--color-text-primary);">{{ $event->title }}</a>
+                            <div>
+                                <a href="{{ route('events.show', $event->id) }}" style="font-weight: 700; color: var(--color-text-primary);">{{ $event->title }}</a>
+                                @if($event->category)<div class="eb-help-text">{{ $event->category }}</div>@endif
+                            </div>
                         </div>
                     </td>
                     <td>
                         <div>{{ $event->venue_name ?: 'Venue to be announced' }}</div>
-                        <div class="eb-help-text">{{ \App\Support\EventListing::location($event) }}</div>
-                    </td>
-                    <td>
-                        <div>{{ $event->date_str ?: 'Date to be announced' }}</div>
-                        <div class="eb-help-text">{{ $event->time_str }}</div>
+                        <div class="eb-help-text">{{ $event->date_str ?: 'Date TBA' }}{{ $event->time_str ? ' · ' . $event->time_str : '' }}</div>
                     </td>
                     <td><x-status-indicator :status="$event->status ?? 'draft'" /></td>
                     <td>
                         <span class="eb-badge {{ $event->is_ordering_open ? 'eb-badge-success' : '' }}">{{ $event->is_ordering_open ? 'Open' : 'Closed' }}</span>
+                    </td>
+                    <td class="eb-table-num">
+                        <div class="eb-text-price" style="font-size: 0.92rem;">{{ $perf['confirmed_revenue_formatted'] }}</div>
+                        <div class="eb-help-text">{{ $perf['tickets_sold'] }} tickets · {{ $perf['food_portions'] }} meals · {{ $perf['orders_count'] }} orders</div>
                     </td>
                     <td class="eb-table-num" style="white-space: nowrap;">
                         <x-button variant="secondary" size="sm" :href="route('events.edit', $event->id)">Edit</x-button>
@@ -120,6 +169,76 @@
             @endforeach
         </x-data-table>
     </section>
+
+    {{-- Ticket Sales Charts & Order Analytics --}}
+    <div id="analytics" class="eb-grid-2">
+        <section class="eb-panel card" style="margin: 0;" aria-labelledby="ticket-sales-chart-heading">
+            <div class="eb-card-header card-header">
+                <div>
+                    <h2 id="ticket-sales-chart-heading" class="eb-card-title card-title">Ticket sales chart</h2>
+                    <p class="eb-card-subtitle card-subtitle">Settled ticket volume by tier across your active events.</p>
+                </div>
+                <span class="eb-badge eb-badge-success">{{ $total_tickets_sold ?? 0 }} Sold</span>
+            </div>
+
+            @php
+                $tierRows = collect($ticket_sales_by_tier ?? []);
+                $maxTierSold = max(1, (int) $tierRows->max('sold'));
+            @endphp
+            @if($tierRows->isEmpty())
+                <x-empty-state icon="tickets" title="No paid ticket sales yet" description="Ticket sales bars appear here as soon as orders are verified." />
+            @else
+                <div class="eb-chart-stack">
+                    @foreach($tierRows as $tRow)
+                        @php $barPct = (int) round(($tRow['sold'] / $maxTierSold) * 100); @endphp
+                        <div class="eb-chart-row">
+                            <div class="eb-chart-row-head">
+                                <span class="eb-chart-row-title">{{ $tRow['tier_name'] }} <span class="eb-help-text">· {{ $tRow['event_title'] }}</span></span>
+                                <span class="eb-chart-row-meta">{{ $tRow['sold'] }} sold</span>
+                            </div>
+                            <div class="eb-progress-track">
+                                <div class="eb-progress-fill" style="width: {{ max(6, $barPct) }}%;"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+
+        <section class="eb-panel card" style="margin: 0;" aria-labelledby="order-analytics-heading">
+            <div class="eb-card-header card-header">
+                <div>
+                    <h2 id="order-analytics-heading" class="eb-card-title card-title">Order analytics</h2>
+                    <p class="eb-card-subtitle card-subtitle">Order settlement funnel and payment method distribution across {{ $total_orders ?? 0 }} orders.</p>
+                </div>
+            </div>
+
+            <div class="eb-chart-stack">
+                @foreach(($order_status_breakdown ?? []) as $sRow)
+                    <div class="eb-chart-row">
+                        <div class="eb-chart-row-head">
+                            <span class="eb-chart-row-title">{{ $sRow['label'] }}</span>
+                            <span class="eb-chart-row-meta">{{ $sRow['count'] }} ({{ $sRow['percent'] }}%)</span>
+                        </div>
+                        <div class="eb-progress-track">
+                            <div class="eb-progress-fill {{ $sRow['tone'] === 'emerald' ? 'eb-progress-fill--emerald' : ($sRow['tone'] === 'amber' ? 'eb-progress-fill--amber' : 'eb-progress-fill--sky') }}" style="width: {{ $sRow['percent'] }}%;"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+
+            @if(!empty($payment_method_breakdown))
+                <div style="margin-top: 1rem;">
+                    <span class="eb-text-label" style="display: block; margin-bottom: 0.45rem;">By payment method</span>
+                    <div class="eb-cluster" style="gap: 0.45rem;">
+                        @foreach($payment_method_breakdown as $pmRow)
+                            <span class="eb-badge eb-badge-neutral">{{ $pmRow['label'] }}: {{ $pmRow['count'] }} ({{ $pmRow['percent'] }}%)</span>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+        </section>
+    </div>
 
     {{-- Payments waiting for a decision --}}
     <section id="review" class="eb-stack">
@@ -266,11 +385,17 @@
                         <thead><tr><th scope="col">Item</th><th scope="col" class="eb-table-num">Sold</th><th scope="col" class="eb-table-num">Handed over</th><th scope="col" class="eb-table-num">Prepare</th></tr></thead>
                         <tbody>
                             @foreach($prep_items as $row)
+                                @php
+                                    $prepFulfilledPct = ($row['sold'] ?? 0) > 0 ? (int) round(($row['collected'] / $row['sold']) * 100) : 0;
+                                @endphp
                                 <tr>
-                                    <td><div>{{ $row['item'] }}</div><div class="eb-help-text">{{ $row['event'] }}</div></td>
+                                    <td>
+                                        <div style="font-weight: 700;">{{ $row['item'] }}</div>
+                                        <div class="eb-help-text">{{ $row['event'] }} · {{ $prepFulfilledPct }}% handed over</div>
+                                    </td>
                                     <td class="eb-table-num">{{ $row['sold'] }}</td>
                                     <td class="eb-table-num">{{ $row['collected'] }}</td>
-                                    <td class="eb-table-num" style="font-weight: 700;">{{ $row['prep_target'] }}</td>
+                                    <td class="eb-table-num" style="font-weight: 700; color: var(--color-accent);">{{ $row['prep_target'] }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

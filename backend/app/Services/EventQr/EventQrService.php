@@ -79,6 +79,30 @@ class EventQrService
         return rtrim((string) config('app.url'), '/') . '/e/' . $qr->public_code;
     }
 
+    /**
+     * Detect whether a scanned payload is a Public Promotional Event QR URL or public_code.
+     * Public Event QR codes are strictly for event discovery and must NEVER admit anyone at a gate.
+     */
+    public static function isPromotionalEventQrPayload(string $payload): bool
+    {
+        $clean = trim($payload);
+        if ($clean === '' || str_starts_with($clean, 'tok_')) {
+            return false;
+        }
+
+        // Match /e/{10-char-code} or /events/{slug-or-id} URLs
+        if (preg_match('~(?:^|https?://[^/\s]+)(?:/e/[A-Za-z0-9]{10}|/events/[A-Za-z0-9_-]+)(?:[/?#]|$)~i', $clean)) {
+            return true;
+        }
+
+        // Match raw 10-character promotional public_code if registered in event_qr_codes
+        if (preg_match('/^[A-Za-z0-9]{10}$/', $clean)) {
+            return EventQrCode::where('public_code', strtoupper($clean))->exists();
+        }
+
+        return false;
+    }
+
     public function svg(EventQrCode $qr): string
     {
         if ($qr->asset_path && Storage::disk(self::disk())->exists($qr->asset_path)) {

@@ -92,3 +92,26 @@ They are kept because older records and the React client may still reference the
 ## 7. Files present but not part of the Blade library
 
 The React client's `public/images/` (repository root) holds `cuisine_*.jpg`, `dish_jm_*.jpg` and `event_*.jpg` files whose source and licence are not recorded. They are not in the catalogue, so the Blade application never shows them, even where seed data points at them.
+
+## 8. Coverage and asset gaps (11 November 2026)
+
+The runtime library currently contains **10 bundled food sample photographs** listed above, **4 bundled event photographs** that the Blade app deliberately does not use, plus original SVG artwork (not photography). There are no approved rows in the photo-library assets checked into this repository; that library is populated by administrators at runtime and cannot be counted from code alone.
+
+No bundled images currently cover African, Latin American, Asian, American, Mediterranean, plant-based or dessert dishes. There are no bundled dish-by-dish images for the rest of those cuisines, no bundled vendor setups, named venues, host portraits, family/community portraits or past-event memories. Event flyers, gallery photos, menu photos, performer portraits and partner logos must come from the event's host. When an approved category photo exists at runtime, it may illustrate the explicitly selected event subject and is labelled; it does not claim to depict that event.
+
+Source and licence provenance for the 10 bundled JPG food samples is not recorded in the manifest today. They are labelled illustrative and subject-matched, but should not be described as licensed until their rights are documented. The separate React client's 13 JPGs have unknown provenance and are excluded from the Blade catalogue.
+
+## 9. Updated application placement
+
+| Surface | Photography/artwork used | Accuracy rule |
+|---|---|---|
+| Home and discovery | Host flyer, approved photo of host-selected event kind, generated event artwork, or original SVG category art | Flyer first; category photo is labelled illustrative; never infer from title |
+| Search results, recommendations, similar events | That event's own flyer, approved category photo, or its generated artwork | No unrelated event photo |
+| Event details and gallery | Host gallery, flyer, host-uploaded performer portraits, accurate dish photos | Samples appear only on menu items whose configured match list includes the dish |
+| Food ordering and menu | Host's item photo, matching bundled sample, or a labelled no-photo tile | A sample is labelled illustrative; other dishes do not borrow it |
+| Host image management | Flyer previews, gallery manager, menu photo fields, schedule performer photos | Uploads remain event scoped |
+| Attendee dashboard and tickets | Event cover plus the first host gallery image when one exists | The keepsake is explicitly captioned as from that event |
+| Vendor and host profiles | Host/vendor data and uploads where a profile image exists | No bundled substitute photos are provided |
+| Locations | Event's own location text; no bundled venue photography | No image implies a named location or partnership |
+
+The four bundled `island_*.jpg` images are intentionally unavailable as actual event covers. Their source/licence provenance should be confirmed before any future use as category imagery.

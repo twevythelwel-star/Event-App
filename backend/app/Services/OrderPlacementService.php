@@ -262,7 +262,7 @@ class OrderPlacementService
                     // Independent of the order number, so knowing one does not give away the other
                     $ticketCode = 'SFF-' . self::randomTicketSuffix();
                 } while (Order::withoutGlobalScopes()->where('order_number', $orderNumber)->orWhere('ticket_code', $ticketCode)->exists());
-                $secureToken = 'tok_' . Str::random(32);
+                $secureToken = Order::generateSecureTicketToken();
 
                 $order = Order::create([
                     'organizer_id' => $event->organizer_id,
@@ -661,10 +661,10 @@ class OrderPlacementService
     {
         $cleanId = trim($identifier);
 
-        // Path A: Authenticated by Cryptographic Secure Token
+        // Path A: Authenticated by Cryptographic Secure Token (verified via SHA-256 hash)
         if (str_starts_with($cleanId, 'tok_')) {
-            $order = Order::where('secure_ticket_token', $cleanId)->with('items')->first();
-            if ($order) {
+            $order = Order::whereTicketToken($cleanId)->with('items')->first();
+            if ($order && !$order->isTicketRevoked()) {
                 if ($requestingUser !== null && !$this->isUserAuthorizedForOrder($order, $requestingUser)) {
                     return [
                         'success' => false,
@@ -698,8 +698,11 @@ class OrderPlacementService
         if ($phoneOrToken) {
             $cleanInputPhone = preg_replace('/\D/', '', $phoneOrToken);
             $cleanOrderPhone = preg_replace('/\D/', '', (string) $order->customer_phone);
+            $tokenMatches = $order->secure_ticket_token_hash
+                ? hash_equals((string) $order->secure_ticket_token_hash, Order::hashTicketToken($phoneOrToken))
+                : $order->secure_ticket_token === $phoneOrToken;
 
-            if (str_contains($cleanOrderPhone, $cleanInputPhone) || $order->secure_ticket_token === $phoneOrToken) {
+            if (($cleanInputPhone !== '' && str_contains($cleanOrderPhone, $cleanInputPhone)) || $tokenMatches) {
                 return ['success' => true, 'order' => $order];
             }
         }

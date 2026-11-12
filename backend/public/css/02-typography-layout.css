@@ -24,6 +24,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background-color: var(--color-background);
+  background-image: var(--gradient-canvas-ambient);
+  background-attachment: fixed;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
   font-size: var(--text-body-size);
