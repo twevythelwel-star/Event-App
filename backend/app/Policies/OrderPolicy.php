@@ -69,7 +69,10 @@ class OrderPolicy
      */
     public function recordCashPayment(User $user, Order $order, ?EventWorkerAssignment $assignment = null): bool
     {
-        if ($assignment && $assignment->isCurrentlyActive()) {
+        if ($this->runsOrdersEvent($user, $order)) {
+            return true;
+        }
+        if ($assignment && $assignment->exists && $assignment->isCurrentlyActive()) {
             return $assignment->canPerform('record_cash_received') && $assignment->event_id === $order->event_id;
         }
 
@@ -81,16 +84,25 @@ class OrderPolicy
      */
     public function verifyPayment(User $user, Order $order, ?EventWorkerAssignment $assignment = null): bool
     {
-        if ($assignment && $assignment->isCurrentlyActive()) {
+        if ($this->runsOrdersEvent($user, $order)) {
+            return true;
+        }
+        if ($assignment && $assignment->exists && $assignment->isCurrentlyActive()) {
             return $assignment->canPerform('verify_payments') && $assignment->event_id === $order->event_id;
         }
 
-        // Event hosts can verify payments for their events
-        if ($user->hasRole(\App\Enums\AccountType::EVENT_HOST)) {
-            return $order->event->organizer_id === $user->organizer_id;
-        }
-
         return false;
+    }
+
+    /**
+     * Whether the user runs the order's event: a system administrator, or a manager of the event's organizer
+     * (EventWorkerService::actsWithoutAssignment). They act on the event's money without a staff assignment.
+     */
+    private function runsOrdersEvent(User $user, Order $order): bool
+    {
+        $event = \App\Models\Event::withoutGlobalScopes()->find($order->event_id);
+
+        return $event !== null && \App\Services\EventWorkerService::actsWithoutAssignment($user, $event);
     }
 
     /**

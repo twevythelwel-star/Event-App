@@ -55,6 +55,7 @@ return new class extends Migration
         if (Schema::hasTable('orders') && Schema::hasColumn('orders', 'user_id')) {
             Schema::table('orders', function (Blueprint $table) {
                 $table->dropForeign(['user_id']);
+                $table->dropIndex(['user_id']); // SQLite cannot drop an indexed column
                 $table->dropColumn('user_id');
             });
         }

@@ -5,6 +5,9 @@
 
 @php
     $eventTitles = collect($events ?? [])->pluck('title', 'id');
+    // Times are shown in each event's own timezone, labelled (as on the customer's ticket), not the server's UTC.
+    $eventZones = collect($events ?? [])->mapWithKeys(fn ($e) => [$e->id => $e->timezone ?: 'America/New_York']);
+    $atEvent = fn ($time, ?string $eventId) => $time ? $time->copy()->setTimezone($eventZones[$eventId] ?? 'America/New_York')->format('M j, g:i A T') : '';
     $money = fn ($order) => \App\Support\Money::ofMinor((int) $order->total_minor, $order->currency ?: 'USD')->display();
 @endphp
 
@@ -216,7 +219,7 @@
                     <td>{{ ucwords(str_replace('_', ' ', (string) $order->method)) }}</td>
                     <td class="eb-table-num">{{ $money($order) }}</td>
                     <td><x-status-indicator :status="$order->status" /></td>
-                    <td class="eb-help-text">{{ optional($order->created_at)->format('M j, g:i A') }}</td>
+                    <td class="eb-help-text">{{ $atEvent($order->created_at, $order->event_id) }}</td>
                 </tr>
             @endforeach
         </x-data-table>

@@ -107,9 +107,11 @@ class USComplianceAndPrivacyService
             'jurisdiction' => 'US_CCPA_CPRA',
         ];
 
-        // Store in user metadata/account settings
-        $user->account_status_notes = ($user->account_status_notes ? $user->account_status_notes . ' | ' : '') .
-            "CCPA: DoNotSell=" . ($doNotSellOrShare ? '1' : '0');
+        // Kept with the user's other communication and privacy choices (users.marketing_preferences, JSON), with the
+        // time and jurisdiction it was recorded under.
+        $stored = (array) ($user->marketing_preferences ?? []);
+        $stored['privacy'] = $prefs;
+        $user->marketing_preferences = $stored;
         $user->save();
 
         return [

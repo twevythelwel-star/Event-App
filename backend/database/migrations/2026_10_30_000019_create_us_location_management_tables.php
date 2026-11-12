@@ -53,6 +53,9 @@ return new class extends Migration
         Schema::table('events', function (Blueprint $table) {
             $table->dropForeign(['target_market_id']);
             $table->dropForeign(['state_code']);
+            $table->dropIndex(['city']); // SQLite cannot drop an indexed column
+            $table->dropIndex(['state_code']);
+            $table->dropIndex(['zip_code']);
             $table->dropColumn([
                 'street_address', 'venue_building_name', 'city', 'state_code',
                 'target_market_id', 'zip_code', 'country_code', 'latitude', 'longitude',

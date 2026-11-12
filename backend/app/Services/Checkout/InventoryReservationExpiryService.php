@@ -21,6 +21,8 @@ final class InventoryReservationExpiryService
         $ids = Order::withoutGlobalScopes()->whereNull('deleted_at')
             ->whereIn('status', ['awaiting_payment', 'payment_submitted', 'under_verification', 'pending_verification', 'rejected'])
             ->whereNull('inventory_released_at')->whereNotNull('reservation_expires_at')
+            // Cash-at-pickup orders are held for the event (older ones may still carry a timer).
+            ->where(fn ($q) => $q->whereNull('authorized_unpaid')->orWhere('authorized_unpaid', false))
             ->where('reservation_expires_at', '<=', now())->orderBy('reservation_expires_at')
             ->limit(max(1, min(1000, $batchSize)))->pluck('id');
 

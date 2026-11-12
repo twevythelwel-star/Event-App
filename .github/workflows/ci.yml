@@ -42,9 +42,6 @@ jobs:
       # Feature tests run against in-memory SQLite (see phpunit.xml)
       - run: php artisan test
 
-      - name: Legacy standalone service checks
-        run: php tests/run_backend_tests.php
-
       - name: PHP syntax lint
         run: php tests/lint_all.php
 

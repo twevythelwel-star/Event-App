@@ -1,814 +1,218 @@
 <?php
 
-declare(strict_types=1);
-
-/**
- * EventBite - Backend Tenancy & Policies Test Suite
- * Validates TenantRole enum logic, TenantContext scoping, Cross-Tenant authorization rules,
- * four enterprise account types, dual-acting user role switching, and specialized event-worker roles.
- */
-
-// Lightweight stubs for Illuminate components when running standalone PHP unit tests
-namespace Illuminate\Database\Eloquent\Relations {
-    if (!class_exists(Relation::class)) {
-        abstract class Relation {}
-        class BelongsTo extends Relation {}
-        class HasMany extends Relation {}
-        class HasOne extends Relation {}
-        class BelongsToMany extends Relation {}
-    }
-}
-
-namespace Illuminate\Database\Eloquent {
-    if (!class_exists(Model::class)) {
-        class ModelQueryBuilder {
-            private string $modelClass;
-            private array $conditions = [];
-            private ?int $limit = null;
-
-            public function __construct(string $modelClass, mixed $col = null, mixed $op = null, mixed $val = null) {
-                $this->modelClass = $modelClass;
-                if ($col !== null) {
-                    $this->where($col, $op, $val);
-                }
-            }
-            public function where(mixed $col, mixed $op = null, mixed $val = null): self {
-                if (is_callable($col)) {
-                    $sub = new self($this->modelClass);
-                    $col($sub);
-                    $this->conditions[] = ['sub', 'and', $sub];
-                    return $this;
-                }
-                if ($val === null) {
-                    $val = $op;
-                    $op = '=';
-                }
-                $this->conditions[] = ['simple', 'and', $col, $op, $val];
-                return $this;
-            }
-            public function orWhere(mixed $col, mixed $op = null, mixed $val = null): self {
-                if (is_callable($col)) {
-                    $sub = new self($this->modelClass);
-                    $col($sub);
-                    $this->conditions[] = ['sub', 'or', $sub];
-                    return $this;
-                }
-                if ($val === null) {
-                    $val = $op;
-                    $op = '=';
-                }
-                $this->conditions[] = ['simple', 'or', $col, $op, $val];
-                return $this;
-            }
-            public function whereIn(string $col, array $values): self {
-                $this->conditions[] = ['simple', 'and', $col, 'in', $values];
-                return $this;
-            }
-            public function orWhereNull(string $col): self {
-                $this->conditions[] = ['simple', 'or', $col, '=', null];
-                return $this;
-            }
-            public function whereNull(string $col): self {
-                $this->conditions[] = ['simple', 'and', $col, '=', null];
-                return $this;
-            }
-            public function orderByDesc(string $col): self {
-                return $this;
-            }
-            public function latest(): self {
-                return $this;
-            }
-            public function with(mixed $relations): self {
-                return $this;
-            }
-            public function lockForUpdate(): self {
-                return $this;
-            }
-            public function withoutGlobalScopes(): self {
-                return $this;
-            }
-            public function take(int $limit): self {
-                $this->limit = $limit;
-                return $this;
-            }
-            public function limit(int $limit): self {
-                $this->limit = $limit;
-                return $this;
-            }
-            public function exists(): bool {
-                return $this->first() !== null;
-            }
-            public function count(): int {
-                return count($this->get()->toArray());
-            }
-            public function sum(string|callable|null $callback = null): float|int {
-                return $this->get()->sum($callback);
-            }
-            public function first(): ?Model {
-                $items = $this->get()->toArray();
-                return $items[0] ?? null;
-            }
-            public function matchesRecord(Model $record): bool {
-                if (empty($this->conditions)) {
-                    return true;
-                }
-                $result = true;
-                $isFirst = true;
-                foreach ($this->conditions as $cond) {
-                    $type = $cond[0];
-                    $bool = $cond[1];
-                    $condMatch = true;
-
-                    if ($type === 'sub') {
-                        $condMatch = $cond[2]->matchesRecord($record);
-                    } elseif ($type === 'simple') {
-                        $col = $cond[2];
-                        $op = $cond[3];
-                        $val = $cond[4];
-                        $actual = $record->$col;
-                        if ($actual instanceof \BackedEnum) {
-                            $actual = $actual->value;
-                        }
-                        if ($val instanceof \BackedEnum) {
-                            $val = $val->value;
-                        }
-                        if ($op === '=') {
-                            $condMatch = ($actual === $val);
-                        } elseif ($op === 'in') {
-                            $condMatch = in_array($actual, (array)$val, true);
-                        }
-                    }
-                    if ($isFirst) {
-                        $result = $condMatch;
-                        $isFirst = false;
-                    } elseif ($bool === 'and') {
-                        $result = $result && $condMatch;
-                    } elseif ($bool === 'or') {
-                        $result = $result || $condMatch;
-                    }
-                }
-                return $result;
-            }
-            public function get(): object {
-                $records = Model::$inMemoryRecords[$this->modelClass] ?? [];
-                $matches = [];
-                foreach ($records as $record) {
-                    if ($this->matchesRecord($record)) {
-                        $matches[] = $record;
-                    }
-                }
-                if ($this->limit !== null) {
-                    $matches = array_slice($matches, 0, $this->limit);
-                }
-                return new class($matches) implements \Countable, \IteratorAggregate {
-                    public function __construct(private array $items) {}
-                    public function count(): int { return count($this->items); }
-                    public function toArray(): array { return $this->items; }
-                    public function getIterator(): \Traversable { return new \ArrayIterator($this->items); }
-                    public function each(callable $c): void { foreach ($this->items as $i) $c($i); }
-                    public function first(): mixed { return $this->items[0] ?? null; }
-                    public function map(callable $c): self { return new self(array_map($c, $this->items)); }
-                    public function take(int $limit): self { return new self(array_slice($this->items, 0, $limit)); }
-                    public function where(string $key, mixed $operator = null, mixed $value = null): self {
-                        if (func_num_args() === 2) {
-                            $value = $operator;
-                            $operator = '=';
-                        }
-                        $filtered = array_filter($this->items, function($item) use ($key, $operator, $value) {
-                            $actual = is_object($item) ? ($item->$key ?? null) : ($item[$key] ?? null);
-                            if ($operator === '=') {
-                                return $actual == $value;
-                            } elseif ($operator === '===') {
-                                return $actual === $value;
-                            } elseif ($operator === '!=') {
-                                return $actual != $value;
-                            }
-                            return $actual == $value;
-                        });
-                        return new self(array_values($filtered));
-                    }
-                    public function whereIn(string $key, array $values): self {
-                        $filtered = array_filter($this->items, function($item) use ($key, $values) {
-                            $actual = is_object($item) ? ($item->$key ?? null) : ($item[$key] ?? null);
-                            return in_array($actual, $values);
-                        });
-                        return new self(array_values($filtered));
-                    }
-                    public function sum(string|callable|null $callback = null): float|int {
-                        $total = 0;
-                        foreach ($this->items as $item) {
-                            if (is_callable($callback)) {
-                                $val = $callback($item);
-                            } elseif (is_string($callback)) {
-                                $val = is_object($item) ? ($item->$callback ?? 0) : ($item[$callback] ?? 0);
-                            } else {
-                                $val = $item;
-                            }
-                            $total += is_numeric($val) ? $val : 0;
-                        }
-                        return $total;
-                    }
-                };
-            }
-            public function pluck(string $column): object {
-                $records = Model::$inMemoryRecords[$this->modelClass] ?? [];
-                $res = [];
-                foreach ($records as $r) {
-                    if (isset($r->$column)) $res[] = $r->$column;
-                }
-                return new class($res) {
-                    public function __construct(private array $items) {}
-                    public function toArray(): array { return $this->items; }
-                };
-            }
-        }
-
-        abstract class Model {
-            public array $attributes = [];
-            public static array $inMemoryRecords = [];
-
-            public function __construct(array $attributes = []) {
-                $this->attributes = $attributes;
-            }
-            public function __get(string $key) {
-                $getter = 'get' . str_replace('_', '', ucwords($key, '_')) . 'Attribute';
-                if (method_exists($this, $getter)) {
-                    return $this->$getter($this->attributes[$key] ?? null);
-                }
-                if (array_key_exists($key, $this->attributes)) {
-                    return $this->attributes[$key];
-                }
-                if (method_exists($this, $key)) {
-                    $rel = $this->$key();
-                    if ($rel instanceof \Illuminate\Database\Eloquent\Relations\BelongsTo) {
-                        return $rel->first();
-                    }
-                }
-                return null;
-            }
-            public function __set(string $key, mixed $value): void {
-                $setter = 'set' . str_replace('_', '', ucwords($key, '_')) . 'Attribute';
-                if (method_exists($this, $setter)) {
-                    $this->$setter($value);
-                    return;
-                }
-                $this->attributes[$key] = $value;
-            }
-            public function __isset(string $key): bool {
-                return isset($this->attributes[$key]) || method_exists($this, $key);
-            }
-            public function decrement(string $column, int $amount = 1): bool {
-                $this->attributes[$column] = ($this->attributes[$column] ?? 0) - $amount;
-                return $this->save();
-            }
-            public function increment(string $column, int $amount = 1): bool {
-                $this->attributes[$column] = ($this->attributes[$column] ?? 0) + $amount;
-                return $this->save();
-            }
-            public function fresh(array $with = []): static {
-                if (isset($this->attributes['id']) && isset(self::$inMemoryRecords[static::class][$this->attributes['id']])) {
-                    return self::$inMemoryRecords[static::class][$this->attributes['id']];
-                }
-                return $this;
-            }
-            public function save(): bool {
-                if (!isset($this->attributes['id'])) {
-                    $this->attributes['id'] = count(self::$inMemoryRecords[static::class] ?? []) + 1;
-                }
-                self::$inMemoryRecords[static::class][$this->attributes['id']] = $this;
-                return true;
-            }
-            public static function create(array $attributes): static {
-                $instance = new static($attributes);
-                $instance->save();
-                return $instance;
-            }
-            public static function updateOrCreate(array $attributes, array $values): static {
-                $existing = static::where(function() {})->first(); // fallback
-                return static::create(array_merge($attributes, $values));
-            }
-            public static function find(mixed $id): ?static {
-                return self::$inMemoryRecords[static::class][$id] ?? null;
-            }
-            public static function findOrFail(mixed $id): static {
-                $record = static::find($id);
-                if (!$record) {
-                    throw new \Exception("Model " . static::class . " not found with ID {$id}");
-                }
-                return $record;
-            }
-            public static function with(mixed $relations): ModelQueryBuilder {
-                return new ModelQueryBuilder(static::class);
-            }
-            public static function latest(): ModelQueryBuilder {
-                return new ModelQueryBuilder(static::class);
-            }
-            public static function where(mixed $column = null, mixed $operator = null, mixed $value = null): ModelQueryBuilder {
-                return new ModelQueryBuilder(static::class, $column, $operator, $value);
-            }
-            public static function query(): ModelQueryBuilder {
-                return new ModelQueryBuilder(static::class);
-            }
-            public static function whereIn(string $column, array $values): ModelQueryBuilder {
-                return (new ModelQueryBuilder(static::class))->whereIn($column, $values);
-            }
-            public static function __callStatic(string $method, array $args) {
-                return (new ModelQueryBuilder(static::class))->$method(...$args);
-            }
-            public function relationLoaded(string $relation): bool { return false; }
-            public function hasMany(string $related, string $foreignKey = '', string $localKey = ''): \Illuminate\Database\Eloquent\Relations\HasMany {
-                $parent = $this;
-                return new class($related, $parent) extends \Illuminate\Database\Eloquent\Relations\HasMany {
-                    private string $related;
-                    private \Illuminate\Database\Eloquent\Model $parent;
-                    private array $conditions = [];
-
-                    public function __construct(string $related, \Illuminate\Database\Eloquent\Model $parent) {
-                        $this->related = $related;
-                        $this->parent = $parent;
-                    }
-                    public function where(mixed $col, mixed $op = null, mixed $val = null): self {
-                        if ($val === null) {
-                            $val = $op;
-                            $op = '=';
-                        }
-                        $this->conditions[] = [$col, $op, $val];
-                        return $this;
-                    }
-                    public function exists(): bool {
-                        $records = \Illuminate\Database\Eloquent\Model::$inMemoryRecords[$this->related] ?? [];
-                        foreach ($records as $r) {
-                            if (($r->user_id ?? null) == ($this->parent->id ?? null)) {
-                                $matches = true;
-                                foreach ($this->conditions as [$col, $op, $val]) {
-                                    if ($r->$col !== $val) {
-                                        $matches = false;
-                                        break;
-                                    }
-                                }
-                                if ($matches) return true;
-                            }
-                        }
-                        return false;
-                    }
-                    public function pluck(string $col): object {
-                        $records = \Illuminate\Database\Eloquent\Model::$inMemoryRecords[$this->related] ?? [];
-                        $res = [];
-                        foreach ($records as $r) {
-                            if (($r->user_id ?? null) == ($this->parent->id ?? null)) {
-                                if (isset($r->$col)) $res[] = $r->$col;
-                            }
-                        }
-                        return new class($res) {
-                            public function __construct(private array $items) {}
-                            public function toArray(): array { return $this->items; }
-                        };
-                    }
-                };
-            }
-            public function hasOne(string $related, string $foreignKey = '', string $localKey = ''): \Illuminate\Database\Eloquent\Relations\HasOne {
-                return new class extends \Illuminate\Database\Eloquent\Relations\HasOne {
-                    public function where(mixed ...$args): self { return $this; }
-                    public function first(): ?\Illuminate\Database\Eloquent\Model { return null; }
-                };
-            }
-            public function belongsTo(string $related, string $foreignKey = ''): \Illuminate\Database\Eloquent\Relations\BelongsTo {
-                $parent = $this;
-                return new class($related, $parent, $foreignKey) extends \Illuminate\Database\Eloquent\Relations\BelongsTo {
-                    public function __construct(private string $related, private \Illuminate\Database\Eloquent\Model $parent, private string $fk) {}
-                    public function where(mixed ...$args): self { return $this; }
-                    public function first(): ?\Illuminate\Database\Eloquent\Model {
-                        $fkName = $this->fk;
-                        if (empty($fkName)) {
-                            $parts = explode('\\', $this->related);
-                            $fkName = strtolower(end($parts)) . '_id';
-                        }
-                        $targetId = $this->parent->$fkName;
-                        if (!$targetId) return null;
-                        return \Illuminate\Database\Eloquent\Model::$inMemoryRecords[$this->related][$targetId] ?? null;
-                    }
-                };
-            }
-            public function belongsToMany(string $related, string $table = ''): \Illuminate\Database\Eloquent\Relations\BelongsToMany {
-                return new class extends \Illuminate\Database\Eloquent\Relations\BelongsToMany {
-                    public function where(mixed ...$args): self { return $this; }
-                    public function first(): ?\Illuminate\Database\Eloquent\Model { return null; }
-                };
-            }
-        }
-    }
-    if (!trait_exists(SoftDeletes::class)) {
-        trait SoftDeletes {}
-    }
-}
-
-namespace Illuminate\Database\Eloquent\Concerns {
-    if (!trait_exists(HasUuids::class)) {
-        trait HasUuids {}
-    }
-}
-
-namespace Illuminate\Database\Eloquent\Factories {
-    if (!trait_exists(HasFactory::class)) {
-        trait HasFactory {}
-    }
-}
-
-namespace Illuminate\Notifications {
-    if (!trait_exists(Notifiable::class)) {
-        trait Notifiable {}
-    }
-}
-
-namespace Illuminate\Foundation\Auth {
-    if (!class_exists(User::class)) {
-        class User extends \Illuminate\Database\Eloquent\Model {}
-    }
-}
-
-namespace Illuminate\Support {
-    if (!class_exists(Str::class)) {
-        class Str {
-            public static function uuid(): string {
-                return sprintf(
-                    '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-                    mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff),
-                    mt_rand(0, 0x0fff) | 0x4000, mt_rand(0, 0x3fff) | 0x8000,
-                    mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
-                );
-            }
-            public static function random(int $length = 16): string {
-                return substr(bin2hex(random_bytes((int) ceil($length / 2) + 1)), 0, $length);
-            }
-            public static function upper(string $value): string {
-                return strtoupper($value);
-            }
-            public static function slug(string $title, string $separator = '-'): string {
-                $raw = preg_replace('~[^\pL\d]+~u', $separator, $title);
-                return strtolower(trim($raw, $separator));
-            }
-            public static function lower(string $value): string {
-                return strtolower($value);
-            }
-            public static function contains(string $haystack, string|iterable $needles): bool {
-                foreach ((array) $needles as $needle) {
-                    if ($needle !== '' && str_contains($haystack, $needle)) return true;
-                }
-                return false;
-            }
-            public static function startsWith(string $haystack, string|iterable $needles): bool {
-                foreach ((array) $needles as $needle) {
-                    if ((string) $needle !== '' && str_starts_with($haystack, $needle)) return true;
-                }
-                return false;
-            }
-            public static function endsWith(string $haystack, string|iterable $needles): bool {
-                foreach ((array) $needles as $needle) {
-                    if ((string) $needle !== '' && str_ends_with($haystack, $needle)) return true;
-                }
-                return false;
-            }
-        }
-    }
-}
-
-namespace Illuminate\Http {
-    if (!class_exists(Request::class)) {
-        class Request {
-            public array $attributes = [];
-            public ?\App\Models\User $user = null;
-            public function __construct(array $attributes = [], ?\App\Models\User $user = null) {
-                $this->attributes = $attributes;
-                $this->user = $user;
-            }
-            public function user(): ?\App\Models\User {
-                return $this->user;
-            }
-            public function setUser(\App\Models\User $u): self {
-                $this->user = $u;
-                return $this;
-            }
-            public function wantsJson(): bool {
-                return true;
-            }
-            public function input(string $key, mixed $default = null): mixed {
-                return $this->attributes[$key] ?? $default;
-            }
-            public function all(): array {
-                return $this->attributes;
-            }
-            public function has(string $key): bool {
-                return array_key_exists($key, $this->attributes);
-            }
-        }
-    }
-
-    if (!class_exists(JsonResponse::class)) {
-        class JsonResponse {
-            public mixed $original;
-            public int $status;
-            public function __construct(mixed $data = [], int $status = 200) {
-                $this->original = $data;
-                $this->status = $status;
-            }
-        }
-    }
-}
-
-namespace Illuminate\View {
-    if (!class_exists(View::class)) {
-        class View {
-            public string $view;
-            public array $data;
-            public function __construct(string $view = '', array $data = []) {
-                $this->view = $view;
-                $this->data = $data;
-            }
-        }
-    }
-}
-
-namespace Illuminate\Support\Facades {
-    if (!class_exists(DB::class)) {
-        class DB {
-            public static array $tables = [];
-
-            public static function transaction(callable $callback) {
-                return $callback();
-            }
-            public static function table(string $tableName) {
-                return new class($tableName) {
-                    private string $tableName;
-                    private array $wheres = [];
-
-                    public function __construct(string $tableName) {
-                        $this->tableName = $tableName;
-                    }
-
-                    public function updateOrInsert(array $attributes, array $values): bool {
-                        $records = DB::$tables[$this->tableName] ?? [];
-                        $foundIdx = null;
-                        foreach ($records as $idx => $rec) {
-                            $match = true;
-                            foreach ($attributes as $k => $v) {
-                                if (($rec[$k] ?? null) !== $v) {
-                                    $match = false;
-                                    break;
-                                }
-                            }
-                            if ($match) {
-                                $foundIdx = $idx;
-                                break;
-                            }
-                        }
-                        $merged = array_merge($attributes, $values);
-                        if ($foundIdx !== null) {
-                            DB::$tables[$this->tableName][$foundIdx] = $merged;
-                        } else {
-                            DB::$tables[$this->tableName][] = $merged;
-                        }
-                        return true;
-                    }
-
-                    public function where(string $col, mixed $val): self {
-                        $this->wheres[$col] = $val;
-                        return $this;
-                    }
-
-                    public function first(): ?object {
-                        $records = DB::$tables[$this->tableName] ?? [];
-                        foreach ($records as $rec) {
-                            $match = true;
-                            foreach ($this->wheres as $k => $v) {
-                                if (($rec[$k] ?? null) !== $v) {
-                                    $match = false;
-                                    break;
-                                }
-                            }
-                            if ($match) {
-                                return (object) $rec;
-                            }
-                        }
-                        return null;
-                    }
-
-                    public function delete(): int {
-                        $records = DB::$tables[$this->tableName] ?? [];
-                        $newRecords = [];
-                        $deleted = 0;
-                        foreach ($records as $rec) {
-                            $match = true;
-                            foreach ($this->wheres as $k => $v) {
-                                if (($rec[$k] ?? null) !== $v) {
-                                    $match = false;
-                                    break;
-                                }
-                            }
-                            if ($match) {
-                                $deleted++;
-                            } else {
-                                $newRecords[] = $rec;
-                            }
-                        }
-                        DB::$tables[$this->tableName] = $newRecords;
-                        return $deleted;
-                    }
-                };
-            }
-        }
-    }
-}
-
-namespace {
-    if (!class_exists('CarbonStub')) {
-        class CarbonStub extends \DateTimeImmutable {
-            public function subHours(int $hours): self {
-                return $this->modify("-{$hours} hours");
-            }
-            public function addHours(int $hours): self {
-                return $this->modify("+{$hours} hours");
-            }
-            public function addDays(int $days): self {
-                return $this->modify("+{$days} days");
-            }
-            public function subDays(int $days): self {
-                return $this->modify("-{$days} days");
-            }
-            public function greaterThan(mixed $date): bool {
-                if (is_string($date)) $date = new \DateTimeImmutable($date);
-                return $this > $date;
-            }
-            public function lessThan(mixed $date): bool {
-                if (is_string($date)) $date = new \DateTimeImmutable($date);
-                return $this < $date;
-            }
-            public function toIso8601String(): string {
-                return $this->format(\DateTimeInterface::ATOM);
-            }
-        }
-    }
-    if (!function_exists('now')) {
-        function now(): CarbonStub {
-            return new CarbonStub();
-        }
-    }
-
-    if (!function_exists('config')) {
-        function config(string|array $key, mixed $default = null): mixed {
-            static $cfg = [
-                'events.require_login_for_browsing' => false,
-            ];
-            if (is_array($key)) {
-                foreach ($key as $k => $v) {
-                    $cfg[$k] = $v;
-                }
-                return true;
-            }
-            return $cfg[$key] ?? $default;
-        }
-    }
-
-    if (!function_exists('auth')) {
-        class TestAuthGuard {
-            public static ?\App\Models\User $currentUser = null;
-            public function user(): ?\App\Models\User { return self::$currentUser; }
-            public function id(): ?int { return self::$currentUser?->id; }
-            public function check(): bool { return self::$currentUser !== null; }
-            public function login(\App\Models\User $user): void { self::$currentUser = $user; }
-            public function logout(): void { self::$currentUser = null; }
-            public function guard(): self { return $this; }
-        }
-        function auth(): TestAuthGuard {
-            return new TestAuthGuard();
-        }
-    }
-
-    if (!function_exists('request')) {
-        class TestRequestHelper {
-            public function ip(): string { return '127.0.0.1'; }
-            public function userAgent(): string { return 'PHPUnit/EnterpriseRunner'; }
-        }
-        function request(): TestRequestHelper {
-            return new TestRequestHelper();
-        }
-    }
-
-    if (!function_exists('response')) {
-        class TestResponseHelper {
-            public mixed $content = null;
-            public int $status = 200;
-            public function json(mixed $data = [], int $status = 200): \Illuminate\Http\JsonResponse {
-                return new \Illuminate\Http\JsonResponse($data, $status);
-            }
-        }
-        function response(mixed $content = '', int $status = 200): TestResponseHelper {
-            return new TestResponseHelper();
-        }
-    }
-
-    if (!function_exists('redirect')) {
-        class TestRedirectHelper {
-            public string $url = '';
-            public function __construct(string $url = '') { $this->url = $url; }
-            public function route(string $name, array $parameters = []): self { return $this; }
-            public function with(string|array $key, mixed $value = null): self { return $this; }
-            public function intended(string $default = '/'): self { return $this; }
-            public function guest(string $url): self { return $this; }
-            public function to(string $url): self { return $this; }
-        }
-        function redirect(?string $to = null): TestRedirectHelper {
-            return new TestRedirectHelper($to ?? '');
-        }
-    }
-
-    if (!function_exists('view')) {
-        function view(?string $view = null, array $data = []): \Illuminate\View\View {
-            return new \Illuminate\View\View($view ?? '', $data);
-        }
-    }
-
-    // Simple autoloader for backend classes without requiring full composer dump-autoload
-    spl_autoload_register(function ($class) {
-        $prefix = 'App\\';
-        $baseDir = __DIR__ . '/../app/';
-
-        if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
-            return;
-        }
-
-        $relativeClass = substr($class, strlen($prefix));
-        $file = $baseDir . str_replace('\\', '/', $relativeClass) . '.php';
-
-        if (file_exists($file)) {
-            require_once $file;
-        }
-    });
-
-    require_once __DIR__ . '/../app/Exceptions/SecurityException.php';
-
+namespace Tests\Feature;
 
 use App\Enums\AccountType;
 use App\Enums\EventWorkerRole;
 use App\Enums\TenantRole;
 use App\Services\TenantContext;
+use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Tests\TestCase;
 
-class TestRunner
+/**
+ * The checks from the retired standalone runner (tests/run_backend_tests.php), run on the real framework. Each
+ * suite keeps its original code and messages; it used a hand-made fake of Laravel, which the app outgrew.
+ * Generated once from that runner; edit here from now on.
+ */
+class LegacyServiceChecksTest extends TestCase
 {
-    private int $passed = 0;
-    private int $failed = 0;
+    use DatabaseMigrations;
 
+    /**
+     * The old runner's fake database accepted any record: no required columns, no foreign keys, any attribute. The
+     * suites' fixtures were written for that, and none of their checks is about those constraints (the rest of the
+     * test suite enforces them). So here, on insert, required columns a fixture leaves out get neutral values,
+     * attributes that are not columns are dropped, and foreign keys are not enforced.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // A fresh database per test (DatabaseMigrations, no wrapping transaction), so SQLite can turn this off.
+        \Illuminate\Support\Facades\DB::statement('PRAGMA foreign_keys = OFF');
+
+        $str = fn () => strtolower(\Illuminate\Support\Str::random(10));
+        $defaults = [
+            \App\Models\User::class => fn ($m) => [
+                'name' => trim(($m->first_name ?? '') . ' ' . ($m->last_name ?? '')) ?: (string) ($m->email ?? 'Legacy user'),
+                'email' => $str() . '@legacy.test', 'password' => bcrypt('legacy-check-password'),
+            ],
+            \App\Models\Event::class => fn ($m) => [
+                'organizer_id' => 'org-legacy', 'slug' => (string) ($m->id ?? $str()), 'title' => 'Legacy check event',
+                'date_str' => 'Saturday, December 5, 2026', 'time_str' => '6:00 PM - 11:00 PM', 'venue_name' => 'Test venue',
+                'venue_address' => '1 Test Street', 'organizer_name' => 'Test organizer', 'organizer_phone' => '+1 305 555 0100',
+                'advance_order_deadline' => now()->addDays(10),
+            ],
+            \App\Models\Order::class => fn ($m) => [
+                'organizer_id' => 'org-legacy', 'ticket_code' => 'LEG-' . strtoupper($str()), 'order_number' => 'ORD-LEG-' . strtoupper($str()),
+                'customer_name' => 'Legacy customer', 'customer_phone' => '+1 305 555 0101', 'method' => 'cash',
+                'subtotal' => 0, 'total_amount' => 0, 'secure_ticket_token' => $str() . $str(),
+            ],
+            \App\Models\Organizer::class => fn ($m) => ['name' => 'Legacy organizer', 'slug' => (string) ($m->id ?? $str())],
+            \App\Models\MenuItem::class => fn ($m) => ['organizer_id' => 'org-legacy', 'name' => 'Legacy item'],
+            \App\Models\EventWorkerAssignment::class => fn ($m) => [
+                'organizer_id' => (string) (\App\Models\Event::withoutGlobalScopes()->whereKey($m->event_id)->value('organizer_id') ?? 'org-legacy'),
+                'worker_role' => 'ticket_checker',
+            ],
+            \App\Models\CashPayment::class => fn ($m) => [
+                'organizer_id' => 'org-legacy', 'receipt_number' => 'RCPT-LEG-' . strtoupper($str()), 'customer_name' => 'Legacy customer',
+                'customer_phone' => '+1 305 555 0102', 'amount' => 0, 'received_at' => now(), 'received_by' => 'legacy-check',
+            ],
+        ];
+        foreach ($defaults as $class => $fill) {
+            $class::creating(function ($model) use ($fill): void {
+                foreach ($fill($model) as $key => $value) {
+                    if (blank($model->getAttribute($key))) {
+                        $model->setAttribute($key, $value);
+                    }
+                }
+            });
+        }
+        // The fake kept a user's role on the user ('role' => 'event_host'); the app keeps roles in user_roles. A role
+        // given that way becomes an active role record once the user exists.
+        $pendingRoles = new \WeakMap();
+        \App\Models\User::creating(function ($user) use ($pendingRoles): void {
+            $role = $user->getAttributes()['role'] ?? null;
+            if (is_string($role) && $role !== '') {
+                $pendingRoles[$user] = $role;
+            }
+        });
+        \App\Models\User::created(function ($user) use ($pendingRoles): void {
+            if (isset($pendingRoles[$user]) && !\App\Models\UserRole::where('user_id', $user->id)->where('role', $pendingRoles[$user])->exists()) {
+                \App\Models\UserRole::forceCreate(['user_id' => $user->id, 'role' => $pendingRoles[$user], 'is_active' => true]);
+            }
+        });
+        // Attributes that are not columns of the table (e.g. users.role) are not written.
+        \Illuminate\Support\Facades\Event::listen('eloquent.creating: *', function (string $event, array $payload): void {
+            $model = $payload[0];
+            static $columns = [];
+            $table = $model->getTable();
+            $columns[$table] ??= array_flip(\Illuminate\Support\Facades\Schema::getColumnListing($table));
+            $model->setRawAttributes(array_intersect_key($model->getAttributes(), $columns[$table]));
+        });
+    }
+
+    /** The runner's assertion helper: one named check. */
     public function assert(bool $condition, string $testName): void
     {
-        if ($condition) {
-            $this->passed++;
-            echo "  ✓ {$testName}\n";
-        } else {
-            $this->failed++;
-            echo "  ✗ FAIL: {$testName}\n";
-        }
+        $this->assertTrue($condition, $testName);
     }
 
-    public function runAll(): void
+    public function test_legacy_tenant_role_enums(): void
     {
-        echo "========================================================\n";
-        echo " RUNNING BACKEND TENANCY & POLICY UNIT TESTS (PHP 8.4)  \n";
-        echo "========================================================\n\n";
-
         $this->testTenantRoleEnums();
-        $this->testTenantContextService();
-        $this->testCrossOrganizerAuthorizationLogic();
-        $this->testEventLifecycleAndFlyerScoping();
-        $this->suite5AdvanceFoodOrderingAndExactPricing();
-        $this->suite6AccountTypesResponsibilitiesAndCredentialProtection();
-        $this->suite7AccountSettingsHierarchyAndScopes();
-        $this->suite8SpecialAttentionSettingsAndInvariants();
-        $this->suite9FourAccountTypesAndAuthentication();
-        $this->suite10DualActingUserAndContextSwitching();
-        $this->suite11FourDistinctDashboardsAndAuthorizationBoundaries();
-        $this->suite12AccountSpecificSettingsStorageAndInvariants();
-        $this->suite13AuditLoggingAndHistory();
-        $this->suite14EventWorkerRolesAndOperationalBoundaries();
-        $this->suite15UserRegistrationAuthenticationAndPersistence();
-        $this->suite16PasswordResetAndEmailVerification();
-        $this->suite17EventScopedStaffInvitationsAndSeparationOfDuties();
-        $this->suite18SecureEventStaffAssignmentSystem();
-        $this->suite19MandatoryAuthenticationAndAccountAccess();
-        $this->suite20CompleteRoleBasedAccessControlAndNavigation();
-        $this->suite21UnitedStatesOnlyConfigurationAndPaymentIntegrity();
-        $this->suite22TicketRedemptionAndServerSideQrVerification();
-
-        echo "\n--------------------------------------------------------\n";
-        echo "SUMMARY: {$this->passed} Passed, {$this->failed} Failed\n";
-        echo "--------------------------------------------------------\n";
-
-        if ($this->failed > 0) {
-            exit(1);
-        }
     }
+
+    public function test_legacy_tenant_context_service(): void
+    {
+        $this->testTenantContextService();
+    }
+
+    public function test_legacy_cross_organizer_authorization_logic(): void
+    {
+        $this->testCrossOrganizerAuthorizationLogic();
+    }
+
+    public function test_legacy_event_lifecycle_and_flyer_scoping(): void
+    {
+        $this->testEventLifecycleAndFlyerScoping();
+    }
+
+    public function test_legacy_suite_5_advance_food_ordering_and_exact_pricing(): void
+    {
+        $this->suite5AdvanceFoodOrderingAndExactPricing();
+    }
+
+    public function test_legacy_suite_6_account_types_responsibilities_and_credential_protection(): void
+    {
+        $this->suite6AccountTypesResponsibilitiesAndCredentialProtection();
+    }
+
+    public function test_legacy_suite_7_account_settings_hierarchy_and_scopes(): void
+    {
+        $this->suite7AccountSettingsHierarchyAndScopes();
+    }
+
+    public function test_legacy_suite_8_special_attention_settings_and_invariants(): void
+    {
+        $this->suite8SpecialAttentionSettingsAndInvariants();
+    }
+
+    public function test_legacy_suite_9_four_account_types_and_authentication(): void
+    {
+        $this->suite9FourAccountTypesAndAuthentication();
+    }
+
+    public function test_legacy_suite_10_dual_acting_user_and_context_switching(): void
+    {
+        $this->suite10DualActingUserAndContextSwitching();
+    }
+
+    public function test_legacy_suite_11_four_distinct_dashboards_and_authorization_boundaries(): void
+    {
+        $this->suite11FourDistinctDashboardsAndAuthorizationBoundaries();
+    }
+
+    public function test_legacy_suite_12_account_specific_settings_storage_and_invariants(): void
+    {
+        $this->suite12AccountSpecificSettingsStorageAndInvariants();
+    }
+
+    public function test_legacy_suite_13_audit_logging_and_history(): void
+    {
+        $this->suite13AuditLoggingAndHistory();
+    }
+
+    public function test_legacy_suite_14_event_worker_roles_and_operational_boundaries(): void
+    {
+        $this->suite14EventWorkerRolesAndOperationalBoundaries();
+    }
+
+    public function test_legacy_suite_15_user_registration_authentication_and_persistence(): void
+    {
+        $this->suite15UserRegistrationAuthenticationAndPersistence();
+    }
+
+    public function test_legacy_suite_16_password_reset_and_email_verification(): void
+    {
+        $this->suite16PasswordResetAndEmailVerification();
+    }
+
+    public function test_legacy_suite_17_event_scoped_staff_invitations_and_separation_of_duties(): void
+    {
+        $this->suite17EventScopedStaffInvitationsAndSeparationOfDuties();
+    }
+
+    public function test_legacy_suite_18_secure_event_staff_assignment_system(): void
+    {
+        $this->suite18SecureEventStaffAssignmentSystem();
+    }
+
+    public function test_legacy_suite_19_mandatory_authentication_and_account_access(): void
+    {
+        $this->suite19MandatoryAuthenticationAndAccountAccess();
+    }
+
+    public function test_legacy_suite_20_complete_role_based_access_control_and_navigation(): void
+    {
+        $this->suite20CompleteRoleBasedAccessControlAndNavigation();
+    }
+
+    public function test_legacy_suite_21_united_states_only_configuration_and_payment_integrity(): void
+    {
+        $this->suite21UnitedStatesOnlyConfigurationAndPaymentIntegrity();
+    }
+
+    public function test_legacy_suite_22_ticket_redemption_and_server_side_qr_verification(): void
+    {
+        $this->suite22TicketRedemptionAndServerSideQrVerification();
+    }
+
+
+
+
 
     private function testTenantRoleEnums(): void
     {
-        echo "Suite 1: TenantRole Enums & Permissions\n";
 
         $this->assert(TenantRole::PLATFORM_ADMIN->value === 'platform_admin', "PLATFORM_ADMIN value is 'platform_admin'");
         $this->assert(TenantRole::EVENT_OWNER->value === 'event_owner', "EVENT_OWNER value is 'event_owner'");
@@ -836,7 +240,6 @@ class TestRunner
 
     private function testTenantContextService(): void
     {
-        echo "\nSuite 2: TenantContext Lifecycle & Scope Bypass\n";
 
         TenantContext::clear();
         $this->assert(TenantContext::get() === null, "Initial context is null");
@@ -856,7 +259,6 @@ class TestRunner
 
     private function testCrossOrganizerAuthorizationLogic(): void
     {
-        echo "\nSuite 3: Cross-Organizer Isolation & Policy Logic\n";
 
         $tenantA = 'org-uuid-kingston-youth';
         $tenantB = 'org-uuid-portmore-church';
@@ -916,7 +318,6 @@ class TestRunner
 
     private function testEventLifecycleAndFlyerScoping(): void
     {
-        echo "\nSuite 4: Event Lifecycle, Advance Cutoffs & Flyer Path Scoping\n";
 
         $tenantId = 'org-uuid-kingston-youth';
 
@@ -980,9 +381,8 @@ class TestRunner
         $this->assert(str_starts_with($socialMeta['og_image'], "https://islandevents.app/storage/tenants/"), "Social sharing metadata includes secure tenant storage URL");
     }
 
-    public function suite5AdvanceFoodOrderingAndExactPricing(): void
+    private function suite5AdvanceFoodOrderingAndExactPricing(): void
     {
-        echo "\nSuite 5: Advance Food-Ordering System & Exact Pricing (Minor Units)\n";
 
         // 1. Exact integer minor units conversion
         $minorUSD = \App\Services\PriceCalculationService::toMinorUnits(18.50, 'USD');
@@ -1070,9 +470,8 @@ class TestRunner
         $this->assert($transferInitial['status'] === 'payment_submitted' && $transferInitial['amount_paid'] === 0.00, "Transfer orders with ref initially created as payment_submitted with $0.00 verified paid");
     }
 
-    public function suite6AccountTypesResponsibilitiesAndCredentialProtection(): void
+    private function suite6AccountTypesResponsibilitiesAndCredentialProtection(): void
     {
-        echo "\nSuite 6: Enterprise Account Types, Responsibilities & Credential Masking\n";
 
         // 1. System Administrator
         $sysAdmin = \App\Enums\AccountType::SYSTEM_ADMIN;
@@ -1127,9 +526,8 @@ class TestRunner
         $this->assert(str_starts_with($auditEntry['id'], 'sec-'), "Audit entry has unique security record ID");
     }
 
-    public function suite7AccountSettingsHierarchyAndScopes(): void
+    private function suite7AccountSettingsHierarchyAndScopes(): void
     {
-        echo "\nSuite 7: Account Settings Hierarchy, Scopes & Exclusions\n";
 
         $sysAdmin = \App\Enums\AccountType::SYSTEM_ADMIN;
         $admin = \App\Enums\AccountType::ADMINISTRATOR;
@@ -1216,9 +614,8 @@ class TestRunner
         $this->assert(count($attendee->getAllowedSettings()) === 9, "Attendee has exactly 9 allowed settings (profile, auth, tickets, transactions, privacy)");
     }
 
-    public function suite8SpecialAttentionSettingsAndInvariants(): void
+    private function suite8SpecialAttentionSettingsAndInvariants(): void
     {
-        echo "\nSuite 8: Special Attention Settings & Invariant Enforcement\n";
 
         // 1. Host Event Defaults & Historical Order Immutability
         // Invariant: Changing event defaults must NEVER alter existing historical orders
@@ -1318,9 +715,8 @@ class TestRunner
         }
     }
 
-    public function suite9FourAccountTypesAndAuthentication(): void
+    private function suite9FourAccountTypesAndAuthentication(): void
     {
-        echo "\nSuite 9: Four Account Types, Authentication, Provisioning & Anti-Escalation\n";
 
         // 1. Account types enum verification
         $types = \App\Enums\AccountType::cases();
@@ -1408,9 +804,8 @@ class TestRunner
         $this->assert($isActive === false, "Suspended account fails isActive() check");
     }
 
-    public function suite10DualActingUserAndContextSwitching(): void
+    private function suite10DualActingUserAndContextSwitching(): void
     {
-        echo "\nSuite 10: Dual-Acting User Context Switching & Role Invariants\n";
 
         // 1. Dual-acting user model: Holds both Event Host and Attendee
         $dualUser = [
@@ -1504,9 +899,8 @@ class TestRunner
         );
     }
 
-    public function suite11FourDistinctDashboardsAndAuthorizationBoundaries(): void
+    private function suite11FourDistinctDashboardsAndAuthorizationBoundaries(): void
     {
-        echo "\nSuite 11: Four Distinct Dashboards & Authorization Boundaries\n";
 
         // 1. Dashboard access permissions
         $canAccessDashboard = function(AccountType $userRole, string $dashboard): bool {
@@ -1561,9 +955,8 @@ class TestRunner
         $this->assert($bobAccess['allowed'] === false && $bobAccess['status'] === 403, "Attendee Bob is strictly barred from inspecting Alice's order (HTTP 403 Forbidden)");
     }
 
-    public function suite12AccountSpecificSettingsStorageAndInvariants(): void
+    private function suite12AccountSpecificSettingsStorageAndInvariants(): void
     {
-        echo "\nSuite 12: Account-Specific Settings Storage, Invariants & Security\n";
 
         // 1. Structured models rather than unrestricted JSON blobs
         $settingEntities = [
@@ -1629,9 +1022,8 @@ class TestRunner
         }
     }
 
-    public function suite13AuditLoggingAndHistory(): void
+    private function suite13AuditLoggingAndHistory(): void
     {
-        echo "\nSuite 13: Audit Logging, PII Access Tracking & History\n";
 
         // 1. Audit Log Schema fields
         $sampleLog = [
@@ -1661,9 +1053,8 @@ class TestRunner
         $this->assert($routineLog['is_pii_access'] === false, "Routine operational scan is marked is_pii_access = false");
     }
 
-    public function suite14EventWorkerRolesAndOperationalBoundaries(): void
+    private function suite14EventWorkerRolesAndOperationalBoundaries(): void
     {
-        echo "\nSuite 14: Specialized Event-Worker Roles & Least-Privilege Boundaries\n";
 
         // 1. Role Enum verification
         $workerRoles = \App\Enums\EventWorkerRole::cases();
@@ -1800,14 +1191,10 @@ class TestRunner
         );
     }
 
-    public function suite15UserRegistrationAuthenticationAndPersistence(): void
+    private function suite15UserRegistrationAuthenticationAndPersistence(): void
     {
-        echo "\nSuite 15: User Registration, Authentication & Database Persistence\n";
 
         // Reset in-memory database records
-        \Illuminate\Database\Eloquent\Model::$inMemoryRecords = [];
-        \Illuminate\Support\Facades\DB::$tables = [];
-
         // 1. Transactional Registration with Attendee Default Role
         $regData = [
             'first_name' => 'Shanique',
@@ -1877,7 +1264,7 @@ class TestRunner
 
         $missingTermsFailed = false;
         try {
-            \App\Services\AuthenticationService::register(array_merge($regData, ['email' => 'noterms@mail.com', 'agree_terms' => false]));
+            \App\Services\AuthenticationService::register(array_merge($regData, ['email' => 'noterms@mail.com', 'agree_terms' => false, 'accept_platform_terms' => false]));
         } catch (\InvalidArgumentException $e) {
             $missingTermsFailed = true;
         }
@@ -1934,13 +1321,13 @@ class TestRunner
         $registeredUser->save();
 
         // 6. Role-Based Dashboard Redirection Routing
-        $hostUser = new \App\Models\User([
+        $hostUser = (new \App\Models\User)->forceFill([
             'id' => 20,
             'email' => 'host@islandevents.app',
             'current_context_role' => 'event_host',
             'status' => 'active',
         ]);
-        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\UserRole::class][] = new \App\Models\UserRole([
+        \App\Models\UserRole::forceCreate([
             'user_id' => 20,
             'role' => 'event_host',
             'is_active' => true,
@@ -1948,13 +1335,13 @@ class TestRunner
         $hostRoute = \App\Services\ContextSwitchingService::getDashboardRouteForRole($hostUser->getActiveRole());
         $this->assert($hostRoute === 'host.dashboard', "Event Host active role maps to host.dashboard");
 
-        $adminUser = new \App\Models\User([
+        $adminUser = (new \App\Models\User)->forceFill([
             'id' => 30,
             'email' => 'admin@islandevents.app',
             'current_context_role' => 'admin',
             'status' => 'active',
         ]);
-        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\UserRole::class][] = new \App\Models\UserRole([
+        \App\Models\UserRole::forceCreate([
             'user_id' => 30,
             'role' => 'admin',
             'is_active' => true,
@@ -1962,7 +1349,7 @@ class TestRunner
         $adminRoute = \App\Services\ContextSwitchingService::getDashboardRouteForRole($adminUser->getActiveRole());
         $this->assert($adminRoute === 'admin.dashboard', "Administrator active role maps to admin.dashboard");
 
-        $sysAdminUser = new \App\Models\User([
+        $sysAdminUser = (new \App\Models\User)->forceFill([
             'id' => 40,
             'email' => 'sysadmin@islandevents.app',
             'current_context_role' => 'system_admin',
@@ -1973,12 +1360,11 @@ class TestRunner
         $this->assert($sysAdminRoute === 'system-admin.dashboard', "System Admin active role maps to system-admin.dashboard");
     }
 
-    public function suite16PasswordResetAndEmailVerification(): void
+    private function suite16PasswordResetAndEmailVerification(): void
     {
-        echo "\nSuite 16: Password Reset & Email/Phone Verification\n";
 
         // Setup user for password reset
-        $user = new \App\Models\User([
+        $user = (new \App\Models\User)->forceFill([
             'id' => 50,
             'email' => 'reset.me@islandevents.app',
             'password' => password_hash('OldPassword2026!', PASSWORD_DEFAULT),
@@ -2040,7 +1426,7 @@ class TestRunner
         $expiredToken = \App\Services\AuthenticationService::createPasswordResetToken('reset.me@islandevents.app');
         // Manually adjust created_at to 65 minutes ago
         $expiredTime = (new \DateTime())->modify('-65 minutes')->format('Y-m-d H:i:s');
-        \Illuminate\Support\Facades\DB::$tables['password_reset_tokens'][0]['created_at'] = $expiredTime;
+        \Illuminate\Support\Facades\DB::table('password_reset_tokens')->where('email', 'reset.me@islandevents.app')->update(['created_at' => $expiredTime]);
 
         $expiredResult = \App\Services\AuthenticationService::resetPassword(
             'reset.me@islandevents.app',
@@ -2060,32 +1446,31 @@ class TestRunner
         $this->assert($user->hasVerifiedPhone() === true, "markPhoneAsVerified() updates phone_verified_at and returns true");
     }
 
-    public function suite17EventScopedStaffInvitationsAndSeparationOfDuties(): void
+    private function suite17EventScopedStaffInvitationsAndSeparationOfDuties(): void
     {
-        echo "\nSuite 17: Event-Scoped Staff Invitations, Real-Time Revocation & Separation of Duties\n";
 
         // Setup host user and event
-        $host = new \App\Models\User([
+        $host = (new \App\Models\User)->forceFill([
             'id' => 60,
             'email' => 'host.kareem@islandevents.app',
             'status' => 'active',
             'current_context_role' => 'event_host',
         ]);
         $host->save();
-        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\UserRole::class][] = new \App\Models\UserRole([
+        \App\Models\UserRole::forceCreate([
             'user_id' => 60,
             'role' => 'event_host',
             'is_active' => true,
         ]);
 
-        $event = new \App\Models\Event([
+        $event = (new \App\Models\Event)->forceFill([
             'id' => 'evt-uuid-kingston-carnival',
             'organizer_id' => 'org-uuid-island-vibes',
             'title' => 'Kingston Carnival 2026',
         ]);
         $event->save();
         // The host owns the event's organizer: holding the host role alone does not cover other organizers' events.
-        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\OrganizerUser::class][] = new \App\Models\OrganizerUser([
+        \App\Models\OrganizerUser::forceCreate([
             'organizer_id' => 'org-uuid-island-vibes',
             'user_id' => 60,
             'role' => 'event_owner',
@@ -2093,9 +1478,9 @@ class TestRunner
         ]);
 
         // 0. A host of a different organizer cannot invite staff to this event
-        $otherHost = new \App\Models\User(['id' => 61, 'email' => 'host.other@islandevents.app', 'status' => 'active', 'current_context_role' => 'event_host']);
+        $otherHost = (new \App\Models\User)->forceFill(['id' => 61, 'email' => 'host.other@islandevents.app', 'status' => 'active', 'current_context_role' => 'event_host']);
         $otherHost->save();
-        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\UserRole::class][] = new \App\Models\UserRole(['user_id' => 61, 'role' => 'event_host', 'is_active' => true]);
+        \App\Models\UserRole::forceCreate(['user_id' => 61, 'role' => 'event_host', 'is_active' => true]);
         $otherHostBlocked = false;
         try {
             \App\Services\EventWorkerService::createWorkerInvitation(host: $otherHost, event: $event, inviteEmail: 'x@mail.com', role: \App\Enums\EventWorkerRole::TICKET_CHECKER);
@@ -2121,7 +1506,7 @@ class TestRunner
         $this->assert($assignment->invitation_token_hash === hash('sha256', $inviteResult['plain_token']), "Database stores SHA-256 hash of invitation token");
 
         // 2. Privilege Escalation Prevention on Invitations
-        $unauthorizedCaller = new \App\Models\User([
+        $unauthorizedCaller = (new \App\Models\User)->forceFill([
             'id' => 70,
             'email' => 'attendee.stranger@gmail.com',
             'status' => 'active',
@@ -2143,7 +1528,7 @@ class TestRunner
         $this->assert($unauthInviteBlocked, "Attendee cannot invite event workers (SecurityException)");
 
         // 3. Worker Accepts Invitation
-        $workerUser = new \App\Models\User([
+        $workerUser = (new \App\Models\User)->forceFill([
             'id' => 80,
             'email' => 'mark.ticketchecker@gmail.com',
             'status' => 'active',
@@ -2187,7 +1572,7 @@ class TestRunner
         $this->assert($accepted->canPerform('scan_qr_tickets') === false, "Revoked worker is immediately blocked from canPerform actions without logout");
 
         // 5. Strict Separation of Duties
-        $order = new \App\Models\Order([
+        $order = (new \App\Models\Order)->forceFill([
             'id' => 'ord-uuid-101',
             'order_number' => 'ORD-101',
             'event_id' => 'evt-uuid-kingston-carnival',
@@ -2221,7 +1606,7 @@ class TestRunner
         $this->assert($eventOwnershipBlocked, "Worker attempting to alter event ownership is blocked by Separation of Duties");
 
         // Invariant: Worker who records a cash payment cannot be the sole unverified approver of that same payment
-        $clerkUser = new \App\Models\User([
+        $clerkUser = (new \App\Models\User)->forceFill([
             'id' => 90,
             'email' => 'clerk@islandevents.app',
             'status' => 'active',
@@ -2229,10 +1614,10 @@ class TestRunner
         ]);
         $clerkUser->save();
 
-        $cashPayment = new \App\Models\CashPayment([
+        $cashPayment = (new \App\Models\CashPayment)->forceFill([
             'id' => 1,
             'order_id' => 'ord-uuid-101',
-            'collected_by_user_id' => 90,
+            'received_by_user_id' => 90,
             'amount_cents' => 4500,
             'currency' => 'JMD',
         ]);
@@ -2256,12 +1641,11 @@ class TestRunner
         $this->assert($hostVerifyAllowed, "Event Host is authorized to verify/approve payments");
     }
 
-    public function suite18SecureEventStaffAssignmentSystem(): void
+    private function suite18SecureEventStaffAssignmentSystem(): void
     {
-        echo "\nSuite 18: Secure Event Staff Assignment, Claim Codes & Time-Bound Lifecycles\n";
 
         // 1. Setup Users and Event
-        $host = new \App\Models\User([
+        $host = (new \App\Models\User)->forceFill([
             'id' => 100,
             'name' => 'Usain St. Leo',
             'first_name' => 'Usain',
@@ -2274,7 +1658,7 @@ class TestRunner
         ]);
         $host->save();
 
-        $attendeeWorker = new \App\Models\User([
+        $attendeeWorker = (new \App\Models\User)->forceFill([
             'id' => 101,
             'name' => 'Marcus Garvey',
             'first_name' => 'Marcus',
@@ -2287,14 +1671,14 @@ class TestRunner
         ]);
         $attendeeWorker->save();
 
-        $event = new \App\Models\Event([
+        $event = (new \App\Models\Event)->forceFill([
             'id' => 'evt-uuid-sunsplash-2026',
             'organizer_id' => 'org-uuid-kingston-sunsplash',
             'title' => 'Kingston Sunsplash 2026',
             'timezone' => 'America/Jamaica',
         ]);
         $event->save();
-        \Illuminate\Database\Eloquent\Model::$inMemoryRecords[\App\Models\OrganizerUser::class][] = new \App\Models\OrganizerUser([
+        \App\Models\OrganizerUser::forceCreate([
             'organizer_id' => 'org-uuid-kingston-sunsplash',
             'user_id' => 100,
             'role' => 'event_owner',
@@ -2315,7 +1699,7 @@ class TestRunner
         $this->assert(strpos($plainCode, 'marcus') === false, "Claim code does not leak user email or name");
 
         // 3. Suspended account cannot generate claim codes
-        $suspendedUser = new \App\Models\User([
+        $suspendedUser = (new \App\Models\User)->forceFill([
             'id' => 102,
             'email' => 'suspended.user@islandevents.com',
             'status' => 'suspended',
@@ -2332,7 +1716,7 @@ class TestRunner
 
         // 4. Single-active-code invariant: Generating a second code automatically revokes previous code
         $codeResult2 = \App\Services\StaffClaimCodeService::generateCode($attendeeWorker, lifetimeMinutes: 10);
-        $this->assert($claimCode->status === 'revoked', "Generating new claim code automatically revokes prior unredeemed code");
+        $this->assert($claimCode->fresh()->status === 'revoked', "Generating new claim code automatically revokes prior unredeemed code");
         $newPlainCode = $codeResult2['plain_code'];
         $newClaimCode = $codeResult2['claim_code'];
 
@@ -2402,7 +1786,7 @@ class TestRunner
         $this->assert($assignment->status === 'pending_acceptance', "Newly created assignment status is 'pending_acceptance'");
         $this->assert($assignment->is_active === false, "Pending assignment is not active until recipient accepts");
         $this->assert($assignment->user_id === 101, "Assignment assigned to the claim code owner (user_id = 101)");
-        $this->assert($newClaimCode->status === 'redeemed', "Claim code atomically redeemed and consumed upon assignment creation");
+        $this->assert($newClaimCode->fresh()->status === 'redeemed', "Claim code atomically redeemed and consumed upon assignment creation");
 
         // 11. Re-using already-redeemed claim code is blocked
         $reusedBlocked = false;
@@ -2430,7 +1814,7 @@ class TestRunner
         $this->assert($pendingDenied, "Pending assignment cannot authorize operational terminal requests");
 
         // 13. Only the intended recipient can accept the assignment
-        $otherUser = new \App\Models\User([
+        $otherUser = (new \App\Models\User)->forceFill([
             'id' => 103,
             'email' => 'stranger@islandevents.com',
             'status' => 'active',
@@ -2471,7 +1855,7 @@ class TestRunner
         $this->assert($unauthorizedRoleActionBlocked, "Ticket Checker blocked from performing 'record_cash_received'");
 
         // 17. Cross-event containment: Worker on Event A cannot access Event B
-        $eventB = new \App\Models\Event([
+        $eventB = (new \App\Models\Event)->forceFill([
             'id' => 'evt-uuid-montego-bay-bash',
             'organizer_id' => 'org-uuid-kingston-sunsplash',
             'title' => 'Atlanta Reggae Night 2026',
@@ -2489,7 +1873,7 @@ class TestRunner
         // 18. Scheduled shift boundary enforcement (Start time in future)
         $futureStart = (new \DateTimeImmutable())->modify('+3 hours')->format('Y-m-d H:i:s');
         $futureExpire = (new \DateTimeImmutable())->modify('+10 hours')->format('Y-m-d H:i:s');
-        $scheduledAssignment = new \App\Models\EventWorkerAssignment([
+        $scheduledAssignment = (new \App\Models\EventWorkerAssignment)->forceFill([
             'id' => 991,
             'organizer_id' => $event->organizer_id,
             'event_id' => $event->id,
@@ -2537,22 +1921,22 @@ class TestRunner
         $this->assert($revokedActionBlocked, "Revoked worker immediately denied operational terminal access");
     }
 
-    public function suite19MandatoryAuthenticationAndAccountAccess(): void
+    private function suite19MandatoryAuthenticationAndAccountAccess(): void
     {
-        echo "\nSuite 19: Mandatory Authentication, Public vs Authenticated Access & Host Approval Workflow\n";
 
         // Setup test event & menu item
-        $event = new \App\Models\Event([
+        $event = (new \App\Models\Event)->forceFill([
             'id' => 'evt-uuid-port-antonio-fest',
             'organizer_id' => 'org-uuid-port-antonio',
             'title' => 'Port Antonio Jerk & Seafood Festival',
             'slug' => 'port-antonio-jerk-seafood-fest',
             'currency' => 'JMD',
+            'status' => 'published', // only a published event sells anything
             'is_ordering_open' => true,
         ]);
         $event->save();
 
-        $menuItem = new \App\Models\MenuItem([
+        $menuItem = (new \App\Models\MenuItem)->forceFill([
             'id' => 'item-jerk-pork',
             'organizer_id' => 'org-uuid-port-antonio',
             'event_id' => 'evt-uuid-port-antonio-fest',
@@ -2583,7 +1967,7 @@ class TestRunner
         $this->assert(str_contains($unauthOrderResult['error'], 'Authentication required'), "Error message explicitly states authentication required");
 
         // 2. Authenticated Attendee CAN place an order, and the order is linked to user_id
-        $attendeeAlice = new \App\Models\User([
+        $attendeeAlice = (new \App\Models\User)->forceFill([
             'id' => 201,
             'name' => 'Alice Walker',
             'first_name' => 'Alice',
@@ -2613,7 +1997,7 @@ class TestRunner
         $this->assert($aliceOrder->email === 'alice.walker@islandevents.app', "Order email matches attendee authenticated email");
 
         // 3. IDOR Prevention: Attendee Bob cannot view or retrieve Alice's order or ticket
-        $attendeeBob = new \App\Models\User([
+        $attendeeBob = (new \App\Models\User)->forceFill([
             'id' => 202,
             'name' => 'Bob Marley',
             'first_name' => 'Bob',
@@ -2682,17 +2066,10 @@ class TestRunner
         $this->assert($tamperedBlocked, "Registration strictly blocks privilege escalation payload injection");
 
         // 6. Host Access: Attendee cannot access Host dashboard or create events
-        $attendeeCannotCreateEvent = false;
-        try {
-            $eventCtrl = new \App\Http\Controllers\EventController();
-            $mockReq = new \Illuminate\Http\Request([], $registeredUser);
-            $res = $eventCtrl->create($mockReq);
-            if (isset($res->original['error']) && str_contains($res->original['error'], 'Forbidden')) {
-                $attendeeCannotCreateEvent = true;
-            }
-        } catch (\Exception $e) {
-            $attendeeCannotCreateEvent = true;
-        }
+        // Through the real route and its middleware (the runner called the controller and read fake responses).
+        $createRes = $this->actingAs($registeredUser)->get(route('events.create'));
+        $attendeeCannotCreateEvent = $createRes->status() === 403
+            || ($createRes->isRedirect() && !str_contains((string) $createRes->headers->get('Location'), '/events/create'));
         $this->assert($attendeeCannotCreateEvent, "Attendee cannot access event creation without approved Host privileges");
 
         // 7. Host Application Submission Workflow
@@ -2732,7 +2109,7 @@ class TestRunner
         $this->assert($unauthApproveBlocked, "Non-admin user cannot approve Host applications (SecurityException)");
 
         // 9. Administrator Approves Host Application
-        $adminUser = new \App\Models\User([
+        $adminUser = (new \App\Models\User)->forceFill([
             'id' => 300,
             'name' => 'Admin Officer',
             'email' => 'admin.officer@islandevents.app',
@@ -2771,7 +2148,7 @@ class TestRunner
         $this->assert($badSwitch['success'] === false, "Switching to unauthorized role (system_admin) is strictly forbidden");
 
         // 11. Rejection Workflow
-        $rejectedApplicant = new \App\Models\User([
+        $rejectedApplicant = (new \App\Models\User)->forceFill([
             'id' => 205,
             'name' => 'Ineligible Applicant',
             'email' => 'ineligible@islandevents.app',
@@ -2801,16 +2178,15 @@ class TestRunner
         $this->assert(auth()->check() === false, "auth()->logout() successfully terminates authenticated session");
     }
 
-    public function suite20CompleteRoleBasedAccessControlAndNavigation(): void
+    private function suite20CompleteRoleBasedAccessControlAndNavigation(): void
     {
-        echo "Suite 20: Complete Role-Based Access Control, Navigation Visibility & Strict Boundaries\n";
 
         // 1. Navigation Visibility: Signed-Out Guests have visible Login & Sign Up
         auth()->logout();
         $this->assert(auth()->check() === false, "User is confirmed signed out (Guest)");
 
         // 2. Role 4: Attendee Dashboard and Isolation
-        $attendeeUser = new \App\Models\User([
+        $attendeeUser = (new \App\Models\User)->forceFill([
             'id' => 801,
             'name' => 'Kareem Campbell',
             'email' => 'kareem@islandevents.app',
@@ -2818,50 +2194,44 @@ class TestRunner
             'role' => 'attendee',
         ]);
         $attendeeUser->save();
-        \App\Models\UserRole::create(['user_id' => 801, 'role' => \App\Enums\AccountType::ATTENDEE->value, 'is_active' => true]);
+        \App\Models\UserRole::firstOrCreate(['user_id' => 801, 'role' => \App\Enums\AccountType::ATTENDEE->value, 'is_active' => true]);
 
         auth()->login($attendeeUser);
         $this->assert(auth()->check() === true, "Attendee is signed in");
         $this->assert($attendeeUser->hasRole(\App\Enums\AccountType::ATTENDEE), "User holds Attendee role");
 
         // Attendee can access Attendee dashboard
-        $attendeeReq = new \Illuminate\Http\Request([], $attendeeUser);
+        $attendeeReq = tap(new \Illuminate\Http\Request(), fn ($r) => $r->setUserResolver(fn () => $attendeeUser));
         $attendeeCtrl = new \App\Http\Controllers\AttendeeDashboardController();
-        $attRes = $attendeeCtrl->index($attendeeReq);
-        $this->assert($attRes instanceof \Illuminate\View\View || is_object($attRes), "Attendee successfully accesses Attendee Dashboard");
+        $attRes = $this->actingAs($attendeeUser)->get(route('attendee.dashboard'));
+        $this->assert($attRes->status() === 200, "Attendee successfully accesses Attendee Dashboard");
 
         // Attendee directly requesting Host Dashboard is strictly blocked (HTTP 403 Forbidden / Redirected)
-        $hostCtrl = new \App\Http\Controllers\HostDashboardController();
-        $hostRes = $hostCtrl->index($attendeeReq);
+        // (through the real route and its middleware; the runner called the controller and read fake responses)
+        $hostRes = $this->actingAs($attendeeUser)->get(route('host.dashboard'));
         $this->assert(
-            (isset($hostRes->original['error']) && $hostRes->original['error'] === 'Forbidden') ||
-            (isset($hostRes->status) && $hostRes->status === 403) ||
-            ($hostRes instanceof \TestRedirectHelper),
+            $hostRes->status() === 403 || ($hostRes->isRedirect() && !str_contains((string) $hostRes->headers->get('Location'), '/host/dashboard')),
             "Attendee directly accessing Host Dashboard is strictly blocked (HTTP 403 / Redirected)"
         );
 
         // Attendee directly requesting Administrator Desk is strictly blocked (HTTP 403 Forbidden)
         $adminCtrl = new \App\Http\Controllers\AdminDashboardController();
-        $admRes = $adminCtrl->index($attendeeReq);
+        $admRes = $this->actingAs($attendeeUser)->get(route('admin.dashboard'));
         $this->assert(
-            (isset($admRes->original['error']) && $admRes->original['error'] === 'Forbidden') ||
-            (isset($admRes->status) && $admRes->status === 403) ||
-            ($admRes instanceof \TestRedirectHelper),
+            $admRes->status() === 403 || ($admRes->isRedirect() && !str_contains((string) $admRes->headers->get('Location'), parse_url(route('admin.dashboard'), PHP_URL_PATH))),
             "Attendee directly accessing Administrator Desk is strictly blocked (HTTP 403 Forbidden)"
         );
 
         // Attendee directly requesting System Administrator Console is strictly blocked (HTTP 403 Forbidden)
         $sysCtrl = new \App\Http\Controllers\SystemAdminDashboardController();
-        $sysRes = $sysCtrl->index($attendeeReq);
+        $sysRes = $this->actingAs($attendeeUser)->get(route('system-admin.dashboard'));
         $this->assert(
-            (isset($sysRes->original['error']) && $sysRes->original['error'] === 'Forbidden') ||
-            (isset($sysRes->status) && $sysRes->status === 403) ||
-            ($sysRes instanceof \TestRedirectHelper),
+            $sysRes->status() === 403 || ($sysRes->isRedirect() && !str_contains((string) $sysRes->headers->get('Location'), parse_url(route('system-admin.dashboard'), PHP_URL_PATH))),
             "Attendee directly accessing System Administrator Console is strictly blocked (HTTP 403 Forbidden)"
         );
 
         // 3. Role 3: Event Host Access & Boundaries
-        $hostUser = new \App\Models\User([
+        $hostUser = (new \App\Models\User)->forceFill([
             'id' => 802,
             'name' => 'Shelly-Ann Fraser',
             'email' => 'shelly@islandevents.app',
@@ -2870,35 +2240,28 @@ class TestRunner
             'organizer_id' => 10,
         ]);
         $hostUser->save();
-        \App\Models\UserRole::create(['user_id' => 802, 'role' => \App\Enums\AccountType::EVENT_HOST->value, 'is_active' => true]);
+        \App\Models\UserRole::firstOrCreate(['user_id' => 802, 'role' => \App\Enums\AccountType::EVENT_HOST->value, 'is_active' => true]);
 
-        $hostReq = new \Illuminate\Http\Request([], $hostUser);
-        $hostResApproved = $hostCtrl->index($hostReq);
-        $this->assert(
-            $hostResApproved instanceof \Illuminate\View\View || is_object($hostResApproved),
-            "Approved Event Host successfully accesses Host Command Center"
-        );
+        $hostReq = tap(new \Illuminate\Http\Request(), fn ($r) => $r->setUserResolver(fn () => $hostUser));
+        $hostResApproved = $this->actingAs($hostUser)->get(route('host.dashboard'));
+        $this->assert($hostResApproved->status() === 200, "Approved Event Host successfully accesses Host Command Center");
 
         // Event Host cannot access Administrator Desk
-        $hostAdmRes = $adminCtrl->index($hostReq);
+        $hostAdmRes = $this->actingAs($hostUser)->get(route('admin.dashboard'));
         $this->assert(
-            (isset($hostAdmRes->original['error']) && $hostAdmRes->original['error'] === 'Forbidden') ||
-            (isset($hostAdmRes->status) && $hostAdmRes->status === 403) ||
-            ($hostAdmRes instanceof \TestRedirectHelper),
+            $hostAdmRes->status() === 403 || ($hostAdmRes->isRedirect() && !str_contains((string) $hostAdmRes->headers->get('Location'), parse_url(route('admin.dashboard'), PHP_URL_PATH))),
             "Event Host without admin privileges is strictly blocked from Administrator Desk (HTTP 403)"
         );
 
         // Event Host cannot access System Administrator Console
-        $hostSysRes = $sysCtrl->index($hostReq);
+        $hostSysRes = $this->actingAs($hostUser)->get(route('system-admin.dashboard'));
         $this->assert(
-            (isset($hostSysRes->original['error']) && $hostSysRes->original['error'] === 'Forbidden') ||
-            (isset($hostSysRes->status) && $hostSysRes->status === 403) ||
-            ($hostSysRes instanceof \TestRedirectHelper),
+            $hostSysRes->status() === 403 || ($hostSysRes->isRedirect() && !str_contains((string) $hostSysRes->headers->get('Location'), parse_url(route('system-admin.dashboard'), PHP_URL_PATH))),
             "Event Host is strictly blocked from System Administrator Console (HTTP 403)"
         );
 
         // 4. Role 2: Delegated Administrator Access & Boundaries
-        $adminUser = new \App\Models\User([
+        $adminUser = (new \App\Models\User)->forceFill([
             'id' => 803,
             'name' => 'Devon Administrator',
             'email' => 'devon.admin@islandevents.app',
@@ -2906,26 +2269,22 @@ class TestRunner
             'role' => 'admin',
         ]);
         $adminUser->save();
-        \App\Models\UserRole::create(['user_id' => 803, 'role' => \App\Enums\AccountType::ADMINISTRATOR->value, 'is_active' => true]);
+        \App\Models\UserRole::firstOrCreate(['user_id' => 803, 'role' => \App\Enums\AccountType::ADMINISTRATOR->value, 'is_active' => true]);
 
-        $adminReq = new \Illuminate\Http\Request([], $adminUser);
-        $admResApproved = $adminCtrl->index($adminReq);
-        $this->assert(
-            $admResApproved instanceof \Illuminate\View\View || is_object($admResApproved),
-            "Delegated Administrator successfully accesses Administrator Operations Desk"
-        );
+        $adminReq = tap(new \Illuminate\Http\Request(), fn ($r) => $r->setUserResolver(fn () => $adminUser));
+        $admResApproved = $this->actingAs($adminUser)->get(route('admin.dashboard'));
+        // In a browser the desk now opens the administration console (the old page stays for API clients).
+        $this->assert($admResApproved->status() === 200 || ($admResApproved->isRedirect() && str_contains((string) $admResApproved->headers->get('Location'), parse_url(route('admin.console.overview'), PHP_URL_PATH))), "Delegated Administrator successfully accesses Administrator Operations Desk");
 
         // Administrator CANNOT access System Administrator Console (Strict Separation of Roles)
-        $admSysRes = $sysCtrl->index($adminReq);
+        $admSysRes = $this->actingAs($adminUser)->get(route('system-admin.dashboard'));
         $this->assert(
-            (isset($admSysRes->original['error']) && $admSysRes->original['error'] === 'Forbidden') ||
-            (isset($admSysRes->status) && $admSysRes->status === 403) ||
-            ($admSysRes instanceof \TestRedirectHelper),
+            $admSysRes->status() === 403 || ($admSysRes->isRedirect() && !str_contains((string) $admSysRes->headers->get('Location'), parse_url(route('system-admin.dashboard'), PHP_URL_PATH))),
             "Administrator without root role is strictly blocked from System Administrator Console (HTTP 403)"
         );
 
         // 5. Role 1: System Administrator Root Access
-        $rootUser = new \App\Models\User([
+        $rootUser = (new \App\Models\User)->forceFill([
             'id' => 804,
             'name' => 'Root System Admin',
             'email' => 'root@islandevents.app',
@@ -2934,17 +2293,15 @@ class TestRunner
             'is_system_admin' => true,
         ]);
         $rootUser->save();
-        \App\Models\UserRole::create(['user_id' => 804, 'role' => \App\Enums\AccountType::SYSTEM_ADMIN->value, 'is_active' => true]);
+        \App\Models\UserRole::firstOrCreate(['user_id' => 804, 'role' => \App\Enums\AccountType::SYSTEM_ADMIN->value, 'is_active' => true]);
 
-        $rootReq = new \Illuminate\Http\Request([], $rootUser);
-        $rootRes = $sysCtrl->index($rootReq);
-        $this->assert(
-            $rootRes instanceof \Illuminate\View\View || is_object($rootRes),
-            "System Administrator root user successfully accesses System Platform Governance Console"
-        );
+        $rootReq = tap(new \Illuminate\Http\Request(), fn ($r) => $r->setUserResolver(fn () => $rootUser));
+        $rootRes = $this->actingAs($rootUser)->get(route('system-admin.dashboard'));
+        // In a browser the governance console now opens the administration console (the old page stays for API clients).
+        $this->assert($rootRes->status() === 200 || ($rootRes->isRedirect() && str_contains((string) $rootRes->headers->get('Location'), parse_url(route('admin.console.overview'), PHP_URL_PATH))), "System Administrator root user successfully accesses System Platform Governance Console");
 
         // 6. Multi-Role Dual-Acting User Switching
-        $dualUser = new \App\Models\User([
+        $dualUser = (new \App\Models\User)->forceFill([
             'id' => 805,
             'name' => 'Marcus Dual-Role Host',
             'email' => 'marcus@islandevents.app',
@@ -2953,8 +2310,8 @@ class TestRunner
             'current_context_role' => 'attendee',
         ]);
         $dualUser->save();
-        \App\Models\UserRole::create(['user_id' => 805, 'role' => \App\Enums\AccountType::ATTENDEE->value, 'is_active' => true]);
-        \App\Models\UserRole::create(['user_id' => 805, 'role' => \App\Enums\AccountType::EVENT_HOST->value, 'is_active' => true]);
+        \App\Models\UserRole::firstOrCreate(['user_id' => 805, 'role' => \App\Enums\AccountType::ATTENDEE->value, 'is_active' => true]);
+        \App\Models\UserRole::firstOrCreate(['user_id' => 805, 'role' => \App\Enums\AccountType::EVENT_HOST->value, 'is_active' => true]);
 
         $this->assert($dualUser->hasRole(\App\Enums\AccountType::ATTENDEE) === true, "Dual user has Attendee role");
         $this->assert($dualUser->hasRole(\App\Enums\AccountType::EVENT_HOST) === true, "Dual user has Event Host role");
@@ -2974,7 +2331,7 @@ class TestRunner
         $this->assert($unauthorizedSwitch['success'] === false, "Switching to unauthorized role (system_admin) is blocked");
 
         // 7. Suspended Account Enforcement
-        $suspendedUser = new \App\Models\User([
+        $suspendedUser = (new \App\Models\User)->forceFill([
             'id' => 806,
             'name' => 'Suspended Account',
             'email' => 'suspended@islandevents.app',
@@ -2992,7 +2349,7 @@ class TestRunner
         $this->assert($suspendedBlocked, "Suspended account is immediately blocked from generating staff claim codes");
 
         // 8. Event-Scoped Worker Isolation
-        $workerUser = new \App\Models\User([
+        $workerUser = (new \App\Models\User)->forceFill([
             'id' => 807,
             'name' => 'Terminal Cashier',
             'email' => 'cashier@islandevents.app',
@@ -3001,9 +2358,9 @@ class TestRunner
         ]);
         $workerUser->save();
 
-        $eventA = new \App\Models\Event(['id' => 501, 'title' => 'Event A — Portland Jerk', 'organizer_id' => 10]);
+        $eventA = (new \App\Models\Event)->forceFill(['id' => 501, 'title' => 'Event A — Portland Jerk', 'organizer_id' => 10]);
         $eventA->save();
-        $eventB = new \App\Models\Event(['id' => 502, 'title' => 'Event B — East Orange Seafood', 'organizer_id' => 20]);
+        $eventB = (new \App\Models\Event)->forceFill(['id' => 502, 'title' => 'Event B — East Orange Seafood', 'organizer_id' => 20]);
         $eventB->save();
 
         $assignmentA = \App\Models\EventWorkerAssignment::create([
@@ -3039,9 +2396,8 @@ class TestRunner
         $this->assert(auth()->check() === false, "Final session logout complete");
     }
 
-    public function suite21UnitedStatesOnlyConfigurationAndPaymentIntegrity(): void
+    private function suite21UnitedStatesOnlyConfigurationAndPaymentIntegrity(): void
     {
-        echo "\nSuite 21: United States-Only Launch Configuration, US Addresses, Timezones, Financial Precision & Payment Integrity\n";
 
         // =========================================================================
         // 1. Operating Market (US-Only Launch)
@@ -3108,7 +2464,7 @@ class TestRunner
         $this->assert($manualGateway->isAvailable('USD', 'US') === true, "Manual US gateway is available for USD in US");
 
         // Create a test order
-        $testOrder = new \App\Models\Order([
+        $testOrder = (new \App\Models\Order)->forceFill([
             'id' => 9901,
             'organizer_id' => 10,
             'customer_name' => 'Sarah Connor',
@@ -3249,7 +2605,7 @@ class TestRunner
         $this->assert($taxExempt['is_exempt'] === true, "Fundraiser flagged as tax exempt");
 
         // CCPA / CPRA "Do Not Sell"
-        $privacyUser = new \App\Models\User([
+        $privacyUser = (new \App\Models\User)->forceFill([
             'id' => 9905,
             'name' => 'California Attendee',
             'email' => 'california@example.com',
@@ -3260,6 +2616,7 @@ class TestRunner
 
         $privacyRes = \App\Services\USComplianceAndPrivacyService::setConsumerPrivacyPreferences($privacyUser, true, true);
         $this->assert($privacyRes['preferences']['do_not_sell_or_share'] === true, "CCPA Do Not Sell recorded");
+        $this->assert(($privacyUser->fresh()->marketing_preferences['privacy']['do_not_sell_or_share'] ?? null) === true, "CCPA Do Not Sell is stored on the account");
 
         // PCI-DSS Scope Minimization
         $pciAuditGood = \App\Services\USComplianceAndPrivacyService::auditPciScope(['token' => 'tok_safe_token_123', 'amount' => 4500]);
@@ -3284,10 +2641,9 @@ class TestRunner
 
     private function suite22TicketRedemptionAndServerSideQrVerification(): void
     {
-        echo "\nSuite 22: Ticket Redemption, Server-Side QR Verification & Audit Trail Enforcement\n";
 
         // Setup test event and authorized ticket checker worker
-        $testEvent = new \App\Models\Event([
+        $testEvent = (new \App\Models\Event)->forceFill([
             'id' => 'evt-qr-festival-2026',
             'organizer_id' => 'org-island-events',
             'title' => 'Atlanta Reggae & Sound Festival 2026',
@@ -3295,7 +2651,7 @@ class TestRunner
         ]);
         $testEvent->save();
 
-        $authorizedChecker = new \App\Models\User([
+        $authorizedChecker = (new \App\Models\User)->forceFill([
             'id' => 7701,
             'name' => 'Checker Marcia',
             'email' => 'marcia.checker@islandevents.example',
@@ -3304,8 +2660,7 @@ class TestRunner
         ]);
         $authorizedChecker->save();
 
-        $checkerAssignment = new \App\Models\EventWorkerAssignment([
-            'id' => 'asg-marcia-checker',
+        $checkerAssignment = (new \App\Models\EventWorkerAssignment)->forceFill([
             'organizer_id' => 'org-island-events',
             'event_id' => 'evt-qr-festival-2026',
             'user_id' => 7701,
@@ -3316,7 +2671,7 @@ class TestRunner
         ]);
         $checkerAssignment->save();
 
-        $unauthorizedWorker = new \App\Models\User([
+        $unauthorizedWorker = (new \App\Models\User)->forceFill([
             'id' => 7702,
             'name' => 'Kitchen Jerome',
             'email' => 'jerome.cook@islandevents.example',
@@ -3325,8 +2680,7 @@ class TestRunner
         ]);
         $unauthorizedWorker->save();
 
-        $cookAssignment = new \App\Models\EventWorkerAssignment([
-            'id' => 'asg-jerome-cook',
+        $cookAssignment = (new \App\Models\EventWorkerAssignment)->forceFill([
             'organizer_id' => 'org-island-events',
             'event_id' => 'evt-qr-festival-2026',
             'user_id' => 7702,
@@ -3338,7 +2692,7 @@ class TestRunner
         $cookAssignment->save();
 
         // 1. Genuine Paid Ticket Order
-        $validPaidOrder = new \App\Models\Order([
+        $validPaidOrder = (new \App\Models\Order)->forceFill([
             'id' => 'ord-valid-qr-001',
             'organizer_id' => 'org-island-events',
             'event_id' => 'evt-qr-festival-2026',
@@ -3379,7 +2733,7 @@ class TestRunner
         $this->assert(str_contains($secondScan['rejection_reason'], 'Duplicate redemption prevented'), "Rejection reason explicitly identifies duplicate redemption");
 
         // 3. Event Association Enforcement
-        $otherEventOrder = new \App\Models\Order([
+        $otherEventOrder = (new \App\Models\Order)->forceFill([
             'id' => 'ord-other-event-002',
             'organizer_id' => 'org-island-events',
             'event_id' => 'evt-unrelated-beach-bash',
@@ -3404,7 +2758,7 @@ class TestRunner
         $this->assert(str_contains($crossEventScan['rejection_reason'], 'Event association mismatch'), "Rejection reason explicitly states event association mismatch");
 
         // 4. Ticket Status Check (Unpaid, Cancelled, Refunded)
-        $unpaidOrder = new \App\Models\Order([
+        $unpaidOrder = (new \App\Models\Order)->forceFill([
             'id' => 'ord-unpaid-003',
             'organizer_id' => 'org-island-events',
             'event_id' => 'evt-qr-festival-2026',
@@ -3426,7 +2780,7 @@ class TestRunner
         $this->assert($unpaidScan['success'] === false, "Unpaid awaiting-payment ticket is rejected at gate");
         $this->assert(str_contains($unpaidScan['rejection_reason'], 'Invalid ticket status: awaiting_payment'), "Rejection reason specifies awaiting_payment status");
 
-        $refundedOrder = new \App\Models\Order([
+        $refundedOrder = (new \App\Models\Order)->forceFill([
             'id' => 'ord-refunded-004',
             'organizer_id' => 'org-island-events',
             'event_id' => 'evt-qr-festival-2026',
@@ -3449,7 +2803,7 @@ class TestRunner
         $this->assert(str_contains($refundedScan['rejection_reason'], 'Invalid ticket status: refunded'), "Rejection reason specifies refunded status");
 
         // 5. Validity Period Check
-        $expiredOrder = new \App\Models\Order([
+        $expiredOrder = (new \App\Models\Order)->forceFill([
             'id' => 'ord-expired-005',
             'organizer_id' => 'org-island-events',
             'event_id' => 'evt-qr-festival-2026',
@@ -3500,8 +2854,4 @@ class TestRunner
         $this->assert($hasVerifiedLog, "Successful ticket redemption is logged in immutable security audit trail");
         $this->assert($hasRejectedLog, "Rejected ticket redemption is logged with reason in security audit trail");
     }
-}
-
-$runner = new TestRunner();
-$runner->runAll();
 }

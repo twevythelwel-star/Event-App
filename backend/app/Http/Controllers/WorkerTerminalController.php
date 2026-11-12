@@ -51,6 +51,8 @@ class WorkerTerminalController extends Controller
             'event' => $event,
             'assignment' => $assignment,
             'workerRole' => $activeRole,
+            // The event's host and its organizer's managers run the event: every desk, whatever the staff role.
+            'runsEvent' => (bool) $request->attributes->get('worker_runs_event'),
             'station' => $assignment->station_assignment ?? 'all',
             'stats' => $activeRole === EventWorkerRole::EVENT_SUPERVISOR ? $this->supervisorStats($event) : null,
         ]);

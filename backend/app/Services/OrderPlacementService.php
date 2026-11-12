@@ -281,7 +281,9 @@ class OrderPlacementService
                     'payment_reference' => $paymentRef ?: null,
                     'sender_name' => trim($payload['sender_name'] ?? '') ?: null,
                     'authorized_unpaid' => $authorizedUnpaid,
-                    'reservation_expires_at' => now()->addMinutes(max(1, (int) config('commerce.reservation_minutes', 15))),
+                    // Cash at pickup is paid to staff at the event, so its tickets and food are held until the host
+                    // records the cash or cancels the order, not on the short timer for orders awaiting payment.
+                    'reservation_expires_at' => $authorizedUnpaid ? null : now()->addMinutes(max(1, (int) config('commerce.reservation_minutes', 15))),
                     'secure_ticket_token' => $secureToken,
                     'all_handed_over' => false,
                     'idempotency_key' => $idempotencyKey !== '' ? $idempotencyKey : null,

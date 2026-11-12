@@ -66,10 +66,9 @@ Seeded demo data also includes four Kingston Harbour orders in different payment
 
 ```sh
 cd backend && php artisan test             # backend feature tests (PHPUnit)
-cd backend && php tests/run_backend_tests.php   # legacy standalone service checks
 ```
 
-**Continuous integration:** `.github/workflows/ci.yml` runs on every push to `main` and on pull requests: the backend PHPUnit tests (SQLite and MySQL 8), legacy service checks, PHP lint, and a full `migrate:fresh --seed`.
+**Continuous integration:** `.github/workflows/ci.yml` runs on every push to `main` and on pull requests: the backend PHPUnit tests (SQLite and MySQL 8, including the checks from the retired standalone runner in `LegacyServiceChecksTest`), PHP lint, and a full `migrate:fresh --seed`.
 
 **Customer messages:** customers get an SMS (and an email when their order has one) when an order is placed, payment is verified or rejected, cash is recorded, the order is ready for pickup, and everything has been handed over; hosts can also send event reminders. Messages go through the queue, so run a worker alongside the server:
 

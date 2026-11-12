@@ -28,6 +28,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('security_audit_logs', function (Blueprint $table) {
+            $table->dropIndex(['organizer_id']); // SQLite cannot drop an indexed column
+            $table->dropIndex(['event_id']);
             $table->dropColumn(['outcome', 'organizer_id', 'event_id']);
         });
     }

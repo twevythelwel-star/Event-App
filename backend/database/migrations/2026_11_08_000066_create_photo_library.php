@@ -56,7 +56,10 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('events', fn (Blueprint $table) => $table->dropColumn('photo_subject'));
+        Schema::table('events', function (Blueprint $table) {
+            $table->dropIndex(['photo_subject']); // SQLite cannot drop an indexed column
+            $table->dropColumn('photo_subject');
+        });
         Schema::dropIfExists('library_photos');
     }
 };

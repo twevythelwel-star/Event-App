@@ -15,9 +15,9 @@ class EventReportsController extends Controller
 {
     private function eventFor(Request $request, string $eventId): Event
     {
-        return Event::where('id', $eventId)
-            ->where('organizer_id', TenantContext::id())
-            ->firstOrFail();
+        // An event the signed-in user manages (its organizer's managers and system administrators); 404 otherwise.
+        // These routes have no tenant middleware, so the active tenant cannot be used to find the event.
+        return app(\App\Services\EventManagementService::class)->findEvent($request->user(), $eventId);
     }
 
     public function financialReport(Request $request, string $eventId): JsonResponse

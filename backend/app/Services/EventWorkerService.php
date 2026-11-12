@@ -478,7 +478,7 @@ class EventWorkerService
         // Invariant 2: The worker who collected the cash cannot unilaterally self-approve payment without audit or host review
         if ($action === 'verify_payment') {
             $isCollector = CashPayment::where('order_id', $order->id)
-                ->where('collected_by_user_id', $worker->id)
+                ->where('received_by_user_id', $worker->id)
                 ->exists();
 
             if ($isCollector && !$worker->hasRole(AccountType::EVENT_HOST) && !$worker->hasRole(AccountType::SYSTEM_ADMIN)) {

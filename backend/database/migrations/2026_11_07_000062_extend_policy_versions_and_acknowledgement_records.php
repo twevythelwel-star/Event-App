@@ -75,7 +75,10 @@ return new class extends Migration
     public function down(): void
     {
         DB::table('compliance_policy_versions')->where('source', 'built_in')->delete();
-        Schema::table('policy_acceptances', fn (Blueprint $table) => $table->dropColumn('policy_version_id'));
+        Schema::table('policy_acceptances', function (Blueprint $table) {
+            $table->dropIndex(['policy_version_id']); // SQLite cannot drop an indexed column
+            $table->dropColumn('policy_version_id');
+        });
         Schema::table('compliance_policy_versions', fn (Blueprint $table) => $table->dropColumn([
             'category', 'applicable_roles', 'applicable_jurisdictions', 'acknowledgement_mandatory', 'requires_reacknowledgement', 'effective_at', 'source',
         ]));

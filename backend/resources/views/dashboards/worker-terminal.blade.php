@@ -30,11 +30,17 @@
         </div>
     </div>
 
-    <!-- Dynamic Interface Based on Worker Role -->
-    @if ($workerRole->value === 'ticket_checker')
+    {{-- Each desk is shown to whoever may use it: the event's host and managers get all of them; staff get the desks
+         their role (or custom permissions) allow. The server checks the same permission on every action. --}}
+    @php
+        $may = fn (string $permission) => ($runsEvent ?? false) || $assignment->canPerform($permission);
+        $supervises = ($runsEvent ?? false) || $workerRole->value === 'event_supervisor';
+    @endphp
+    @if ($may('scan_qr_tickets'))
         @include('dashboards.partials.ticket-check-in')
+    @endif
 
-    @elseif ($workerRole->value === 'payment_clerk')
+    @if ($may('record_cash_received'))
         <!-- 💵 PAYMENT CLERK INTERFACE -->
         <div class="card">
             <div class="card-header">
@@ -70,7 +76,9 @@
             <p id="cash_result" role="status" aria-live="polite" style="margin-top: 1rem; font-size: 0.9rem;"></p>
         </div>
 
-    @elseif ($workerRole->value === 'food_station_worker')
+    @endif
+
+    @if ($may('mark_quantities_collected'))
         <!-- FOOD STATION: look up the order, then hand over portions; the server caps quantities and refuses unpaid orders -->
         <div class="card">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
@@ -102,9 +110,9 @@
             </div>
         </div>
 
-        @else
-        @include('dashboards.partials.ticket-check-in')
+    @endif
 
+    @if ($supervises)
         <!-- EVENT SUPERVISOR: live figures for this event -->
         <div class="card">
             <div class="card-header">
@@ -262,8 +270,10 @@ function renderFoodOrder(order) {
         name.textContent = item.name;
         const meta = document.createElement('div');
         meta.style.cssText = 'font-size: 0.8rem; color: var(--text-secondary);';
+        // The server sends the chosen options as a list of labels (older records may hold one string).
+        const options = (Array.isArray(item.options) ? item.options.join(', ') : String(item.options || '')).trim();
         meta.textContent = `Ordered ${item.quantity} • Handed over ${item.collected} • Remaining ${item.remaining}`
-            + (item.options && item.options.trim() ? ` • ${item.options.trim()}` : '')
+            + (options ? ` • ${options}` : '')
             + (item.at_this_station ? '' : ` • Served at the ${item.category} station`);
         info.append(name, meta);
 
