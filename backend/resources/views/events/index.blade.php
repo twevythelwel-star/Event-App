@@ -405,51 +405,6 @@
     .event-item-card { display: flex; flex-direction: column; }
     .event-item-card > .eb-event-card { flex: 1; }
 
-    /* Fixed Bottom Navigation (5 items) */
-    .discovery-bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background-color: rgba(7, 17, 31, 0.94);
-        border-top: 1px solid var(--color-border);
-        padding: 8px 16px;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        z-index: 50;
-        backdrop-filter: blur(16px);
-        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
-    }
-
-    .bottom-nav-link {
-        background: none;
-        border: none;
-        color: var(--color-text-secondary);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 3px;
-        cursor: pointer;
-        padding: 6px 14px;
-        border-radius: 12px;
-        text-decoration: none;
-        font-size: 0.74rem;
-        font-weight: 600;
-        transition: color 0.15s ease;
-    }
-
-    .bottom-nav-link.active, .bottom-nav-link:hover {
-        color: var(--color-accent);
-    }
-
-    .bottom-nav-link.active .nav-dot {
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background-color: var(--color-accent);
-    }
-
     @media (max-width: 767px) {
         #event-discovery-page .discovery-header { padding: 10px 16px 16px; position: relative; }
         #event-discovery-page .discovery-header-inner { align-items: flex-start; gap: 10px; }
@@ -476,9 +431,8 @@
         #event-discovery-page .trending-scroll-container { gap: 12px; margin: 0 -16px 30px; padding: 0 16px 12px; }
         #event-discovery-page .trending-card { min-width: 248px; max-width: 248px; border-radius: 16px; }
         #event-discovery-page .discovery-grid { grid-template-columns: 1fr; gap: 12px; }
-        #event-discovery-page .discovery-bottom-nav { display: none; }
         .eb-app-header { display: none !important; }
-        main.content-canvas { padding-top: 0 !important; padding-bottom: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem) !important; }
+        main.content-canvas { padding-top: 0 !important; }
         .eb-customer-bottom-nav { height: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
     }
     .eb-explore-section { margin: 0 0 28px; }
@@ -905,44 +859,7 @@
         </div>
     </div>
 
-    <!-- 7. Bottom Navigation (5 navigation items) -->
-    <nav class="discovery-bottom-nav" aria-label="Bottom Navigation">
-        <a href="{{ route('events.index') }}" class="bottom-nav-link active" id="nav-bottom-home">
-            <span style="font-size: 1.2rem;">🏠</span>
-            <span>Home</span>
-            <span class="nav-dot"></span>
-        </a>
-        <a href="#events-search-input" onclick="focusSearch()" class="bottom-nav-link" id="nav-bottom-explore">
-            <span style="font-size: 1.2rem;">🧭</span>
-            <span>Explore</span>
-        </a>
-        @auth
-            <a href="{{ route('attendee.dashboard') }}" class="bottom-nav-link" id="nav-bottom-tickets">
-                <span style="font-size: 1.2rem;">🎟️</span>
-                <span>Tickets</span>
-            </a>
-        @else
-            <a href="{{ route('login') }}" class="bottom-nav-link" id="nav-bottom-tickets">
-                <span style="font-size: 1.2rem;">🎟️</span>
-                <span>Tickets</span>
-            </a>
-        @endauth
-        <a href="#trending-container" class="bottom-nav-link" id="nav-bottom-food">
-            <span style="font-size: 1.2rem;">🍲</span>
-            <span>Food</span>
-        </a>
-        @auth
-            <a href="{{ route('attendee.dashboard') }}" class="bottom-nav-link" id="nav-bottom-profile">
-                <span style="font-size: 1.2rem;">👤</span>
-                <span>Profile</span>
-            </a>
-        @else
-            <a href="{{ route('login') }}" class="bottom-nav-link" id="nav-bottom-profile">
-                <span style="font-size: 1.2rem;">🔑</span>
-                <span>Sign In</span>
-            </a>
-        @endauth
-    </nav>
+
 </div>
 
 <script>

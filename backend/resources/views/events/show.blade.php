@@ -375,7 +375,7 @@
 
     @media (max-width: 767px) {
         body:has(#event-detail-page) .eb-app-header { display: none !important; }
-        body:has(#event-detail-page) main.content-canvas { padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: calc(var(--layout-bottom-nav-height) + 84px + env(safe-area-inset-bottom, 0px)) !important; }
+        body:has(#event-detail-page) main.content-canvas { padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 84px !important; }
         #event-detail-page .detail-hero { min-height: 0; height: auto; aspect-ratio: 4 / 5; max-height: 560px; border: 0; }
         #event-detail-page .detail-hero-img { position: absolute; inset: 0; }
         #event-detail-page .detail-hero-overlay { background: linear-gradient(180deg, rgba(7,17,31,.08) 35%, rgba(7,17,31,.45) 64%, rgba(7,17,31,.98) 100%); }

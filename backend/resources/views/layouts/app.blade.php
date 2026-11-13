@@ -150,7 +150,7 @@
 
         main.content-canvas {
             flex: 1;
-            padding: var(--layout-page-padding-y) var(--layout-page-padding-x) calc(var(--layout-bottom-nav-height) + 1.5rem);
+            padding: var(--layout-page-padding-y) var(--layout-page-padding-x);
             max-width: var(--layout-max-width);
             width: 100%;
             margin: 0 auto;
@@ -311,18 +311,19 @@
                 @endif
 
                 @yield('content')
-
-                {{-- Legal and policy pages (LegalPages), on every page. --}}
-                <nav aria-label="Policies and legal information" style="margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.8rem;">
-                    @foreach(\App\Support\LegalPages::PAGES as $legalSlug => $legalPage)
-                        <a href="{{ $legalSlug === 'jurisdictions' ? route('legal.jurisdictions') : route('legal.show', $legalSlug) }}" style="color: var(--color-text-secondary, inherit); text-decoration: underline;">{{ $legalPage['title'] }}</a>
-                    @endforeach
-                    <span style="color: var(--color-text-secondary, inherit);">General information, not legal advice.</span>
-                </nav>
             </main>
 
-            <!-- Customer Mobile Bottom Navigation (Home, My Tickets, Orders, Profile) -->
+            <!-- Main navigation on every page (Home, Explore, Tickets, Food, Sign In / Profile): it stays at the bottom
+                 of the screen while scrolling and comes to rest above the legal links. -->
             <x-customer-bottom-nav :user="Auth::user()" />
+
+            {{-- Legal and policy pages (LegalPages), on every page. --}}
+            <nav class="eb-legal-footer" aria-label="Policies and legal information" style="padding: 1rem var(--layout-page-padding-x) 1.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.8rem;">
+                @foreach(\App\Support\LegalPages::PAGES as $legalSlug => $legalPage)
+                    <a href="{{ $legalSlug === 'jurisdictions' ? route('legal.jurisdictions') : route('legal.show', $legalSlug) }}" style="color: var(--color-text-secondary, inherit); text-decoration: underline;">{{ $legalPage['title'] }}</a>
+                @endforeach
+                <span style="color: var(--color-text-secondary, inherit);">General information, not legal advice.</span>
+            </nav>
         </div>
     </div>
 

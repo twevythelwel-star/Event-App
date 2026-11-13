@@ -6,11 +6,12 @@
 @php
     $authUser = $user ?? Auth::user();
     $isAuthenticated = $authUser !== null;
-    $customerSurface = request()->routeIs('home', 'events.*', 'saved.*', 'attendee.dashboard', 'tickets.*', 'settings.*');
+    $foodScreen = request()->routeIs('events.index') && request()->query('category') === 'food';
 
-    // Customer mobile navigation: Home / Explore / My Tickets / Saved / Profile, with the active item in lime.
-    // Home is the homepage (signed-in customers land on their dashboard there); Explore is event discovery.
-    // Saved stays a tab for signed-in customers (docs/eventbite-mobile-design-audit.md).
+    // The app's main bar, on every page: Home / Explore / Tickets / Food / Sign In (Saved and Profile when signed in),
+    // with the active item in lime. It stays at the bottom of the screen while scrolling and ends above the legal links.
+    // Home is the homepage (signed-in customers land on their dashboard there); Explore is event discovery;
+    // Food is the Food & Experience screen. Saved stays a tab for signed-in customers (docs/eventbite-mobile-design-audit.md).
     $items = [
         [
             'key' => 'home',
@@ -26,15 +27,23 @@
             'icon' => 'search',
             'href' => route('events.index'),
             'visible' => true,
-            'active' => $active === 'discover' || request()->routeIs('events.*'),
+            'active' => $active === 'discover' || (request()->routeIs('events.*') && !$foodScreen),
         ],
         [
             'key' => 'tickets',
-            'label' => 'My Tickets',
+            'label' => 'Tickets',
             'icon' => 'tickets',
             'href' => $isAuthenticated ? route('tickets.collection') : route('login'),
             'visible' => true,
             'active' => $active === 'tickets' || request()->routeIs('tickets.collection', 'tickets.show'),
+        ],
+        [
+            'key' => 'food',
+            'label' => 'Food',
+            'icon' => 'utensils',
+            'href' => route('events.index', ['category' => 'food']),
+            'visible' => true,
+            'active' => $active === 'food' || $foodScreen,
         ],
         [
             'key' => 'saved',
@@ -46,8 +55,8 @@
         ],
         [
             'key' => 'profile',
-            'label' => 'Profile',
-            'icon' => 'profile',
+            'label' => $isAuthenticated ? 'Profile' : 'Sign In',
+            'icon' => $isAuthenticated ? 'profile' : 'login',
             'href' => $isAuthenticated ? route('settings.show') : route('login'),
             'visible' => true,
             'active' => $active === 'profile' || request()->routeIs('settings.*'),
@@ -57,8 +66,7 @@
     $visibleItems = array_values(array_filter($items, fn (array $item) => $item['visible'] && !empty($item['href'])));
 @endphp
 
-@if($customerSurface)
-<nav class="eb-customer-bottom-nav eb-customer-bottom-nav-mobile-only" aria-label="Customer mobile navigation">
+<nav class="eb-customer-bottom-nav" aria-label="Main navigation">
     @foreach($visibleItems as $item)
         <a
             href="{{ $item['href'] }}"
@@ -71,4 +79,3 @@
         </a>
     @endforeach
 </nav>
-@endif
