@@ -64,7 +64,7 @@
                     @endphp
                     <form method="POST" action="{{ route('admin.console.roles.administrators.update', $admin) }}" class="ac-confirm" id="admin-{{ $admin->id }}">
                         @csrf
-                        <h3><a class="ac-link" href="{{ route('admin.console.users.show', $admin) }}">{{ $admin->name }}</a> <span class="ac-cell-sub" style="display:inline">{{ $admin->email }}</span></h3>
+                        <h3>@can(\App\Support\AdminAuthorization::USER_VIEW, $admin)<a class="ac-link" href="{{ route('admin.console.users.show', $admin) }}">{{ $admin->name }}</a>@else{{ $admin->name }}@endcan <span class="ac-cell-sub" style="display:inline">{{ $admin->email }}</span></h3>
                         @if($isSelf)
                             <p>You cannot change your own permissions.</p>
                         @else

@@ -97,7 +97,11 @@
                                     <td><x-status-indicator :status="$u->status ?? 'active'" /></td>
                                     <td class="eb-help-text">{{ $u->created_at?->format('M j, Y') }}</td>
                                     <td class="eb-table-num">
-                                        <a href="{{ route('admin.console.users.show', $u) }}" class="eb-btn eb-btn-ghost eb-btn-sm">Inspect</a>
+                                        @can(\App\Support\AdminAuthorization::USER_VIEW, $u)
+                                            <a href="{{ route('admin.console.users.show', $u) }}" class="eb-btn eb-btn-ghost eb-btn-sm">Inspect</a>
+                                        @else
+                                            <span class="eb-help-text" title="Only a system administrator can open this account">Restricted</span>
+                                        @endcan
                                     </td>
                                 </tr>
                             @endforeach

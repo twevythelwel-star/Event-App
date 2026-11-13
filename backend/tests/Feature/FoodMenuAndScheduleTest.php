@@ -246,6 +246,9 @@ class FoodMenuAndScheduleTest extends TestCase
 
     public function test_closed_food_ordering_still_sells_tickets_and_event_day_orders_follow_service_hours(): void
     {
+        // Service windows below are "now" plus or minus a few hours on one day; from midday they never cross midnight.
+        $this->travelTo(Carbon::now(self::TZ)->setTime(12, 0));
+
         $this->event->update(['advance_order_deadline' => now()->subHour()]);
         $food = $this->place([['menu_item_id' => $this->items['rice']->id, 'quantity' => 1]]);
         $this->assertFalse($food['success']);
