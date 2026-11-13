@@ -16,7 +16,9 @@ use App\Models\Order;
 use App\Models\OrganizerUser;
 use App\Models\OrderItem;
 use App\Models\SecurityAuditLog;
+use App\Models\TicketAdmission;
 use App\Models\User;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -170,7 +172,8 @@ class EventWorkerService
                 return ['success' => true, 'already_admitted' => false, 'valid' => true, 'replayed' => true,
                     'rejection_reason' => null, 'ticket' => ['order_number' => $locked->order_number,
                         'ticket_code' => $locked->ticket_code, 'customer_name' => $locked->customer_name,
-                        'status' => $locked->status, 'checked_in_at' => $locked->checked_in_at?->format('Y-m-d H:i:s')]];
+                        'status' => $locked->status, 'checked_in_at' => $locked->checked_in_at?->format('Y-m-d H:i:s')]]
+                    + self::verdict(true, null, 'Whole party on this order');
             }
 
             return self::admitLockedTicket($worker, $locked, $order, $expectedEventId, $manual, $assignment, $requestId);
@@ -208,6 +211,17 @@ class EventWorkerService
 
         // 3b. Admission window: the gate opens at doors_open_time (or the event start) and closes at the event end.
         $admissionEvent = $order->event ?? Event::withoutGlobalScopes()->find($order->event_id);
+
+        // 3a. The event itself must be live: a cancelled, unpublished or deleted event admits nobody.
+        if (!$admissionEvent || $admissionEvent->status !== 'published') {
+            $isPeriodValid = false;
+            $reasonCode = $reasonCode ?? 'event_not_active';
+            $eventState = $admissionEvent?->status ?: 'missing';
+            $rejectionReason = $rejectionReason ?? ($eventState === 'cancelled'
+                ? 'This event was cancelled; its tickets do not admit anyone.'
+                : "This event is not live (status: {$eventState}); admission is closed.");
+        }
+
         if ($admissionEvent) {
             $tz = (string) ($admissionEvent->timezone ?: 'America/New_York');
             $localDate = $admissionEvent->starts_at?->copy()->setTimezone($tz)->format('Y-m-d')
@@ -277,7 +291,8 @@ class EventWorkerService
         if ($requestId !== null && hash_equals((string) $attendee->check_in_request_id, $requestId)
             && (int) $attendee->checked_in_by === (int) $worker->id && $attendee->checked_in_at !== null) {
             return ['success' => true, 'already_admitted' => false, 'valid' => true, 'replayed' => true, 'reason_code' => null,
-                'rejection_reason' => null, 'ticket' => self::scanTicketData($order, $assignment) + ['attendee' => $seat]];
+                'rejection_reason' => null, 'ticket' => self::scanTicketData($order, $assignment) + ['attendee' => $seat]]
+                + self::verdict(true, null, "Guest {$attendee->sequence} of {$total}");
         }
 
         [$isAuthentic, $isEventMatched, $isPeriodValid, $isStatusValid, $reasonCode, $rejectionReason] = self::orderChecks($order, $expectedEventId);
@@ -292,6 +307,14 @@ class EventWorkerService
         }
 
         $isSuccess = $isAuthentic && $isEventMatched && $isPeriodValid && $isStatusValid && !$isAlreadyAdmitted;
+
+        // 9. Atomic admission: the unique admission record is the database's own guard against a second admission.
+        if ($isSuccess && !self::recordAdmissions([$attendee], $order, $worker, TicketAdmission::VIA_ATTENDEE_TICKET, $requestId)) {
+            $isSuccess = false;
+            $isAlreadyAdmitted = true;
+            $reasonCode = 'already_admitted';
+            $rejectionReason = "Duplicate redemption prevented: Ticket {$attendee->ticket_number} was already admitted.";
+        }
 
         if ($isSuccess) {
             $attendee->forceFill(['checked_in_at' => now(), 'checked_in_by' => $worker->id, 'check_in_request_id' => $requestId])->save();
@@ -331,6 +354,43 @@ class EventWorkerService
             ]],
             // Order, payment, ticket, admission and food statuses, reported separately.
             'statuses' => \App\Support\TicketStatuses::for($order, $attendee),
+        ] + self::verdict($isSuccess, $rejectionReason, "Guest {$attendee->sequence} of {$total}");
+    }
+
+    /**
+     * Writes one admission record per ticket under the unique key, inside a savepoint. False when any of them was
+     * already admitted (the insert hit the unique key): nothing is then recorded for this scan.
+     *
+     * @param list<AttendeeTicket> $tickets
+     */
+    private static function recordAdmissions(array $tickets, Order $order, User $worker, string $via, ?string $requestId): bool
+    {
+        try {
+            DB::transaction(function () use ($tickets, $order, $worker, $via, $requestId) {
+                foreach ($tickets as $ticket) {
+                    TicketAdmission::create([
+                        'attendee_ticket_id' => $ticket->id, 'order_id' => $order->id, 'event_id' => $order->event_id,
+                        'admitted_by' => $worker->id, 'admitted_via' => $via, 'request_id' => $requestId, 'admitted_at' => now(),
+                    ]);
+                }
+            });
+        } catch (UniqueConstraintViolationException) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * The plain answer for the person at the gate: admit or not, in a few words.
+     *
+     * @return array{result: string, headline: string}
+     */
+    private static function verdict(bool $admit, ?string $reason, string $who): array
+    {
+        return [
+            'result' => $admit ? 'admit' : 'reject',
+            'headline' => $admit ? "ADMIT · {$who}" : 'DO NOT ADMIT · ' . ($reason ?? 'Ticket not valid.'),
         ];
     }
 
@@ -383,6 +443,17 @@ class EventWorkerService
         }
 
         $isSuccess = $isAuthentic && $isEventMatched && $isPeriodValid && $isStatusValid && !$isAlreadyAdmitted;
+
+        // The order's pass admits every guest still outside; each gets its unique admission record first.
+        if ($isSuccess) {
+            $remaining = AttendeeTicket::where('order_id', $locked->id)->whereNull('checked_in_at')->lockForUpdate()->get()->all();
+            if (!self::recordAdmissions($remaining, $locked, $worker, TicketAdmission::VIA_ORDER_PASS, $requestId)) {
+                $isSuccess = false;
+                $isAlreadyAdmitted = true;
+                $reasonCode = 'already_admitted';
+                $rejectionReason = 'Duplicate redemption prevented: guests on this order were already admitted.';
+            }
+        }
 
         if ($isSuccess) {
             $locked->checked_in_at = now();
@@ -445,7 +516,7 @@ class EventWorkerService
             'reason_code' => $isSuccess ? null : ($reasonCode ?? 'invalid_ticket'),
             'rejection_reason' => $rejectionReason,
             'ticket' => $sanitizedData,
-        ];
+        ] + self::verdict($isSuccess, $rejectionReason, 'Whole party on this order');
     }
 
     /**

@@ -488,6 +488,116 @@ class AttendeeTicketQrTest extends TestCase
         $this->scan($checker, $this->credentials()->credential($ticket))->assertJson(['success' => false, 'reason_code' => 'ticket_revoked']);
     }
 
+    // ---- Scanner workflow --------------------------------------------------------------------------------
+
+    public function test_cancelled_or_unpublished_events_admit_nobody(): void
+    {
+        $order = $this->paidOrder(2);
+        $checker = $this->checker();
+        $credential = $this->credentials()->credential(AttendeeTicket::where('order_id', $order->id)->first());
+
+        foreach (['cancelled' => 'cancelled', 'draft' => 'not live'] as $status => $words) {
+            Event::allTenants()->whereKey($this->event->id)->update(['status' => $status]);
+            $this->scan($checker, $credential)
+                ->assertJson(['success' => false, 'result' => 'reject', 'reason_code' => 'event_not_active'])
+                ->assertJsonFragment(['rejection_reason' => $status === 'cancelled'
+                    ? 'This event was cancelled; its tickets do not admit anyone.'
+                    : 'This event is not live (status: draft); admission is closed.']);
+            $this->scan($checker, $order->secure_ticket_token)->assertJson(['success' => false, 'reason_code' => 'event_not_active']);
+        }
+        $this->assertSame(0, \App\Models\TicketAdmission::count());
+        $this->assertSame(0, AttendeeTicket::whereNotNull('checked_in_at')->count());
+    }
+
+    public function test_the_scanner_gets_a_clear_admit_or_reject_verdict(): void
+    {
+        $order = $this->paidOrder(2);
+        $checker = $this->checker();
+        $credential = $this->credentials()->credential(AttendeeTicket::where('order_id', $order->id)->where('sequence', 2)->first());
+
+        $this->scan($checker, $credential)->assertJson(['result' => 'admit', 'headline' => 'ADMIT · Guest 2 of 2']);
+        $again = $this->scan($checker, $credential)->assertJson(['result' => 'reject']);
+        $this->assertStringStartsWith('DO NOT ADMIT · Duplicate redemption prevented', $again->json('headline'));
+    }
+
+    public function test_a_database_unique_key_blocks_a_second_admission_even_past_the_locks(): void
+    {
+        $order = $this->paidOrder(2);
+        $checker = $this->checker();
+        $ticket = AttendeeTicket::where('order_id', $order->id)->where('sequence', 1)->first();
+
+        // A concurrent scan already wrote the admission record but has not yet marked the ticket.
+        \App\Models\TicketAdmission::create(['attendee_ticket_id' => $ticket->id, 'order_id' => $order->id, 'event_id' => $this->event->id,
+            'admitted_by' => $checker->id, 'admitted_via' => 'attendee_ticket', 'admitted_at' => now()]);
+
+        $this->scan($checker, $this->credentials()->credential($ticket))
+            ->assertJson(['success' => false, 'already_admitted' => true, 'reason_code' => 'already_admitted']);
+        $this->assertNull($ticket->fresh()->checked_in_at);
+        $this->assertSame(1, \App\Models\TicketAdmission::where('attendee_ticket_id', $ticket->id)->count());
+
+        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        \App\Models\TicketAdmission::create(['attendee_ticket_id' => $ticket->id, 'order_id' => $order->id, 'event_id' => $this->event->id,
+            'admitted_via' => 'attendee_ticket', 'admitted_at' => now()]);
+    }
+
+    public function test_every_admission_leaves_one_record_per_guest(): void
+    {
+        $order = $this->paidOrder(3);
+        $checker = $this->checker();
+        $first = AttendeeTicket::where('order_id', $order->id)->where('sequence', 1)->first();
+
+        $this->scan($checker, $this->credentials()->credential($first))->assertJson(['success' => true]);
+        $this->assertDatabaseHas('ticket_admissions', ['attendee_ticket_id' => $first->id, 'admitted_via' => 'attendee_ticket', 'admitted_by' => $checker->id]);
+
+        // The order pass is refused once a guest came in alone; so a second order shows the pass path.
+        $party = $this->paidOrder(2);
+        $this->scan($checker, $party->secure_ticket_token)->assertJson(['success' => true, 'result' => 'admit']);
+        $this->assertSame(2, \App\Models\TicketAdmission::where('order_id', $party->id)->where('admitted_via', 'order_pass')->count());
+        $this->assertSame(3, \App\Models\TicketAdmission::count());
+    }
+
+    public function test_food_redemption_stays_separate_from_admission(): void
+    {
+        $order = $this->paidOrder(2);
+        $credential = $this->credentials()->credential(AttendeeTicket::where('order_id', $order->id)->first());
+        $food = User::create(['name' => 'Food Worker', 'email' => 'qr-food@example.test', 'password' => bcrypt('password'), 'status' => 'active']);
+        EventWorkerAssignment::create(['organizer_id' => $this->organizer->id, 'event_id' => $this->event->id, 'user_id' => $food->id,
+            'worker_role' => 'food_station_worker', 'station_assignment' => 'all', 'status' => 'active', 'is_active' => true]);
+
+        // A food station can find the order from a guest's QR, but it never admits anyone.
+        $lookup = $this->actingAs($food)->postJson("/worker/events/{$this->event->id}/lookup", ['code' => $credential])
+            ->assertOk()->assertJsonPath('order.order_number', $order->order_number);
+        $this->assertSame(['Escovitch Fish'], array_column($lookup->json('order.items'), 'name'), 'only food lines, never tickets');
+        $this->actingAs($food)->postJson("/worker/events/{$this->event->id}/scan", ['ticket_code' => $credential])->assertForbidden();
+        $this->assertSame(0, \App\Models\TicketAdmission::count());
+
+        // Admission at the gate leaves the food untouched; each food item is handed over on its own.
+        $this->scan($this->checker(), $credential)->assertJson(['success' => true]);
+        $dish = $order->items()->whereNull('ticket_tier_id')->first();
+        $this->assertSame(0, (int) $dish->fresh()->collected_quantity);
+        $this->actingAs($food)->postJson("/worker/events/{$this->event->id}/collect", ['order_id' => $order->id, 'order_item_id' => $dish->id, 'quantity' => 1])->assertOk();
+        $this->assertSame(1, (int) $dish->fresh()->collected_quantity);
+        $this->assertSame(1, \App\Models\TicketAdmission::count(), 'collecting food records no admission');
+    }
+
+    public function test_each_guest_card_shows_holder_type_number_payment_and_admission(): void
+    {
+        $order = $this->paidOrder(2);
+        $first = AttendeeTicket::where('order_id', $order->id)->where('sequence', 1)->first();
+        $this->scan($this->checker(), $this->credentials()->credential($first))->assertJson(['success' => true]);
+
+        $html = $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
+            ->assertSee('Kingston Reggae Night')->assertSee('Kingston Pier')
+            ->assertSee('Ticket holder')->assertSee('QR Buyer')
+            ->assertSee('Ticket type')->assertSee('General Admission')
+            ->assertSee($first->ticket_number)
+            ->assertSee('data-payment-status="paid"', false)
+            ->getContent();
+        $this->assertSame(1, substr_count($html, 'data-admission-status="admitted"'));
+        $this->assertSame(1, substr_count($html, 'data-admission-status="not_admitted"'));
+        $this->assertSame(1, substr_count($html, 'class="eb-ticket-qr-art"'), 'the admitted guest no longer shows a usable QR');
+    }
+
     public function test_food_and_staff_lookups_find_the_order_from_an_attendee_qr(): void
     {
         $order = $this->paidOrder(2);

@@ -2765,3 +2765,17 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
 .eb-qr-swatches { display: flex; gap: 4px; }
 .eb-qr-swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.35); }
 .eb-qr-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.85rem; }
+.eb-attendee-qr-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; margin: 0; width: min(100%, 260px); font-size: 0.82rem; }
+.eb-attendee-qr-facts div { min-width: 0; }
+.eb-attendee-qr-facts dt { color: var(--color-text-secondary); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.eb-attendee-qr-facts dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+
+/* Each guest's code fades up in turn. Only when motion is welcome; the code is fully visible without it
+   (no animation support or reduced motion = no hidden start state). */
+@media (prefers-reduced-motion: no-preference) {
+  .eb-attendee-qr-art { animation: eb-attendee-qr-reveal 320ms cubic-bezier(0.22, 1, 0.36, 1) backwards; }
+  .eb-attendee-qr:nth-child(2) .eb-attendee-qr-art { animation-delay: 60ms; }
+  .eb-attendee-qr:nth-child(3) .eb-attendee-qr-art { animation-delay: 120ms; }
+  .eb-attendee-qr:nth-child(n+4) .eb-attendee-qr-art { animation-delay: 160ms; }
+}
+@keyframes eb-attendee-qr-reveal { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } }

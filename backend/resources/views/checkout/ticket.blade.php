@@ -263,7 +263,17 @@
                                                 </form>
                                             </div>
                                         @endif
-                                        <span class="eb-text-ticket-code eb-attendee-qr-number">{{ $attendee->ticket_number }}</span>
+                                        @php
+                                            $guestStatus = \App\Support\TicketStatuses::for($order, $attendee, $event);
+                                            $paymentLabels = ['unpaid' => 'Not paid', 'submitted' => 'Being checked', 'partially_paid' => 'Part paid', 'paid' => 'Paid', 'partially_refunded' => 'Part refunded', 'refunded' => 'Refunded', 'not_collected' => 'Not collected'];
+                                        @endphp
+                                        <dl class="eb-attendee-qr-facts">
+                                            <div><dt>Ticket holder</dt><dd>{{ $order->customer_name ?: 'Guest' }}</dd></div>
+                                            <div><dt>Ticket type</dt><dd>{{ $tierName }}</dd></div>
+                                            <div><dt>Ticket number</dt><dd class="eb-text-ticket-code eb-attendee-qr-number">{{ $attendee->ticket_number }}</dd></div>
+                                            <div><dt>Payment</dt><dd data-payment-status="{{ $guestStatus['payment'] }}">{{ $paymentLabels[$guestStatus['payment']] ?? ucfirst($guestStatus['payment']) }}</dd></div>
+                                            <div><dt>Admission</dt><dd data-admission-status="{{ $guestStatus['admission'] }}">{{ $guestStatus['admission'] === 'admitted' ? 'Admitted' : 'Not yet admitted' }}</dd></div>
+                                        </dl>
                                     </figure>
                                 @endforeach
                             </div>

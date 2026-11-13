@@ -298,7 +298,8 @@ async function validateTicket() {
         verdict.style.color = admitted ? 'var(--color-success-text, #6ee7b7)' : 'var(--color-error-text, #fca5a5)';
         if (admitted) {
             verdict.textContent = data.replayed ? '✓ ADMIT (confirmed retry)' : '✓ ADMIT';
-            details.textContent = [data.ticket?.customer_name, data.ticket?.order_number].filter(Boolean).join(' • ');
+            const guest = data.ticket?.attendee ? `Guest ${data.ticket.attendee.sequence} of ${data.ticket.attendee.of} · ${data.ticket.attendee.ticket_number}` : null;
+            details.textContent = [guest, data.ticket?.customer_name, data.ticket?.order_number].filter(Boolean).join(' • ');
         } else if (data.promotional_qr_rejected) {
             verdict.textContent = '✕ PROMOTIONAL EVENT QR — DO NOT ADMIT';
             details.textContent = data.rejection_reason || 'Public event QR codes are for event discovery only and cannot admit guests.';
