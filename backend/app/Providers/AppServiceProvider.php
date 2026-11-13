@@ -50,6 +50,28 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Apple Wallet passes follow their ticket: a change the pass shows marks it modified and tells its devices.
+        // Only when passes exist (the table is created by a migration, so guard for fresh installs mid-migrate).
+        \App\Models\Order::updated(function (\App\Models\Order $order): void {
+            try {
+                if (\App\Models\WalletPass::query()->where('order_id', $order->id)->exists()) {
+                    app(\App\Services\Wallet\WalletPassService::class)->orderChanged($order, array_keys($order->getChanges()));
+                }
+            } catch (\Illuminate\Database\QueryException $e) {
+                Log::warning('wallet.order_update_skipped', ['order' => $order->id, 'error' => $e->getCode()]);
+            }
+        });
+        \App\Models\Event::updated(function (\App\Models\Event $event): void {
+            try {
+                if (array_intersect(array_keys($event->getChanges()), \App\Services\Wallet\WalletPassService::EVENT_FIELDS) !== []
+                    && \App\Models\WalletPass::query()->exists()) {
+                    app(\App\Services\Wallet\WalletPassService::class)->eventChanged($event, array_keys($event->getChanges()));
+                }
+            } catch (\Illuminate\Database\QueryException $e) {
+                Log::warning('wallet.event_update_skipped', ['event' => $event->id, 'error' => $e->getCode()]);
+            }
+        });
+
         EventFacade::listen(\Illuminate\Queue\Events\JobFailed::class, function ($event): void {
             Log::error('queue.job_failed', ['connection' => $event->connectionName, 'queue' => $event->job->getQueue(),
                 'job' => $event->job->resolveName(), 'uuid' => $event->job->uuid(), 'exception' => $event->exception::class]);

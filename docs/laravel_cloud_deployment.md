@@ -50,6 +50,13 @@ NOTIFICATIONS_QUEUE=notifications             # empty on a plan with one managed
 
 MAIL_MAILER=...                               # a real provider; 'log'/'array' fail the startup guard
 LEGAL_COUNSEL_REVIEWED=false                  # set true + LEGAL_COUNSEL_REVIEWED_ON only after counsel sign-off
+
+# Apple Wallet (optional; docs/eventbite-apple-wallet.md). Secrets as secret variables, never in the repo.
+APPLE_WALLET_ENABLED=false
+APPLE_WALLET_PASS_TYPE_ID=pass.com.example.eventbite.ticket
+APPLE_WALLET_TEAM_ID=ABCDE12345
+APPLE_WALLET_CERTIFICATE_BASE64=...           # base64 of the .p12 (certificate + private key)
+APPLE_WALLET_CERTIFICATE_PASSWORD=...
 ```
 
 Leave `TRUSTED_PROXIES` unset (`*`): Cloud's proxy terminates TLS and sends `X-Forwarded-Proto`, and the app

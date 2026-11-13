@@ -32,30 +32,38 @@ final class TicketLifecycle
     private const ASSUMED_LENGTH_HOURS = 12;
 
     /**
-     * Whether the event is over. The same rule closes admission at the gate (TicketVerificationService), so a
-     * keepsake can never admit anyone. An event with no date at all is never over.
+     * Whether the event is over. The same rule closes admission at the gate (TicketVerificationService,
+     * EventWorkerService) and expires Apple Wallet passes, so a keepsake can never admit anyone. An event with no
+     * date at all is never over.
      */
     public static function eventIsOver(?Event $event, ?Carbon $now = null): bool
     {
-        if ($event === null) {
-            return false;
-        }
-        $now ??= now();
+        $over = self::overAt($event);
 
+        return $over !== null && ($now ?? now())->greaterThanOrEqualTo($over);
+    }
+
+    /**
+     * The moment the event counts as over: a short grace after its end; with no end, a usual length after its start;
+     * with only a date, 6 AM local the next day (a late-night event still scans after midnight).
+     */
+    public static function overAt(?Event $event): ?Carbon
+    {
+        if ($event === null) {
+            return null;
+        }
         if ($event->ends_at) {
-            return $now->greaterThan($event->ends_at->copy()->addHours(self::GRACE_AFTER_END_HOURS));
+            return $event->ends_at->copy()->addHours(self::GRACE_AFTER_END_HOURS)->addSecond();
         }
         if ($event->starts_at) {
-            return $now->greaterThan($event->starts_at->copy()->addHours(self::ASSUMED_LENGTH_HOURS + self::GRACE_AFTER_END_HOURS));
+            return $event->starts_at->copy()->addHours(self::ASSUMED_LENGTH_HOURS + self::GRACE_AFTER_END_HOURS)->addSecond();
         }
-        $date = substr((string) ($event->event_date_iso ?? ''), 0, 10);
-        if ($date === '') {
-            return false;
+        $date = substr((string) ($event->event_date_iso ?? ""), 0, 10);
+        if ($date === "") {
+            return null;
         }
-        $tz = $event->timezone ?: 'America/New_York';
 
-        // Date only: over from 6 AM local the day after, so a late-night event still scans after midnight.
-        return $now->greaterThanOrEqualTo(Carbon::parse($date, $tz)->addDay()->setTime(6, 0));
+        return Carbon::parse($date, $event->timezone ?: "America/New_York")->addDay()->setTime(6, 0);
     }
 
     public static function stateOf(Order $order): string

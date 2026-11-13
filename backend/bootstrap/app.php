@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        // Apple Wallet's web service: device calls, outside the web group (no session or CSRF).
+        then: fn () => \Illuminate\Support\Facades\Route::middleware([])->group(base_path('routes/wallet.php')),
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Behind a load balancer that terminates TLS (Laravel Cloud), trust its X-Forwarded-* headers so HTTPS,

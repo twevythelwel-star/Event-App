@@ -22,3 +22,7 @@ Artisan::command('compliance:purge-expired-id-documents', function () {
 \Illuminate\Support\Facades\Schedule::command('compliance:flag-due-reviews')->dailyAt('03:15')->withoutOverlapping()->onOneServer();
 // Queued reminders for verified permits, licences and host IDs expiring in 30 or 7 days, or expired yesterday.
 \Illuminate\Support\Facades\Schedule::command('compliance:notify-expiring')->dailyAt('07:30')->withoutOverlapping()->onOneServer();
+
+// Apple Wallet: warn ahead of the pass certificate expiring (docs/eventbite-apple-wallet.md).
+\Illuminate\Support\Facades\Schedule::command('wallet:check --warn-days=30')->weeklyOn(1, '08:00')
+    ->when(fn () => (bool) config('wallet.apple.enabled'))->withoutOverlapping()->onOneServer();

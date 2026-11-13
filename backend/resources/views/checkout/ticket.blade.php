@@ -270,6 +270,10 @@
                             @if($event && ($event->starts_at || $event->event_date_iso))
                                 <a class="eb-btn eb-btn-ghost eb-btn-sm" href="{{ route('tickets.calendar', $order) }}" download data-confirm-text="Added to calendar"><span data-confirm-label>Add to calendar</span></a>
                             @endif
+                            {{-- Apple Wallet: a clean entry pass for the holder, only while the ticket is valid for entry. --}}
+                            @if($settled && !$checkedIn && auth()->check() && ($order->user_id === null || (int) $order->user_id === (int) auth()->id()) && app(\App\Services\Wallet\AppleWalletConfig::class)->enabled())
+                                <a class="eb-btn eb-btn-sm eb-wallet-btn" href="{{ route('tickets.wallet', $order) }}" data-confirm-text="Opening Apple Wallet"><span data-confirm-label>Add to Apple Wallet</span></a>
+                            @endif
                             @if($settled && !$checkedIn)
                                 <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" onclick="window.print()">
                                     Print ticket
