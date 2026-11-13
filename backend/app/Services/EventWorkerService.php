@@ -329,6 +329,8 @@ class EventWorkerService
             'ticket' => self::scanTicketData($order, $assignment) + ['attendee' => $seat + [
                 'checked_in_at' => $attendee->checked_in_at?->format('Y-m-d H:i:s'),
             ]],
+            // Order, payment, ticket, admission and food statuses, reported separately.
+            'statuses' => \App\Support\TicketStatuses::for($order, $attendee),
         ];
     }
 

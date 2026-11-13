@@ -337,8 +337,9 @@ class Order extends Model
      */
     public static function redactTokenForLog(string $text): string
     {
-        return (string) preg_replace_callback('/\btok_[A-Za-z0-9_-]{4,}\b/', function (array $matches): string {
-            return 'tok_[REDACTED:sha256:' . substr(hash('sha256', $matches[0]), 0, 12) . ']';
+        // Order passes (tok_...) and attendee tickets (tkt_...) alike.
+        return (string) preg_replace_callback('/\b(tok|tkt)_[A-Za-z0-9_-]{4,}/', function (array $matches): string {
+            return $matches[1] . '_[REDACTED:sha256:' . substr(hash('sha256', $matches[0]), 0, 12) . ']';
         }, $text);
     }
 

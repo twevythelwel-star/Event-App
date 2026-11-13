@@ -50,6 +50,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Raw admission credentials never reach the application log (App\Support\RedactCredentialsProcessor).
+        try {
+            $logger = \Illuminate\Support\Facades\Log::getLogger();
+            if ($logger instanceof \Monolog\Logger) {
+                $logger->pushProcessor(new \App\Support\RedactCredentialsProcessor());
+            }
+        } catch (\Throwable) {
+            // Logging misconfigured: nothing to protect yet, and boot must not fail over it.
+        }
+
         // Apple Wallet passes follow their ticket: a change the pass shows marks it modified and tells its devices.
         // Only when passes exist (the table is created by a migration, so guard for fresh installs mid-migrate).
         \App\Models\Order::updated(function (\App\Models\Order $order): void {

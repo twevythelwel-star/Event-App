@@ -353,6 +353,141 @@ class AttendeeTicketQrTest extends TestCase
         $this->scan($checker, $this->credentials()->credential($new[0]))->assertJson(['success' => true]);
     }
 
+    // ---- Credential security -------------------------------------------------------------------------------
+
+    public function test_the_qr_carries_only_an_opaque_random_credential(): void
+    {
+        $order = $this->paidOrder(3);
+        $html = $this->actingAs($this->buyer)->get(route('tickets.show', $order))->getContent();
+        $renderer = app(QrArtworkRenderer::class);
+        $reader = new \chillerlan\QRCode\QRCode(new \chillerlan\QRCode\QROptions(['readerGrayscale' => true]));
+
+        foreach (AttendeeTicket::where('order_id', $order->id)->get() as $ticket) {
+            $payload = (string) $reader->readFromBlob($renderer->png($this->credentials()->credential($ticket), $ticket->qr_design, 6));
+
+            $this->assertMatchesRegularExpression('/^tkt_[A-Za-z0-9_-]{43}$/', $payload, 'a bare credential, not a URL');
+            $this->assertSame(32, strlen(base64_decode(strtr(substr($payload, 4), '-_', '+/') . '=')), '256 bits');
+            $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $ticket->getAttributes()['credential_nonce'], '256-bit CSPRNG nonce per ticket');
+            foreach ([$ticket->id, $order->id, (string) $order->event_id, $ticket->ticket_number, $order->ticket_code, $order->order_number,
+                         'QR Buyer', 'qr-buyer@example.test', '8765550123', (string) $order->total_minor, 'bank'] as $secret) {
+                $this->assertStringNotContainsStringIgnoringCase($secret, $payload);
+            }
+            $this->assertStringNotContainsString($payload, $html, 'the credential appears nowhere on the page as text');
+        }
+    }
+
+    public function test_credentials_are_unique_across_many_tickets(): void
+    {
+        $hashes = [];
+        foreach (range(1, 6) as $i) {
+            $order = $this->place(4)['order'];
+            foreach (AttendeeTicket::where('order_id', $order->id)->get() as $ticket) {
+                $hashes[] = hash('sha256', $this->credentials()->credential($ticket));
+            }
+        }
+        $this->assertCount(24, $hashes);
+        $this->assertCount(24, array_unique($hashes));
+    }
+
+    public function test_sequential_ticket_numbers_never_admit(): void
+    {
+        $order = $this->paidOrder(2);
+        $ticket = AttendeeTicket::where('order_id', $order->id)->where('sequence', 1)->first();
+
+        // A checker cannot type codes at all; a supervisor can type an order code, but never a seat number.
+        $this->scan($this->checker(), $ticket->ticket_number)->assertForbidden();
+        $supervisor = User::create(['name' => 'Gate Supervisor', 'email' => 'qr-super@example.test', 'password' => bcrypt('password'), 'status' => 'active']);
+        EventWorkerAssignment::create(['organizer_id' => $this->organizer->id, 'event_id' => $this->event->id, 'user_id' => $supervisor->id,
+            'worker_role' => 'event_supervisor', 'status' => 'active', 'is_active' => true]);
+        $this->scan($supervisor, $ticket->ticket_number)->assertNotFound();
+        $this->assertSame(0, AttendeeTicket::whereNotNull('checked_in_at')->count());
+    }
+
+    public function test_raw_credentials_are_never_logged(): void
+    {
+        $order = $this->place(2)['order']; // unpaid: the scan is refused and audited
+        $checker = $this->checker();
+        $credential = $this->credentials()->credential(AttendeeTicket::where('order_id', $order->id)->first());
+
+        $this->scan($checker, $credential)->assertJson(['success' => false]);
+        $order->forceFill(['status' => 'paid', 'amount_paid_minor' => (int) $order->total_minor])->save();
+        $this->scan($checker, $credential)->assertJson(['success' => true]);
+        $this->scan($checker, 'tkt_' . str_repeat('Z', 43))->assertNotFound();
+
+        $this->assertGreaterThan(0, \App\Models\SecurityAuditLog::count());
+        foreach (\App\Models\SecurityAuditLog::pluck('details') as $details) {
+            $this->assertStringNotContainsString($credential, (string) $details);
+            $this->assertStringNotContainsString($order->secure_ticket_token, (string) $details);
+        }
+
+        // Even when a caller passes a credential in, the audit trail and the application log keep only a fingerprint.
+        $log = \App\Services\AuditLogService::log('test_redaction', 'orders', $order->id, "scanned {$credential} and {$order->secure_ticket_token}");
+        $this->assertStringNotContainsString($credential, $log->details);
+        $this->assertStringContainsString('tkt_[REDACTED:sha256:', $log->details);
+        $this->assertStringContainsString('tok_[REDACTED:sha256:', $log->details);
+
+        $redacted = (new \App\Support\RedactCredentialsProcessor())(new \Monolog\LogRecord(new \DateTimeImmutable(), 'test', \Monolog\Level::Warning,
+            "bad scan {$credential}", ['code' => $credential, 'nested' => ['token' => $order->secure_ticket_token]]));
+        $this->assertStringNotContainsString($credential, $redacted->message . json_encode($redacted->context));
+        $this->assertStringNotContainsString($order->secure_ticket_token, json_encode($redacted->context));
+    }
+
+    // ---- Payment, ticket and admission statuses stay separate ---------------------------------------------
+
+    public function test_a_qr_issued_while_payment_is_pending_never_admits_until_payment_is_verified(): void
+    {
+        $order = $this->place(2)['order'];
+        $checker = $this->checker();
+        $ticket = AttendeeTicket::where('order_id', $order->id)->where('sequence', 1)->first();
+        $credential = $this->credentials()->credential($ticket);
+
+        // The credential and its QR artwork exist while payment is pending; generating them changes no money status.
+        app(TicketQrService::class)->prepare($order);
+        $this->assertSame(AttendeeTicket::QR_READY, $ticket->fresh()->qr_status);
+        $this->assertSame('awaiting_payment', $order->fresh()->status);
+        $this->assertSame(['placed', 'unpaid', 'issued', 'not_admitted'], array_values(array_slice(\App\Support\TicketStatuses::for($order->fresh(), $ticket), 0, 4)));
+        $this->scan($checker, $credential)->assertJson(['success' => false, 'reason_code' => 'payment_pending']);
+
+        // The customer says they paid (reference, as they would after a success page or screenshot): still not paid.
+        app(\App\Services\Checkout\CustomerPaymentService::class)->submitReference($this->buyer, $order->fresh(), 'BANKREF-778', 'QR Buyer');
+        $order->refresh();
+        $this->assertSame('payment_submitted', $order->status);
+        $statuses = \App\Support\TicketStatuses::for($order, $ticket->fresh());
+        $this->assertSame(['submitted', 'issued'], [$statuses['payment'], $statuses['ticket']]);
+        $this->scan($checker, $credential)->assertJson(['success' => false, 'reason_code' => 'payment_pending']);
+        $this->assertNull($ticket->fresh()->checked_in_at);
+
+        // An authorised manual verification records the money; only then does the gate admit.
+        app(\App\Services\Gateways\ManualPaymentGateway::class)->verifyPayment($order, [
+            'verifier_id' => 'host-1', 'verifier_name' => 'Host', 'amount_verified_minor' => (int) $order->total_minor, 'notes' => 'Bank statement checked',
+        ]);
+        $this->assertSame('paid', $order->fresh()->status);
+        $response = $this->scan($checker, $credential)->assertJson(['success' => true]);
+        $response->assertJson(['statuses' => ['order' => 'placed', 'payment' => 'paid', 'ticket' => 'valid', 'admission' => 'admitted']]);
+        $this->assertArrayHasKey('food', $response->json('statuses'));
+        // The other guest on the same order is still not admitted: admission is per ticket.
+        $other = AttendeeTicket::where('order_id', $order->id)->where('sequence', 2)->first();
+        $this->assertSame('not_admitted', \App\Support\TicketStatuses::for($order->fresh(), $other)['admission']);
+    }
+
+    public function test_refunded_cancelled_and_revoked_tickets_report_their_own_status_and_never_admit(): void
+    {
+        $checker = $this->checker();
+        foreach (['refunded' => 'void', 'cancelled' => 'void'] as $status => $ticketStatus) {
+            $order = $this->paidOrder(1);
+            $order->forceFill(['status' => $status])->save();
+            $ticket = AttendeeTicket::where('order_id', $order->id)->first();
+            $this->assertSame($ticketStatus, \App\Support\TicketStatuses::for($order->fresh(), $ticket)['ticket']);
+            $this->scan($checker, $this->credentials()->credential($ticket))->assertJson(['success' => false]);
+        }
+
+        $order = $this->paidOrder(1);
+        $order->revokeTicketToken(null, 'Fraud review');
+        $ticket = AttendeeTicket::where('order_id', $order->id)->first();
+        $this->assertSame('revoked', \App\Support\TicketStatuses::for($order->fresh(), $ticket)['ticket']);
+        $this->scan($checker, $this->credentials()->credential($ticket))->assertJson(['success' => false, 'reason_code' => 'ticket_revoked']);
+    }
+
     public function test_food_and_staff_lookups_find_the_order_from_an_attendee_qr(): void
     {
         $order = $this->paidOrder(2);

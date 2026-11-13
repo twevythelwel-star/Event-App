@@ -32,6 +32,9 @@ class AuditLogService
 
         // Scanner terminals send a per-device session UUID (X-EventBite-Scanner-Session); correlate it
         // into the record so repeated suspicious scans from one device are visible to investigators.
+        // A raw admission credential is never written to the audit trail, whoever passes one in.
+        $details = \App\Models\Order::redactTokenForLog($details);
+
         $scannerSession = $request?->header('X-EventBite-Scanner-Session');
         if (is_string($scannerSession) && preg_match('/^[a-f0-9-]{36}$/i', $scannerSession)) {
             $details .= ' [scanner_session:' . strtolower($scannerSession) . ']';
