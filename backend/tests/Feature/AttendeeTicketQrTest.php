@@ -445,7 +445,8 @@ class AttendeeTicketQrTest extends TestCase
         app(TicketQrService::class)->prepare($order);
         $this->assertSame(AttendeeTicket::QR_READY, $ticket->fresh()->qr_status);
         $this->assertSame('awaiting_payment', $order->fresh()->status);
-        $this->assertSame(['placed', 'unpaid', 'issued', 'not_admitted'], array_values(array_slice(\App\Support\TicketStatuses::for($order->fresh(), $ticket), 0, 4)));
+        $pending = \App\Support\TicketStatuses::for($order->fresh(), $ticket);
+        $this->assertSame(['placed', 'unpaid', 'pending_payment', 'not_admitted'], [$pending['order'], $pending['payment'], $pending['ticket'], $pending['admission']]);
         $this->scan($checker, $credential)->assertJson(['success' => false, 'reason_code' => 'payment_pending']);
 
         // The customer says they paid (reference, as they would after a success page or screenshot): still not paid.
@@ -453,7 +454,7 @@ class AttendeeTicketQrTest extends TestCase
         $order->refresh();
         $this->assertSame('payment_submitted', $order->status);
         $statuses = \App\Support\TicketStatuses::for($order, $ticket->fresh());
-        $this->assertSame(['submitted', 'issued'], [$statuses['payment'], $statuses['ticket']]);
+        $this->assertSame(['submitted', 'pending_payment'], [$statuses['payment'], $statuses['ticket']]);
         $this->scan($checker, $credential)->assertJson(['success' => false, 'reason_code' => 'payment_pending']);
         $this->assertNull($ticket->fresh()->checked_in_at);
 
@@ -473,7 +474,7 @@ class AttendeeTicketQrTest extends TestCase
     public function test_refunded_cancelled_and_revoked_tickets_report_their_own_status_and_never_admit(): void
     {
         $checker = $this->checker();
-        foreach (['refunded' => 'void', 'cancelled' => 'void'] as $status => $ticketStatus) {
+        foreach (['refunded' => 'refunded', 'cancelled' => 'cancelled', 'expired' => 'cancelled'] as $status => $ticketStatus) {
             $order = $this->paidOrder(1);
             $order->forceFill(['status' => $status])->save();
             $ticket = AttendeeTicket::where('order_id', $order->id)->first();

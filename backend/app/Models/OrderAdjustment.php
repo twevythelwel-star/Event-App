@@ -25,6 +25,8 @@ class OrderAdjustment extends Model
 
     public const TYPE_REFUND = 'refund';
     public const TYPE_CORRECTION = 'correction';
+    /** Money the payment provider reclaimed after a dispute. Recorded, never netted into earlier rows. */
+    public const TYPE_CHARGEBACK = 'chargeback';
 
     protected $fillable = [
         'order_id',

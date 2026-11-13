@@ -471,7 +471,7 @@ class Order extends Model
             ])->save();
 
             // Every attendee's own QR code is replaced as well, so no copy of any of them still admits.
-            app(\App\Services\Tickets\AttendeeTicketService::class)->rotateAllFor($locked);
+            app(\App\Services\Tickets\AttendeeTicketService::class)->rotateAllFor($locked, $actor, $reason);
 
             $this->rawTicketToken = $newToken;
             $this->forceFill([
@@ -521,6 +521,9 @@ class Order extends Model
                 'secure_ticket_token_hash' => $revokedSentinelHash,
                 'token_version' => $nextVersion,
             ])->save();
+
+            // Every attendee credential on the order dies with it; the history records why and who.
+            app(\App\Services\Tickets\AttendeeTicketService::class)->recordForOrder($locked, \App\Models\TicketCredentialEvent::REVOKED, $actor, $locked->revocation_reason);
 
             $this->rawTicketToken = null;
             $this->forceFill([

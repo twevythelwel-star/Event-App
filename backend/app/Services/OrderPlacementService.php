@@ -306,6 +306,8 @@ class OrderPlacementService
                 // One admission credential per attendee, created in this transaction: if anything below fails, the
                 // order and every credential roll back together; a retried submission finds them by idempotency key.
                 app(\App\Services\Tickets\AttendeeTicketService::class)->issueFor($order);
+                // Their QR artwork is drawn on the queue once this transaction commits (never for a rolled-back order).
+                \App\Jobs\RenderAttendeeTicketQrCodes::dispatchFor($order);
 
                 // Each fee, tax and discount line is frozen with the order; later rule changes never alter it.
                 foreach ($totals->charges as $charge) {

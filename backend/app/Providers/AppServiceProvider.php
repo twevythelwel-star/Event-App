@@ -154,6 +154,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Register Laravel policies
         Gate::policy(Order::class, OrderPolicy::class);
+        Gate::policy(\App\Models\AttendeeTicket::class, \App\Policies\AttendeeTicketPolicy::class);
         Gate::policy(Event::class, EventPolicy::class);
         Gate::policy(EventWorkerAssignment::class, EventWorkerAssignmentPolicy::class);
 

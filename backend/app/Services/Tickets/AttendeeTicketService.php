@@ -7,6 +7,8 @@ namespace App\Services\Tickets;
 use App\Models\AttendeeTicket;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\TicketCredentialEvent;
+use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -134,7 +136,7 @@ class AttendeeTicketService
      * Replaces the ticket's credential: every earlier copy of its QR code stops working at once. Admitted
      * tickets keep theirs (the gate already rejects them, and their record of admission must not change).
      */
-    public function rotate(AttendeeTicket $ticket): AttendeeTicket
+    public function rotate(AttendeeTicket $ticket, ?User $actor = null, string $reason = 'QR code replaced'): AttendeeTicket
     {
         if ($ticket->checked_in_at !== null) {
             return $ticket;
@@ -149,17 +151,31 @@ class AttendeeTicketService
         ]);
         $ticket->token_hash = self::hash($this->credential($ticket));
         $ticket->save();
+        // The old credential is now dead; the history keeps why, when and who.
+        TicketCredentialEvent::record((string) $ticket->order_id, $ticket, TicketCredentialEvent::REISSUED, $actor, $reason);
 
         return $ticket;
     }
 
     /** Rotates every not-yet-admitted ticket on the order (QR replacement, ticket transfer). */
-    public function rotateAllFor(Order $order): void
+    public function rotateAllFor(Order $order, ?User $actor = null, string $reason = 'QR code replaced'): void
     {
-        DB::transaction(function () use ($order) {
+        DB::transaction(function () use ($order, $actor, $reason) {
             AttendeeTicket::where('order_id', $order->id)->whereNull('checked_in_at')->lockForUpdate()->get()
-                ->each(fn (AttendeeTicket $ticket) => $this->rotate($ticket));
+                ->each(fn (AttendeeTicket $ticket) => $this->rotate($ticket, $actor, $reason));
         });
+    }
+
+    /** Records a step (revoked, charged back) for every attendee ticket on the order, or once for the order. */
+    public function recordForOrder(Order $order, string $action, ?User $actor, ?string $reason): void
+    {
+        $tickets = AttendeeTicket::where('order_id', $order->id)->orderBy('sequence')->get();
+        if ($tickets->isEmpty()) {
+            TicketCredentialEvent::record((string) $order->id, null, $action, $actor, $reason);
+
+            return;
+        }
+        $tickets->each(fn (AttendeeTicket $ticket) => TicketCredentialEvent::record((string) $order->id, $ticket, $action, $actor, $reason));
     }
 
     private function createSeat(Order $order, OrderItem $item, int $sequence): AttendeeTicket
@@ -179,6 +195,7 @@ class AttendeeTicketService
         $ticket->id = (string) Str::uuid();
         $ticket->token_hash = self::hash($this->credential($ticket));
         $ticket->save();
+        TicketCredentialEvent::record((string) $order->id, $ticket, TicketCredentialEvent::ISSUED, null, 'Order placed');
 
         return $ticket;
     }

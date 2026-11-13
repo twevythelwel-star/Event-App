@@ -363,6 +363,23 @@ class CheckoutController extends Controller
         return back()->with('success', 'Thanks. Your ticket now shows Confirmation submitted until the organizer checks the payment.');
     }
 
+    /**
+     * Replaces one guest's QR code: the previous one (and any screenshot of it) stops working at once. The reason,
+     * time and person are kept in the credential history. Only the holder or the event's payment staff may do it.
+     */
+    public function reissueGuest(\App\Http\Requests\ReissueAttendeeTicketRequest $request, Order $order, \App\Models\AttendeeTicket $attendeeTicket): RedirectResponse
+    {
+        abort_unless((string) $attendeeTicket->order_id === (string) $order->id, 404);
+
+        try {
+            app(\App\Services\Tickets\TicketLifecycleService::class)->reissue($attendeeTicket, $request->user(), (string) $request->validated('reason'));
+        } catch (OrderPlacementException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', "Guest {$attendeeTicket->sequence}'s QR code was replaced. The old one no longer works.");
+    }
+
     /** Draws again any attendee QR artwork that failed. Tickets and credentials are never re-issued here. */
     public function retryTicketQr(Request $request, Order $order): RedirectResponse
     {

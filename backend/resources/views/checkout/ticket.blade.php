@@ -238,43 +238,10 @@
                                  The artwork carries its own quiet zone and frame; nothing is drawn over it. --}}
                             @php $seatCount = $attendeeTickets->count(); $tierNames = $order->items->keyBy('id'); @endphp
                             <div class="eb-attendee-qr-list" data-attendee-count="{{ $seatCount }}">
+                                @php $canReissue = auth()->check() && auth()->user()->can('reissue', $attendeeTickets->first()) && !$checkedIn; @endphp
                                 @foreach($attendeeTickets as $attendee)
-                                    @php
-                                        $tierName = $tierNames->get($attendee->order_item_id)?->name ?? 'Admission';
-                                        $art = $ticketQr->svg($attendee, 'QR code for ticket ' . $attendee->ticket_number . ', guest ' . $attendee->sequence . ' of ' . $seatCount);
-                                    @endphp
-                                    <figure class="eb-attendee-qr" data-attendee-ticket="{{ $attendee->ticket_number }}" data-qr-status="{{ $attendee->qr_status }}">
-                                        <figcaption class="eb-attendee-qr-head">
-                                            <span class="eb-text-label">Guest {{ $attendee->sequence }} of {{ $seatCount }} · {{ $tierName }}</span>
-                                            @if($attendee->checked_in_at)
-                                                <span class="eb-badge eb-badge-success">Admitted {{ $local($attendee->checked_in_at) }}</span>
-                                            @endif
-                                        </figcaption>
-                                        @if($attendee->checked_in_at)
-                                            <p class="eb-text-supporting eb-attendee-qr-used">This guest is in. Their QR code can’t be used again.</p>
-                                        @elseif($art)
-                                            <div class="eb-attendee-qr-art" data-qr-type="admission">{!! $art !!}</div>
-                                        @else
-                                            <div class="eb-attendee-qr-pending" role="status">
-                                                <p class="eb-text-supporting" style="margin: 0 0 var(--space-2);">This guest’s QR code is still being prepared. Your ticket is safe; nothing is charged or issued twice.</p>
-                                                <form method="POST" action="{{ route('tickets.qr.retry', $order) }}" style="margin: 0;">
-                                                    @csrf
-                                                    <button type="submit" class="eb-btn eb-btn-secondary eb-btn-sm" data-loading-text="Preparing…">Try again</button>
-                                                </form>
-                                            </div>
-                                        @endif
-                                        @php
-                                            $guestStatus = \App\Support\TicketStatuses::for($order, $attendee, $event);
-                                            $paymentLabels = ['unpaid' => 'Not paid', 'submitted' => 'Being checked', 'partially_paid' => 'Part paid', 'paid' => 'Paid', 'partially_refunded' => 'Part refunded', 'refunded' => 'Refunded', 'not_collected' => 'Not collected'];
-                                        @endphp
-                                        <dl class="eb-attendee-qr-facts">
-                                            <div><dt>Ticket holder</dt><dd>{{ $order->customer_name ?: 'Guest' }}</dd></div>
-                                            <div><dt>Ticket type</dt><dd>{{ $tierName }}</dd></div>
-                                            <div><dt>Ticket number</dt><dd class="eb-text-ticket-code eb-attendee-qr-number">{{ $attendee->ticket_number }}</dd></div>
-                                            <div><dt>Payment</dt><dd data-payment-status="{{ $guestStatus['payment'] }}">{{ $paymentLabels[$guestStatus['payment']] ?? ucfirst($guestStatus['payment']) }}</dd></div>
-                                            <div><dt>Admission</dt><dd data-admission-status="{{ $guestStatus['admission'] }}">{{ $guestStatus['admission'] === 'admitted' ? 'Admitted' : 'Not yet admitted' }}</dd></div>
-                                        </dl>
-                                    </figure>
+                                    <x-ticket-attendee-qr :attendee="$attendee" :order="$order" :event="$event" :of="$seatCount"
+                                        :tier-name="$tierNames->get($attendee->order_item_id)?->name ?? 'Admission'" :ticket-qr="$ticketQr" :can-reissue="$canReissue" />
                                 @endforeach
                             </div>
                             <p class="eb-help-text" style="margin: var(--space-2) 0 0; text-align: center;">

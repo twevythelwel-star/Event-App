@@ -6,6 +6,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exceptions\SecurityException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RecordChargebackRequest;
+use App\Services\OrderPlacementException;
+use App\Services\Tickets\TicketLifecycleService;
 use App\Models\Event;
 use App\Models\Order;
 use App\Services\AuditLogService;
@@ -124,6 +127,26 @@ class OrderOversightController extends Controller
         }
 
         return back()->with('success', "Order {$record->order_number} marked " . Status::label($data['status']) . '.');
+    }
+
+    /**
+     * Records a chargeback the payment provider reported: every ticket credential on the order is revoked and an
+     * append-only chargeback adjustment is added. The original payment records are never changed.
+     */
+    public function chargeback(RecordChargebackRequest $request, string $order, TicketLifecycleService $lifecycle): RedirectResponse
+    {
+        $record = $this->findOrder($order);
+        Gate::authorize(Admin::PAYMENT_REVIEW, $record);
+        $data = $request->validated();
+        $amountMinor = \App\Support\Money::parse((string) $data['amount'], (string) ($record->currency ?: 'USD'))->minor();
+
+        try {
+            $lifecycle->recordChargeback($record, $request->user(), $amountMinor, $data['reason'], $data['provider_reference'] ?? null);
+        } catch (OrderPlacementException $e) {
+            return back()->withInput()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', "Chargeback recorded on order {$record->order_number}. Every ticket on it is revoked.");
     }
 
     private function findOrder(string $id): Order

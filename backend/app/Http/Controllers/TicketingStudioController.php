@@ -13,10 +13,9 @@ use App\Services\Checkout\TicketingStudioService;
 use App\Services\Checkout\TicketPricing;
 use App\Services\Checkout\WaitlistService;
 use App\Services\EventManagementService;
-use App\Services\EventQr\QrDesignCatalog;
+use App\Http\Requests\UpdateTicketQrDesignRequest;
 use App\Services\EventQr\TicketQrDesignSystem;
 use App\Services\OrderPlacementException;
-use Illuminate\Validation\Rule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -60,23 +59,10 @@ class TicketingStudioController extends Controller
      * Ticket QR design: the host picks one of the approved presets (and, for the Cultural Celebration preset, the
      * event's own colours). A choice that would make the code hard to scan is refused with the reason.
      */
-    public function saveQrDesign(Request $request, string $id, TicketQrDesignSystem $designs): RedirectResponse
+    public function saveQrDesign(UpdateTicketQrDesignRequest $request, string $id, TicketQrDesignSystem $designs): RedirectResponse
     {
         $event = $this->events->findEvent($request->user(), $id);
-        $hex = ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'];
-        $data = $request->validate([
-            'preset' => ['required', 'string', Rule::in(array_merge(['auto'], array_keys(TicketQrDesignSystem::PRESETS)))],
-            'module' => ['nullable', 'string', Rule::in(QrDesignCatalog::MODULE_SHAPES)],
-            'finder' => ['nullable', 'string', Rule::in(QrDesignCatalog::FINDER_SHAPES)],
-            'border' => ['nullable', 'string', Rule::in(QrDesignCatalog::BORDERS)],
-            'logo' => ['nullable', 'string', Rule::in(QrDesignCatalog::LOGOS)],
-            'monogram' => ['nullable', 'string', 'max:3', 'regex:/^[A-Za-z0-9&]*$/'],
-            'primary' => $hex, 'secondary' => $hex, 'background' => $hex, 'frame' => $hex,
-        ], ['*.regex' => 'Colours must be hex values like #12351F; initials may be up to three letters or digits.']);
-        $choice = array_filter($data, fn ($v) => $v !== null && $v !== '');
-        if (($choice['preset'] ?? '') !== 'cultural_celebration') {
-            unset($choice['primary'], $choice['secondary'], $choice['background'], $choice['frame']);
-        }
+        $choice = $request->choice();
 
         if ($problem = $designs->choiceProblem($event, $choice)) {
             return redirect()->route('events.ticketing', ['id' => $id, 'tab' => 'qr'])->withErrors(['ticketing' => $problem])->withInput();

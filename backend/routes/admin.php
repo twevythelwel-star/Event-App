@@ -46,6 +46,7 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
         Route::get('/orders', [OrderOversightController::class, 'index'])->name('orders.index');
         Route::get('/orders/{order}', [OrderOversightController::class, 'show'])->name('orders.show');
         Route::post('/orders/{order}/review', [OrderOversightController::class, 'review'])->name('orders.review')->middleware('throttle:30,1');
+        Route::post('/orders/{order}/chargeback', [OrderOversightController::class, 'chargeback'])->name('orders.chargeback')->middleware('throttle:10,1');
 
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export')->middleware('throttle:10,1');

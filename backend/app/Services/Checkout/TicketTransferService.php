@@ -94,7 +94,7 @@ final class TicketTransferService
                 'token_reissued_at' => now(),
             ])->save();
             // Each attendee's QR code is replaced too: the sender's screenshots stop working.
-            app(\App\Services\Tickets\AttendeeTicketService::class)->rotateAllFor($order);
+            app(\App\Services\Tickets\AttendeeTicketService::class)->rotateAllFor($order, $recipient, "Transferred to {$recipient->email}");
             $transfer->forceFill(['status' => 'accepted', 'to_user_id' => $recipient->id, 'accepted_at' => now()])->save();
             $this->audit($recipient, $order, 'ticket_transfer_accepted', "Tickets {$order->ticket_code} transferred to {$recipient->email}.");
 

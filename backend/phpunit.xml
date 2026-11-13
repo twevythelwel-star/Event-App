@@ -36,6 +36,7 @@
         <env name="TWILIO_MESSAGING_SERVICE_SID" value=""/>
         <env name="TWILIO_STATUS_CALLBACK_BASE" value=""/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="TICKET_QR_PRERENDER" value="false"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
