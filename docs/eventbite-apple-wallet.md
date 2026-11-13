@@ -5,6 +5,10 @@ EventBite app keeps the richer collectible ticket. Packaging and signing use the
 [`pkpass/pkpass`](https://github.com/includable/php-pkpass) library (MIT, `^2.5`); EventBite builds the pass
 content, serves Apple's PassKit web service for updates and sends the update pushes itself.
 
+Apple is one provider in the shared wallet architecture ([eventbite-wallet-architecture.md](eventbite-wallet-architecture.md)):
+`AppleWalletService` adapts this flow to the common contract, and a pass counts as saved only once a validated
+signed package was delivered or a device registered for updates.
+
 Status: **built and tested with throwaway certificates shaped like Apple's. Not yet tested with a real Pass Type
 ID certificate on an iPhone** (Verification Required, see the go-live checklist at the end).
 
@@ -185,6 +189,6 @@ leaked key could sign passes that look like EventBite's.
 | Package validation | `app/Services/Wallet/AppleWalletPackageValidator.php`, `php artisan wallet:validate` |
 | Issue and change handling | `app/Services/Wallet/WalletPassService.php`, model hooks in `AppServiceProvider` |
 | Pushes | `app/Services/Wallet/AppleWalletPushService.php`, `app/Jobs/PushWalletPassUpdate.php` |
-| Endpoints | `AppleWalletController` (download), `AppleWalletWebServiceController`, `routes/wallet.php` |
+| Endpoints | `TicketWalletController` (download, shared with Google and Samsung), `AppleWalletWebServiceController`, `routes/wallet.php` |
 | Data | migration `2026_11_12_000071_create_wallet_pass_tables` |
 | Tests | `tests/Feature/AppleWalletTest.php` (throwaway certificates: `tests/Support/WalletTestCertificates.php`) |

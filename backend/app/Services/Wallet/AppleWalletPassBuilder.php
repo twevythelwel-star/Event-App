@@ -30,22 +30,10 @@ final class AppleWalletPassBuilder
         private readonly AppleWalletImages $images,
     ) {}
 
-    /** @return array{status: string, barcode: bool, voided: bool} */
+    /** @return array{status: string, code: string, barcode: bool, voided: bool} */
     public function state(WalletPass $pass, Order $order): array
     {
-        $status = (string) $order->status;
-        $holderChanged = $order->user_id !== null && (int) $pass->user_id !== (int) $order->user_id;
-
-        return match (true) {
-            $pass->voided_at !== null || $holderChanged => ['status' => 'Transferred', 'barcode' => false, 'voided' => true],
-            $order->token_revoked_at !== null => ['status' => 'Revoked', 'barcode' => false, 'voided' => true],
-            $status === 'refunded' => ['status' => 'Refunded', 'barcode' => false, 'voided' => true],
-            in_array($status, TicketLifecycle::CANCELLED_STATUSES, true) => ['status' => 'Cancelled', 'barcode' => false, 'voided' => true],
-            TicketLifecycle::eventIsOver($order->event) => ['status' => 'Event over', 'barcode' => false, 'voided' => false],
-            !in_array($status, TicketLifecycle::SETTLED_STATUSES, true) => ['status' => 'Awaiting payment', 'barcode' => false, 'voided' => false],
-            $order->checked_in_at !== null => ['status' => 'Checked in', 'barcode' => true, 'voided' => false],
-            default => ['status' => 'Valid for entry', 'barcode' => true, 'voided' => false],
-        };
+        return WalletTicketState::of($pass, $order);
     }
 
     /** The pass.json content. */

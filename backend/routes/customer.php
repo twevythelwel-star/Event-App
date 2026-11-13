@@ -23,7 +23,9 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/my-tickets', [\App\Http\Controllers\TicketCollectionController::class, 'index'])->name('tickets.collection');
     Route::get('/tickets/{order}', [CheckoutController::class, 'ticket'])->name('tickets.show');
-    Route::get('/tickets/{order}/wallet.pkpass', [\App\Http\Controllers\AppleWalletController::class, 'download'])->name('tickets.wallet')->middleware('throttle:20,1');
+    Route::get('/tickets/{order}/wallet.pkpass', [\App\Http\Controllers\TicketWalletController::class, 'apple'])->name('tickets.wallet')->middleware('throttle:20,1');
+    Route::get('/tickets/{order}/wallet/{provider}', [\App\Http\Controllers\TicketWalletController::class, 'add'])
+        ->whereIn('provider', ['google', 'samsung'])->name('tickets.wallet.add')->middleware('throttle:20,1');
     Route::get('/tickets/{order}/calendar.ics', [\App\Http\Controllers\TicketCalendarController::class, 'show'])->name('tickets.calendar')->middleware('throttle:30,1');
     Route::post('/tickets/{order}/reissue', [CheckoutController::class, 'reissueTicket'])->name('tickets.reissue')->middleware('throttle:10,1');
     Route::post('/tickets/{order}/revoke', [CheckoutController::class, 'revokeTicket'])->name('tickets.revoke')->middleware('throttle:10,1');

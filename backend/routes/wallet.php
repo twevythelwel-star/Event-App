@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AppleWalletWebServiceController;
+use App\Http\Controllers\SamsungWalletPartnerController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -22,4 +23,18 @@ Route::prefix('wallet/v1')->middleware('throttle:120,1')->group(function () {
     Route::get('/passes/{passTypeId}/{serial}', [AppleWalletWebServiceController::class, 'latest'])
         ->where(['passTypeId' => $passType, 'serial' => $serial])->name('wallet.pass');
     Route::post('/log', [AppleWalletWebServiceController::class, 'log'])->middleware('throttle:20,1')->name('wallet.log');
+});
+
+/*
+| Samsung Wallet partner server (registered in the Samsung Wallet Partners Portal as APP_URL/wallet/samsung).
+| Called by Samsung's servers with a signed Authorization token; 404 until Samsung Wallet is configured.
+| See docs/eventbite-samsung-wallet.md.
+*/
+Route::prefix('wallet/samsung')->middleware('throttle:120,1')->group(function () {
+    $card = '[A-Za-z0-9_\-]{1,64}';
+    $ref = 'eb-[a-f0-9]{32}';
+    Route::get('/cards/{cardId}/{refId}', [SamsungWalletPartnerController::class, 'cardData'])
+        ->where(['cardId' => $card, 'refId' => $ref])->name('wallet.samsung.card');
+    Route::post('/cards/{cardId}/{refId}', [SamsungWalletPartnerController::class, 'cardState'])
+        ->where(['cardId' => $card, 'refId' => $ref])->name('wallet.samsung.state');
 });

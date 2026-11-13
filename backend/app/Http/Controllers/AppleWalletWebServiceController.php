@@ -44,6 +44,8 @@ class AppleWalletWebServiceController extends Controller
             return response('', 200);
         }
         WalletDeviceRegistration::create(['device_library_identifier' => $device, 'push_token' => $pushToken, 'wallet_pass_id' => $pass->id]);
+        // A device holding the pass registered: Apple's own confirmation that it is in a wallet.
+        app(\App\Services\Wallet\WalletPassManager::class)->markSaved($pass, 'device_registered');
 
         return response('', 201);
     }

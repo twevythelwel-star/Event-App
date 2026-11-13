@@ -52,6 +52,7 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
 
         Route::get('/audit-logs', [AuditLogController::class, 'index'])->name('audit.index');
         Route::get('/fraud-monitor', [FraudMonitorController::class, 'index'])->name('fraud-monitor.index');
+        Route::get('/wallets', [\App\Http\Controllers\Admin\WalletAdminController::class, 'index'])->name('wallets.index');
 
         Route::get('/settings', [PlatformSettingsController::class, 'edit'])->name('settings.edit');
         Route::post('/settings', [PlatformSettingsController::class, 'update'])->name('settings.update')->middleware('throttle:10,1');

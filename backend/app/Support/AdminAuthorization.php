@@ -46,6 +46,9 @@ final class AdminAuthorization
     public const REPORTS_EXPORT = 'admin.reports.export';
     public const AUDIT_VIEW = 'admin.audit.view';
     public const SETTINGS_MANAGE = 'admin.settings.manage';
+
+    // Wallet provider status (platform-wide configuration and pass operations): system administrators only.
+    public const WALLETS_VIEW = 'admin.wallets.view';
     // Compliance management (the compliance dashboard, review queues, suspensions, safety reports, policy drafts and
     // the US state and local compliance database): system administrators, and delegated administrators granted
     // "Compliance management". Approving database records and publishing policies stays with system administrators.
@@ -144,6 +147,8 @@ final class AdminAuthorization
         Gate::policy(\App\Models\Compliance\CompliancePolicyVersion::class, \App\Policies\CompliancePolicyVersionPolicy::class);
         Gate::define(self::COMPLIANCE_APPROVE, fn (User $user) => self::isSystemAdmin($user));
         Gate::define(self::COMPLIANCE_OVERRIDE, fn (User $user) => self::isSystemAdmin($user));
+
+        Gate::define(self::WALLETS_VIEW, fn (User $user) => self::isActiveAdmin($user) && self::isSystemAdmin($user));
 
         Gate::define(self::SETTINGS_MANAGE, fn (User $user) => self::isActiveAdmin($user)
             && Gate::forUser($user)->allows('updatePlatformConfiguration', SystemPlatformSetting::class));

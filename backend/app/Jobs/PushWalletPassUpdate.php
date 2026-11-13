@@ -29,4 +29,12 @@ class PushWalletPassUpdate implements ShouldQueue
             $push->notify($pass);
         }
     }
+
+    public function failed(?\Throwable $e): void
+    {
+        $pass = WalletPass::find($this->walletPassId);
+        if ($pass !== null) {
+            app(\App\Services\Wallet\WalletPassManager::class)->recordFailure($pass, $e ?? new \RuntimeException('failed'));
+        }
+    }
 }
