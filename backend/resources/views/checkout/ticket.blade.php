@@ -95,6 +95,14 @@
 <div class="eb-checkout eb-ticket-pass-page">
     <p id="ticket-live-status" class="sr-only" aria-live="polite"></p>
     @auth<a href="{{ $keepsake ? route('tickets.collection', ['tab' => 'past']) : route('tickets.collection') }}" class="eb-help-text" style="text-decoration: none;" data-no-print>← My Tickets</a>@endauth
+    {{-- Poor event-day signal: public/ticket-offline-sw.js keeps a copy of this page on the phone and, when there is no
+         connection, serves that copy with this notice shown (data-offline-copy). The copy is only what the ticket looked
+         like when it was saved: admission is decided by the gate scan against the server, never by this page. --}}
+    <div class="eb-offline-copy" data-offline-copy hidden role="status" data-no-print>
+        <strong>Saved copy · you’re offline</strong>
+        <span>This is your ticket as it was <span data-offline-saved>when it was last loaded</span>. It may not show changes made since then.</span>
+        <span><strong>This page doesn’t confirm admission:</strong> only the staff scan at the gate does, checked live with EventBite. If your QR code was replaced or the ticket changed, the gate will refuse this copy.</span>
+    </div>
     <x-alert :type="$nextTone" :title="$nextTitle">{{ $nextDetail }}</x-alert>
 
     <article class="eb-ticket-card eb-digital-pass {{ $theme->cssClass() }} {{ $settled && !$keepsake ? 'is-settled' : '' }} {{ $keepsake ? 'is-keepsake' : '' }} {{ $void ? 'is-void' : '' }}"
@@ -213,7 +221,7 @@
             @endif
 
             @if($status === 'refunded')
-                <img src="{{ \App\Support\VisualAssets::illustration('refund')['url'] }}" alt="" width="180" height="135" style="display: block; margin: 0 auto; max-width: 60%; height: auto;">
+                <img src="{{ \App\Support\VisualAssets::illustration('refund')['url'] }}" alt="" width="180" height="135" loading="lazy" decoding="async" style="display: block; margin: 0 auto; max-width: 60%; height: auto;">
             @endif
 
             {{-- 4. Perforated Stub & Unobstructed Admission QR Well --}}
@@ -243,7 +251,7 @@
                             Single-use admission QR{{ $admissionWindow ? ' · valid ' . $admissionWindow : '' }}. Food items are collected separately by event staff.
                         </p>
                     @else
-                        <img src="{{ \App\Support\VisualAssets::illustration('payment')['url'] }}" alt="" width="180" height="135" style="display: block; margin: 0 auto var(--space-2); max-width: 60%; height: auto;">
+                        <img src="{{ \App\Support\VisualAssets::illustration('payment')['url'] }}" alt="" width="180" height="135" loading="lazy" decoding="async" style="display: block; margin: 0 auto var(--space-2); max-width: 60%; height: auto;">
                         <p class="eb-text-supporting" style="margin: 0;">Your ticket QR code appears here once your payment is confirmed.</p>
                     @endif
 

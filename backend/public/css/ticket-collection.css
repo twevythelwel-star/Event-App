@@ -109,3 +109,9 @@ a.eb-collectible:focus-visible { outline: 3px solid #C7FF45; outline-offset: 3px
 /* "Add to Apple Wallet": black, as Wallet buttons are. */
 .eb-wallet-btn { background: #000; color: #fff; border: 1px solid rgba(255, 255, 255, 0.35); }
 .eb-wallet-btn:hover, .eb-wallet-btn:focus-visible { background: #111; color: #fff; }
+
+/* Offline copy notice (public/ticket-offline-sw.js): unmistakable, and never styled like a "valid" state. */
+.eb-offline-copy { display: grid; gap: 4px; margin: 0 0 var(--space-3); padding: var(--space-3); border-radius: var(--radius-md);
+  border: 1px solid var(--color-warning, #F59E0B); background: rgba(245, 158, 11, 0.12); color: var(--color-text-primary); font-size: 0.875rem; line-height: 1.45; }
+.eb-offline-copy[hidden] { display: none; }
+.eb-offline-copy > strong:first-child { color: var(--color-warning-text, #FBBF24); }

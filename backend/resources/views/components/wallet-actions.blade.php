@@ -22,7 +22,7 @@
 
     @foreach($walletStatuses as $key => $status)
         <p class="eb-help-text" role="status" data-wallet-status="{{ $key }}" data-wallet-state="{{ $status['state'] }}"
-           style="margin: 0 0 var(--space-2); color: {{ in_array($status['state'], ['failed', 'revoked'], true) ? 'var(--color-warning, #b45309)' : 'var(--color-success, #15803d)' }};">
+           style="margin: 0 0 var(--space-2); color: {{ in_array($status['state'], ['failed', 'revoked'], true) ? 'var(--color-warning-text)' : 'var(--color-success-text)' }};">
             {{ str_replace(':label', $status['label'], $walletStatusText[$status['state']]) }}
         </p>
     @endforeach
@@ -36,9 +36,10 @@
                     $badgeText = 'Add to ' . $offer['label'];
                 @endphp
                 <a href="{{ $offer['url'] }}" rel="nofollow" data-wallet-provider="{{ $offer['key'] }}" data-confirm-text="Opening {{ $offer['label'] }}"
-                   class="{{ $hasBadge ? 'eb-wallet-badge' : 'eb-btn eb-btn-sm eb-wallet-btn' }}">
+                   class="{{ $hasBadge ? 'eb-wallet-badge' : 'eb-btn eb-wallet-btn' }}"
+                   style="min-height: 44px; display: inline-flex; align-items: center;">
                     @if($hasBadge)
-                        <img src="{{ asset($badge) }}" alt="{{ $badgeText }}" height="40" style="height: 40px; width: auto; display: block;">
+                        <img src="{{ asset($badge) }}" alt="{{ $badgeText }}" height="40" decoding="async" style="height: 40px; width: auto; display: block;">
                     @else
                         <span data-confirm-label>{{ $badgeText }}</span>
                     @endif
@@ -55,6 +56,6 @@
             Wallet passes aren’t available for this ticket yet.
         @endif
         No wallet app? You don’t need one: show this EventBite ticket at the gate, print it, or open it any time from
-        <a href="{{ route('tickets.collection') }}">My tickets</a>. Adding a pass to a wallet doesn’t change your payment or admission.
+        <a href="{{ route('tickets.collection') }}" style="color: var(--color-text-primary); text-decoration: underline;">My tickets</a>. Adding a pass to a wallet doesn’t change your payment or admission.
     </p>
 </section>

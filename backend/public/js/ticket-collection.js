@@ -201,6 +201,36 @@
     });
   }
 
-  function init() { initTabs(); initConfirmations(); initShare(); }
+  // ---------- Offline copy (ticket pages only) ----------
+  // public/ticket-offline-sw.js keeps a copy of each ticket page the holder opens, for event days with poor signal.
+  // When it has to serve that copy it marks the notice (data-offline-source="cache"); the notice also appears if the
+  // connection drops while the page is open. The notice says plainly that only the gate scan confirms admission.
+  function initOffline() {
+    var notice = document.querySelector('[data-offline-copy]');
+    if (!notice) return;
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+      navigator.serviceWorker.register('/ticket-offline-sw.js', { scope: '/tickets/' }).catch(function () { /* the page works without it */ });
+    }
+    var savedAt = notice.getAttribute('data-saved-at');
+    var when = notice.querySelector('[data-offline-saved]');
+    function stamp(date) {
+      if (!when || isNaN(date.getTime())) return;
+      when.textContent = 'on ' + date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    }
+    var loadedAt = new Date();
+    if (notice.getAttribute('data-offline-source') === 'cache') {
+      stamp(new Date(savedAt));
+      notice.hidden = false;
+      return;
+    }
+    function update() {
+      if (navigator.onLine === false) { stamp(loadedAt); notice.hidden = false; } else { notice.hidden = true; }
+    }
+    window.addEventListener('offline', update);
+    window.addEventListener('online', update);
+    update();
+  }
+
+  function init() { initTabs(); initConfirmations(); initShare(); initOffline(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();

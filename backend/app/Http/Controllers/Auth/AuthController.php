@@ -125,6 +125,9 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login')->with('status', 'You have been signed out successfully.');
+        // Also wipe what this browser kept for the account, including the offline ticket copies
+        // (public/ticket-offline-sw.js), so the next person on a shared phone can't open them.
+        return redirect()->route('login')->with('status', 'You have been signed out successfully.')
+            ->header('Clear-Site-Data', '"cache", "storage"');
     }
 }

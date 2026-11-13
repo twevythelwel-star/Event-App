@@ -73,6 +73,30 @@ Customers without a supported wallet use the EventBite ticket itself: the same p
 **My tickets**; the wallet section says so. Saving a pass never changes payment or admission: it touches only
 `wallet_passes` and `wallet_pass_events` (tested in `WalletCustomerFlowTest`).
 
+### Event-day offline copy
+
+For poor signal at the venue, `public/ticket-offline-sw.js` (a service worker registered by
+`public/js/ticket-collection.js`, scope `/tickets/`) keeps a copy of each ticket page the holder opens, together with
+the styles, scripts and images it uses. It works network first: with a connection the page always comes fresh from the
+server. It serves the copy only when the network fails, and then with the notice "Saved copy · you’re offline" and when
+it was saved. The notice also says that the page doesn’t confirm admission: only the gate scan, checked live with the
+server, does, and the gate refuses a replaced, revoked, transferred or used QR whatever the copy shows. The worker
+handles nothing else: no other pages, no forms, no wallet downloads. A copy is dropped when the server stops showing
+that ticket to the browser (401, 403, 404, 410 or a redirect), and signing out sends
+`Clear-Site-Data: "cache", "storage"`, which removes all copies and the worker. Service workers need HTTPS (or
+localhost). Tested in `TicketOfflineAndAccessibilityTest`.
+
+### Mobile layout and accessibility
+
+The ticket page was checked at 320, 360, 375, 390 and 430 px, tablet (768 px) and desktop (1280 px). It has no
+horizontal scroll and no clipped content, and the QR code stays at 185–220 px on a plain white quiet zone. Wallet
+buttons are at least 44 px high. Status lines use the high-contrast `--color-success-text` and `--color-warning-text`
+tokens. Illustrations below the fold load lazily, and motion follows `prefers-reduced-motion` (global rules in the
+layout and `animations.css`).
+
+The layout's viewport meta has no `viewport-fit=cover`, so phones keep the page inside the safe area themselves, and
+the bottom navigation's `env(safe-area-inset-bottom)` padding takes effect only if that is turned on later.
+
 ### Official badges
 
 Each button uses the provider's official "Add to … Wallet" badge when its file is installed under `public/` at
