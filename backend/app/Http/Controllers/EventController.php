@@ -47,7 +47,12 @@ class EventController extends Controller
         if ($request->filled('kind')) {
             $kind = (string) $request->query('kind');
             $subjects = \App\Services\PhotoLibrary::subjects();
-            $keys = array_key_exists($kind, $subjects) ? [$kind] : array_keys(array_filter($subjects, fn ($s) => $s['group'] === $kind));
+            $collection = config('photo_library.collections.' . $kind);
+            $keys = match (true) {
+                array_key_exists($kind, $subjects) => [$kind],
+                is_array($collection) => array_values(array_intersect((array) ($collection['subjects'] ?? []), array_keys($subjects))),
+                default => array_keys(array_filter($subjects, fn ($s) => $s['group'] === $kind)),
+            };
             $query->whereIn('photo_subject', $keys ?: ['__none__']);
         }
         $perPage = min(48, max(12, (int) $request->query('per_page', 24)));

@@ -7,7 +7,6 @@
 @php
     $marketValue = fn ($m) => strtoupper($m->state_code) . ':' . strtolower($m->city);
     $sections = [
-        ['id' => 'featured', 'title' => 'Featured events', 'note' => 'Coming up soonest in our featured cities.', 'events' => $featured, 'more' => route('events.index')],
         ['id' => 'food-festivals', 'title' => 'Upcoming food festivals', 'note' => 'A range of cuisines, one event per tradition first.', 'events' => $foodFestivals, 'more' => route('events.index', ['category' => 'food'])],
         ['id' => 'music', 'title' => 'Live music & nightlife', 'note' => 'Concerts, DJs and dances across genres.', 'events' => $music, 'more' => route('events.index', ['category' => 'music'])],
         ['id' => 'culture', 'title' => 'Cultural & community celebrations', 'note' => null, 'events' => $culture, 'more' => route('events.index', ['category' => 'culture'])],
@@ -20,11 +19,7 @@
     .eb-home { display: flex; flex-direction: column; gap: var(--space-8, 2.5rem); max-width: 1240px; margin: 0 auto; }
     .eb-home-hero { padding: var(--space-6, 2rem); border-radius: var(--radius-lg, 16px); background: var(--color-surface, #10243A); border: 1px solid var(--color-border, #26384D); }
     .eb-home-hero h1 { margin: 0 0 var(--space-2, .5rem); }
-    .eb-home-search { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; gap: var(--space-3, .75rem); margin-top: var(--space-5, 1.5rem); align-items: end; }
-    .eb-home-near { display: flex; flex-wrap: wrap; gap: var(--space-3, .75rem); align-items: end; margin-top: var(--space-4, 1rem); }
-    .eb-home-chips { display: flex; flex-wrap: wrap; gap: var(--space-2, .5rem); margin: 0; padding: 0; list-style: none; }
-    .eb-home-chips a { display: inline-flex; gap: 6px; align-items: center; padding: 6px 14px; border-radius: 9999px; border: 1px solid var(--color-border, #26384D); color: var(--color-text-primary, #F8FAFC); text-decoration: none; font-size: .875rem; font-weight: 600; }
-    .eb-home-chips a:hover, .eb-home-chips a:focus-visible { border-color: var(--color-accent, #C7FF45); }
+    .eb-home-near { display: flex; flex-wrap: wrap; gap: var(--space-3, .75rem); align-items: end; margin: 0; }
     .eb-home-section-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3, .75rem); margin-bottom: var(--space-3, .75rem); }
     .eb-home-markets { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3, .75rem); margin: 0; padding: 0; list-style: none; }
     .eb-home-markets a { display: block; padding: var(--space-3, .75rem) var(--space-4, 1rem); border-radius: var(--radius-md, 12px); background: var(--color-surface, #10243A); border: 1px solid var(--color-border, #26384D); color: var(--color-text-primary, #F8FAFC); text-decoration: none; }
@@ -32,7 +27,6 @@
     .eb-home-steps li { padding: var(--space-4, 1rem); border-radius: var(--radius-md, 12px); background: var(--color-background-secondary, #0B192B); border: 1px solid var(--color-border, #26384D); }
     .eb-home-steps li::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 28px; height: 28px; margin-bottom: var(--space-2, .5rem); border-radius: 50%; background: var(--color-accent-subtle); color: var(--color-accent, #C7FF45); font-weight: 800; font-size: .85rem; }
     .eb-home-steps strong { display: block; color: var(--color-text-primary, #F8FAFC); }
-    @media (max-width: 720px) { .eb-home-search { grid-template-columns: 1fr; } }
 </style>
 
 <div class="eb-home">
@@ -55,7 +49,7 @@
         }
         // A real photograph for each tradition: the flyer of an upcoming event that celebrates it.
         $traditionPhotos = [];
-        foreach (collect($sections)->pluck('events')->map(fn ($events) => collect($events))->flatten(1)->unique('id') as $listed) {
+        foreach (collect($sections)->pluck('events')->prepend($featured)->map(fn ($events) => collect($events))->flatten(1)->unique('id') as $listed) {
             if (!$listed->hasFlyer() || !method_exists($listed, 'traditionLabels')) {
                 continue;
             }
@@ -63,80 +57,95 @@
                 $traditionPhotos[$label] ??= $listed;
             }
         }
-        $upcomingCount = $markets->sum('upcoming_count') ?: $featured->count();
     @endphp
-    @if($heroArt->isNotEmpty())
+    @php
+        $heroLead = $heroArt->first();
+        // The hero needs a photograph behind the headline. A generated flyer is text, so when the lead event has no
+        // photo, a photo of a dish on a featured event's menu stands in (labelled when it is illustrative).
+        $heroCover = $heroLead?->coverImage();
+        $heroAlt = $heroLead ? 'Featured: ' . $heroLead->title . ($heroCover->label ? ' (illustrative photo)' : '') : null;
+        if ($heroLead && !$heroLead->hasFlyer() && !$heroCover->illustrative) {
+            $heroDish = $featured->flatMap(fn ($e) => $e->menuItems->where('is_active', true)->map(fn ($item) => [$e, $item, $item->responsiveImage()]))
+                ->first(fn ($row) => $row[2] !== null);
+            if ($heroDish) {
+                [$heroLead, $heroItem, $heroCover] = $heroDish;
+                $heroAlt = 'Featured: ' . $heroItem->name . ' at ' . $heroLead->title . ($heroCover->illustrative ? ' (illustrative photo)' : '');
+            } else {
+                $heroCover = null;
+            }
+        }
+    @endphp
+    @if($heroCover)
         @push('head')
-            <x-preload-image :image="$heroArt->first()->coverImage()" sizes="(min-width: 1280px) 520px, 90vw" />
+            <x-preload-image :image="$heroCover" sizes="(min-width: 1024px) 1240px, 100vw" />
         @endpush
     @endif
-    <section class="eb-home-hero eb-hero-cinematic" aria-labelledby="home-heading">
-        <div class="eb-hero-backdrop" aria-hidden="true">
-            <span class="eb-hero-orb eb-hero-orb-lime"></span>
-            <span class="eb-hero-orb eb-hero-orb-purple"></span>
-            <span class="eb-hero-shape eb-hero-shape-ring"></span>
-            <span class="eb-hero-shape eb-hero-shape-pill"></span>
-        </div>
-        <div class="eb-hero-grid">
-        <div class="eb-hero-copy">
-        <p class="eb-hero-kicker"><x-icon name="sparkles" size="sm" /> Food · Music · Culture</p>
-        <h1 id="home-heading" class="eb-text-display eb-hero-title">Events, food and culture across the U.S.</h1>
-        <p class="eb-text-supporting" style="margin: 0; max-width: 60ch;">
-            Find food festivals, cookouts, live music and community celebrations from many traditions. Buy tickets and order food for pickup in one place.
-        </p>
-
-        <form method="GET" action="{{ route('events.index') }}" class="eb-home-search" role="search" aria-label="Search events">
-            <div class="eb-form-group" style="margin: 0;">
-                <label for="home-q" class="eb-label">Search events, cities and towns</label>
-                <input id="home-q" name="q" type="search" class="eb-input" placeholder="e.g. tamales, jollof, Atlanta, family day" autocomplete="off">
-            </div>
-            <div class="eb-form-group" style="margin: 0;">
-                <label for="home-city" class="eb-label">Location</label>
-                <select id="home-city" name="city" class="eb-input">
-                    <option value="">United States (all)</option>
-                    @foreach($allMarkets as $m)
-                        <option value="{{ $marketValue($m) }}" @selected($market && $market->id === $m->id)>{{ $m->city }}, {{ $m->state_code }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <button type="submit" class="eb-btn eb-btn-primary">Search</button>
-        </form>
-
-        <form method="GET" action="{{ route('home') }}" class="eb-home-near" id="home-near-form">
-            <div class="eb-form-group" style="margin: 0;">
-                <label for="home-market" class="eb-label">Show events near</label>
-                <select id="home-market" name="market" class="eb-input" onchange="this.form.submit()">
-                    <option value="">Anywhere in the United States</option>
-                    @foreach($allMarkets as $m)
-                        <option value="{{ $m->id }}" @selected($market && $market->id === $m->id)>{{ $m->city }}, {{ $m->state_code }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <noscript><button type="submit" class="eb-btn eb-btn-secondary">Show</button></noscript>
-        </form>
-        <dl class="eb-hero-stats">
-            <div><dt>Upcoming events</dt><dd>{{ $upcomingCount }}</dd></div>
-            <div><dt>Cities</dt><dd>{{ $allMarkets->count() }}</dd></div>
-            <div><dt>Traditions</dt><dd>{{ count($traditions) }}</dd></div>
-        </dl>
-        </div>
-        @if($heroArt->isNotEmpty())
-            {{-- The featured events' own artwork: their uploaded flyer, or their generated cover. --}}
+    {{-- Phone-first photo hero: a featured event's own photograph fills the panel behind the headline and search. --}}
+    <section class="eb-home-hero eb-hero-cinematic eb-home-photo-hero" aria-labelledby="home-heading">
+        @if($heroCover)
             <div class="eb-hero-art">
-                @foreach($heroArt as $i => $art)
-                    <a href="{{ route('events.show', $art->id) }}" class="eb-hero-card eb-hero-card-{{ $i }}" @if($i > 0) tabindex="-1" aria-hidden="true" @endif>
-                        @php $heroCover = $art->coverImage(); @endphp
-                        <x-responsive-image :image="$heroCover" :alt="$i === 0 ? 'Featured: ' . $art->title . ($heroCover->label ? ' (illustrative photo)' : '') : ''" :eager="$i === 0" sizes="(min-width: 1280px) 520px, 90vw" />
-                        @if($i === 0)<x-image-label :image="$heroCover" corner="top-right" />@endif
-                        @if($i === 0)
-                            <span class="eb-hero-card-label"><span class="eb-badge eb-badge-accent">Featured</span></span>
-                        @endif
-                    </a>
-                @endforeach
+                <x-responsive-image :image="$heroCover" :alt="$heroAlt" :eager="true" sizes="(min-width: 1024px) 1240px, 100vw" />
+                <x-image-label :image="$heroCover" corner="top-right" />
             </div>
         @endif
+        <div class="eb-hero-backdrop" aria-hidden="true"></div>
+        <div class="eb-home-photo-hero-content">
+            <h1 id="home-heading" class="eb-home-photo-hero-title">Discover. Enjoy. <span>Make Memories.</span></h1>
+            <p class="eb-home-photo-hero-kicker">Events <span aria-hidden="true">•</span> Food <span aria-hidden="true">•</span> Culture <span aria-hidden="true">•</span> More</p>
+            <p class="eb-home-photo-hero-lede">Events, food and culture across the U.S. Find food festivals, cookouts, live music and community celebrations, then buy tickets and order food in one place.</p>
+
+            <form method="GET" action="{{ route('events.index') }}" class="eb-home-search" role="search" aria-label="Search events">
+                <div class="eb-search-pill">
+                    <x-icon name="search" size="md" />
+                    <label for="home-q" class="sr-only">Search events, cities and towns</label>
+                    <input id="home-q" name="q" type="search" placeholder="Search events..." autocomplete="off">
+                    <button type="submit" class="eb-search-pill-go"><x-icon name="arrow-right" size="sm" /><span class="sr-only">Search</span></button>
+                </div>
+                <div class="eb-home-search-where">
+                    <label for="home-city" class="eb-home-search-where-label"><x-icon name="map-pin" size="sm" /><span>Location</span></label>
+                    <select id="home-city" name="city" class="eb-input">
+                        <option value="">United States (all)</option>
+                        @foreach($allMarkets as $m)
+                            <option value="{{ $marketValue($m) }}" @selected($market && $market->id === $m->id)>{{ $m->city }}, {{ $m->state_code }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </form>
+
+            <ul class="eb-home-chips" aria-label="Browse by category">
+                <li><a href="{{ route('events.index', ['category' => 'music']) }}"><x-icon name="music" size="sm" /><span>Music</span></a></li>
+                <li><a href="{{ route('events.index', ['category' => 'food']) }}"><x-icon name="utensils" size="sm" /><span>Food</span></a></li>
+                <li><a href="{{ route('events.index', ['category' => 'culture']) }}"><x-icon name="users" size="sm" /><span>Culture</span></a></li>
+                <li><a href="{{ route('events.index', ['q' => 'family']) }}"><x-icon name="heart" size="sm" /><span>Family</span></a></li>
+            </ul>
+
+            @if($heroLead)
+                <a href="{{ route('events.show', $heroLead->id) }}" class="eb-home-photo-hero-featured">
+                    <span class="eb-badge eb-badge-accent">Featured</span>
+                    <span class="eb-clamp-1">{{ $heroLead->title }}</span>
+                    <x-icon name="arrow-right" size="sm" />
+                </a>
+            @endif
         </div>
     </section>
+
+    {{-- Upcoming events as compact rows: photo, category tag, title, date, venue and an arrow. --}}
+    @if($featured->isNotEmpty())
+        <section aria-labelledby="upcoming-heading">
+            <div class="eb-home-section-head">
+                <div>
+                    <h2 id="upcoming-heading" class="eb-text-section-title" style="margin: 0;">Featured events</h2>
+                    <p class="eb-text-supporting" style="margin: 2px 0 0;">Upcoming events in our featured cities, soonest first.</p>
+                </div>
+                <a class="eb-text-label" href="{{ route('events.index') }}">See all →</a>
+            </div>
+            <div class="eb-event-rows">
+                @foreach($featured as $event)
+                    <x-event-row :event="$event" />
+                @endforeach
+            </div>
+        </section>
+    @endif
 
     {{-- What EventBite does, in the order people do it --}}
     <section aria-labelledby="how-heading">
@@ -238,6 +247,18 @@
         <section aria-labelledby="markets-heading">
             <div class="eb-home-section-head">
                 <h2 id="markets-heading" class="eb-text-section-title" style="margin: 0;">Popular cities</h2>
+                <form method="GET" action="{{ route('home') }}" class="eb-home-near" id="home-near-form">
+                    <div class="eb-form-group" style="margin: 0;">
+                        <label for="home-market" class="eb-label">Show events near</label>
+                        <select id="home-market" name="market" class="eb-input" onchange="this.form.submit()">
+                            <option value="">Anywhere in the United States</option>
+                            @foreach($allMarkets as $m)
+                                <option value="{{ $m->id }}" @selected($market && $market->id === $m->id)>{{ $m->city }}, {{ $m->state_code }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <noscript><button type="submit" class="eb-btn eb-btn-secondary">Show</button></noscript>
+                </form>
             </div>
             <ul class="eb-home-markets">
                 @foreach($markets as $m)

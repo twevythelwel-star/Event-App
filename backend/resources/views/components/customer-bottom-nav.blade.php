@@ -8,24 +8,33 @@
     $isAuthenticated = $authUser !== null;
     $customerSurface = request()->routeIs('home', 'events.*', 'saved.*', 'attendee.dashboard', 'tickets.*', 'settings.*');
 
-    // Customer mobile navigation: Discover / My Tickets / Saved / Profile (docs/eventbite-mobile-design-audit.md).
-    // Home is the logo; order history stays reachable from the dashboard's Orders section.
+    // Customer mobile navigation: Home / Explore / My Tickets / Saved / Profile, with the active item in lime.
+    // Home is the homepage (signed-in customers land on their dashboard there); Explore is event discovery.
+    // Saved stays a tab for signed-in customers (docs/eventbite-mobile-design-audit.md).
     $items = [
         [
+            'key' => 'home',
+            'label' => 'Home',
+            'icon' => 'home',
+            'href' => route('home'),
+            'visible' => true,
+            'active' => $active === 'home' || request()->routeIs('home', 'attendee.dashboard'),
+        ],
+        [
             'key' => 'discover',
-            'label' => 'Discover',
+            'label' => 'Explore',
             'icon' => 'search',
             'href' => route('events.index'),
             'visible' => true,
-            'active' => $active === 'discover' || request()->routeIs('home', 'events.*'),
+            'active' => $active === 'discover' || request()->routeIs('events.*'),
         ],
         [
             'key' => 'tickets',
             'label' => 'My Tickets',
             'icon' => 'tickets',
-            'href' => $isAuthenticated ? route('tickets.collection') : null,
-            'visible' => $isAuthenticated,
-            'active' => $active === 'tickets' || request()->routeIs('attendee.dashboard', 'tickets.collection', 'tickets.show'),
+            'href' => $isAuthenticated ? route('tickets.collection') : route('login'),
+            'visible' => true,
+            'active' => $active === 'tickets' || request()->routeIs('tickets.collection', 'tickets.show'),
         ],
         [
             'key' => 'saved',
@@ -54,6 +63,7 @@
         <a
             href="{{ $item['href'] }}"
             class="eb-customer-nav-item {{ $item['active'] ? 'active' : '' }}"
+            data-nav="{{ $item['key'] }}"
             @if($item['active']) aria-current="page" @endif
         >
             <x-icon :name="$item['icon']" size="md" />
@@ -62,4 +72,3 @@
     @endforeach
 </nav>
 @endif
-

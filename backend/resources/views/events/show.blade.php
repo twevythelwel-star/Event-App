@@ -391,7 +391,33 @@
         #event-detail-page .eb-buy-bar { bottom: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding: 9px 14px; }
         #event-detail-page .eb-buy-bar .eb-btn { min-width: 52%; min-height: 48px; border-radius: 999px; }
         .eb-customer-bottom-nav { height: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
+        /* The page canvas has no side padding here, so the root must not pull itself outwards (that scrolled sideways). */
+        #event-detail-page.event-detail-root { margin-left: 0; margin-right: 0; }
+        /* The app design: on phones the title block sits on the page itself, not in a card. */
+        #event-detail-page .detail-intro.card-navy { background: transparent; border: 0; box-shadow: none; padding: 4px 2px 0; }
+        #event-detail-page #venue-information { background: transparent; border: 0; box-shadow: none; padding: 0; gap: 12px; }
     }
+
+    .detail-title { font-family: var(--font-display); font-size: clamp(1.75rem, 7vw, 2.4rem); font-weight: 800; color: #FFFFFF; line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .detail-kicker { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 0 0 8px; font-size: 0.95rem; font-weight: 600; color: var(--color-text-secondary); }
+    .detail-kicker a { color: var(--color-text-secondary); text-decoration: none; }
+    .detail-kicker a:hover { color: var(--color-accent); text-decoration: underline; }
+    .detail-info-icon { flex-shrink: 0; display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--color-accent-subtle); color: var(--color-accent); }
+    .detail-subhead { font-size: 1rem; font-weight: 800; color: #FFFFFF; margin: 0 0 10px; }
+    .detail-food-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+    @media (min-width: 640px) { .detail-food-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+    .detail-food-strip button { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; padding: 0; border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; cursor: pointer; background: var(--color-surface-recessed); }
+    .detail-food-strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .detail-food-strip .eb-image-label { font-size: 9px !important; padding: 2px 6px !important; left: 4px !important; bottom: 4px !important; }
+    .detail-cta-inline .btn-gradient-purchase { border-radius: 9999px; min-height: 52px; font-size: 1rem; }
+    @media (min-width: 901px) { .detail-cta-inline { display: none; } }
+    .icon-glass-btn { text-decoration: none; }
+    .icon-glass-btn.is-saved { color: var(--color-accent); border-color: var(--color-accent-border); }
+    .icon-glass-btn.is-saved svg { fill: currentColor; }
+    /* Tabs as an underlined row, as in the app design. */
+    .section-tab-nav { background: transparent; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; box-shadow: none; padding: 0; gap: 4px; }
+    .section-tab-btn { border-radius: 0; border: 0; border-bottom: 3px solid transparent; padding: 12px 10px; }
+    .section-tab-btn.active { background: transparent; background-image: none; box-shadow: none; color: #FFFFFF; border-color: transparent; border-bottom-color: var(--color-accent); }
 </style>
 
 <div class="event-detail-root" id="event-detail-page">
@@ -420,14 +446,29 @@
 
         <!-- Floating Top Navigation -->
         <div class="detail-hero-nav">
-            <a href="{{ route('events.index') }}" class="btn-glass" id="btn-back-to-discovery">
-                <span>&larr;</span>
-                <span>Back to All Events</span>
+            <a href="{{ route('events.index') }}" class="icon-glass-btn" id="btn-back-to-discovery" title="Back to all events">
+                <x-icon name="arrow-left" size="md" />
+                <span class="sr-only">Back to all events</span>
             </a>
 
             <div style="display: flex; align-items: center; gap: 10px;">
+                @auth
+                    @php $heroSaved = \App\Models\SavedEvent::where('user_id', auth()->id())->where('event_id', $event->id)->exists(); @endphp
+                    <form method="POST" action="{{ route('events.save.toggle', $event->id) }}" style="margin: 0;">
+                        @csrf
+                        <button type="submit" class="icon-glass-btn{{ $heroSaved ? ' is-saved' : '' }}" aria-pressed="{{ $heroSaved ? 'true' : 'false' }}" title="{{ $heroSaved ? 'Remove from saved events' : 'Save this event' }}">
+                            <x-icon name="heart" size="md" />
+                            <span class="sr-only">Save this event</span>
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="icon-glass-btn" title="Sign in to save this event">
+                        <x-icon name="heart" size="md" />
+                        <span class="sr-only">Sign in to save this event</span>
+                    </a>
+                @endauth
                 <button type="button" class="icon-glass-btn" onclick="shareCurrentEvent()" title="Share Event" aria-label="Share this event">
-                    <span>🔗</span>
+                    <x-icon name="share" size="md" />
                 </button>
             </div>
         </div>
@@ -438,15 +479,9 @@
         <!-- LEFT COLUMN: Metadata, Tabs, Media Gallery & Organizer -->
         <div style="display: flex; flex-direction: column; gap: 28px;">
             <!-- Event Title, Description, Highlights & Venue Information -->
-            <div class="card-navy" style="position: relative; display: flex; flex-direction: column; gap: 18px;">
+            <div class="card-navy detail-intro" style="position: relative; display: flex; flex-direction: column; gap: 18px;">
                 <div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-                        <span class="eb-badge eb-badge-info" style="text-transform: uppercase; letter-spacing: 0.04em;">
-                            {{ $event->category ?: 'Event' }}
-                        </span>
-                        @foreach($event->traditionLabels() as $tradition)
-                            <a href="{{ route('events.index', ['q' => $tradition]) }}" style="border: 1px solid rgba(255, 255, 255, 0.24); background: rgba(255, 255, 255, 0.05); color: #F8FAFC; font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 9999px; text-decoration: none;">{{ $tradition }}</a>
-                        @endforeach
                         @php $heroTone = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$availability['tone']] ?? 'eb-badge-info'; @endphp
                         <span class="eb-badge {{ $heroTone }}">
                             <span class="eb-badge-dot" aria-hidden="true"></span>
@@ -459,9 +494,17 @@
                         @endif
                     </div>
 
-                    <h1 style="font-size: clamp(1.6rem, 2.5vw, 2.1rem); font-weight: 900; color: #FFFFFF; line-height: 1.2; margin: 0 0 8px; letter-spacing: -0.02em;">
+                    <h1 class="detail-title">
                         {{ $event->title }}
                     </h1>
+                    {{-- The kind of event and its traditions on one line ("Music • Food • Culture" in the app design). --}}
+                    <p class="detail-kicker">
+                        <span>{{ $event->category ?: 'Event' }}</span>
+                        @foreach($event->traditionLabels() as $tradition)
+                            <span aria-hidden="true">•</span>
+                            <a href="{{ route('events.index', ['q' => $tradition]) }}">{{ $tradition }}</a>
+                        @endforeach
+                    </p>
 
                     @if(!empty($event->tagline))
                         <p style="font-size: 15px; color: var(--color-text-secondary); line-height: 1.5; margin: 0; font-weight: 600;">
@@ -481,7 +524,7 @@
                 @endphp
                 <div class="detail-well" id="venue-information" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
                     <div style="display: flex; gap: 12px; align-items: flex-start;">
-                        <span style="font-size: 20px;" aria-hidden="true">📅</span>
+                        <span class="detail-info-icon" aria-hidden="true"><x-icon name="calendar" size="md" /></span>
                         <div>
                             <div style="font-size: 10px; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; letter-spacing: 0.05em;">Date &amp; Time</div>
                             <div style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">
@@ -499,7 +542,7 @@
                     </div>
 
                     <div style="display: flex; gap: 12px; align-items: flex-start;">
-                        <span style="font-size: 20px;" aria-hidden="true">📍</span>
+                        <span class="detail-info-icon" aria-hidden="true"><x-icon name="map-pin" size="md" /></span>
                         <div>
                             <div style="font-size: 10px; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; letter-spacing: 0.05em;">Venue &amp; Location</div>
                             <div style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">
@@ -575,6 +618,44 @@
                     </div>
                 @endif
 
+                @php
+                    // Dishes from the event's own menu that have a photo: the "Food Highlights" strip.
+                    $foodHighlights = $menu->map(fn ($dish) => ['item' => $dish, 'image' => $dish->responsiveImage()])
+                        ->filter(fn ($row) => $row['image'] !== null)->take(6)->values();
+                @endphp
+                @if($foodHighlights->isNotEmpty())
+                    <div id="food-highlights">
+                        <h2 class="detail-subhead">Food Highlights</h2>
+                        <ul class="detail-food-strip">
+                            @foreach($foodHighlights as $row)
+                                <li>
+                                    <button type="button" onclick="switchSection('food', true)" title="{{ $row['item']->name }}">
+                                        <x-responsive-image :image="$row['image']" :alt="$row['item']->name . ' (see the menu)'" sizes="(min-width: 640px) 160px, 31vw" />
+                                        <x-image-label :image="$row['image']" />
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @if($canOrder)
+                    {{-- Phones and tablets: the way to buy, right under the essentials (the side panel comes later). --}}
+                    <div class="detail-cta-inline" id="detail-cta-inline">
+                        @auth
+                            <a href="{{ route('checkout.tickets', $event) }}" class="btn-gradient-purchase">
+                                <x-icon name="ticket" size="md" />
+                                <span>{{ collect($tiers)->contains('on_sale', true) ? 'Get Tickets' : 'Order Food' }}</span>
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="btn-gradient-purchase">
+                                <x-icon name="ticket" size="md" />
+                                <span>Sign in to get tickets</span>
+                            </a>
+                        @endauth
+                    </div>
+                @endif
+
                 <!-- Event Highlights (derived strictly from populated event attributes) -->
                 @php
                     $formatLabels = ['in_person' => 'In-Person Event', 'virtual' => 'Virtual / Online', 'hybrid' => 'Hybrid (In-Person + Online)'];
@@ -610,23 +691,20 @@
 
             <!-- 3. Section Switcher Tabs (Tickets · Food · Details) -->
             <div>
-                <div class="section-tab-nav" role="tablist">
-                    <button type="button" class="section-tab-btn active" id="tab-tickets-btn" onclick="switchSection('tickets')">
-                        <span>🎟️</span>
-                        <span>Tickets &amp; Passes</span>
+                <div class="section-tab-nav" role="tablist" aria-label="Event information">
+                    <button type="button" role="tab" class="section-tab-btn active" id="tab-tickets-btn" aria-selected="true" aria-controls="pane-tickets" onclick="switchSection('tickets')">
+                        <span>Tickets</span>
                     </button>
-                    <button type="button" class="section-tab-btn" id="tab-food-btn" onclick="switchSection('food')">
-                        <span>🍲</span>
-                        <span>Food &amp; Dining ({{ $menu->count() }})</span>
+                    <button type="button" role="tab" class="section-tab-btn" id="tab-food-btn" aria-selected="false" aria-controls="pane-food" tabindex="-1" onclick="switchSection('food')">
+                        <span>Food ({{ $menu->count() }})</span>
                     </button>
-                    <button type="button" class="section-tab-btn" id="tab-details-btn" onclick="switchSection('details')">
-                        <span>ℹ️</span>
-                        <span>Event Guide &amp; Policies</span>
+                    <button type="button" role="tab" class="section-tab-btn" id="tab-details-btn" aria-selected="false" aria-controls="pane-details" tabindex="-1" onclick="switchSection('details')">
+                        <span>Details</span>
                     </button>
                 </div>
 
                 <!-- TAB 1: TICKETS & MENU PREVIEW (host-configured types from TicketTierCatalog + dish previews) -->
-                <div class="tab-pane active" id="pane-tickets">
+                <div class="tab-pane active" id="pane-tickets" role="tabpanel" aria-labelledby="tab-tickets-btn" tabindex="0">
                     @if(empty($tiers))
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
                             <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No tickets on sale</h3>
@@ -691,7 +769,7 @@
                 </div>
 
                 <!-- TAB 2: FOOD & DINING (active menu items with dish photography) -->
-                <div class="tab-pane" id="pane-food">
+                <div class="tab-pane" id="pane-food" role="tabpanel" aria-labelledby="tab-food-btn" tabindex="0">
                     @if($menu->isEmpty())
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
                             <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No food menu</h3>
@@ -729,7 +807,7 @@
                 </div>
 
                 <!-- TAB 3: DETAILS: description, pickup, payment, fees, refunds and the event QR code -->
-                <div class="tab-pane" id="pane-details">
+                <div class="tab-pane" id="pane-details" role="tabpanel" aria-labelledby="tab-details-btn" tabindex="0">
                     <div class="card-navy" style="display: flex; flex-direction: column; gap: 20px;">
                         <div>
                             <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0 0 8px;">About this event</h3>
@@ -1137,22 +1215,62 @@
             backdrop-filter: blur(10px);
         }
         .eb-buy-bar .eb-btn { min-height: 44px; flex-shrink: 0; }
+        .eb-buy-bar { transition: transform .2s ease, visibility .2s; }
+        .eb-buy-bar.is-hidden { transform: translateY(120%); visibility: hidden; }
         .event-detail-root { padding-bottom: calc(5rem + 72px); }
     }
 </style>
 
 <script>
     // Tab switching logic: swaps the active section content
-    function switchSection(tabName) {
-        document.querySelectorAll('.section-tab-btn').forEach(btn => btn.classList.remove('active'));
+    function switchSection(tabName, reveal) {
+        document.querySelectorAll('.section-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+            btn.setAttribute('tabindex', '-1');
+        });
         document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
 
         const targetBtn = document.getElementById('tab-' + tabName + '-btn');
         const targetPane = document.getElementById('pane-' + tabName);
 
-        if (targetBtn) targetBtn.classList.add('active');
-        if (targetPane) targetPane.classList.add('active');
+        if (targetBtn) {
+            targetBtn.classList.add('active');
+            targetBtn.setAttribute('aria-selected', 'true');
+            targetBtn.removeAttribute('tabindex');
+        }
+        if (targetPane) {
+            targetPane.classList.add('active');
+            if (reveal) {
+                const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                (targetBtn || targetPane).scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+            }
+        }
     }
+
+    // Tabs: arrow keys move between them (WAI-ARIA tabs pattern); a #pane-food link opens that tab.
+    (function () {
+        const tabs = Array.from(document.querySelectorAll('.section-tab-btn[role="tab"]'));
+        tabs.forEach((tab, i) => tab.addEventListener('keydown', event => {
+            const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+            if (!step) return;
+            event.preventDefault();
+            const next = tabs[(i + step + tabs.length) % tabs.length];
+            next.click();
+            next.focus();
+        }));
+        const fromHash = (location.hash || '').replace('#pane-', '');
+        if (['tickets', 'food', 'details'].includes(fromHash)) switchSection(fromHash, true);
+
+        // Phones: the bottom buy bar appears once the in-page Get Tickets button has scrolled away.
+        const inline = document.getElementById('detail-cta-inline');
+        const bar = document.querySelector('.eb-buy-bar');
+        if (inline && bar && 'IntersectionObserver' in window) {
+            new IntersectionObserver(([entry]) => {
+                bar.classList.toggle('is-hidden', entry.isIntersecting || entry.boundingClientRect.top > 0);
+            }).observe(inline);
+        }
+    })();
 
 
     // Share Event

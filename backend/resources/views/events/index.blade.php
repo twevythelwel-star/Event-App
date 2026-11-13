@@ -481,8 +481,23 @@
         main.content-canvas { padding-top: 0 !important; padding-bottom: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem) !important; }
         .eb-customer-bottom-nav { height: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
     }
+    .eb-explore-section { margin: 0 0 28px; }
+    .eb-food-screen { margin: 0 0 28px; }
 </style>
 
+@php
+    // ?category=food (the home screen's Food chip) opens the Food & Experience screen: real dish photos from the
+    // menus of the events listed, then the food events themselves.
+    $foodScreen = request()->query('category') === 'food';
+    $foodEvents = $foodScreen
+        ? $events->getCollection()->filter(fn ($event) => str_contains(strtolower((string) $event->category), 'food')
+            || ($event->supports_food_ordering && $event->menuItems->isNotEmpty()))->values()
+        : collect();
+    $foodPhotos = $foodEvents->flatMap(fn ($event) => $event->menuItems->map(fn ($item) => ['item' => $item, 'event' => $event]))
+        ->map(fn ($row) => $row + ['image' => $row['item']->responsiveImage()])
+        ->filter(fn ($row) => $row['image'] !== null)->unique(fn ($row) => $row['image']->src)->take(9)->values();
+    $foodLead = $foodEvents->first(fn ($event) => $event->hasFlyer()) ?? $foodEvents->first();
+@endphp
 <div class="discovery-root" id="event-discovery-page">
     <!-- 1. Discovery Header -->
     <header class="discovery-header">
@@ -493,15 +508,11 @@
                     <span>EventBite Discovery</span>
                 </div>
                 <h1 class="discovery-title" id="discovery-header-greeting">
-                    @auth
-                        Hello, {{ Auth::user()->name }} 👋
-                    @else
-                        Discover Events Across the U.S.
-                    @endauth
+                    {{ $foodScreen ? 'Food & Experience' : 'Explore Events' }}
                 </h1>
                 <p class="discovery-subtitle">
                     @auth
-                        Discover food, music, culture, and community events near you.
+                        Hello, {{ Auth::user()->name }}. Discover food, music, culture, and community events near you.
                     @else
                         Explore diverse food, music, cultural, and community events across the United States.
                     @endauth
@@ -537,7 +548,43 @@
         </div>
     </header>
 
-    <div style="max-width: 1240px; margin: 0 auto; padding: 24px 24px 40px;">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 24px 24px 40px;" class="discovery-body">
+        @if($foodScreen && $foodLead)
+            {{-- Food & Experience: a food event's photo, then dishes from the listed events' menus. --}}
+            <section class="eb-food-screen" aria-labelledby="food-screen-heading">
+                @php
+                    // A photograph behind the headline: the event's flyer or library photo, else a dish from the menus.
+                    $foodCover = $foodLead->coverImage();
+                    if (!$foodLead->hasFlyer() && !$foodCover->illustrative && $foodPhotos->isNotEmpty()) {
+                        $foodCover = $foodPhotos->first()['image'];
+                    }
+                @endphp
+                <div class="eb-food-hero">
+                    <x-responsive-image :image="$foodCover" alt="" class="eb-food-hero-img" :eager="true" sizes="(min-width: 1240px) 1200px, 100vw" />
+                    <x-image-label :image="$foodCover" corner="top-right" />
+                    <h2 id="food-screen-heading" class="eb-food-hero-title">Good food. <span>Great company.</span></h2>
+                    <p class="eb-food-hero-sub">Savor the flavours. Share the moments.</p>
+                </div>
+                @if($foodPhotos->isNotEmpty())
+                    <ul class="eb-food-grid" aria-label="Dishes on the menus of upcoming food events">
+                        @foreach($foodPhotos as $row)
+                            <li>
+                                <a href="{{ route('events.show', $row['event']->id) }}#pane-food" title="{{ $row['item']->name }} at {{ $row['event']->title }}">
+                                    <x-responsive-image :image="$row['image']" :alt="$row['item']->name . ', on the menu at ' . $row['event']->title" sizes="(min-width: 768px) 190px, 31vw" />
+                                    <x-image-label :image="$row['image']" />
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                <div class="eb-event-rows" style="margin-top: var(--space-3);">
+                    @foreach($foodEvents->take(3) as $foodEvent)
+                        <x-event-row :event="$foodEvent" />
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         <!-- 2. Search Area with Rounded Search Field and Selectors -->
         <div class="discovery-search-card">
             <div class="discovery-search-input-wrap">
@@ -632,6 +679,17 @@
                 <div style="font-size: 0.68rem; color: #94A3B8;">Heritage & Parades</div>
             </button>
         </div>
+
+        <!-- Explore: photo tiles for each kind of event, each a filtered list of upcoming events -->
+        <section class="eb-explore-section" aria-labelledby="explore-tiles-heading">
+            <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px;">
+                <h2 id="explore-tiles-heading" style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">Browse by kind of event</h2>
+                @if(request()->filled('kind'))
+                    <a href="{{ route('events.index') }}" style="font-size: 0.8rem; font-weight: 600; color: var(--color-accent);">Show all events</a>
+                @endif
+            </div>
+            <x-explore-tiles :active="request()->query('kind')" heading-level="3" />
+        </section>
 
         <!-- 4. Featured Events (Large Image-Led Card) -->
         @php
@@ -885,16 +943,6 @@
             </a>
         @endauth
     </nav>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const bar = document.querySelector('.eb-customer-bottom-nav');
-            if (!bar) return;
-            bar.querySelectorAll('.eb-customer-nav-item').forEach(link => {
-                const label = link.querySelector('span')?.textContent?.trim();
-                if (label === 'Explore') link.addEventListener('click', event => { event.preventDefault(); focusSearch(); });
-            });
-        });
-    </script>
 </div>
 
 <script>
