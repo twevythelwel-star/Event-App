@@ -389,13 +389,21 @@
                 </span>
                 <div>
                     <h2 id="pay-heading" class="eb-text-section-title" style="margin: 0;">How to pay ({{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }})</h2>
-                    <p class="eb-help-text" style="margin: 2px 0 0;">Follow the organizer's instructions below, then submit your transfer reference.</p>
+                    <p class="eb-help-text" style="margin: 2px 0 0;">Send the payment as shown below, then submit your confirmation number.</p>
                 </div>
             </div>
 
+            @if($payTo ?? null)
+                <div class="eb-payment-due-callout" data-payment-handle="{{ $order->method }}">
+                    <div>
+                        <span class="eb-text-label">Send with {{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }} to</span>
+                        <strong class="eb-text-ticket-code" style="display: block; font-size: 1.15rem;">{{ $payTo }}</strong>
+                    </div>
+                </div>
+            @endif
             @if($instructions)
                 <div class="eb-checkout-instructions">{{ $instructions }}</div>
-            @else
+            @elseif(!($payTo ?? null))
                 <p class="eb-text-supporting" style="margin: 0;">The organizer will send you payment details.</p>
             @endif
 
@@ -415,8 +423,8 @@
 
             <form method="POST" action="{{ route('tickets.payment-reference', $order) }}" class="eb-stack" style="gap: var(--space-3);">
                 @csrf
-                <x-form-field name="payment_reference" label="Transfer reference" :value="old('payment_reference', $order->payment_reference)"
-                    :required="true" placeholder="e.g. NCB-109284" help="From your bank or app receipt." />
+                <x-form-field name="payment_reference" label="Payment confirmation number" :value="old('payment_reference', $order->payment_reference)"
+                    :required="true" placeholder="e.g. the Cash App or Zelle confirmation number" help="From your Cash App or Zelle receipt." />
                 <x-form-field name="sender_name" label="Name on the paying account (optional)" :value="old('sender_name', $order->sender_name)" />
                 <div><button type="submit" class="eb-btn eb-btn-primary" data-prevent-double-submit="true">
                     {{ $status === 'payment_submitted' ? 'Update reference' : 'I’ve sent the payment' }}

@@ -30,7 +30,7 @@ class SpaApiTest extends TestCase
         return array_merge([
             'customer_name' => 'Demo Attendee',
             'customer_phone' => '+1 305 555 0199',
-            'method' => 'bank',
+            'method' => 'zelle',
             'currency' => 'USD',
             'payment_reference' => 'ACH-REF-001',
             'items' => $items,

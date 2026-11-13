@@ -56,6 +56,7 @@ final class PaymentStatusPresenter
     public static function methodLabel(?string $method): string
     {
         return match ($method) {
+            // Retired: no longer offered, but older orders keep a readable label.
             'bank' => 'Bank transfer',
             'cash' => 'Cash',
             'card' => 'Card',

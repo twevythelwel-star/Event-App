@@ -10,7 +10,7 @@ use App\Models\Order;
  * PaymentGatewayInterface
  *
  * Modular contract for payment providers. Allows seamlessly swapping between
- * manual US payment workflows (Cash, Domestic ACH, Wire, Zelle) and automated
+ * manual US payment workflows (cash in person, Zelle, Cash App) and automated
  * US card/ACH gateways (e.g. Stripe, Square, Authorize.net).
  */
 interface PaymentGatewayInterface

@@ -529,12 +529,14 @@ class AdminConsoleSecurityTest extends TestCase
 
         $valid = [
             'platform_name' => 'EventBite', 'default_timezone' => 'America/New_York', 'default_locale' => 'en-US',
-            'supported_currencies' => ['USD'], 'supported_payment_methods' => ['bank', 'cash'],
+            'supported_currencies' => ['USD'], 'supported_payment_methods' => ['cash', 'zelle', 'cashapp'],
             'mandatory_2fa_for_admins' => 1, 'admin_session_timeout_minutes' => 30, 'attendee_session_timeout_days' => 30,
             'audit_retention_days' => 365, 'pii_scrub_days' => 90,
         ];
 
         $this->actingAs($root)->post('/admin/console/settings', array_merge($valid, ['audit_retention_days' => 10]))->assertSessionHasErrors('audit_retention_days');
+        // Bank transfer is retired: the platform can no longer allow it.
+        $this->actingAs($root)->post('/admin/console/settings', array_merge($valid, ['supported_payment_methods' => ['bank', 'cash']]))->assertSessionHasErrors('supported_payment_methods.0');
         $this->actingAs($root)->post('/admin/console/settings', array_merge($valid, ['supported_payment_methods' => ['bitcoin']]))->assertSessionHasErrors('supported_payment_methods.0');
 
         $this->actingAs($root)->post('/admin/console/settings', $valid)->assertSessionHasNoErrors();

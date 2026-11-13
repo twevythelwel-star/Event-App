@@ -1,6 +1,7 @@
 {{--
     One payment-method choice, rendered as a 3D radio card. Group several under one name.
-    Props: name, value, label, description, icon (x-icon name), checked, disabled.
+    Props: name, value, label, description, icon (x-icon name), checked, disabled,
+    handle / handleLabel (where the customer sends a Cash App or Zelle payment), instructions (the host's extra notes).
     Which methods are offered is decided strictly by the host's configured settings and platform rules
     (PaymentOptions::forEvent / PaymentMethods::availableFor), never by this component.
 --}}
@@ -12,6 +13,9 @@
     'icon' => 'payment',
     'checked' => false,
     'disabled' => false,
+    'handle' => null,
+    'handleLabel' => null,
+    'instructions' => null,
 ])
 
 @php
@@ -22,7 +26,6 @@
         : $icon;
 
     $methodBadge = match ((string) $value) {
-        'bank' => 'Bank wire / transfer',
         'zelle' => 'Mobile banking transfer',
         'cashapp', 'cash_app_pay' => '$Cashtag transfer',
         'cash' => 'In-person at event',
@@ -46,6 +49,10 @@
                 @endif
             </span>
             @if($description)<span>{{ $description }}</span>@endif
+            @if($handle)
+                <span class="eb-payment-handle" data-payment-handle="{{ $value }}">Send to <strong>{{ $handle }}</strong>@if($handleLabel) <span class="eb-help-text">({{ $handleLabel }})</span>@endif</span>
+            @endif
+            @if($instructions)<span class="eb-payment-note">{{ $instructions }}</span>@endif
         </span>
         <span class="eb-payment-radio" aria-hidden="true"></span>
     </span>

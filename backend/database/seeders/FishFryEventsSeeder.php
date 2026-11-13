@@ -150,11 +150,14 @@ class FishFryEventsSeeder extends Seeder
             }
         }
 
-        // East Orange demo: cash at pickup plus manually verified bank and Zelle transfers (placeholder details
-        // only). The organiser verifies each transfer before the order is marked paid.
+        // East Orange demo: cash in person plus manually verified Zelle payments (placeholder details only).
+        // The organiser verifies each payment before the order is marked paid.
         HostPaymentPolicy::updateOrCreate(['organizer_id' => 'org-runaway-events'], [
             'enable_cash' => true,
-            'bank_transfer_instructions' => 'DEMO ONLY: no real account. Configure a verified U.S. ACH recipient before accepting transfers.',
+            'enable_bank' => false,
+            'enable_cashapp' => false,
+            'enable_zelle' => true,
+            'zelle_recipient' => 'demo-payments@runaway-events.example',
             'zelle_instructions' => 'DEMO ONLY: no real Zelle recipient. Send the exact amount shown with your order number in the memo, then enter your Zelle confirmation number on your ticket page.',
             'require_transfer_reference' => true,
             'require_sender_name' => true,

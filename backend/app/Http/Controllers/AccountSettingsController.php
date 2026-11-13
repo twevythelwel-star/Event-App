@@ -146,14 +146,16 @@ class AccountSettingsController extends Controller
         if (isset($validated['enable_cash'])) {
             $policies->enable_cash = (bool) $validated['enable_cash'];
         }
-        if (isset($validated['zelle_instructions'])) {
-            $policies->zelle_instructions = $validated['zelle_instructions'];
+        foreach (['enable_zelle', 'enable_cashapp'] as $switch) {
+            if (isset($validated[$switch])) {
+                $policies->{$switch} = (bool) $validated[$switch];
+            }
         }
-        if (isset($validated['cash_app_instructions'])) {
-            $policies->cash_app_instructions = $validated['cash_app_instructions'];
-        }
-        if (isset($validated['bank_transfer_instructions'])) {
-            $policies->bank_transfer_instructions = $validated['bank_transfer_instructions'];
+        // Handles and notes: an emptied field clears the stored value (the form always sends them).
+        foreach (['zelle_recipient', 'cash_app_cashtag', 'zelle_instructions', 'cash_app_instructions'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $policies->{$field} = $validated[$field];
+            }
         }
         if (isset($validated['require_transfer_reference'])) {
             $policies->require_transfer_reference = (bool) $validated['require_transfer_reference'];

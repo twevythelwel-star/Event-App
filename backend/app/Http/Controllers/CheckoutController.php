@@ -336,6 +336,7 @@ class CheckoutController extends Controller
             'order' => $order,
             'event' => $order->event,
             'instructions' => $order->event ? PaymentOptions::instructionsFor($order->event, (string) $order->method) : null,
+            'payTo' => $order->event ? PaymentOptions::handleFor($order->event, (string) $order->method) : null,
         ]);
     }
 
@@ -345,7 +346,7 @@ class CheckoutController extends Controller
         $data = $request->validate([
             'payment_reference' => ['required', 'string', 'min:3', 'max:100'],
             'sender_name' => ['nullable', 'string', 'max:120'],
-        ], ['payment_reference.required' => 'Enter the reference from your bank or app.']);
+        ], ['payment_reference.required' => 'Enter the confirmation number from Cash App or Zelle.']);
 
         try {
             $payments->submitReference($request->user(), $order, $data['payment_reference'], $data['sender_name'] ?? null);

@@ -163,7 +163,7 @@ class DiscoveryJourneyTest extends TestCase
 
         $page = $this->get('/events/' . self::SOUTH_FLORIDA)->assertOk()
             ->assertSee('Accepted payment methods')
-            ->assertSee('Bank transfer')
+            ->assertSee('Cash App')->assertSee('Zelle')->assertDontSee('Bank transfer')
             ->assertSee('Packaging fee')
             ->assertSee('Sales tax (configured)')
             ->assertSee('7.00% of food')

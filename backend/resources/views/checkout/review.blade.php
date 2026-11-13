@@ -86,7 +86,9 @@
                     <div class="eb-stack" style="gap: var(--space-2);">
                         @foreach($methods as $method)
                             <x-payment-method :value="$method['value']" :label="$method['label']" :description="$method['description']"
-                                :icon="$method['icon']" :checked="$selectedMethod === $method['value']" required />
+                                :icon="$method['icon']" :checked="$selectedMethod === $method['value']"
+                                :handle="$method['handle'] ?? null" :handle-label="$method['handle_label'] ?? null"
+                                :instructions="$method['instructions'] ?? null" required />
                         @endforeach
                     </div>
                     <p id="method-help" class="eb-help-text" style="margin: var(--space-2) 0 0;">Your ticket shows Pending until the organizer confirms your payment.</p>
@@ -96,10 +98,10 @@
 
             @if(collect($methods)->contains(fn ($m) => $m['value'] !== 'cash'))
                 <details class="eb-checkout-details" @if(old('payment_reference')) open @endif>
-                    <summary>Already sent a transfer? Add the reference</summary>
+                    <summary>Already sent with Cash App or Zelle? Add the confirmation</summary>
                     <div class="eb-stack" style="gap: var(--space-3); margin-top: var(--space-3);">
-                        <x-form-field name="payment_reference" label="Transfer reference (optional)" :value="old('payment_reference')"
-                            placeholder="e.g. NCB-109284" :error="$errors->first('payment_reference')" />
+                        <x-form-field name="payment_reference" label="Payment confirmation number (optional)" :value="old('payment_reference')"
+                            placeholder="e.g. the Cash App or Zelle confirmation number" :error="$errors->first('payment_reference')" />
                         <x-form-field name="sender_name" label="Name on the paying account (optional)" :value="old('sender_name')"
                             :error="$errors->first('sender_name')" />
                     </div>

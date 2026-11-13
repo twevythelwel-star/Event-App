@@ -57,7 +57,7 @@ class PaymentPolicy
     }
 
     /**
-     * Manage bank transfer account numbers, Zelle emails, and Cash App tags.
+     * Manage Zelle emails or phones and Cash App $Cashtags.
      * Boundary: strictly restricted to EVENT_OWNER.
      */
     public function managePaymentSettings(User $user, ?string $organizerId = null): bool

@@ -549,8 +549,8 @@ class Event extends Model
     public function getEnabledPaymentMethods(): array
     {
         if (empty($this->payment_methods) || !is_array($this->payment_methods)) {
-            // Default payment methods
-            return ['bank', 'zelle', 'cashapp', 'cash', 'card'];
+            // Default: every method a customer can be offered (bank transfer is retired)
+            return \App\Payments\PaymentMethods::offerable();
         }
 
         return $this->payment_methods;
@@ -561,8 +561,7 @@ class Event extends Model
      */
     public function setPaymentMethods(array $methods): void
     {
-        $validMethods = ['bank', 'zelle', 'cashapp', 'cash', 'card'];
-        $this->payment_methods = array_intersect($methods, $validMethods);
+        $this->payment_methods = array_values(array_intersect($methods, \App\Payments\PaymentMethods::offerable()));
     }
 
     public function complianceAcknowledgements(): HasMany

@@ -47,7 +47,7 @@ class NotificationsApiTest extends TestCase
         return $this->actingAs($this->user('attendee'))->postJson('/api/v1/events/south-florida-jamaican-fish-fry/orders', array_merge([
             'customer_name' => 'Notify Guest',
             'customer_phone' => '305 555 0123',
-            'method' => 'bank',
+            'method' => 'zelle',
             'currency' => 'USD',
             'payment_reference' => 'ACH-777',
             'items' => [['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 1]],

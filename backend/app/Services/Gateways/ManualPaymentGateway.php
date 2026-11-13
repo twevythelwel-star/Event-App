@@ -13,7 +13,7 @@ use RuntimeException;
 /**
  * ManualPaymentGateway
  *
- * Implements manual US cash, ACH transfer, wire, and Zelle payment workflows.
+ * Implements manual US cash, Zelle and Cash App payment workflows (bank transfer is retired).
  * Enforces the strict rule: Uploaded screenshots or attendee payment claims
  * are NEVER treated as proof of funds. Payments must be verified through
  * an authorized, auditable reconciliation workflow before being marked paid.
@@ -39,7 +39,7 @@ class ManualPaymentGateway implements PaymentGatewayInterface
     {
         $reference = trim((string) ($paymentData['reference'] ?? ''));
         $senderName = trim((string) ($paymentData['sender_name'] ?? ''));
-        $method = trim((string) ($paymentData['method'] ?? 'bank_transfer'));
+        $method = trim((string) ($paymentData['method'] ?? $order->method ?? 'zelle'));
         $receiptPath = $paymentData['receipt_path'] ?? null;
 
         $order->payment_reference = $reference ?: null;
@@ -47,7 +47,7 @@ class ManualPaymentGateway implements PaymentGatewayInterface
         $order->method = $method;
         $order->status = 'payment_submitted'; // Strictly awaiting verification
 
-        $order->verification_notes = "Payment claim submitted by attendee. Awaiting bank/cash reconciliation. Screenshot: " . ($receiptPath ? 'attached' : 'none');
+        $order->verification_notes = "Payment claim submitted by attendee. Awaiting Cash App/Zelle/cash reconciliation. Screenshot: " . ($receiptPath ? 'attached' : 'none');
         $order->save();
 
         return [

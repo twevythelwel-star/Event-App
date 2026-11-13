@@ -87,21 +87,38 @@
                 <div class="eb-card-header card-header">
                     <div>
                         <h2 class="eb-card-title card-title">Payments &amp; refunds</h2>
-                        <p class="eb-card-subtitle card-subtitle">What customers see when they choose a manual payment. Leave instructions empty to not offer that method. Card payments are not available yet.</p>
+                        <p class="eb-card-subtitle card-subtitle">Customers can pay with Cash App, Zelle or cash in person. Cash App and Zelle are offered only once you add where to send the money, and only for events priced in US dollars. You confirm each payment before the ticket is marked paid.</p>
                     </div>
                 </div>
                 <div class="eb-stack">
-                    {!! $toggle('enable_cash', 'Accept cash at the event', (bool) old('enable_cash', $hostPolicy->enable_cash ?? true)) !!}
-                    <div class="eb-grid-3">
-                        <x-form-field name="zelle_instructions" type="textarea" label="Zelle instructions" :rows="3"
-                                      :value="old('zelle_instructions', $hostPolicy->zelle_instructions)" placeholder="Send to payments@yourorg.example and put your order number in the memo." />
-                        <x-form-field name="cash_app_instructions" type="textarea" label="Cash App instructions" :rows="3"
-                                      :value="old('cash_app_instructions', $hostPolicy->cash_app_instructions)" placeholder="Send to $YourCashtag with your order number." />
-                        <x-form-field name="bank_transfer_instructions" type="textarea" label="Bank transfer instructions" :rows="3"
-                                      :value="old('bank_transfer_instructions', $hostPolicy->bank_transfer_instructions)" />
-                    </div>
+                    {!! $toggle('enable_cash', 'Accept cash in person at the event', (bool) old('enable_cash', $hostPolicy->enable_cash ?? true), 'Staff record the cash when the customer pays at the event.') !!}
+
+                    <fieldset class="eb-stack" style="border: 0; padding: 0; margin: 0; gap: var(--space-3);" data-payment-setup="cashapp">
+                        <legend class="eb-text-section-title" style="margin-bottom: var(--space-2);">Cash App</legend>
+                        {!! $toggle('enable_cashapp', 'Accept Cash App', (bool) old('enable_cashapp', ($hostPolicy->enable_cashapp ?? false) && filled($hostPolicy->cash_app_cashtag ?? null))) !!}
+                        <div class="eb-grid-2">
+                            <x-form-field name="cash_app_cashtag" label="Your $Cashtag" :value="old('cash_app_cashtag', $hostPolicy->cash_app_cashtag)"
+                                          placeholder="$YourCashtag" autocomplete="off" :error="$errors->first('cash_app_cashtag')"
+                                          help="Shown to customers at checkout and on their ticket." />
+                            <x-form-field name="cash_app_instructions" type="textarea" label="Extra Cash App instructions (optional)" :rows="2"
+                                          :value="old('cash_app_instructions', $hostPolicy->cash_app_instructions)" placeholder="Put your order code in the note." />
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="eb-stack" style="border: 0; padding: 0; margin: 0; gap: var(--space-3);" data-payment-setup="zelle">
+                        <legend class="eb-text-section-title" style="margin-bottom: var(--space-2);">Zelle</legend>
+                        {!! $toggle('enable_zelle', 'Accept Zelle', (bool) old('enable_zelle', ($hostPolicy->enable_zelle ?? false) && filled($hostPolicy->zelle_recipient ?? null))) !!}
+                        <div class="eb-grid-2">
+                            <x-form-field name="zelle_recipient" label="Zelle email or U.S. mobile number" :value="old('zelle_recipient', $hostPolicy->zelle_recipient)"
+                                          placeholder="payments@yourorg.example" autocomplete="off" :error="$errors->first('zelle_recipient')"
+                                          help="The email or phone your Zelle is enrolled with. Shown to customers at checkout and on their ticket." />
+                            <x-form-field name="zelle_instructions" type="textarea" label="Extra Zelle instructions (optional)" :rows="2"
+                                          :value="old('zelle_instructions', $hostPolicy->zelle_instructions)" placeholder="Put your order code in the memo." />
+                        </div>
+                    </fieldset>
+
                     <div class="eb-grid-2">
-                        {!! $toggle('require_transfer_reference', 'Require a transfer reference', (bool) old('require_transfer_reference', $hostPolicy->require_transfer_reference ?? true), 'Customers must enter the confirmation number from their app or bank.') !!}
+                        {!! $toggle('require_transfer_reference', 'Require a payment reference', (bool) old('require_transfer_reference', $hostPolicy->require_transfer_reference ?? true), 'Customers must enter the confirmation number from Cash App or Zelle.') !!}
                         {!! $toggle('require_sender_name', 'Require the sender\'s name', (bool) old('require_sender_name', $hostPolicy->require_sender_name ?? false)) !!}
                     </div>
                     <div class="eb-grid-2">

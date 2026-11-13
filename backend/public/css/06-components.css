@@ -83,6 +83,9 @@
 .eb-payment-text { flex: 1; min-width: 0; }
 .eb-payment-text strong { display: block; color: var(--color-text-primary); }
 .eb-payment-text span { font-size: 0.85rem; color: var(--color-text-secondary); }
+.eb-payment-text .eb-payment-handle, .eb-payment-text .eb-payment-note { display: block; margin-top: 4px; }
+.eb-payment-text .eb-payment-note { white-space: pre-line; }
+.eb-payment-text .eb-payment-handle strong { display: inline; color: var(--color-text-primary); }
 .eb-payment-radio {
   width: 1.25rem; height: 1.25rem; flex-shrink: 0;
   border: 2px solid var(--color-border-strong); border-radius: 50%;

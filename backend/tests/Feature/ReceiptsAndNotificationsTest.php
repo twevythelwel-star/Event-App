@@ -41,7 +41,7 @@ class ReceiptsAndNotificationsTest extends TestCase
         return User::where('email', "{$who}@islandevents.example")->firstOrFail();
     }
 
-    private function placeOrder(string $method = 'bank'): Order
+    private function placeOrder(string $method = 'zelle'): Order
     {
         $id = $this->actingAs($this->user('attendee'))->postJson('/api/v1/events/south-florida-jamaican-fish-fry/orders', [
             'customer_name' => 'Receipt Guest',
@@ -74,7 +74,7 @@ class ReceiptsAndNotificationsTest extends TestCase
         $this->assertSame(['order_received', 'payment_verified', 'ticket_issued'], $sms->pluck('trigger')->sort()->values()->all());
         $this->assertSame('Payment confirmed', $sms->firstWhere('trigger', 'payment_verified')->title);
         $this->assertStringContainsString('$', $sms->firstWhere('trigger', 'payment_verified')->message);
-        $this->assertStringContainsString('Bank transfer', $sms->firstWhere('trigger', 'payment_verified')->message);
+        $this->assertStringContainsString('Zelle', $sms->firstWhere('trigger', 'payment_verified')->message);
         // U.S. date in the event's own zone
         $this->assertMatchesRegularExpression('/(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), [A-Z][a-z]+ \d{1,2}, \d{4}/', $sms->firstWhere('trigger', 'ticket_issued')->message);
     }
@@ -183,7 +183,7 @@ class ReceiptsAndNotificationsTest extends TestCase
             $order->items->first()->name,                      // itemized food
             '2 ×',
             'Total (USD)',                                     // currency and total
-            'Bank transfer',                                   // payment method
+            'Zelle',                                           // payment method
             'ACH-55821',                                       // payment reference
             'not proof of payment',                            // unverified orders say so
         ] as $expected) {

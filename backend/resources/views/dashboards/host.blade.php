@@ -250,7 +250,7 @@
         </div>
         <p id="review-result" role="status" aria-live="polite" class="eb-help-text" hidden></p>
         <x-data-table caption="Payments to review" :columns="['Order', 'Event', 'Customer', 'Method and reference', ['label' => 'Amount', 'numeric' => true], 'Status', ['label' => 'Decision', 'numeric' => true]]"
-                      :empty="collect($review_orders ?? [])->isEmpty()" empty-title="Nothing to review" empty-text="Bank transfer and Zelle confirmations that customers submit appear here.">
+                      :empty="collect($review_orders ?? [])->isEmpty()" empty-title="Nothing to review" empty-text="Cash App and Zelle confirmations that customers submit appear here.">
             @foreach($review_orders ?? [] as $order)
                 <tr>
                     <td style="font-family: var(--font-mono);">{{ $order->order_number }}</td>

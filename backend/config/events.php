@@ -86,7 +86,7 @@ return [
         ],
         // Supported Payment Gateways for US Launch
         'payments' => [
-            'supported_methods' => ['cash', 'bank_transfer', 'zelle', 'ach'],
+            'supported_methods' => ['cash', 'zelle', 'cashapp'],
             'active_gateway' => env('PAYMENT_GATEWAY', 'manual_us'), // 'manual_us', 'stripe_us'
             'require_manual_verification' => true, // Uploaded screenshot is NEVER proof of funds
         ],

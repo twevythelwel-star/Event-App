@@ -161,8 +161,8 @@ Hosts select target markets when creating events, enabling geographic targeting 
 ### PlatformSettingsController (Enhanced)
 - **Supported Payment Methods:** Configure which payment methods are platform-wide
 - **Methods:**
-  - Bank transfer
-  - Cash
+  - (Bank transfer: retired in November 2026; older orders still display it)
+  - Cash in person
   - Card (Stripe)
   - Zelle
   - Cash App

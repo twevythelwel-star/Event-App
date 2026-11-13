@@ -13,13 +13,13 @@ class SystemPlatformSetting extends Model
 
     /**
      * Defaults for the two required list columns, so settings created with firstOrCreate([]) (the payment
-     * configuration screen) or with only some fields are valid: US dollars, and bank or cash payment.
+     * configuration screen) or with only some fields are valid: US dollars, and cash, Zelle or Cash App payment.
      */
     protected static function booted(): void
     {
         static::creating(function (self $settings): void {
             $settings->supported_currencies ??= ['USD'];
-            $settings->supported_payment_methods ??= ['bank', 'cash'];
+            $settings->supported_payment_methods ??= ['cash', 'zelle', 'cashapp'];
         });
     }
 

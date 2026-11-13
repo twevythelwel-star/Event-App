@@ -41,7 +41,7 @@ class SystemAdminSeeder extends Seeder
                 'brand_theme' => 'eventbite_navy',
                 'supported_currencies' => ['USD'],
                 // Only methods with working authorization and settlement paths may be enabled.
-                'supported_payment_methods' => ['cash', 'bank', 'zelle', 'cashapp'],
+                'supported_payment_methods' => ['cash', 'zelle', 'cashapp'],
                 'file_storage_status' => 'healthy',
                 'storage_bucket' => 'eventbite-flyers-prod',
                 'storage_provider' => 's3_compatible_r2',

@@ -22,7 +22,7 @@ class PlatformSettingsController extends Controller
 {
     private const CURRENCIES = ['USD'];
 
-    private const PAYMENT_METHODS = ['bank' => 'Bank transfer', 'cash' => 'Cash', 'card' => 'Card', 'zelle' => 'Zelle', 'cashapp' => 'Cash App'];
+    private const PAYMENT_METHODS = ['cash' => 'Cash in person', 'card' => 'Card', 'zelle' => 'Zelle', 'cashapp' => 'Cash App'];
 
     private const TIMEZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'America/Phoenix', 'America/Anchorage', 'Pacific/Honolulu'];
 
@@ -142,7 +142,7 @@ class PlatformSettingsController extends Controller
     {
         return SystemPlatformSetting::first() ?? SystemPlatformSetting::create([
             'supported_currencies' => self::CURRENCIES,
-            'supported_payment_methods' => ['bank', 'cash'],
+            'supported_payment_methods' => ['cash', 'zelle', 'cashapp'],
         ])->fresh();
     }
 }

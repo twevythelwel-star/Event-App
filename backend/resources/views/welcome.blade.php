@@ -146,7 +146,7 @@
             <li><span class="eb-step-icon"><x-icon name="map-pin" /></span><strong>Find events near you</strong><span class="eb-text-supporting">Search by city, town or tradition.</span></li>
             <li><span class="eb-step-icon"><x-icon name="ticket" /></span><strong>Buy tickets</strong><span class="eb-text-supporting">Prices, fees and taxes shown before you pay.</span></li>
             <li><span class="eb-step-icon"><x-icon name="utensils" /></span><strong>Order food</strong><span class="eb-text-supporting">Pre-order from the event's menu for pickup.</span></li>
-            <li><span class="eb-step-icon"><x-icon name="cash" /></span><strong>Pay your way</strong><span class="eb-text-supporting">Bank transfer, Zelle, Cash App or cash, wherever the host accepts it.</span></li>
+            <li><span class="eb-step-icon"><x-icon name="cash" /></span><strong>Pay your way</strong><span class="eb-text-supporting">Cash App, Zelle or cash in person, wherever the host accepts it.</span></li>
             <li><span class="eb-step-icon"><x-icon name="qr-frame" /></span><strong>Get your ticket</strong><span class="eb-text-supporting">Your QR ticket appears once the payment is confirmed, and is checked at the door.</span></li>
         </ol>
     </section>

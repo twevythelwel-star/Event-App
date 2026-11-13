@@ -18,7 +18,7 @@ class StoreOrderRequest extends FormRequest
             'customer_name' => ['required', 'string', 'min:2', 'max:120'],
             'customer_phone' => ['required', 'string', 'min:7', 'max:30'],
             'email' => ['nullable', 'email', 'max:150'],
-            'method' => ['required', 'in:bank,zelle,cashapp,cash,card'],
+            'method' => ['required', \Illuminate\Validation\Rule::in(\App\Payments\PaymentMethods::offerable())],
             'currency' => ['nullable', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
             'payment_reference' => ['nullable', 'string', 'max:100'],
             'sender_name' => ['nullable', 'string', 'max:120'],

@@ -23,9 +23,13 @@ class UpdateHostSettingsRequest extends FormRequest
             'default_flyer_aspect_ratio' => ['nullable', 'string', 'in:4:5,1:1,16:9'],
             'default_brand_theme' => ['nullable', 'string', 'max:64'],
             'enable_cash' => ['nullable', 'boolean'],
+            'enable_zelle' => ['nullable', 'boolean'],
+            'enable_cashapp' => ['nullable', 'boolean'],
+            ...\App\Models\HostPaymentPolicy::handleRules(),
             'zelle_instructions' => ['nullable', 'string', 'max:500'],
             'cash_app_instructions' => ['nullable', 'string', 'max:255'],
-            'bank_transfer_instructions' => ['nullable', 'string', 'max:1000'],
+            // Bank transfer is no longer offered.
+            'bank_transfer_instructions' => ['prohibited'],
             'require_transfer_reference' => ['nullable', 'boolean'],
             'require_sender_name' => ['nullable', 'boolean'],
             'require_receipt_snapshot' => ['nullable', 'boolean'],
@@ -41,5 +45,24 @@ class UpdateHostSettingsRequest extends FormRequest
             'food_order_modification_deadline_hours' => ['nullable', 'integer', 'min:0', 'max:720'],
             'food_prep_buffer_percent' => ['nullable', 'integer', 'min:0', 'max:50'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return \App\Models\HostPaymentPolicy::handleMessages() + [
+            'bank_transfer_instructions.prohibited' => 'Bank transfer is no longer offered. Use Zelle, Cash App or cash in person.',
+        ];
+    }
+
+    /** Turning on Zelle or Cash App needs the handle customers send to. */
+    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Validation\Validator $v) {
+            foreach (['enable_zelle' => ['zelle_recipient', 'your Zelle email or phone', 'Zelle'], 'enable_cashapp' => ['cash_app_cashtag', 'your $Cashtag', 'Cash App']] as $switch => [$field, $what, $name]) {
+                if ($this->boolean($switch) && trim((string) $this->input($field)) === '') {
+                    $v->errors()->add($field, "Add {$what} to accept {$name}.");
+                }
+            }
+        });
     }
 }
