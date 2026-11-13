@@ -74,8 +74,10 @@ final class ResponsiveImage
 
         // No flyer: an approved library photograph of the kind of event the host said this is, labelled as illustrative.
         if ($photo = app(\App\Services\PhotoLibrary::class)->forEvent($event)) {
+            // The alt text says what the photo shows, then that it illustrates the kind of event rather than this one.
             return self::forLibraryPhoto($photo, route('events.generated-flyer', $event->id, false),
-                'Illustrative photo of a ' . strtolower($photo->subjectLabel()) . ', not of this event: ' . ($event->title ?: 'this event') . ' has no flyer yet');
+                rtrim(trim((string) $photo->alt_text), '.') . '. Illustrative photo of a ' . strtolower($photo->subjectLabel())
+                . ', not of this event: ' . ($event->title ?: 'this event') . ' has no flyer yet');
         }
 
         // Otherwise: artwork drawn from the event's own details, said to be artwork rather than a photo.

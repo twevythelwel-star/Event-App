@@ -34,6 +34,7 @@ class FishFryEventsSeeder extends Seeder
         'evt-us-jacksonville' => 'outdoor_cookout',
         'evt-us-queens' => 'street_food_market',
         'evt-us-mount-vernon' => 'cultural_heritage',
+        'evt-us-hempstead' => 'caribbean_food_festival',
         'evt-us-newark' => 'international_food_festival',
         'evt-us-bridgeport' => 'cultural_celebration',
     ];

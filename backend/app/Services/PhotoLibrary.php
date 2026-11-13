@@ -15,10 +15,12 @@ use Illuminate\Support\Facades\DB;
  *
  * Which photo an event may show, in order:
  *   1. the host's own flyer (and gallery photos), always;
- *   2. otherwise, an approved library photo of the kind of event the host said this is (Event::photo_subject),
- *      labelled "Illustrative photo";
+ *   2. otherwise, an approved library photo of the kind of event the host said this is (Event::photo_subject), or,
+ *      when they did not say, of the kind their chosen category stands for (subjectFor()), labelled
+ *      "Illustrative photo";
  *   3. otherwise, artwork drawn from the event's own details (GeneratedFlyer).
- * A library photo is never chosen from an event's title or category, so a concert photo cannot reach a picnic.
+ * A library photo is never chosen from an event's title, and a declared kind is never overridden by the category,
+ * so a concert photo cannot reach a picnic.
  * Events of the same kind are spread across that kind's photos, so neighbouring cards differ when the library has
  * several photos of a kind.
  *
@@ -51,11 +53,35 @@ final class PhotoLibrary
         return $key !== null && array_key_exists($key, self::subjects());
     }
 
-    /** An approved photo of the event's own kind, or null (no kind chosen, or none approved yet). */
+    /**
+     * The kind of event to illustrate: the kind the host declared, or, when they declared none, the kind their
+     * chosen category stands for (config photo_library.category_subjects). Null when neither names a kind.
+     * A declared kind is never second-guessed by the category, and the title is never read.
+     */
+    public static function subjectFor(Event $event): ?string
+    {
+        $declared = (string) ($event->photo_subject ?? '');
+        if (self::isSubject($declared)) {
+            return $declared;
+        }
+        $category = ' ' . trim((string) preg_replace('/[^a-z]+/', ' ', mb_strtolower((string) ($event->category ?? '')))) . ' ';
+        if (trim($category) === '') {
+            return null;
+        }
+        foreach ((array) config('photo_library.category_subjects', []) as $words => $subject) {
+            if (str_contains($category, ' ' . $words . ' ') && self::isSubject($subject)) {
+                return $subject;
+            }
+        }
+
+        return null;
+    }
+
+    /** An approved photo of the event's own kind (declared, or from its category), or null (no kind, or none approved yet). */
     public function forEvent(Event $event): ?LibraryPhoto
     {
-        $subject = (string) ($event->photo_subject ?? '');
-        if (!self::isSubject($subject)) {
+        $subject = (string) self::subjectFor($event);
+        if ($subject === '') {
             return null;
         }
         $photos = $this->approved()->get($subject);

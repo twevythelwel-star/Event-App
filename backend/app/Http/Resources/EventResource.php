@@ -302,7 +302,7 @@ class EventResource extends JsonResource
         // An approved library photo of the kind of event the host said this is, labelled as illustrative.
         if ($photo = app(\App\Services\PhotoLibrary::class)->forEvent($this->resource)) {
             return ['kind' => 'library', 'url' => '/api/v1/media/library/' . $photo->id . '?variant=large&format=webp&v=' . substr(sha1((string) $photo->path), 0, 10),
-                'alt' => 'Illustrative photo of a ' . strtolower($photo->subjectLabel()) . ", not of {$title}",
+                'alt' => rtrim(trim((string) $photo->alt_text), '.') . '. Illustrative photo of a ' . strtolower($photo->subjectLabel()) . ", not of {$title}",
                 'label' => 'Illustrative photo · ' . $photo->subjectLabel()];
         }
 

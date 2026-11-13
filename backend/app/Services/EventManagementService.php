@@ -254,6 +254,10 @@ class EventManagementService
         $menuItems = is_array($data['menu_items'] ?? null) ? $data['menu_items'] : [];
         $this->assertMenuItemsConsistent($menuItems);
         unset($data['menu_items']);
+        // An empty category select (e.g. a category the form does not list) keeps the event's current category.
+        if (array_key_exists('category', $data) && blank($data['category'])) {
+            unset($data['category']);
+        }
         $data = app(LocationAddressNormalizer::class)->normalize(array_merge([
             'street_address' => $event->street_address,
             'venue_building_name' => $event->venue_building_name,

@@ -18,8 +18,11 @@ An event's cover picture is chosen in this order, everywhere (homepage, discover
 
 Rules that keep pictures accurate:
 
-* The kind comes only from the host's choice on the event form ("What kind of event is this?"). It is optional, and
-  the title, description and category are **never** used to guess it. An event with no kind gets its artwork.
+* The kind is the host's choice on the event form ("What kind of event is this?"). It is optional; when the host
+  leaves it empty, the kind their **category** stands for is used (`photo_library.category_subjects`, e.g. Music → live
+  band, Market → street food market). A declared kind is never overridden by the category, the title and description
+  are **never** used, and a category that names no kind (Workshop, Other) keeps its artwork.
+* The alt text starts with the library photo's own description of what it shows, then says it is not of this event.
 * A photo is shown only for its own kind. A picnic never gets a concert photo.
 * Each event always gets the same photo, and events of one kind are spread across that kind's photos.
 * A photo appears only after a second system administrator approves it, and disappears as soon as it is retired.

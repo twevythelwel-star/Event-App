@@ -43,6 +43,37 @@ return [
         'rights' => 'The licence allows commercial use, and consent or a model release covers any identifiable people',
     ],
 
+    /*
+    | The kind of event an event's category stands for, used only when the host has not said what kind of event it
+    | is. Checked in this order against the words of the category ("Music and Food" is music first); a category
+    | with none of these words (e.g. "Workshop", "Other") has no kind, so it keeps its generated artwork rather
+    | than borrowing a photo of something else. The title is never used.
+    */
+    'category_subjects' => [
+        'fish fry' => 'jamaican_fish_fry',
+        'reggae' => 'reggae_concert',
+        'dancehall' => 'dancehall_event',
+        'fundraiser' => 'community_fundraiser',
+        'sports' => 'sports_outdoor',
+        'market' => 'street_food_market',
+        'cookout' => 'outdoor_cookout',
+        'picnic' => 'outdoor_picnic',
+        'wedding' => 'wedding',
+        'birthday' => 'birthday_celebration',
+        'corporate' => 'corporate_event',
+        'nightlife' => 'nightlife',
+        'concert' => 'outdoor_concert',
+        'music' => 'live_band',
+        'caribbean' => 'caribbean_food_festival',
+        'jamaican' => 'caribbean_food_festival',
+        'food' => 'international_food_festival',
+        'heritage' => 'cultural_heritage',
+        'cultural' => 'cultural_celebration',
+        'culture' => 'cultural_celebration',
+        'family' => 'family_festival',
+        'community' => 'community_gathering',
+    ],
+
     'subjects' => [
         // Music and entertainment
         'reggae_concert' => ['group' => 'music', 'label' => 'Reggae concert',

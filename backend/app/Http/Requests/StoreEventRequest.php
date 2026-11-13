@@ -50,6 +50,8 @@ class StoreEventRequest extends FormRequest
             'title' => 'required|string|min:3|max:255',
             'slug' => 'nullable|string|max:128|regex:/^[a-z0-9-]+$/',
             'tagline' => 'nullable|string|max:255',
+            // The category chosen on the form (also used for its photo when no kind of event is chosen).
+            'category' => 'nullable|string|max:128',
             // The kind of event (photo library subject), chosen by the host; never inferred from the title.
             'photo_subject' => ['nullable', \Illuminate\Validation\Rule::in(array_keys(\App\Services\PhotoLibrary::subjects()))],
             // Written from the schedule when left empty (EventDetails).
