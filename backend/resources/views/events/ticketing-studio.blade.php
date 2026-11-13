@@ -5,7 +5,7 @@
 
 @section('content')
 @php
-    $tabs = ['pricing' => 'Pricing', 'codes' => 'Discount codes', 'promoters' => 'Promoters', 'complimentary' => 'Complimentary', 'waitlist' => 'Waitlist', 'settings' => 'Settings'];
+    $tabs = ['pricing' => 'Pricing', 'codes' => 'Discount codes', 'promoters' => 'Promoters', 'complimentary' => 'Complimentary', 'waitlist' => 'Waitlist', 'qr' => 'QR design', 'settings' => 'Settings'];
     $fmt = fn (?int $minor) => \App\Support\Money::formatMinor((int) $minor, $currency);
     $major = fn ($minor) => $minor === null ? '' : number_format(((int) $minor) / 100, 2, '.', '');
     $local = fn (?string $iso) => $iso ? \Illuminate\Support\Carbon::parse($iso)->setTimezone($tz)->format('Y-m-d\TH:i') : '';
@@ -207,6 +207,103 @@
                     <td>{{ $entry->status === 'offered' ? 'Offered until ' . $entry->offer_expires_at?->copy()->setTimezone($tz)->format('g:i A') : 'Waiting' }}</td></tr>
             @endforeach
         </x-data-table>
+    </section>
+
+    {{-- Ticket QR design: approved presets only; every choice is checked for readability before it is saved --}}
+    <section role="tabpanel" id="panel-qr" aria-labelledby="tab-qr" class="eb-stack" style="gap: var(--space-4);" @if($tab !== 'qr') hidden @endif>
+        @if($qr)
+            @php
+                $choice = old('preset') ? array_merge($qr['choice'], old()) : $qr['choice'];
+                $presetSpecs = \App\Services\EventQr\TicketQrDesignSystem::PRESETS;
+                $activeKey = $qr['current']['preset'] ?? 'eventbite_classic';
+            @endphp
+            @unless($qr['controls']['enabled'])
+                <x-alert type="info" title="Themed QR codes are off">EventBite administrators have turned themed ticket QR codes off for now, so every ticket uses the standard black-and-white code. Your choice is kept for when they are back.</x-alert>
+            @endunless
+            <div class="eb-panel eb-stack" style="gap: var(--space-3);">
+                <h2 class="eb-text-section-title" style="margin: 0;">Each guest’s QR code</h2>
+                <p class="eb-text-supporting" style="margin: 0;">Every guest gets their own single-use QR code after the order is placed. Pick a design that fits your event. Every design keeps the code easy to scan: strong contrast, a clear margin, intact corner markers and extra error correction. Choices that would make it hard to scan are refused.</p>
+                <form method="POST" action="{{ route('events.ticketing.qr-design', $event->id) }}" class="eb-stack" style="gap: var(--space-4); margin: 0;">
+                    @csrf
+                    <fieldset class="eb-stack" style="gap: var(--space-2); border: 0; padding: 0; margin: 0;">
+                        <legend class="eb-text-label">Design</legend>
+                        <div class="eb-qr-preset-grid">
+                            <label class="eb-qr-preset">
+                                <span><input type="radio" name="preset" value="auto" @checked(($choice['preset'] ?? 'auto') === 'auto')> <strong>Match my event</strong></span>
+                                <span class="eb-help-text">Follows the kind of event you chose: {{ $presetSpecs[$qr['auto']]['label'] ?? 'EventBite Classic' }}.</span>
+                            </label>
+                            @foreach($qr['presets'] as $key => $label)
+                                <label class="eb-qr-preset" data-qr-preset="{{ $key }}">
+                                    <span><input type="radio" name="preset" value="{{ $key }}" @checked(($choice['preset'] ?? '') === $key)> <strong>{{ $label }}</strong></span>
+                                    <span class="eb-qr-swatches" aria-hidden="true">
+                                        @foreach(['primary', 'secondary', 'background', 'frame'] as $c)<span class="eb-qr-swatch" style="background: {{ $presetSpecs[$key][$c] }};"></span>@endforeach
+                                    </span>
+                                    {!! $qr['previews'][$key] !!}
+                                    <span class="eb-help-text">{{ $presetSpecs[$key]['description'] }}</span>
+                                </label>
+                            @endforeach
+                        </div>
+                    </fieldset>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: var(--space-3);">
+                        <label class="eb-field"><span class="eb-text-label">Module shape</span>
+                            <select class="eb-input" name="module"><option value="">Design default</option>
+                                @foreach(\App\Services\EventQr\TicketQrDesignSystem::MODULE_LABELS as $v => $l)<option value="{{ $v }}" @selected(($choice['module'] ?? '') === $v)>{{ $l }}</option>@endforeach
+                            </select></label>
+                        <label class="eb-field"><span class="eb-text-label">Corner markers</span>
+                            <select class="eb-input" name="finder"><option value="">Design default</option>
+                                @foreach(\App\Services\EventQr\TicketQrDesignSystem::FINDER_LABELS as $v => $l)<option value="{{ $v }}" @selected(($choice['finder'] ?? '') === $v)>{{ $l }}</option>@endforeach
+                            </select></label>
+                        <label class="eb-field"><span class="eb-text-label">Border</span>
+                            <select class="eb-input" name="border"><option value="">Design default</option>
+                                @foreach(\App\Services\EventQr\QrDesignCatalog::BORDERS as $v)<option value="{{ $v }}" @selected(($choice['border'] ?? '') === $v)>{{ ucfirst($v) }}</option>@endforeach
+                            </select></label>
+                        @if($qr['controls']['allow_center_logo'])
+                            <label class="eb-field"><span class="eb-text-label">Centre mark</span>
+                                <select class="eb-input" name="logo">
+                                    @foreach(\App\Services\EventQr\TicketQrDesignSystem::LOGO_LABELS as $v => $l)<option value="{{ $v }}" @selected(($choice['logo'] ?? 'none') === $v)>{{ $l }}</option>@endforeach
+                                </select></label>
+                            <label class="eb-field"><span class="eb-text-label">Initials (up to 3)</span>
+                                <input class="eb-input" name="monogram" maxlength="3" value="{{ $choice['monogram'] ?? '' }}" placeholder="{{ \App\Services\EventQr\TicketQrDesignSystem::monogramFor($event, null) }}"></label>
+                        @endif
+                    </div>
+                    <p class="eb-help-text" style="margin: 0;">Shapes, borders and centre marks are limited to what each design allows. The centre mark sits only in the space the code sets aside for it; event photos are never placed on the code.</p>
+
+                    @if($qr['controls']['allow_custom_palette'] && isset($qr['presets']['cultural_celebration']))
+                        <fieldset class="eb-stack" style="gap: var(--space-2); border: 0; padding: 0; margin: 0;">
+                            <legend class="eb-text-label">Cultural Celebration colours</legend>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: var(--space-3);">
+                                @foreach(['primary' => 'Main (code)', 'secondary' => 'Corner markers', 'background' => 'Background', 'frame' => 'Frame'] as $c => $l)
+                                    <label class="eb-field"><span class="eb-text-label">{{ $l }}</span>
+                                        <input class="eb-input" type="text" name="{{ $c }}" value="{{ $choice[$c] ?? $presetSpecs['cultural_celebration'][$c] }}" pattern="#[0-9A-Fa-f]{6}" maxlength="7"></label>
+                                @endforeach
+                            </div>
+                            <p class="eb-help-text" style="margin: 0;">Used only with the Cultural Celebration design. The main colour and corner markers must be dark enough on the background (at least {{ rtrim(rtrim(number_format($qr['controls']['min_contrast'], 1), '0'), '.') }}:1 contrast).</p>
+                        </fieldset>
+                    @endif
+                    <div><button class="eb-btn eb-btn-primary" type="submit">Save QR design</button></div>
+                </form>
+            </div>
+
+            <div class="eb-panel eb-stack" style="gap: var(--space-3);">
+                <h2 class="eb-text-section-title" style="margin: 0;">In use now: {{ $presetSpecs[$activeKey]['label'] ?? 'Standard' }}</h2>
+                @if(!empty($qr['current']['fallback_reason']))
+                    <x-alert type="warning" title="Using the standard code">{{ ucfirst($qr['current']['fallback_reason']) }}.</x-alert>
+                @endif
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: var(--space-4); align-items: start;">
+                    <div style="max-width: 260px;" data-qr-preview="current">{!! $qr['currentPreview'] !!}</div>
+                    <div>
+                        <p class="eb-text-label" style="margin: 0 0 var(--space-2);">Readability check {{ $qr['report']['passes'] ? 'passed' : 'failed' }}</p>
+                        <ul class="eb-qr-checks" data-qr-report="{{ $qr['report']['passes'] ? 'pass' : 'fail' }}">
+                            @foreach($qr['report']['checks'] as $name => $check)
+                                <li>{{ $check['pass'] ? '✓' : '✗' }} <strong>{{ ucfirst(str_replace('_', ' ', $name)) }}.</strong> {{ $check['detail'] }}</li>
+                            @endforeach
+                        </ul>
+                        <p class="eb-help-text" style="margin: var(--space-2) 0 0;">The preview uses a sample code. Each guest’s real code is checked again when their ticket is drawn.</p>
+                    </div>
+                </div>
+            </div>
+        @endif
     </section>
 
     {{-- Settings --}}

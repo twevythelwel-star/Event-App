@@ -94,7 +94,9 @@ class WorkerTerminalController extends Controller
             ], 422);
         }
 
-        $isToken = str_starts_with($code, 'tok_');
+        // An order's pass (tok_...) or one attendee's own ticket (tkt_...).
+        $attendee = app(\App\Services\Tickets\AttendeeTicketService::class)->findByCredential($code, (string) $event->id);
+        $isToken = str_starts_with($code, 'tok_') || \App\Services\Tickets\AttendeeTicketService::looksLikeCredential($code);
         if (!$isToken && $assignment->worker_role !== EventWorkerRole::EVENT_SUPERVISOR) {
             \App\Services\AuditLogService::log(
                 action: 'ticket_redemption_rejected',
@@ -116,9 +118,11 @@ class WorkerTerminalController extends Controller
 
         $order = Order::withoutGlobalScopes()->whereNull('deleted_at')
             ->where('event_id', $event->id)
-            ->when($isToken,
-                fn ($q) => $q->whereTicketToken($code),
-                fn ($q) => $q->where(fn ($w) => $w->where('ticket_code', $code)->orWhere('order_number', $code)))
+            ->when($attendee !== null,
+                fn ($q) => $q->whereKey($attendee->order_id),
+                fn ($q) => $q->when($isToken,
+                    fn ($q) => $q->whereTicketToken($code),
+                    fn ($q) => $q->where(fn ($w) => $w->where('ticket_code', $code)->orWhere('order_number', $code))))
             ->first();
 
         if (!$order) {
@@ -142,7 +146,7 @@ class WorkerTerminalController extends Controller
 
         try {
             $scanResult = EventWorkerService::scanAndValidateTicket($user, $order, (string) $event->id,
-                manual: !$isToken, requestId: $request->validated('scan_request_id'));
+                manual: !$isToken, requestId: $request->validated('scan_request_id'), attendee: $attendee);
             return response()->json($scanResult);
         } catch (SecurityException $e) {
             return response()->json(['success' => false, 'reason_code' => 'unauthorized_scanner', 'error' => $e->getMessage()], 403);

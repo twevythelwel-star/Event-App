@@ -162,6 +162,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/events/{id}/ticketing/complimentary', [\App\Http\Controllers\TicketingStudioController::class, 'issueComplimentary'])->name('events.ticketing.complimentary')->middleware('throttle:30,1');
     Route::post('/events/{id}/ticketing/waitlist/offer', [\App\Http\Controllers\TicketingStudioController::class, 'offerWaitlist'])->name('events.ticketing.waitlist.offer')->middleware('throttle:30,1');
     Route::post('/events/{id}/ticketing/settings', [\App\Http\Controllers\TicketingStudioController::class, 'saveSettings'])->name('events.ticketing.settings');
+    Route::post('/events/{id}/ticketing/qr-design', [\App\Http\Controllers\TicketingStudioController::class, 'saveQrDesign'])->name('events.ticketing.qr-design')->middleware('throttle:30,1');
     Route::get('/events/{id}/partners', [\App\Http\Controllers\PartnersStudioController::class, 'show'])->name('events.partners');
     Route::post('/events/{id}/partners/settings', [\App\Http\Controllers\PartnersStudioController::class, 'saveSettings'])->name('events.partners.settings');
     Route::post('/events/{id}/partners/offers', [\App\Http\Controllers\PartnersStudioController::class, 'saveOffer'])->name('events.partners.offers.store')->middleware('throttle:60,1');

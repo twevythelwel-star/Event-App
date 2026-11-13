@@ -2725,3 +2725,43 @@ details.eb-panel[open] > :not(summary), .eb-studio-row details[open] > :not(summ
 @media (forced-colors: active) { .eb-ticket-theme .eb-ticket-card-head::after { background: CanvasText; } }
 /* Keepsake: a past event's ticket (App\Support\TicketLifecycle). */
 .eb-badge-keepsake { background: rgba(231, 200, 115, 0.14); color: #E7C873; border: 1px solid rgba(231, 200, 115, 0.45); }
+
+/* Attendee ticket QR codes: one per guest, each in the event's approved QR design (App\Services\EventQr).
+   The artwork brings its own white quiet zone and frame, so nothing here is drawn over or around the modules. */
+.eb-attendee-qr-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: var(--space-4);
+  justify-items: center;
+  margin-top: var(--space-3);
+}
+.eb-attendee-qr {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 300px;
+}
+.eb-attendee-qr-head { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; justify-content: center; text-align: center; }
+.eb-attendee-qr-art { width: min(100%, 260px); line-height: 0; border-radius: 14px; box-shadow: 0 10px 28px -12px rgba(0, 0, 0, 0.7); }
+.eb-attendee-qr-art svg { display: block; width: 100%; height: auto; }
+.eb-attendee-qr-number { font-size: 0.85rem; letter-spacing: 0.04em; }
+.eb-attendee-qr-pending, .eb-attendee-qr-used {
+  width: min(100%, 260px); min-height: 120px; display: grid; place-content: center; text-align: center;
+  padding: var(--space-3); border: 1.5px dashed var(--color-border-strong); border-radius: 14px;
+}
+@media print {
+  .eb-attendee-qr { break-inside: avoid; }
+  .eb-attendee-qr-art { box-shadow: none; }
+}
+
+/* QR design pickers (host ticketing studio, admin console) */
+.eb-qr-preset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: var(--space-3); }
+.eb-qr-preset { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); cursor: pointer; }
+.eb-qr-preset:has(input:checked) { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent); }
+.eb-qr-preset svg { width: 100%; height: auto; display: block; border-radius: 10px; }
+.eb-qr-swatches { display: flex; gap: 4px; }
+.eb-qr-swatch { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, 0.35); }
+.eb-qr-checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.85rem; }

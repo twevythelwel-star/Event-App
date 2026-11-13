@@ -8,6 +8,7 @@ use App\Enums\AccountType;
 use App\Enums\EventWorkerRole;
 use App\Enums\TenantRole;
 use App\Exceptions\SecurityException;
+use App\Models\AttendeeTicket;
 use App\Models\CashPayment;
 use App\Models\Event;
 use App\Models\EventWorkerAssignment;
@@ -114,7 +115,8 @@ class EventWorkerService
         Order $order,
         ?string $expectedEventId = null,
         bool $manual = false,
-        ?string $requestId = null
+        ?string $requestId = null,
+        ?AttendeeTicket $attendee = null
     ): array {
         // 6. Authorized redemption check
         $scanningEventId = $expectedEventId ?? $order->event_id;
@@ -142,8 +144,17 @@ class EventWorkerService
 
         // The check and the admission run on the order row locked for update, so two scanners reading the
         // same ticket at the same moment cannot both admit it: the second waits and then sees the check-in.
-        return DB::transaction(function () use ($worker, $order, $expectedEventId, $manual, $assignment, $requestId) {
+        return DB::transaction(function () use ($worker, $order, $expectedEventId, $manual, $assignment, $requestId, $attendee) {
             $locked = Order::query()->withoutGlobalScopes()->where('id', $order->id)->lockForUpdate()->first();
+            if ($attendee !== null) {
+                // One attendee's own ticket: admitted on its own row, under the same order lock.
+                if ((string) $attendee->order_id !== (string) $order->id) {
+                    throw new SecurityException('That attendee ticket does not belong to this order.');
+                }
+                $lockedAttendee = AttendeeTicket::whereKey($attendee->id)->lockForUpdate()->first() ?? $attendee;
+
+                return self::admitAttendee($worker, $locked ?? $order, $lockedAttendee, $expectedEventId, $manual, $assignment, $requestId);
+            }
             if ($locked !== null && $locked !== $order) {
                 $order->checked_in_at = $locked->checked_in_at;
                 $order->checked_in_by = $locked->checked_in_by;
@@ -167,18 +178,13 @@ class EventWorkerService
     }
 
     /**
-     * @param Order $locked The order row as read under the lock (the same object as $order outside a database)
-     * @param Order $order  The caller's copy, kept in step with the admission
+     * The checks every admission makes on the order, whether its pass or one attendee's ticket was scanned:
+     * authenticity, event, admission window, revocation and payment.
+     *
+     * @return array{bool, bool, bool, bool, ?string, ?string} authentic, event matched, period valid, status valid, reason code, reason
      */
-    private static function admitLockedTicket(
-        User $worker,
-        Order $locked,
-        Order $order,
-        ?string $expectedEventId,
-        bool $manual,
-        ?EventWorkerAssignment $assignment,
-        ?string $requestId
-    ): array {
+    private static function orderChecks(Order $order, ?string $expectedEventId): array
+    {
         // 1. Authenticity check: Genuine ticket code & order number must exist
         $isAuthentic = !empty($order->ticket_code) && !empty($order->order_number);
         $rejectionReason = null;
@@ -248,6 +254,117 @@ class EventWorkerService
             $rejectionReason = $rejectionReason ?? 'This event has ended; admission is closed.';
         }
 
+        return [$isAuthentic, $isEventMatched, $isPeriodValid, $isStatusValid, $reasonCode, $rejectionReason];
+    }
+
+    /**
+     * Admits one attendee on their own ticket. The order must pass the same checks as its pass; the attendee's
+     * ticket must not be used, and the order's pass must not already have admitted the whole party. Once every
+     * attendee is in, the order counts as checked in.
+     */
+    private static function admitAttendee(
+        User $worker,
+        Order $order,
+        AttendeeTicket $attendee,
+        ?string $expectedEventId,
+        bool $manual,
+        ?EventWorkerAssignment $assignment,
+        ?string $requestId
+    ): array {
+        $total = AttendeeTicket::where('order_id', $order->id)->count();
+        $seat = ['ticket_number' => $attendee->ticket_number, 'sequence' => $attendee->sequence, 'of' => $total];
+
+        if ($requestId !== null && hash_equals((string) $attendee->check_in_request_id, $requestId)
+            && (int) $attendee->checked_in_by === (int) $worker->id && $attendee->checked_in_at !== null) {
+            return ['success' => true, 'already_admitted' => false, 'valid' => true, 'replayed' => true, 'reason_code' => null,
+                'rejection_reason' => null, 'ticket' => self::scanTicketData($order, $assignment) + ['attendee' => $seat]];
+        }
+
+        [$isAuthentic, $isEventMatched, $isPeriodValid, $isStatusValid, $reasonCode, $rejectionReason] = self::orderChecks($order, $expectedEventId);
+
+        $admittedAt = $attendee->checked_in_at ?? $order->checked_in_at;
+        $isAlreadyAdmitted = $admittedAt !== null;
+        if ($isAlreadyAdmitted) {
+            $reasonCode = $reasonCode ?? 'already_admitted';
+            $rejectionReason = $rejectionReason ?? 'Duplicate redemption prevented: ' . ($attendee->checked_in_at !== null
+                ? "Ticket {$attendee->ticket_number} was already admitted at {$attendee->checked_in_at->format('Y-m-d H:i:s')}."
+                : "this order's whole party was already admitted at {$order->checked_in_at->format('Y-m-d H:i:s')}.");
+        }
+
+        $isSuccess = $isAuthentic && $isEventMatched && $isPeriodValid && $isStatusValid && !$isAlreadyAdmitted;
+
+        if ($isSuccess) {
+            $attendee->forceFill(['checked_in_at' => now(), 'checked_in_by' => $worker->id, 'check_in_request_id' => $requestId])->save();
+            $waiting = AttendeeTicket::where('order_id', $order->id)->whereNull('checked_in_at')->exists();
+            if (!$waiting) {
+                $order->checked_in_at = $attendee->checked_in_at;
+                $order->checked_in_by = $worker->id;
+                $order->save();
+            }
+            AuditLogService::log(
+                action: 'ticket_redemption_verified',
+                targetEntity: 'orders',
+                targetId: (string) $order->id,
+                details: "Attendee ticket {$attendee->ticket_number} ({$attendee->sequence} of {$total}, Order #{$order->order_number}) verified and admitted by {$worker->email}"
+                    . ($manual ? ' using a typed code (manual check).' : ' by QR.'),
+                actor: $worker
+            );
+        } else {
+            AuditLogService::log(
+                action: 'ticket_redemption_rejected',
+                targetEntity: 'orders',
+                targetId: (string) $order->id,
+                details: "Attendee ticket {$attendee->ticket_number} redemption rejected by {$worker->email}. Reason: {$rejectionReason}",
+                actor: $worker
+            );
+        }
+
+        return [
+            'success' => $isSuccess,
+            'replayed' => false,
+            'already_admitted' => $isAlreadyAdmitted,
+            'valid' => $isSuccess,
+            'reason_code' => $isSuccess ? null : ($reasonCode ?? 'invalid_ticket'),
+            'rejection_reason' => $rejectionReason,
+            'ticket' => self::scanTicketData($order, $assignment) + ['attendee' => $seat + [
+                'checked_in_at' => $attendee->checked_in_at?->format('Y-m-d H:i:s'),
+            ]],
+        ];
+    }
+
+    /** What a scanner sees of the order, sanitised for the worker's role. */
+    private static function scanTicketData(Order $order, ?EventWorkerAssignment $assignment): array
+    {
+        $orderData = [
+            'order_number' => $order->order_number,
+            'ticket_code' => $order->ticket_code,
+            'customer_name' => $order->customer_name,
+            'customer_email' => $order->email,
+            'customer_phone' => $order->customer_phone,
+            'status' => $order->status,
+            'payment_method' => $order->method,
+            'total_cents' => (int) $order->total_minor,
+            'checked_in_at' => $order->checked_in_at?->format('Y-m-d H:i:s'),
+        ];
+
+        return $assignment ? $assignment->sanitizeOrder($orderData) : $orderData;
+    }
+
+    /**
+     * @param Order $locked The order row as read under the lock (the same object as $order outside a database)
+     * @param Order $order  The caller's copy, kept in step with the admission
+     */
+    private static function admitLockedTicket(
+        User $worker,
+        Order $locked,
+        Order $order,
+        ?string $expectedEventId,
+        bool $manual,
+        ?EventWorkerAssignment $assignment,
+        ?string $requestId
+    ): array {
+        [$isAuthentic, $isEventMatched, $isPeriodValid, $isStatusValid, $reasonCode, $rejectionReason] = self::orderChecks($order, $expectedEventId);
+
         // 5. Duplicate-redemption prevention check
         $isAlreadyAdmitted = !empty($order->checked_in_at);
         if ($isAlreadyAdmitted) {
@@ -256,6 +373,11 @@ class EventWorkerService
                 : (string) $order->checked_in_at;
             $reasonCode = $reasonCode ?? 'already_admitted';
             $rejectionReason = $rejectionReason ?? "Duplicate redemption prevented: Ticket was already admitted at {$checkInStr}.";
+        } elseif (AttendeeTicket::where('order_id', $order->id)->whereNotNull('checked_in_at')->exists()) {
+            // Some guests already came in on their own tickets: the order's pass must not admit the whole party again.
+            $isAlreadyAdmitted = true;
+            $reasonCode = $reasonCode ?? 'already_admitted';
+            $rejectionReason = $rejectionReason ?? 'Duplicate redemption prevented: guests on this order were already admitted with their own tickets. Scan each remaining guest’s ticket.';
         }
 
         $isSuccess = $isAuthentic && $isEventMatched && $isPeriodValid && $isStatusValid && !$isAlreadyAdmitted;
@@ -265,6 +387,9 @@ class EventWorkerService
             $locked->checked_in_by = $worker->id;
             $locked->check_in_request_id = $requestId;
             $locked->save();
+            // The whole party is in: every attendee's own ticket is used up too.
+            AttendeeTicket::where('order_id', $locked->id)->whereNull('checked_in_at')
+                ->update(['checked_in_at' => $locked->checked_in_at, 'checked_in_by' => $worker->id, 'updated_at' => now()]);
             if ($locked !== $order) {
                 $order->checked_in_at = $locked->checked_in_at;
                 $order->checked_in_by = $locked->checked_in_by;

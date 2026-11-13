@@ -127,6 +127,7 @@ Route::middleware(['auth', 'active', 'can:' . Admin::ACCESS])
         // QR Code Configuration
         Route::get('/qr-codes', [QrCodeConfigurationController::class, 'index'])->name('qr-codes.index');
         Route::post('/qr-codes', [QrCodeConfigurationController::class, 'update'])->name('qr-codes.update')->middleware('throttle:20,1');
+        Route::post('/qr-codes/ticket-controls', [QrCodeConfigurationController::class, 'updateTicketControls'])->name('qr-codes.ticket-controls')->middleware('throttle:20,1');
 
         // Notification Settings
         Route::get('/notifications', [NotificationSettingsController::class, 'index'])->name('notifications.index');

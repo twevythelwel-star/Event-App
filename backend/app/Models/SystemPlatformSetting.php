@@ -47,6 +47,8 @@ class SystemPlatformSetting extends Model
         'qr_design_version',
         'qr_default_preset',
         'qr_enforce_design_rules',
+        // Global controls for attendee ticket QR designs (App\Services\EventQr\TicketQrDesignSystem)
+        'ticket_qr_controls',
         // Notification settings
         'email_notifications_enabled',
         'sms_notifications_enabled',
@@ -74,6 +76,7 @@ class SystemPlatformSetting extends Model
         'qr_design_version' => 'integer',
         'qr_default_preset' => 'string',
         'qr_enforce_design_rules' => 'boolean',
+        'ticket_qr_controls' => 'array',
         'email_notifications_enabled' => 'boolean',
         'sms_notifications_enabled' => 'boolean',
         'push_notifications_enabled' => 'boolean',

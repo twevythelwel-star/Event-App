@@ -377,6 +377,10 @@ class Order extends Model
                 ->orWhere(function (\Illuminate\Database\Eloquent\Builder $legacy) use ($clean) {
                     $legacy->whereNull('secure_ticket_token_hash')->where('secure_ticket_token', $clean);
                 });
+            // An attendee's own credential (tkt_...) finds the order it belongs to as well.
+            if (\App\Services\Tickets\AttendeeTicketService::looksLikeCredential($clean)) {
+                $q->orWhereIn('id', AttendeeTicket::query()->select('order_id')->where('token_hash', $hash));
+            }
         });
     }
 
@@ -464,6 +468,9 @@ class Order extends Model
                 'token_version' => $nextVersion,
                 'token_reissued_at' => now(),
             ])->save();
+
+            // Every attendee's own QR code is replaced as well, so no copy of any of them still admits.
+            app(\App\Services\Tickets\AttendeeTicketService::class)->rotateAllFor($locked);
 
             $this->rawTicketToken = $newToken;
             $this->forceFill([
@@ -555,6 +562,12 @@ class Order extends Model
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'order_id');
+    }
+
+    /** One row per admitted person, each with their own QR credential (App\Services\Tickets\AttendeeTicketService). */
+    public function attendeeTickets(): HasMany
+    {
+        return $this->hasMany(AttendeeTicket::class, 'order_id')->orderBy('sequence');
     }
 
     public function cashPayments(): HasMany

@@ -18,6 +18,7 @@
         ['route' => 'admin.console.reports.index', 'match' => 'admin.console.reports.*', 'label' => 'Reports', 'icon' => 'reports', 'can' => Admin::REPORTS_VIEW],
         ['route' => 'admin.console.audit.index', 'match' => 'admin.console.audit.*', 'label' => 'Audit Logs', 'icon' => 'audit', 'can' => Admin::AUDIT_VIEW],
         ['route' => 'admin.console.fraud-monitor.index', 'match' => 'admin.console.fraud-monitor.*', 'label' => 'Fraud Monitor', 'icon' => 'shield', 'can' => Admin::AUDIT_VIEW],
+        ['route' => 'admin.console.qr-codes.index', 'match' => 'admin.console.qr-codes.*', 'label' => 'QR Codes', 'icon' => 'settings', 'can' => Admin::SETTINGS_MANAGE],
         ['route' => 'admin.console.settings.edit', 'match' => 'admin.console.settings.*', 'label' => 'Platform Settings', 'icon' => 'settings', 'can' => Admin::SETTINGS_MANAGE],
     ])->filter(fn ($item) => Gate::allows($item['can']));
 

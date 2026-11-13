@@ -24,7 +24,8 @@ use chillerlan\QRCode\QROptions;
  */
 class QrArtworkRenderer
 {
-    private const QUIET_ZONE = 4;
+    /** The quiet zone in modules: the QR specification's minimum, always in the plate colour. */
+    public const QUIET_ZONE = 4;
     private const FRAME = 3;
     private const LABEL_SPACE = 2.6;
 
@@ -179,6 +180,8 @@ class QrArtworkRenderer
 
         if ($m['logo'] !== null && ($design['logo'] ?? 'none') === 'bite') {
             array_push($shapes, ...$this->biteMark($ox + $m['logo']['x'], $oy + $m['logo']['y'], $m['logo']['w'], $plate, $fg));
+        } elseif ($m['logo'] !== null && ($design['logo'] ?? 'none') === 'monogram') {
+            array_push($shapes, ...$this->monogramMark($ox + $m['logo']['x'], $oy + $m['logo']['y'], $m['logo']['w'], $plate, $accent, (string) ($design['monogram'] ?? '')));
         }
 
         if ($hasLabel) {
@@ -201,6 +204,15 @@ class QrArtworkRenderer
                 ['type' => 'circle', 'cx' => $x + 3.5, 'cy' => $y + 3.5, 'r' => 3.5, 'fill' => $outer],
                 ['type' => 'circle', 'cx' => $x + 3.5, 'cy' => $y + 3.5, 'r' => 2.5, 'fill' => $plate],
                 ['type' => 'circle', 'cx' => $x + 3.5, 'cy' => $y + 3.5, 'r' => 1.5, 'fill' => $inner],
+            ];
+        }
+
+        if ($shape === 'leaf') {
+            // Two opposite corners rounded, two square: still three nested squares of the standard proportions.
+            return [
+                ['type' => 'leaf', 'x' => $x, 'y' => $y, 'w' => 7, 'h' => 7, 'r' => 2.6, 'fill' => $outer],
+                ['type' => 'leaf', 'x' => $x + 1, 'y' => $y + 1, 'w' => 5, 'h' => 5, 'r' => 1.8, 'fill' => $plate],
+                ['type' => 'leaf', 'x' => $x + 2, 'y' => $y + 2, 'w' => 3, 'h' => 3, 'r' => 1.1, 'fill' => $inner],
             ];
         }
 
@@ -229,6 +241,25 @@ class QrArtworkRenderer
             ['type' => 'circle', 'cx' => $x + $pad + $s, 'cy' => $y + $pad + $s * 0.18, 'r' => $s * 0.24, 'fill' => $plate],
             ['type' => 'circle', 'cx' => $x + $pad, 'cy' => $y + $pad + $s * 0.5, 'r' => $s * 0.1, 'fill' => $plate],
             ['type' => 'circle', 'cx' => $x + $pad + $s, 'cy' => $y + $pad + $s * 0.62, 'r' => $s * 0.1, 'fill' => $plate],
+        ];
+    }
+
+    /**
+     * The event's initials on a badge, inside the cleared logo area only (the plate margin keeps it off the modules).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function monogramMark(float $x, float $y, int $w, string $plate, string $ink, string $letters): array
+    {
+        $letters = preg_replace('/[^A-Z0-9&]/', '', strtoupper($letters)) ?: '';
+        $pad = 0.8;
+        $s = $w - 2 * $pad;
+        $size = $s * (strlen($letters) >= 3 ? 0.34 : (strlen($letters) === 2 ? 0.44 : 0.56));
+
+        return [
+            ['type' => 'rect', 'x' => $x, 'y' => $y, 'w' => $w, 'h' => $w, 'r' => 0.9, 'fill' => $plate],
+            ['type' => 'rect', 'x' => $x + $pad, 'y' => $y + $pad, 'w' => $s, 'h' => $s, 'r' => $s * 0.28, 'fill' => $ink],
+            ['type' => 'text', 'x' => $x + $w / 2, 'y' => $y + $w / 2 + $size * 0.36, 'text' => $letters, 'size' => $size, 'fill' => $plate, 'serif' => false],
         ];
     }
 
@@ -301,6 +332,11 @@ class QrArtworkRenderer
                     $this->n($s['x']), $this->n($s['y']), $this->n($s['w']), $this->n($s['h']),
                     $s['r'] > 0 ? sprintf(' rx="%s"', $this->n($s['r'])) : '', $this->color($s['fill'])),
                 'circle' => sprintf('<circle cx="%s" cy="%s" r="%s" fill="%s"/>', $this->n($s['cx']), $this->n($s['cy']), $this->n($s['r']), $this->color($s['fill'])),
+                'leaf' => sprintf('<path d="M%s %sH%sV%sA%s %s 0 0 1 %s %sH%sV%sA%s %s 0 0 1 %s %sZ" fill="%s"/>',
+                    $this->n($s['x'] + $s['r']), $this->n($s['y']), $this->n($s['x'] + $s['w']), $this->n($s['y'] + $s['h'] - $s['r']),
+                    $this->n($s['r']), $this->n($s['r']), $this->n($s['x'] + $s['w'] - $s['r']), $this->n($s['y'] + $s['h']),
+                    $this->n($s['x']), $this->n($s['y'] + $s['r']), $this->n($s['r']), $this->n($s['r']),
+                    $this->n($s['x'] + $s['r']), $this->n($s['y']), $this->color($s['fill'])),
                 'stroke' => sprintf('<rect x="%s" y="%s" width="%s" height="%s" rx="0.8" fill="none" stroke="%s" stroke-width="%s"%s/>',
                     $this->n($s['x']), $this->n($s['y']), $this->n($s['w']), $this->n($s['h']), $this->color($s['color']), $this->n($s['sw']),
                     $s['dash'] ? ' stroke-dasharray="1 0.6"' : ''),
@@ -337,6 +373,17 @@ class QrArtworkRenderer
             switch ($s['type']) {
                 case 'rect':
                     $this->gdRoundedRect($img, $p($s['x']), $p($s['y']), $p($s['x'] + $s['w']) - 1, $p($s['y'] + $s['h']) - 1, $p($s['r']), $col($s['fill']));
+                    break;
+                case 'leaf':
+                    $x1 = $p($s['x']);
+                    $y1 = $p($s['y']);
+                    $x2 = $p($s['x'] + $s['w']) - 1;
+                    $y2 = $p($s['y'] + $s['h']) - 1;
+                    $r = $p($s['r']);
+                    $this->gdRoundedRect($img, $x1, $y1, $x2, $y2, $r, $col($s['fill']));
+                    // Square the top-right and bottom-left corners again.
+                    imagefilledrectangle($img, $x2 - $r, $y1, $x2, $y1 + $r, $col($s['fill']));
+                    imagefilledrectangle($img, $x1, $y2 - $r, $x1 + $r, $y2, $col($s['fill']));
                     break;
                 case 'circle':
                     $d = max(1, (int) round(2 * $s['r'] * $scale));

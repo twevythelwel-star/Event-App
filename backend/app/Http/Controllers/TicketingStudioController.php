@@ -13,7 +13,10 @@ use App\Services\Checkout\TicketingStudioService;
 use App\Services\Checkout\TicketPricing;
 use App\Services\Checkout\WaitlistService;
 use App\Services\EventManagementService;
+use App\Services\EventQr\QrDesignCatalog;
+use App\Services\EventQr\TicketQrDesignSystem;
 use App\Services\OrderPlacementException;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,7 +27,7 @@ use Illuminate\View\View;
  */
 class TicketingStudioController extends Controller
 {
-    private const TABS = ['pricing', 'codes', 'promoters', 'complimentary', 'waitlist', 'settings'];
+    private const TABS = ['pricing', 'codes', 'promoters', 'complimentary', 'waitlist', 'qr', 'settings'];
 
     public function __construct(
         private readonly EventManagementService $events,
@@ -49,7 +52,67 @@ class TicketingStudioController extends Controller
             'waitlist' => WaitlistEntry::where('event_id', $event->id)->whereIn('status', ['waiting', 'offered'])->orderBy('created_at')->get(),
             'currency' => $event->currency ?: 'USD',
             'tz' => $event->timezone ?: config('app.timezone'),
+            'qr' => $request->query('tab') === 'qr' ? $this->qrStudio($event) : null,
         ]);
+    }
+
+    /**
+     * Ticket QR design: the host picks one of the approved presets (and, for the Cultural Celebration preset, the
+     * event's own colours). A choice that would make the code hard to scan is refused with the reason.
+     */
+    public function saveQrDesign(Request $request, string $id, TicketQrDesignSystem $designs): RedirectResponse
+    {
+        $event = $this->events->findEvent($request->user(), $id);
+        $hex = ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'];
+        $data = $request->validate([
+            'preset' => ['required', 'string', Rule::in(array_merge(['auto'], array_keys(TicketQrDesignSystem::PRESETS)))],
+            'module' => ['nullable', 'string', Rule::in(QrDesignCatalog::MODULE_SHAPES)],
+            'finder' => ['nullable', 'string', Rule::in(QrDesignCatalog::FINDER_SHAPES)],
+            'border' => ['nullable', 'string', Rule::in(QrDesignCatalog::BORDERS)],
+            'logo' => ['nullable', 'string', Rule::in(QrDesignCatalog::LOGOS)],
+            'monogram' => ['nullable', 'string', 'max:3', 'regex:/^[A-Za-z0-9&]*$/'],
+            'primary' => $hex, 'secondary' => $hex, 'background' => $hex, 'frame' => $hex,
+        ], ['*.regex' => 'Colours must be hex values like #12351F; initials may be up to three letters or digits.']);
+        $choice = array_filter($data, fn ($v) => $v !== null && $v !== '');
+        if (($choice['preset'] ?? '') !== 'cultural_celebration') {
+            unset($choice['primary'], $choice['secondary'], $choice['background'], $choice['frame']);
+        }
+
+        if ($problem = $designs->choiceProblem($event, $choice)) {
+            return redirect()->route('events.ticketing', ['id' => $id, 'tab' => 'qr'])->withErrors(['ticketing' => $problem])->withInput();
+        }
+
+        $event->forceFill(['ticket_qr_design' => $choice])->save();
+        \App\Services\AuditLogService::log(action: 'ticket_qr_design_changed', targetEntity: 'events', targetId: (string) $event->id,
+            details: 'Ticket QR design set to ' . ($choice['preset'] === 'auto' ? 'automatic' : TicketQrDesignSystem::PRESETS[$choice['preset']]['label']) . '.',
+            actor: $request->user(), organizerId: (string) $event->organizer_id, eventId: (string) $event->id);
+
+        return redirect()->route('events.ticketing', ['id' => $id, 'tab' => 'qr'])
+            ->with('status', 'Ticket QR design saved. Guests’ QR codes use it the next time their ticket opens.');
+    }
+
+    /** @return array<string, mixed> */
+    private function qrStudio(\App\Models\Event $event): array
+    {
+        $designs = app(TicketQrDesignSystem::class);
+        $qr = app(\App\Services\EventQr\TicketQrService::class);
+        $controls = $designs->controls();
+        $previews = [];
+        foreach ($designs->availablePresets() as $key => $label) {
+            $previews[$key] = $qr->previewSvg($designs->resolve($event, ['preset' => $key]));
+        }
+        $current = $designs->design($event);
+
+        return [
+            'controls' => $controls,
+            'presets' => $designs->availablePresets(),
+            'previews' => $previews,
+            'choice' => is_array($event->ticket_qr_design) ? $event->ticket_qr_design : ['preset' => 'auto'],
+            'auto' => TicketQrDesignSystem::presetForTheme($event),
+            'current' => $current,
+            'currentPreview' => $qr->previewSvg($current),
+            'report' => $designs->readability($current),
+        ];
     }
 
     public function savePricing(Request $request, string $id, string $tierId): RedirectResponse

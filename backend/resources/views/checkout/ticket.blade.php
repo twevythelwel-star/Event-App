@@ -233,15 +233,54 @@
                             </svg>
                             <span>Official Attendee Admission Pass · Scan at Gate</span>
                         </div>
-                        {{-- High-contrast, unobstructed QR well: pure white quiet zone, zero decorative graphics over QR modules --}}
-                        <div class="eb-ticket-qr-frame">
-                            <div class="eb-ticket-qr-well" data-qr-type="admission">
-                                {!! \App\Support\QrCode::svg($order->secure_ticket_token, 220, 'QR code for ticket ' . $order->ticket_code) !!}
+                        @if(($attendeeTickets ?? collect())->isNotEmpty())
+                            {{-- One QR code per attendee, each its own single-use credential, in the event's approved design.
+                                 The artwork carries its own quiet zone and frame; nothing is drawn over it. --}}
+                            @php $seatCount = $attendeeTickets->count(); $tierNames = $order->items->keyBy('id'); @endphp
+                            <div class="eb-attendee-qr-list" data-attendee-count="{{ $seatCount }}">
+                                @foreach($attendeeTickets as $attendee)
+                                    @php
+                                        $tierName = $tierNames->get($attendee->order_item_id)?->name ?? 'Admission';
+                                        $art = $ticketQr->svg($attendee, 'QR code for ticket ' . $attendee->ticket_number . ', guest ' . $attendee->sequence . ' of ' . $seatCount);
+                                    @endphp
+                                    <figure class="eb-attendee-qr" data-attendee-ticket="{{ $attendee->ticket_number }}" data-qr-status="{{ $attendee->qr_status }}">
+                                        <figcaption class="eb-attendee-qr-head">
+                                            <span class="eb-text-label">Guest {{ $attendee->sequence }} of {{ $seatCount }} · {{ $tierName }}</span>
+                                            @if($attendee->checked_in_at)
+                                                <span class="eb-badge eb-badge-success">Admitted {{ $local($attendee->checked_in_at) }}</span>
+                                            @endif
+                                        </figcaption>
+                                        @if($attendee->checked_in_at)
+                                            <p class="eb-text-supporting eb-attendee-qr-used">This guest is in. Their QR code can’t be used again.</p>
+                                        @elseif($art)
+                                            <div class="eb-attendee-qr-art" data-qr-type="admission">{!! $art !!}</div>
+                                        @else
+                                            <div class="eb-attendee-qr-pending" role="status">
+                                                <p class="eb-text-supporting" style="margin: 0 0 var(--space-2);">This guest’s QR code is still being prepared. Your ticket is safe; nothing is charged or issued twice.</p>
+                                                <form method="POST" action="{{ route('tickets.qr.retry', $order) }}" style="margin: 0;">
+                                                    @csrf
+                                                    <button type="submit" class="eb-btn eb-btn-secondary eb-btn-sm" data-loading-text="Preparing…">Try again</button>
+                                                </form>
+                                            </div>
+                                        @endif
+                                        <span class="eb-text-ticket-code eb-attendee-qr-number">{{ $attendee->ticket_number }}</span>
+                                    </figure>
+                                @endforeach
                             </div>
-                        </div>
-                        <p class="eb-help-text" style="margin: var(--space-2) 0 0; text-align: center;">
-                            Single-use admission QR{{ $admissionWindow ? ' · valid ' . $admissionWindow : '' }}. Food items are collected separately by event staff.
-                        </p>
+                            <p class="eb-help-text" style="margin: var(--space-2) 0 0; text-align: center;">
+                                One single-use QR code per guest{{ $admissionWindow ? ' · valid ' . $admissionWindow : '' }}. Each guest shows their own code at the gate. Food items are collected separately by event staff.
+                            </p>
+                        @else
+                            {{-- High-contrast, unobstructed QR well: pure white quiet zone, zero decorative graphics over QR modules --}}
+                            <div class="eb-ticket-qr-frame">
+                                <div class="eb-ticket-qr-well" data-qr-type="admission">
+                                    {!! \App\Support\QrCode::svg($order->secure_ticket_token, 220, 'QR code for ticket ' . $order->ticket_code) !!}
+                                </div>
+                            </div>
+                            <p class="eb-help-text" style="margin: var(--space-2) 0 0; text-align: center;">
+                                Single-use admission QR{{ $admissionWindow ? ' · valid ' . $admissionWindow : '' }}. Food items are collected separately by event staff.
+                            </p>
+                        @endif
                     @else
                         <img src="{{ \App\Support\VisualAssets::illustration('payment')['url'] }}" alt="" width="180" height="135" style="display: block; margin: 0 auto var(--space-2); max-width: 60%; height: auto;">
                         <p class="eb-text-supporting" style="margin: 0;">Your ticket QR code appears here once your payment is confirmed.</p>

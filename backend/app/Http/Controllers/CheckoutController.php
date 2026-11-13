@@ -332,9 +332,16 @@ class CheckoutController extends Controller
 
         $order->load(['items', 'charges', 'event' => fn ($q) => $q->withoutGlobalScopes()->with('mediaItems')]);
 
+        // One QR code per attendee. prepare() issues any missing attendee tickets (orders made before attendee
+        // tickets existed) and draws artwork that is not ready yet; it never duplicates a ticket.
+        $qr = app(\App\Services\EventQr\TicketQrService::class);
+        $attendeeTickets = $qr->prepare($order);
+
         return view('checkout.ticket', [
             'order' => $order,
             'event' => $order->event,
+            'attendeeTickets' => $attendeeTickets,
+            'ticketQr' => $qr,
             'instructions' => $order->event ? PaymentOptions::instructionsFor($order->event, (string) $order->method) : null,
         ]);
     }
@@ -354,6 +361,21 @@ class CheckoutController extends Controller
         }
 
         return back()->with('success', 'Thanks. Your ticket now shows Confirmation submitted until the organizer checks the payment.');
+    }
+
+    /** Draws again any attendee QR artwork that failed. Tickets and credentials are never re-issued here. */
+    public function retryTicketQr(Request $request, Order $order): RedirectResponse
+    {
+        abort_unless($this->orders->isUserAuthorizedForOrder($order, $request->user()), 404);
+        $event = \App\Models\Event::withoutGlobalScopes()->find($order->event_id);
+        if ($event) {
+            $qr = app(\App\Services\EventQr\TicketQrService::class);
+            app(\App\Services\Tickets\AttendeeTicketService::class)->ticketsFor($order)
+                ->where('qr_status', '!=', \App\Models\AttendeeTicket::QR_READY)
+                ->each(fn ($ticket) => $qr->render($ticket, $event));
+        }
+
+        return redirect()->route('tickets.show', $order);
     }
 
     /**

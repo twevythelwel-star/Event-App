@@ -303,6 +303,10 @@ class OrderPlacementService
                     $line->save();
                 }
 
+                // One admission credential per attendee, created in this transaction: if anything below fails, the
+                // order and every credential roll back together; a retried submission finds them by idempotency key.
+                app(\App\Services\Tickets\AttendeeTicketService::class)->issueFor($order);
+
                 // Each fee, tax and discount line is frozen with the order; later rule changes never alter it.
                 foreach ($totals->charges as $charge) {
                     \App\Models\OrderCharge::create($charge + ['order_id' => $order->id]);
@@ -662,7 +666,7 @@ class OrderPlacementService
         $cleanId = trim($identifier);
 
         // Path A: Authenticated by Cryptographic Secure Token (verified via SHA-256 hash)
-        if (str_starts_with($cleanId, 'tok_')) {
+        if (str_starts_with($cleanId, 'tok_') || \App\Services\Tickets\AttendeeTicketService::looksLikeCredential($cleanId)) {
             $order = Order::whereTicketToken($cleanId)->with('items')->first();
             if ($order && !$order->isTicketRevoked()) {
                 if ($requestingUser !== null && !$this->isUserAuthorizedForOrder($order, $requestingUser)) {

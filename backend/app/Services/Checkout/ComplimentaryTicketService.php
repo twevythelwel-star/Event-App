@@ -78,6 +78,7 @@ final class ComplimentaryTicketService
             ]);
             $line->id = (string) Str::uuid();
             $line->save();
+            app(\App\Services\Tickets\AttendeeTicketService::class)->issueFor($order);
 
             AuditLogService::log(action: 'complimentary_tickets_issued', targetEntity: 'orders', targetId: (string) $order->id,
                 details: "{$locked->title}: {$quantity} complimentary " . ($tier['name'] ?? 'tickets') . " for {$recipient->email}. Reason: {$reason}",

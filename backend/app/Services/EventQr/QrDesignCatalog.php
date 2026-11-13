@@ -23,9 +23,10 @@ final class QrDesignCatalog
     public const VERSION = 1;
 
     public const MODULE_SHAPES = ['square', 'rounded', 'dot'];
-    public const FINDER_SHAPES = ['square', 'rounded', 'circle'];
+    public const FINDER_SHAPES = ['square', 'rounded', 'circle', 'leaf'];
     public const BORDERS = ['none', 'line', 'double', 'dashed', 'corners', 'zigzag'];
-    public const LOGOS = ['none', 'bite'];
+    /** Centre marks, drawn only inside the area the encoder clears at error correction H. "monogram" is the event's initials. */
+    public const LOGOS = ['none', 'bite', 'monogram'];
     public const ECC_LEVELS = ['M', 'Q', 'H'];
 
     /** Hosts may choose these; "random" picks among all of them. Labels are shown in the host screen. */
@@ -198,6 +199,9 @@ final class QrDesignCatalog
         if ($design['logo'] !== 'none' && $design['ecc'] !== 'H') {
             return 'a centre logo needs error correction H';
         }
+        if ($design['logo'] === 'monogram' && preg_match('/^[A-Z0-9&]{1,3}$/', (string) ($design['monogram'] ?? '')) !== 1) {
+            return 'a monogram needs one to three capital letters or digits';
+        }
 
         return null;
     }
@@ -277,13 +281,14 @@ final class QrDesignCatalog
         }
         [$fg, $plate] = self::pick($pairs);
         $module = self::pick(self::MODULE_SHAPES);
-        $logo = self::pick(self::LOGOS);
+        // Promotional codes keep their original ingredients; the event monogram and leaf corners are ticket styles.
+        $logo = self::pick(['none', 'bite']);
 
         return [
             'version' => self::VERSION,
             'preset' => 'random_mix',
             'module' => $module,
-            'finder' => self::pick(self::FINDER_SHAPES),
+            'finder' => self::pick(['square', 'rounded', 'circle']),
             'fg' => $fg,
             'plate' => $plate,
             'finder_accent' => self::pick([null, '#5A0F1C', '#0B2A6B', '#3B0F3F']),
