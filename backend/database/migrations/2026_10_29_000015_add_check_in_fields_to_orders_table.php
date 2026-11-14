@@ -25,6 +25,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        \App\Support\ForeignKeyIndexes::keepFor('orders', ['event_id', 'checked_in_at']);
         Schema::table('orders', function (Blueprint $table) {
             $table->dropIndex(['event_id', 'checked_in_at']);
             $table->dropConstrainedForeignId('checked_in_by');

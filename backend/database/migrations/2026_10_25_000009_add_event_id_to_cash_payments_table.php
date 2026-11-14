@@ -20,6 +20,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        \App\Support\ForeignKeyIndexes::keepFor('cash_payments', ['organizer_id', 'event_id']);
         Schema::table('cash_payments', function (Blueprint $table) {
             $table->dropIndex(['organizer_id', 'event_id']);
             $table->dropConstrainedForeignId('event_id');

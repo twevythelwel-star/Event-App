@@ -181,8 +181,9 @@ class FoodMenuAndScheduleTest extends TestCase
         $header = $order->items->firstWhere('line_type', OrderItem::PACKAGE);
         $this->assertSame(2550, (int) $header->unit_price_minor);
         $parts = $order->items->where('package_line_id', $header->id);
-        $this->assertSame(['Oxtail' => 2, 'Rice and Peas' => 2, 'Steamed Vegetables' => 2, 'Festival' => 4, 'Extra Plantain' => 2],
-            $parts->pluck('quantity', 'name')->map(fn ($q) => (int) $q)->all());
+        // Compared by name: the order rows come back in is not defined without an ORDER BY (MySQL differs from SQLite).
+        $this->assertSame(['Extra Plantain' => 2, 'Festival' => 4, 'Oxtail' => 2, 'Rice and Peas' => 2, 'Steamed Vegetables' => 2],
+            $parts->pluck('quantity', 'name')->map(fn ($q) => (int) $q)->sortKeys()->all());
         $this->assertSame(0, (int) $parts->sum('line_total_minor'));
         $this->assertSame(3, (int) $this->items['oxtail']->fresh()->available_stock);
         $this->assertSame(20, (int) $this->items['chicken']->fresh()->available_stock, 'The swapped-out chicken is not reserved.');

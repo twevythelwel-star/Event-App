@@ -22,7 +22,8 @@ final class WalletTestCertificates
 
     public string $caPath;
 
-    public function __construct(int $days = 30)
+    /** $days: how long the pass certificate is valid; well past wallet:check's 30-day renewal warning by default. */
+    public function __construct(int $days = 365)
     {
         $this->dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'eb-wallet-test-' . bin2hex(random_bytes(4));
         @mkdir($this->dir, 0700, true);

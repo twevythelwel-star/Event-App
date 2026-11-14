@@ -126,6 +126,7 @@ return new class extends Migration
 
         foreach (self::NEW_INDEXES as $table => $indexes) {
             foreach (array_keys($indexes) as $name) {
+                \App\Support\ForeignKeyIndexes::keepFor($table, $name);
                 Schema::table($table, fn (Blueprint $t) => $t->dropIndex($name));
             }
         }

@@ -31,6 +31,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        \App\Support\ForeignKeyIndexes::keepFor('orders', ['event_id', 'idempotency_key']);
         Schema::table('orders', function (Blueprint $table) {
             $table->dropUnique(['event_id', 'idempotency_key']);
             $table->dropColumn('idempotency_key');

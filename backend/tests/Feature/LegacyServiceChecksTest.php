@@ -27,8 +27,9 @@ class LegacyServiceChecksTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        // A fresh database per test (DatabaseMigrations, no wrapping transaction), so SQLite can turn this off.
-        \Illuminate\Support\Facades\DB::statement('PRAGMA foreign_keys = OFF');
+        // A fresh database per test (DatabaseMigrations, no wrapping transaction), so foreign keys can be turned off.
+        // Through the schema builder, not a SQLite PRAGMA, so it works on every driver (MySQL in CI too).
+        \Illuminate\Support\Facades\Schema::disableForeignKeyConstraints();
 
         $str = fn () => strtolower(\Illuminate\Support\Str::random(10));
         $defaults = [

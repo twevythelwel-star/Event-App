@@ -65,6 +65,7 @@ return new class extends Migration
                 }
             }
         }
+        \App\Support\ForeignKeyIndexes::keepFor('events', 'events_org_creation_key_unique');
         Schema::table('events', function (Blueprint $table) {
             $table->dropUnique('events_org_creation_key_unique');
             $table->dropColumn('creation_key');

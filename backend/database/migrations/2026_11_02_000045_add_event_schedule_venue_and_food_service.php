@@ -87,6 +87,9 @@ return new class extends Migration
 
     public function down(): void
     {
+        foreach (['orders' => 'orders_event_pickup_idx', 'order_items' => 'order_items_order_package_idx', 'menu_items' => 'menu_items_event_type_idx'] as $table => $index) {
+            \App\Support\ForeignKeyIndexes::keepFor($table, $index);
+        }
         Schema::table('orders', function (Blueprint $table) {
             $table->dropIndex('orders_event_pickup_idx');
             $table->dropColumn(['food_fulfillment_method', 'pickup_window', 'delivery_location']);

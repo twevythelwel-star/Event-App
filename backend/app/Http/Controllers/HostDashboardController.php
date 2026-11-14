@@ -260,16 +260,16 @@ class HostDashboardController extends Controller
         // Settled funds (confirmed - refunds)
         $settledFundsUSD = max(0, $confirmedPaymentsUSD - $refundsTotalUSD);
 
-        // Fees and taxes (from order_charges)
+        // Fees and taxes (from order_charges; its kinds are platform_fee, host_fee, tax and discount)
         $usdOrderIds = $usd->pluck('id');
         $feesUSD = $usdMajor((int) \App\Models\OrderCharge::whereIn('order_id', $usdOrderIds)
             ->where('currency', 'USD')
-            ->where('type', 'fee')
+            ->whereIn('kind', ['platform_fee', 'host_fee'])
             ->sum('amount_minor'));
 
         $taxesUSD = $usdMajor((int) \App\Models\OrderCharge::whereIn('order_id', $usdOrderIds)
             ->where('currency', 'USD')
-            ->where('type', 'tax')
+            ->where('kind', 'tax')
             ->sum('amount_minor'));
 
         // Net amount (gross - fees - taxes - refunds)

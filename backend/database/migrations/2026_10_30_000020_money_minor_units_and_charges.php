@@ -202,7 +202,8 @@ return new class extends Migration
                         'reason' => (string) ($entry['reason'] ?? 'Refund (migrated from refund history)'),
                         'actor_name' => isset($entry['refundedBy']) ? (string) $entry['refundedBy'] : null,
                         'metadata' => json_encode(['migrated_from' => 'refund_details']),
-                        'occurred_at' => $entry['refundedAt'] ?? $o->updated_at ?? now(),
+                        // Refund history stored ISO-8601 times ('2026-10-01T10:00:00Z'); MySQL datetime columns need 'Y-m-d H:i:s'.
+                        'occurred_at' => isset($entry['refundedAt']) ? \Illuminate\Support\Carbon::parse($entry['refundedAt'])->utc()->format('Y-m-d H:i:s') : ($o->updated_at ?? now()),
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);

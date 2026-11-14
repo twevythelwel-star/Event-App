@@ -11,8 +11,9 @@ return new class extends Migration {
             $table->uuid('id')->primary();
             $table->foreignUuid('order_id')->constrained('orders')->cascadeOnDelete();
             $table->foreignUuid('organizer_id')->constrained('organizers')->cascadeOnDelete();
-            $table->foreignUuid('requested_by')->constrained('users')->cascadeOnDelete();
-            $table->foreignUuid('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            // users.id is an auto-increment bigint, so the user references must be too (MySQL rejects a uuid FK to it).
+            $table->foreignId('requested_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
             $table->string('status', 24)->default('pending');
             $table->string('customer_reason', 500)->nullable();
             $table->string('review_reason', 500)->nullable();

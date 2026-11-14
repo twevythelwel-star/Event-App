@@ -72,12 +72,12 @@ class EventReportsController extends Controller
         $checked = (int) (clone $tickets)->whereNotNull('orders.checked_in_at')->sum('order_items.quantity');
         $recent = Order::withoutGlobalScopes()->where('event_id', $event->id)->whereNull('deleted_at')
             ->whereNotNull('checked_in_at')->orderByDesc('checked_in_at')->limit(20)
-            ->get(['order_number', 'ticket_code', 'customer_name', 'checked_in_at', 'checked_by']);
+            ->get(['order_number', 'ticket_code', 'customer_name', 'checked_in_at', 'checked_in_by']);
 
         return response()->json([
             'event_id' => $event->id, 'event_title' => $event->title,
             'check_ins' => ['total_tickets' => $total, 'checked_in' => $checked, 'pending_check_in' => max(0, $total - $checked), 'check_in_rate' => $total > 0 ? round($checked / $total * 100, 2) : 0],
-            'recent_check_ins' => $recent->map(fn ($o) => ['order_number' => $o->order_number, 'ticket_code' => $o->ticket_code, 'customer_name' => $o->customer_name, 'checked_in_at' => $o->checked_in_at?->format('Y-m-d H:i:s'), 'checked_in_by' => $o->checked_by]),
+            'recent_check_ins' => $recent->map(fn ($o) => ['order_number' => $o->order_number, 'ticket_code' => $o->ticket_code, 'customer_name' => $o->customer_name, 'checked_in_at' => $o->checked_in_at?->format('Y-m-d H:i:s'), 'checked_in_by' => $o->checked_in_by]),
         ]);
     }
 

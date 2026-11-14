@@ -67,7 +67,8 @@ class ScheduleStudioTest extends TestCase
             'photo' => UploadedFile::fake()->image('ray.jpg', 600, 600), 'photo_alt_text' => 'Ray behind the decks',
         ])->assertSessionHas('status');
         $ray = EventPerformer::where('event_id', self::EVENT)->firstOrFail();
-        $this->assertSame([['label' => 'Mixes', 'url' => 'https://example.org/ray']], $ray->links);
+        // Keys sorted before comparing: a MySQL json column stores an object's keys in its own order.
+        $this->assertSame([['label' => 'Mixes', 'url' => 'https://example.org/ray']], array_map(fn (array $l) => \Illuminate\Support\Arr::sortRecursive($l), $ray->links));
         $this->assertCount(3, $ray->photo_variants);
         $this->actingAs($host)->post(route('events.schedule-studio.performers.store', self::EVENT), ['name' => 'X', 'role' => 'dj', 'links' => [['url' => 'javascript:alert(1)']]])
             ->assertSessionHasErrors('schedule');
