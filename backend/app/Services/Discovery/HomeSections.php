@@ -31,13 +31,18 @@ final class HomeSections
     {
         // Homepage sections only display four events apiece. Bound the source set so a growing event
         // catalog cannot turn each homepage request into a full-table load.
-        return Event::allTenants()->with(['menuItems' => fn ($query) => $query->where('is_active', true)])
+        $events = Event::allTenants()->with(['menuItems' => fn ($query) => $query->where('is_active', true)])
             ->where('status', 'published')
             ->where('visibility', 'public')
             ->orderByDesc('is_featured')
             ->where(fn ($query) => $query->whereNull('event_date_iso')->orWhereDate('event_date_iso', '>=', now()->toDateString()))
             ->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')->limit(500)->get()
             ->reject(fn (Event $e) => EventListing::hasEnded($e))->values();
+        // Each card shows a photo and ticket availability: load them for every candidate at once.
+        $events->load('mediaItems');
+        \App\Services\Checkout\InventorySnapshot::instance()->prefetch($events);
+
+        return $events;
     }
 
     /** @return list<string> the labels of the traditions an event celebrates */

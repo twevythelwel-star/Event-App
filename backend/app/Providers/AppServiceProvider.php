@@ -31,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(\App\Services\Compliance\PolicyCatalog::class);
         // Approved library photos, read once per request.
         $this->app->scoped(\App\Services\PhotoLibrary::class);
+        // Tickets sold and held for the events a listing page shows, read once per request.
+        $this->app->scoped(\App\Services\Checkout\InventorySnapshot::class);
     }
 
     /** Artisan commands that build or cache the application before it is configured for its environment. */
@@ -50,6 +52,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Any change to holds or orders makes the listing inventory snapshot stale: drop it.
+        foreach ([\App\Models\TicketHold::class, \App\Models\Order::class, \App\Models\OrderItem::class] as $model) {
+            $model::saved(fn () => \App\Services\Checkout\InventorySnapshot::instance()->flush());
+            $model::deleted(fn () => \App\Services\Checkout\InventorySnapshot::instance()->flush());
+        }
+        // ... and it never outlives the request it was read for.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Foundation\Http\Events\RequestHandled::class,
+            fn () => \App\Services\Checkout\InventorySnapshot::instance()->flush());
+
         // Apple Wallet passes follow their ticket: a change the pass shows marks it modified and tells its devices.
         // Only when passes exist (the table is created by a migration, so guard for fresh installs mid-migrate).
         \App\Models\Order::updated(function (\App\Models\Order $order): void {

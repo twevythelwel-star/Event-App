@@ -32,6 +32,10 @@ final class TicketPricing
     /** @return array<string, int> tickets sold per ticket type on live orders */
     public static function soldByTier(Event $event): array
     {
+        if (($prefetched = InventorySnapshot::instance()->soldByTier($event)) !== null) {
+            return $prefetched;
+        }
+
         return OrderItem::query()
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->where('orders.event_id', $event->id)

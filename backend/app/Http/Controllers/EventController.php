@@ -55,6 +55,9 @@ class EventController extends Controller
             ->paginate($perPage)->withQueryString();
         $events->setCollection($events->getCollection()
             ->reject(fn (Event $event) => \App\Support\EventListing::hasEnded($event))->values());
+        // Every card shows a photo and ticket availability: read them for the whole page at once.
+        $events->getCollection()->load('mediaItems');
+        \App\Services\Checkout\InventorySnapshot::instance()->prefetch($events->getCollection());
 
         if ($request->wantsJson()) {
             return response()->json([
