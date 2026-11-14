@@ -46,4 +46,22 @@ class StoreOrderRequest extends FormRequest
             'idempotency_key' => ['nullable', 'string', 'max:120'],
         ];
     }
+
+    /**
+     * The chosen method must be one this event's host actually offers right now (switched on, handle set,
+     * right currency), exactly as web checkout requires. Call once the event is known.
+     *
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function assertMethodOffered(\App\Models\Event $event): void
+    {
+        $offered = array_column(\App\Services\Checkout\PaymentOptions::forEvent($event), 'value');
+        if (!in_array($this->validated('method'), $offered, true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'method' => $offered === []
+                    ? 'The organizer has not set up a way to pay for this event yet.'
+                    : 'This organizer accepts: ' . implode(', ', array_map(fn ($m) => \App\Payments\PaymentMethods::label($m), $offered)) . '.',
+            ]);
+        }
+    }
 }

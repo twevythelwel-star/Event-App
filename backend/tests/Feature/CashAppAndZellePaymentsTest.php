@@ -160,6 +160,42 @@ class CashAppAndZellePaymentsTest extends TestCase
         $this->assertFalse((new HostPaymentPolicy())->canEnableMethod('bank_transfer', 'US'));
     }
 
+    public function test_the_order_api_and_order_form_accept_only_methods_the_host_offers(): void
+    {
+        $this->policy()->forceFill(['enable_cashapp' => false, 'zelle_recipient' => null])->save();
+        $payload = fn (string $method) => [
+            'customer_name' => 'Pay Buyer', 'customer_phone' => '+1 305 555 0123', 'method' => $method, 'currency' => 'USD',
+            'items' => [['menu_item_id' => 'tier-ga', 'quantity' => 1]],
+        ];
+
+        // Cash App switched off, Zelle missing its email or phone: both refused by the JSON API...
+        foreach (['cashapp', 'zelle'] as $method) {
+            $this->actingAs($this->buyer)->postJson('/api/v1/events/' . $this->event->slug . '/orders', $payload($method))
+                ->assertUnprocessable()->assertJsonValidationErrors('method')
+                ->assertJsonPath('errors.method.0', 'This organizer accepts: Cash at pickup.');
+        }
+        // ...and by the event page's order form.
+        $this->actingAs($this->buyer)->from('/events/' . $this->event->slug)
+            ->post('/events/' . $this->event->slug . '/order', $payload('cashapp'))
+            ->assertRedirect('/events/' . $this->event->slug)->assertSessionHasErrors('method');
+        $this->assertSame(0, Order::allTenants()->count());
+
+        // An offered method still goes through.
+        $this->actingAs($this->buyer)->postJson('/api/v1/events/' . $this->event->slug . '/orders', $payload('cash'))->assertCreated();
+        $this->assertSame('cash', Order::allTenants()->sole()->method);
+    }
+
+    public function test_the_order_api_refuses_zelle_and_cash_app_for_events_not_priced_in_dollars(): void
+    {
+        $this->event->forceFill(['currency' => 'JMD'])->save();
+
+        $this->actingAs($this->buyer)->postJson('/api/v1/events/' . $this->event->slug . '/orders', [
+            'customer_name' => 'Pay Buyer', 'customer_phone' => '+1 305 555 0123', 'method' => 'zelle', 'currency' => 'JMD',
+            'items' => [['menu_item_id' => 'tier-ga', 'quantity' => 1]],
+        ])->assertUnprocessable()->assertJsonValidationErrors('method');
+        $this->assertSame(0, Order::allTenants()->count());
+    }
+
     public function test_a_cash_app_order_waits_for_the_host_after_the_buyer_sends_a_confirmation(): void
     {
         $this->fillCart();

@@ -146,6 +146,7 @@ class CatalogController extends Controller
         if (!$event) {
             return response()->json(['error' => 'Event not found.'], 404);
         }
+        TenantContext::withoutTenantScope(fn () => $request->assertMethodOffered($event));
 
         $result = TenantContext::withoutTenantScope(
             fn () => $this->orderService->placeOrder($event, $request->validated(), $request->user())

@@ -28,6 +28,7 @@ class OrderController extends Controller
                 ? response()->json(['error' => 'Event not found.'], 404)
                 : redirect()->route('events.index')->with('error', 'That event is no longer available.');
         }
+        $request->assertMethodOffered($event);
 
         $result = $this->orderService->placeOrder($event, $request->validated(), $request->user());
 
