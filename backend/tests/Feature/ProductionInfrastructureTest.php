@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Middleware\SecurityHeaders;
 use App\Notifications\TransferSubmittedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Process;
@@ -67,6 +68,43 @@ class ProductionInfrastructureTest extends TestCase
         $response->assertHeaderMissing('Strict-Transport-Security'); // never on plain HTTP or in testing
     }
 
+    public function test_pages_carry_a_content_security_policy(): void
+    {
+        $csp = $this->get('/')->assertOk()->headers->get('Content-Security-Policy');
+        $this->assertNotNull($csp);
+        $directives = collect(explode(';', $csp))->map(fn ($d) => trim($d))->filter()
+            ->mapWithKeys(fn ($d) => [strtok($d, ' ') => trim(substr($d, strlen(strtok($d, ' '))))]);
+
+        $this->assertSame("'self'", $directives['default-src']);
+        $this->assertSame("'none'", $directives['object-src']);
+        $this->assertSame("'self'", $directives['base-uri']);
+        $this->assertSame("'self'", $directives['form-action']);
+        $this->assertSame("'self'", $directives['frame-ancestors']);
+        $this->assertSame("'self'", $directives['connect-src']);
+        $this->assertStringNotContainsString('unsafe-eval', $csp);
+        $this->assertStringNotContainsString('https:', $directives['script-src'], 'scripts never come from other sites');
+        $this->assertStringContainsString('https://fonts.googleapis.com', $directives['style-src']);
+        $this->assertArrayNotHasKey('upgrade-insecure-requests', $directives->all(), 'only added on HTTPS');
+
+        $this->assertSame(SecurityHeaders::policy(), $csp);
+    }
+
+    public function test_the_content_security_policy_can_be_widened_or_switched_to_report_only(): void
+    {
+        config(['security.csp.extra_sources' => 'https://cdn.example.test']);
+        $csp = $this->get('/')->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString("img-src 'self' data: blob: https: https://cdn.example.test", $csp);
+        $this->assertStringContainsString("script-src 'self' 'unsafe-inline' https://cdn.example.test", $csp);
+
+        config(['security.csp.report_only' => true]);
+        $response = $this->get('/');
+        $response->assertHeaderMissing('Content-Security-Policy');
+        $this->assertNotNull($response->headers->get('Content-Security-Policy-Report-Only'));
+
+        config(['security.csp.enabled' => false, 'security.csp.report_only' => false]);
+        $this->get('/')->assertHeaderMissing('Content-Security-Policy');
+    }
+
     public function test_https_is_recognised_behind_the_load_balancer(): void
     {
         $this->app['env'] = 'staging'; // HSTS is skipped only in local and testing
@@ -74,6 +112,7 @@ class ProductionInfrastructureTest extends TestCase
             ->withHeaders(['X-Forwarded-Proto' => 'https', 'X-Forwarded-Port' => '443'])
             ->get('/');
         $response->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        $this->assertStringEndsWith('; upgrade-insecure-requests', (string) $response->headers->get('Content-Security-Policy'));
     }
 
     public function test_the_notifications_queue_name_is_configurable(): void
