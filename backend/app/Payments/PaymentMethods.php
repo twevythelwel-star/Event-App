@@ -64,6 +64,11 @@ final class PaymentMethods
         'bank' => 'Bank transfer',
     ];
 
+    /** Where a retired method's instructions were kept, so an order placed before it was retired can still be paid. */
+    private const RETIRED_INSTRUCTIONS = [
+        'bank' => 'bank_transfer_instructions',
+    ];
+
     /** Platform approval keys for processors and processor-specific methods. */
     public const APPROVALS = [
         'stripe' => 'Stripe (cards, Apple Pay, Google Pay)',
@@ -136,7 +141,7 @@ final class PaymentMethods
 
     public static function instructionsField(string $method): ?string
     {
-        return self::DEFINITIONS[$method]['instructions'] ?? null;
+        return self::DEFINITIONS[$method]['instructions'] ?? self::RETIRED_INSTRUCTIONS[$method] ?? null;
     }
 
     /** Whether a processor has all the credentials it needs. Never reveals the credentials themselves. */

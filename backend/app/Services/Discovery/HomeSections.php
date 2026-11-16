@@ -31,18 +31,37 @@ final class HomeSections
     {
         // Homepage sections only display four events apiece. Bound the source set so a growing event
         // catalog cannot turn each homepage request into a full-table load.
-        $events = Event::allTenants()->with(['menuItems' => fn ($query) => $query->where('is_active', true)])
+        return Event::allTenants()->with(['menuItems' => fn ($query) => $query->where('is_active', true)])
             ->where('status', 'published')
             ->where('visibility', 'public')
             ->orderByDesc('is_featured')
             ->where(fn ($query) => $query->whereNull('event_date_iso')->orWhereDate('event_date_iso', '>=', now()->toDateString()))
             ->orderByRaw('event_date_iso IS NULL')->orderBy('event_date_iso')->orderBy('start_time')->limit(500)->get()
             ->reject(fn (Event $e) => EventListing::hasEnded($e))->values();
-        // Each card shows a photo and ticket availability: load them for every candidate at once.
-        $events->load('mediaItems');
-        \App\Services\Checkout\InventorySnapshot::instance()->prefetch($events);
+    }
 
-        return $events;
+    /**
+     * Each card shows a photo and ticket availability: read them for the events the sections actually show
+     * (a few dozen), in a handful of queries, not for every candidate.
+     *
+     * @param array<string, mixed> $sections
+     */
+    private static function preloadShown(array $sections): void
+    {
+        $shown = [];
+        $collect = function ($value) use (&$collect, &$shown): void {
+            if ($value instanceof Event) {
+                $shown[(string) $value->id] = $value;
+            } elseif (is_iterable($value)) {
+                foreach ($value as $item) {
+                    $collect($item);
+                }
+            }
+        };
+        $collect($sections);
+        $shown = \Illuminate\Database\Eloquent\Collection::make(array_values($shown));
+        $shown->loadMissing('mediaItems');
+        \App\Services\Checkout\InventorySnapshot::instance()->prefetch($shown);
     }
 
     /** @return list<string> the labels of the traditions an event celebrates */
@@ -101,7 +120,7 @@ final class HomeSections
             }
         }
 
-        return [
+        $sections = [
             'featured' => $featured->values(),
             'near' => $near,
             'foodFestivals' => $foodFestivals,
@@ -116,6 +135,9 @@ final class HomeSections
             'traditions' => $traditionCounts,
             'market' => $market,
         ];
+        self::preloadShown($sections);
+
+        return $sections;
     }
 
     public static function marketKey(?string $state, ?string $city): string

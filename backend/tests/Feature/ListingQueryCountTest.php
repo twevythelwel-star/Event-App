@@ -79,6 +79,21 @@ class ListingQueryCountTest extends TestCase
         $this->assertSame(0, TicketInventory::availableFor($event, $event->ticket_tiers[0], null));
     }
 
+    public function test_bulk_query_builder_writes_also_drop_the_snapshot(): void
+    {
+        $event = $this->event('bulk', 5);
+        $buyer = User::create(['name' => 'B', 'email' => 'bulk@example.test', 'password' => bcrypt('password'), 'status' => 'active']);
+        TicketHold::create(['event_id' => $event->id, 'ticket_tier_id' => 'ga', 'quantity' => 5, 'user_id' => $buyer->id, 'expires_at' => now()->addMinutes(10)]);
+
+        InventorySnapshot::instance()->prefetch([$event]);
+        $this->assertSame(0, TicketInventory::availableFor($event, $event->ticket_tiers[0], null));
+
+        // Expiring holds in bulk fires no model events; the snapshot must still be dropped.
+        TicketHold::where('event_id', $event->id)->delete();
+        $this->assertNull(InventorySnapshot::instance()->soldByTier($event));
+        $this->assertSame(5, TicketInventory::availableFor($event, $event->ticket_tiers[0], null));
+    }
+
     public function test_checkout_inside_a_transaction_always_counts_live(): void
     {
         $event = $this->event('tx', 5);

@@ -28,8 +28,8 @@ class UpdateHostSettingsRequest extends FormRequest
             ...\App\Models\HostPaymentPolicy::handleRules(),
             'zelle_instructions' => ['nullable', 'string', 'max:500'],
             'cash_app_instructions' => ['nullable', 'string', 'max:255'],
-            // Bank transfer is no longer offered.
-            'bank_transfer_instructions' => ['prohibited'],
+            // Bank transfer is no longer offered (an empty value from an old form is fine).
+            'bank_transfer_instructions' => ['nullable', \App\Models\HostPaymentPolicy::retiredBankRule()],
             'require_transfer_reference' => ['nullable', 'boolean'],
             'require_sender_name' => ['nullable', 'boolean'],
             'require_receipt_snapshot' => ['nullable', 'boolean'],
@@ -49,19 +49,17 @@ class UpdateHostSettingsRequest extends FormRequest
 
     public function messages(): array
     {
-        return \App\Models\HostPaymentPolicy::handleMessages() + [
-            'bank_transfer_instructions.prohibited' => 'Bank transfer is no longer offered. Use Zelle, Cash App or cash in person.',
-        ];
+        return \App\Models\HostPaymentPolicy::handleMessages();
     }
 
     /** Turning on Zelle or Cash App needs the handle customers send to. */
     public function withValidator(\Illuminate\Validation\Validator $validator): void
     {
         $validator->after(function (\Illuminate\Validation\Validator $v) {
-            foreach (['enable_zelle' => ['zelle_recipient', 'your Zelle email or phone', 'Zelle'], 'enable_cashapp' => ['cash_app_cashtag', 'your $Cashtag', 'Cash App']] as $switch => [$field, $what, $name]) {
-                if ($this->boolean($switch) && trim((string) $this->input($field)) === '') {
-                    $v->errors()->add($field, "Add {$what} to accept {$name}.");
-                }
+            $organizerId = \App\Http\Controllers\AccountSettingsController::ownedOrganizerId($this->user());
+            $current = $organizerId ? \App\Models\HostPaymentPolicy::where('organizer_id', $organizerId)->first() : null;
+            foreach (\App\Models\HostPaymentPolicy::missingHandleErrors($this->all(), $current) as $field => $message) {
+                $v->errors()->add($field, $message);
             }
         });
     }

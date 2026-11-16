@@ -52,11 +52,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Any change to holds or orders makes the listing inventory snapshot stale: drop it.
-        foreach ([\App\Models\TicketHold::class, \App\Models\Order::class, \App\Models\OrderItem::class] as $model) {
-            $model::saved(fn () => \App\Services\Checkout\InventorySnapshot::instance()->flush());
-            $model::deleted(fn () => \App\Services\Checkout\InventorySnapshot::instance()->flush());
-        }
+        // Any write to holds or orders makes the listing inventory snapshot stale: drop it. Listening to the
+        // queries (not model events) also catches bulk updates and deletes made with the query builder.
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Database\Events\QueryExecuted::class, function (\Illuminate\Database\Events\QueryExecuted $query): void {
+            if (preg_match('/^\s*(insert|update|delete|replace)\b[^;]*?\b(ticket_holds|orders|order_items)\b/i', $query->sql) === 1) {
+                \App\Services\Checkout\InventorySnapshot::instance()->flush();
+            }
+        });
         // ... and it never outlives the request it was read for.
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Foundation\Http\Events\RequestHandled::class,
             fn () => \App\Services\Checkout\InventorySnapshot::instance()->flush());

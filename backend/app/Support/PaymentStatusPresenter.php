@@ -53,16 +53,9 @@ final class PaymentStatusPresenter
         return self::GROUPS[$group]['statuses'] ?? [];
     }
 
+    /** One list of method names (App\Payments\PaymentMethods), including retired ones such as bank transfer. */
     public static function methodLabel(?string $method): string
     {
-        return match ($method) {
-            // Retired: no longer offered, but older orders keep a readable label.
-            'bank' => 'Bank transfer',
-            'cash' => 'Cash',
-            'card' => 'Card',
-            'zelle' => 'Zelle',
-            'cashapp' => 'Cash App',
-            default => ucfirst((string) $method),
-        };
+        return \App\Payments\PaymentMethods::label($method);
     }
 }

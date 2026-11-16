@@ -40,17 +40,14 @@ class HostPaymentSettingsController extends Controller
             'zelle_instructions' => ['sometimes', 'nullable', 'string', 'max:2000'],
             'cash_app_instructions' => ['sometimes', 'nullable', 'string', 'max:2000'],
             // Bank transfer is no longer offered: it can't be switched back on or given new instructions.
-            'enable_bank' => ['prohibited'],
-            'bank_transfer_instructions' => ['prohibited'],
-        ], HostPaymentPolicy::handleMessages() + [
-            'enable_bank.prohibited' => 'Bank transfer is no longer offered. Use Zelle, Cash App or cash in person.',
-            'bank_transfer_instructions.prohibited' => 'Bank transfer is no longer offered. Use Zelle, Cash App or cash in person.',
-        ]);
-        foreach (['enable_zelle' => 'zelle_recipient', 'enable_cashapp' => 'cash_app_cashtag'] as $switch => $handle) {
-            $after = array_key_exists($handle, $validated) ? $validated[$handle] : HostPaymentPolicy::where('organizer_id', $organizerId)->value($handle);
-            if (($validated[$switch] ?? false) && trim((string) $after) === '') {
-                throw \Illuminate\Validation\ValidationException::withMessages([$handle => 'Add your ' . PaymentMethods::handleLabel($switch === 'enable_zelle' ? 'zelle' : 'cashapp') . ' before turning this method on.']);
-            }
+            // Sending it as off or empty (a settings object saved before it was retired) is fine and ignored.
+            'enable_bank' => ['sometimes', HostPaymentPolicy::retiredBankRule()],
+            'bank_transfer_instructions' => ['sometimes', 'nullable', HostPaymentPolicy::retiredBankRule()],
+        ], HostPaymentPolicy::handleMessages());
+        unset($validated['enable_bank'], $validated['bank_transfer_instructions']);
+        $errors = HostPaymentPolicy::missingHandleErrors($validated, HostPaymentPolicy::where('organizer_id', $organizerId)->first());
+        if ($errors !== []) {
+            throw \Illuminate\Validation\ValidationException::withMessages($errors);
         }
 
         $policy = HostPaymentPolicy::firstOrNew(['organizer_id' => $organizerId]);

@@ -245,7 +245,7 @@ class AccountSettingsController extends Controller
     }
 
     /** The organizer this host owns: the active tenant if they own it, otherwise their only owned organizer. */
-    private static function ownedOrganizerId(\App\Models\User $user): ?string
+    public static function ownedOrganizerId(\App\Models\User $user): ?string
     {
         $owned = OrganizerUser::where('user_id', $user->id)->where('is_active', true)
             ->where('role', TenantRole::EVENT_OWNER->value)->pluck('organizer_id');

@@ -105,6 +105,47 @@ class HostPaymentPolicy extends Model
         return ['cash_app_cashtag.regex' => 'Enter a $Cashtag: a letter, then up to 19 letters, numbers, hyphens or underscores.'];
     }
 
+    /** The switch for each method that needs a handle, and the handle's column. */
+    public const HANDLE_SWITCHES = ['enable_zelle' => 'zelle_recipient', 'enable_cashapp' => 'cash_app_cashtag'];
+
+    /**
+     * Turning Zelle or Cash App on needs the handle customers send to: the one in this update, or else the one
+     * already saved. Shared by the settings page and the host API.
+     *
+     * @param array<string, mixed> $input the submitted fields (only those present are considered)
+     * @return array<string, string> field => message for each method switched on without a handle
+     */
+    public static function missingHandleErrors(array $input, ?self $current): array
+    {
+        $errors = [];
+        foreach (self::HANDLE_SWITCHES as $switch => $field) {
+            if (!filter_var($input[$switch] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                continue;
+            }
+            $handle = array_key_exists($field, $input) ? $input[$field] : $current?->{$field};
+            if (trim((string) $handle) === '') {
+                $method = $switch === 'enable_zelle' ? 'zelle' : 'cashapp';
+                $errors[$field] = 'Add your ' . \App\Payments\PaymentMethods::handleLabel($method) . ' to accept '
+                    . \App\Payments\PaymentMethods::label($method) . '.';
+            }
+        }
+
+        return $errors;
+    }
+
+    /** Fails a field that tries to give bank transfer details or switch it on; empty or false is allowed. */
+    public static function retiredBankRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            $set = is_bool($value) || in_array($value, [0, 1, '0', '1', 'true', 'false', 'on', 'off'], true)
+                ? filter_var($value, FILTER_VALIDATE_BOOLEAN)
+                : trim((string) $value) !== '';
+            if ($set) {
+                $fail('Bank transfer is no longer offered. Use Zelle, Cash App or cash in person.');
+            }
+        };
+    }
+
     public static function isZelleRecipient(string $value): bool
     {
         $value = trim($value);

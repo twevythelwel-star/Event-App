@@ -345,9 +345,89 @@ class CashAppAndZellePaymentsTest extends TestCase
 
         $this->assertSame('Bank transfer', PaymentStatusPresenter::methodLabel('bank'));
         $this->assertSame('Bank transfer', PaymentMethods::label('bank'));
+        // One list of names: receipts and checkout call each method the same thing.
+        foreach (['cash', 'zelle', 'cashapp', 'bank'] as $method) {
+            $this->assertSame(PaymentMethods::label($method), PaymentStatusPresenter::methodLabel($method));
+        }
         $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
             ->assertSee('by Bank transfer')
             ->assertSee('your reference ACH-OLD-1');
+    }
+
+    public function test_an_unpaid_bank_transfer_order_still_shows_the_hosts_bank_details(): void
+    {
+        $order = Order::allTenants()->create([
+            'organizer_id' => $this->organizer->id, 'event_id' => $this->event->id, 'user_id' => $this->buyer->id,
+            'ticket_code' => 'SFF-OLD002', 'order_number' => 'ORD-2026-100002', 'customer_name' => 'Pay Buyer',
+            'customer_phone' => '+13055550123', 'method' => 'bank', 'subtotal' => 20, 'total_amount' => 20,
+            'currency' => 'USD', 'status' => 'awaiting_payment', 'secure_ticket_token' => 'tok_old_bank_order_0002',
+        ]);
+
+        $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
+            ->assertSee('How to pay (Bank transfer)')
+            ->assertSee('Account: 000-000')
+            ->assertDontSee('The organizer will send you payment details.');
+    }
+
+    public function test_the_migration_leaves_ambiguous_handles_for_the_host_to_enter(): void
+    {
+        $rows = [
+            // A help line next to the Zelle number: which one is Zelle? Leave it.
+            ['zelle' => 'Questions? Call 305-555-0100. Zelle us at 786 555 0199.', 'cash' => 'Prices in $USD. Send to $KingstonEats.'],
+            // An account number next to a phone; two cashtags.
+            ['zelle' => 'Zelle 305 555 0142, account 123456789012', 'cash' => 'Send to $TeamOne or $TeamTwo'],
+            // Two emails.
+            ['zelle' => 'Zelle pay@a.example or help@a.example', 'cash' => ''],
+        ];
+        $ids = [];
+        foreach ($rows as $i => $row) {
+            $org = Organizer::create(['name' => "Amb {$i}", 'slug' => "amb-{$i}"]);
+            $ids[] = $org->id;
+            DB::table('host_payment_policies')->insert([
+                'id' => (string) \Illuminate\Support\Str::uuid(), 'organizer_id' => $org->id, 'enable_cash' => true,
+                'zelle_instructions' => $row['zelle'], 'cash_app_instructions' => $row['cash'], 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        (require database_path('migrations/2026_11_13_000072_add_cash_app_and_zelle_handles_retire_bank_transfer.php'))->up();
+
+        $got = DB::table('host_payment_policies')->whereIn('organizer_id', $ids)->get()->keyBy('organizer_id');
+        $this->assertNull($got[$ids[0]]->zelle_recipient, 'help line and Zelle number: ambiguous');
+        $this->assertSame('$KingstonEats', $got[$ids[0]]->cash_app_cashtag, '$USD is a currency, not a cashtag');
+        $this->assertNull($got[$ids[1]]->zelle_recipient, 'a long account number makes it ambiguous');
+        $this->assertNull($got[$ids[1]]->cash_app_cashtag, 'two cashtags: ambiguous');
+        $this->assertNull($got[$ids[2]]->zelle_recipient, 'two emails: ambiguous');
+    }
+
+    public function test_listing_json_does_not_include_photo_rows(): void
+    {
+        $this->seed([FishFryEventsSeeder::class, DemoAccountsSeeder::class]);
+        $attendee = User::where('email', 'attendee@islandevents.example')->firstOrFail();
+
+        // The homepage feed is public; the events index needs a signed-in user.
+        foreach (['/' => null, '/events' => $attendee] as $uri => $user) {
+            $events = ($user ? $this->actingAs($user) : $this)->getJson($uri)->assertOk()->json('data');
+            $this->assertNotEmpty($events, $uri);
+            foreach ($events as $event) {
+                $this->assertArrayNotHasKey('media_items', $event, $uri);
+            }
+        }
+    }
+
+    public function test_settings_can_switch_a_method_on_using_the_handle_already_saved(): void
+    {
+        $this->seed([FishFryEventsSeeder::class, DemoAccountsSeeder::class]);
+        $host = User::where('email', 'host@islandevents.example')->firstOrFail();
+        HostPaymentPolicy::where('organizer_id', 'org-kingston-youth')->firstOrFail()->forceFill(['enable_cashapp' => false])->save();
+
+        // Only the switch is sent; the $Cashtag saved by the demo seed is used.
+        $this->actingAs($host)->postJson('/settings/host', ['enable_cashapp' => true])->assertOk();
+        $this->assertTrue(HostPaymentPolicy::where('organizer_id', 'org-kingston-youth')->value('enable_cashapp'));
+
+        // The host API accepts an old settings object that still says bank transfer is off.
+        $this->actingAs($host)->putJson('/api/v1/host/payment-settings', ['enable_bank' => false, 'bank_transfer_instructions' => null, 'enable_cash' => true])->assertOk();
+        $this->actingAs($host)->putJson('/api/v1/host/payment-settings', ['enable_bank' => true])->assertJsonValidationErrors('enable_bank');
+        $this->assertFalse((bool) HostPaymentPolicy::where('organizer_id', 'org-kingston-youth')->value('enable_bank'));
     }
 
     public function test_the_migration_retires_bank_transfer_and_keeps_handles_written_in_old_instructions(): void
