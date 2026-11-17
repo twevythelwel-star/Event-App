@@ -49,7 +49,7 @@ class ReceiptService
         }
 
         $settled = in_array($order->status, ['paid', 'partially_refunded'], true);
-        $manual = in_array($order->method, ['bank', 'zelle', 'cashapp'], true);
+        $manual = \App\Payments\PaymentMethods::isManual($order->method);
 
         return [
             'event_name' => $event?->title ?? 'Event',

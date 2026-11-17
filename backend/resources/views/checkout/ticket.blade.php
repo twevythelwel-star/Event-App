@@ -69,13 +69,7 @@
         default => 'General Event Pass',
     };
 
-    $methodIconName = match ((string) $order->method) {
-        'bank' => 'bank',
-        'zelle', 'cashapp', 'cash_app_pay' => 'phone',
-        'cash' => 'cash',
-        'paypal' => 'globe',
-        default => 'credit-card',
-    };
+    $methodIconName = \App\Payments\PaymentMethods::icon($order->method);
 
     // What the customer should do next, in one line.
     [$nextTitle, $nextDetail, $nextTone] = match (true) {
@@ -323,7 +317,7 @@
 
             <p class="eb-help-text" style="margin: 0;">
                 Payment: {{ \App\Support\PaymentStatusPresenter::label($status) }} · {{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }} · {{ $currency }}
-                @if($order->payment_reference && in_array($order->method, ['bank', 'zelle', 'cashapp'], true)) · your reference {{ $order->payment_reference }}@endif
+                @if($order->payment_reference && \App\Payments\PaymentMethods::isManual($order->method)) · your reference {{ $order->payment_reference }}@endif
             </p>
             <p class="eb-help-text" style="margin: 0;">Order {{ $order->order_number }} · placed {{ $local($order->created_at) }}</p>
 

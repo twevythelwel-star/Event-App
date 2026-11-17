@@ -32,7 +32,7 @@ class OrderOversightController extends Controller
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:64'],
             'status' => ['nullable', Rule::in(array_keys(Status::GROUPS))],
-            'method' => ['nullable', Rule::in(['bank', 'cash', 'card', 'zelle', 'cashapp'])],
+            'method' => ['nullable', Rule::in(\App\Payments\PaymentMethods::all())],
             'event' => ['nullable', 'string', 'max:36'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],

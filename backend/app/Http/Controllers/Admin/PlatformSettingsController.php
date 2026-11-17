@@ -142,7 +142,7 @@ class PlatformSettingsController extends Controller
     {
         return SystemPlatformSetting::first() ?? SystemPlatformSetting::create([
             'supported_currencies' => self::CURRENCIES,
-            'supported_payment_methods' => ['cash', 'zelle', 'cashapp'],
+            'supported_payment_methods' => \App\Payments\PaymentMethods::offerable(),
         ])->fresh();
     }
 }

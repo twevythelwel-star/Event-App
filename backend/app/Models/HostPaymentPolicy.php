@@ -174,21 +174,4 @@ class HostPaymentPolicy extends Model
         $this->attributes['zelle_recipient'] = $value === '' ? null
             : (str_contains($value, '@') ? strtolower($value) : $value);
     }
-
-    /**
-     * Check if payment method can be enabled based on host location eligibility.
-     * Bank transfer is retired and can no longer be enabled anywhere.
-     */
-    public function canEnableMethod(string $methodId, string $location): bool
-    {
-        if ($methodId === 'cash') {
-            return true;
-        }
-
-        if ($methodId === 'zelle' || $methodId === 'cashapp') {
-            return strtoupper($location) === 'US';
-        }
-
-        return false;
-    }
 }

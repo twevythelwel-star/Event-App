@@ -406,13 +406,17 @@ class CheckoutController extends Controller
         if (!$event->is_ordering_open) {
             return redirect()->route('events.show', $event->id)->with('error', 'The organizer has paused ordering for this event.');
         }
+        // Ticket types and menu are read once here (each read is several queries).
+        $tiers = TicketTierCatalog::sellable($event);
+        $menu = $this->menu($event);
+        $hasFood = $this->hasFood($event, $menu);
         // Food closing (its preorder deadline or service hours) leaves tickets on sale, and the other way round.
-        if (TicketTierCatalog::sellable($event) !== [] && !$this->hasFood($event)
-            && !collect(TicketTierCatalog::sellable($event))->contains(fn ($tier) => $tier['on_sale'])
-            && $this->menu($event)->isNotEmpty()) {
+        if ($tiers !== [] && !$hasFood
+            && !collect($tiers)->contains(fn ($tier) => $tier['on_sale'])
+            && $menu->isNotEmpty()) {
             return redirect()->route('events.show', $event->id)->with('error', $event->foodOrderingState()['reason'] ?? 'Nothing can be ordered for this event right now.');
         }
-        if (TicketTierCatalog::sellable($event) === [] && !$this->hasFood($event)) {
+        if ($tiers === [] && !$hasFood) {
             return redirect()->route('events.show', $event->id)->with('error', 'Nothing is on sale for this event yet.');
         }
 
@@ -420,11 +424,11 @@ class CheckoutController extends Controller
     }
 
     /** Food can be ordered now: the host takes food orders, the food plan is open, and something is available. */
-    private function hasFood(Event $event): bool
+    private function hasFood(Event $event, ?\Illuminate\Support\Collection $menu = null): bool
     {
         return $event->supports_food_ordering !== false
             && $event->foodOrderingState()['open']
-            && $this->menu($event)->isNotEmpty();
+            && ($menu ?? $this->menu($event))->isNotEmpty();
     }
 
     /** Active menu items and packages inside their availability window, featured first. */

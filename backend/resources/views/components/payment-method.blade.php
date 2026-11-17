@@ -22,7 +22,7 @@
     $id = 'pm-' . $name . '-' . $value;
     // Each method gets its own recognizable illustration when the caller passes the generic one.
     $icon = in_array($icon, ['payment', 'credit-card'], true)
-        ? (['bank' => 'bank', 'zelle' => 'phone', 'cashapp' => 'phone', 'cash_app_pay' => 'phone', 'cash' => 'cash', 'card' => 'credit-card', 'paypal' => 'globe'][$value] ?? $icon)
+        ? \App\Payments\PaymentMethods::icon((string) $value, $icon)
         : $icon;
 
     $methodBadge = match ((string) $value) {

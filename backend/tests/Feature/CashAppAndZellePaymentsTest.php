@@ -155,9 +155,6 @@ class CashAppAndZellePaymentsTest extends TestCase
 
         $this->assertSame(0, Order::allTenants()->count());
 
-        // A platform that had allowed bank transfer can't be set to allow it again.
-        $this->assertFalse((new HostPaymentPolicy())->canEnableMethod('bank', 'US'));
-        $this->assertFalse((new HostPaymentPolicy())->canEnableMethod('bank_transfer', 'US'));
     }
 
     public function test_the_order_api_and_order_form_accept_only_methods_the_host_offers(): void

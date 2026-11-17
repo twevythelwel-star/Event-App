@@ -752,7 +752,7 @@
                                     @foreach($paymentMethods as $method)
                                         @php
                                             $pmVal = $method['value'] ?? '';
-                                            $pmIcon = ['bank' => 'bank', 'zelle' => 'phone', 'cashapp' => 'phone', 'cash_app_pay' => 'phone', 'cash' => 'cash', 'card' => 'credit-card', 'paypal' => 'globe'][$pmVal] ?? ($method['icon'] ?? 'payment');
+                                            $pmIcon = \App\Payments\PaymentMethods::icon($pmVal, $method['icon'] ?? 'payment');
                                         @endphp
                                         <div class="eb-payment-card" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px;">
                                             <span class="eb-payment-icon" data-method="{{ $pmVal }}" aria-hidden="true">

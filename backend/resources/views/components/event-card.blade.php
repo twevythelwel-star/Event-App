@@ -16,8 +16,10 @@
 @php
     $link = $href ?? route('events.show', $event->id);
     $tag = 'h' . max(2, min(4, (int) $headingLevel));
-    $availability = \App\Support\EventListing::availability($event);
-    $priceText = $price ?? \App\Support\EventListing::fromPriceText($event);
+    // The card's status and price come from one read of the event's ticket types.
+    $tiers = \App\Services\Checkout\TicketTierCatalog::sellable($event);
+    $availability = \App\Support\EventListing::availability($event, $tiers);
+    $priceText = $price ?? \App\Support\EventListing::fromPriceText($event, $tiers);
     $location = \App\Support\EventListing::location($event);
     $venueLine = implode(' · ', array_filter([$event->venue_name, $location]));
     $badge = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$availability['tone']] ?? 'eb-badge-info';

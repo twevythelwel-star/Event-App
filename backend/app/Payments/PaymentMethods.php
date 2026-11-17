@@ -69,6 +69,17 @@ final class PaymentMethods
         'bank' => 'bank_transfer_instructions',
     ];
 
+    /** The illustration (x-icon name) for each method, including retired and processor-only ones. */
+    private const ICONS = [
+        'bank' => 'bank',
+        'zelle' => 'phone',
+        'cashapp' => 'phone',
+        'cash_app_pay' => 'phone',
+        'cash' => 'cash',
+        'card' => 'credit-card',
+        'paypal' => 'globe',
+    ];
+
     /** Platform approval keys for processors and processor-specific methods. */
     public const APPROVALS = [
         'stripe' => 'Stripe (cards, Apple Pay, Google Pay)',
@@ -121,6 +132,27 @@ final class PaymentMethods
     public static function offerable(): array
     {
         return array_keys(array_filter(self::DEFINITIONS, fn (array $d) => $d['kind'] !== self::PROCESSOR));
+    }
+
+    /**
+     * Every method an order may carry: today's methods plus retired ones (for admin filters over older orders).
+     *
+     * @return list<string>
+     */
+    public static function all(): array
+    {
+        return [...array_keys(self::RETIRED_LABELS), ...self::keys()];
+    }
+
+    /** A method the customer pays outside EventBite and then confirms with a reference (Zelle, Cash App, retired bank transfer). */
+    public static function isManual(?string $method): bool
+    {
+        return self::kind((string) $method) === self::MANUAL || isset(self::RETIRED_LABELS[(string) $method]);
+    }
+
+    public static function icon(?string $method, string $default = 'credit-card'): string
+    {
+        return self::ICONS[(string) $method] ?? $default;
     }
 
     /** The host_payment_policies column holding where customers send this method's payment ($Cashtag, Zelle email or phone). */

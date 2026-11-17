@@ -44,7 +44,7 @@ class AccountSettingsService
             $settings['system_platform'] = [
                 'platform_name' => $sys->platform_name ?? 'EventBite',
                 'supported_currencies' => $sys->supported_currencies ?? ['USD'],
-                'supported_payment_methods' => $sys->supported_payment_methods ?? ['cash', 'zelle', 'cashapp'],
+                'supported_payment_methods' => $sys->supported_payment_methods ?? \App\Payments\PaymentMethods::offerable(),
                 'file_storage_status' => $sys->file_storage_status ?? 'healthy',
                 'storage_bucket' => $sys->storage_bucket ?? 'eventbite-flyers-prod',
                 'storage_provider' => $sys->storage_provider ?? 's3_compatible_r2',

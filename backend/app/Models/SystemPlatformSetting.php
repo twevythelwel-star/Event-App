@@ -19,7 +19,7 @@ class SystemPlatformSetting extends Model
     {
         static::creating(function (self $settings): void {
             $settings->supported_currencies ??= ['USD'];
-            $settings->supported_payment_methods ??= ['cash', 'zelle', 'cashapp'];
+            $settings->supported_payment_methods ??= \App\Payments\PaymentMethods::offerable();
         });
     }
 
