@@ -515,7 +515,7 @@
                         <button
                             type="button"
                             class="input-toggle-btn"
-                            onclick="toggleInputVisibility('password')"
+                            data-action-click="toggleInputVisibility" data-args='["password"]'
                             aria-label="Toggle password visibility"
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -548,7 +548,7 @@
                         <button
                             type="button"
                             class="input-toggle-btn"
-                            onclick="toggleInputVisibility('password_confirmation')"
+                            data-action-click="toggleInputVisibility" data-args='["password_confirmation"]'
                             aria-label="Toggle confirm password visibility"
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -634,7 +634,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function toggleInputVisibility(fieldId) {
     var field = document.getElementById(fieldId);
     if (!field) return;

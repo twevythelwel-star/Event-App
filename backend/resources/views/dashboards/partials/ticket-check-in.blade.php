@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <form id="scan_form" data-url="{{ route('worker.scan', $event->id) }}" data-offline-policy="fail-closed" onsubmit="event.preventDefault(); validateTicket();" class="eb-stack" style="gap: 1rem;">
+    <form id="scan_form" data-url="{{ route('worker.scan', $event->id) }}" data-offline-policy="fail-closed" data-action-submit="validateTicket" data-prevent-default class="eb-stack" style="gap: 1rem;">
         <div class="eb-form-group" style="margin: 0;">
             <label class="eb-label" for="ticket_input">{{ $workerRole->value === 'event_supervisor' ? 'Ticket QR, ticket code or order number' : 'Ticket QR' }}</label>
             <input type="text" id="ticket_input" class="eb-input" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus required

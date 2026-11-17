@@ -264,7 +264,7 @@
                             @endif
                         </div>
                         <div class="eb-ticket-serial-actions" data-no-print>
-                            <button type="button" class="eb-btn eb-btn-ghost eb-btn-sm" onclick="navigator.clipboard && navigator.clipboard.writeText('{{ $order->ticket_code }}'); this.textContent = 'Copied ✓';">
+                            <button type="button" class="eb-btn eb-btn-ghost eb-btn-sm" data-action-click="copy" data-args="{{ json_encode([$order->ticket_code, 'Copied ✓']) }}">
                                 Copy code
                             </button>
                             @if($event && ($event->starts_at || $event->event_date_iso))
@@ -275,7 +275,7 @@
                                 <a class="eb-btn eb-btn-sm eb-wallet-btn" href="{{ route('tickets.wallet', $order) }}" data-confirm-text="Opening Apple Wallet"><span data-confirm-label>Add to Apple Wallet</span></a>
                             @endif
                             @if($settled && !$checkedIn)
-                                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" onclick="window.print()">
+                                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-action-click="print">
                                     Print ticket
                                 </button>
                                 <form method="POST" action="{{ route('tickets.reissue', $order) }}" style="display: inline-block; margin: 0;">
@@ -357,7 +357,7 @@
             @if(session('transfer_link'))
                 <x-alert type="success" title="Send this link to the new holder">
                     <p style="margin: 0 0 4px;">They open it and sign in with the email you entered. Only you see this link.</p>
-                    <input class="eb-input" readonly value="{{ session('transfer_link') }}" onclick="this.select()" aria-label="Transfer link">
+                    <input class="eb-input" readonly value="{{ session('transfer_link') }}" data-action-click="select" aria-label="Transfer link">
                 </x-alert>
             @endif
             @if($pendingTransfer)
@@ -374,7 +374,7 @@
                         <label class="eb-label" for="transfer-email">Their EventBite email</label>
                         <input class="eb-input" type="email" id="transfer-email" name="email" required maxlength="190">
                     </div>
-                    <button class="eb-btn eb-btn-secondary" type="submit" onclick="return confirm('Transfer these tickets? Your QR code will stop working once they accept.');">Transfer</button>
+                    <button class="eb-btn eb-btn-secondary" type="submit" data-confirm="Transfer these tickets? Your QR code will stop working once they accept.">Transfer</button>
                 </form>
                 @error('transfer')<div class="eb-field-error" role="alert"><span>{{ $message }}</span></div>@enderror
             @endif

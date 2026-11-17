@@ -54,6 +54,7 @@
     <link rel="stylesheet" href="{{ asset('css/brand.css') }}">
     <link rel="stylesheet" href="{{ asset('css/animations.css') }}">
     <script src="{{ asset('js/animations.js') }}" defer></script>
+    <script src="{{ asset('js/actions.js') }}" defer></script>
 </head>
 <body class="ac-body">
 <a class="sr-only" href="#ac-main">Skip to content</a>
@@ -151,7 +152,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
     (function () {
         var shell = document.getElementById('acShell');
         var toggle = document.getElementById('acMenuToggle');

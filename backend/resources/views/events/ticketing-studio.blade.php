@@ -131,7 +131,7 @@
                     @if($code)<button class="eb-btn eb-btn-ghost eb-btn-sm" type="submit" form="code-del-{{ $code->id }}">Remove</button>@endif
                 </div>
             </form>
-            @if($code)<form id="code-del-{{ $code->id }}" method="POST" action="{{ route('events.ticketing.codes.destroy', [$event->id, $code->id]) }}" onsubmit="return confirm('Remove this code?');" hidden>@csrf @method('DELETE')</form>@endif
+            @if($code)<form id="code-del-{{ $code->id }}" method="POST" action="{{ route('events.ticketing.codes.destroy', [$event->id, $code->id]) }}" data-confirm="Remove this code?" hidden>@csrf @method('DELETE')</form>@endif
         @endforeach
     </section>
 

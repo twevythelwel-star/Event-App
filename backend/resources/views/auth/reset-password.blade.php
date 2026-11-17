@@ -258,7 +258,7 @@
                     <button
                         type="button"
                         class="input-toggle-btn"
-                        onclick="toggleField('password')"
+                        data-action-click="toggleField" data-args='["password"]'
                         aria-label="Toggle password visibility"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -291,7 +291,7 @@
                     <button
                         type="button"
                         class="input-toggle-btn"
-                        onclick="toggleField('password_confirmation')"
+                        data-action-click="toggleField" data-args='["password_confirmation"]'
                         aria-label="Toggle password confirmation visibility"
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -312,7 +312,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function toggleField(id) {
     var el = document.getElementById(id);
     if (!el) return;

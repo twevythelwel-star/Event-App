@@ -143,7 +143,7 @@
         @endif
     </section>
 
-    <script>
+    <script @cspNonce>
         // Upload preview and focal point: click the preview to set where the subject is.
         (() => {
             const input = document.getElementById('lp-photo'), wrap = document.getElementById('lp-preview-wrap'), img = document.getElementById('lp-preview');

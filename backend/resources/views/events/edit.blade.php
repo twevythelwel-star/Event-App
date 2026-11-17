@@ -23,7 +23,7 @@
                     <button type="submit" class="eb-btn eb-btn-secondary eb-btn-sm">{{ $event->is_ordering_open ? 'Close ordering' : 'Open ordering' }}</button>
                 </form>
                 <form action="{{ route('events.unpublish', $event->id) }}" method="POST" style="display: inline;"
-                      onsubmit="return confirm('Unpublish this event? It disappears from discovery and nobody can buy tickets until you publish it again.');">
+                      data-confirm="Unpublish this event? It disappears from discovery and nobody can buy tickets until you publish it again.">
                     @csrf
                     <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Unpublish</button>
                 </form>
@@ -67,7 +67,7 @@
             <div>
                 @if($event->flyer_path)
                     <button type="button" class="eb-btn eb-btn-ghost eb-btn-sm"
-                            onclick="if (confirm('Remove the flyer? The event shows its default artwork until you upload another.')) document.getElementById('delete-flyer-form').submit();">Remove flyer</button>
+                            data-confirm="Remove the flyer? The event shows its default artwork until you upload another." data-action-click="submit-form" data-args='["delete-flyer-form"]'>Remove flyer</button>
                 @endif
             </div>
             <div class="eb-cluster">
@@ -150,7 +150,7 @@
                 <p class="eb-card-subtitle card-subtitle">Cancelling takes the event out of discovery and stops all ticket and food sales. It cannot be undone: to run it again, create a new event. Existing orders and tickets are kept so you can refund them.</p>
             </div></div>
             <form action="{{ route('events.cancel', $event->id) }}" method="POST"
-                  onsubmit="return confirm('Cancel {{ addslashes($event->title) }}? This cannot be undone.');">
+                  data-confirm="Cancel {{ $event->title }}? This cannot be undone.">
                 @csrf
                 <div class="eb-form-group">
                     <label class="eb-label" for="cancel-reason">Reason (kept in the audit log)</label>

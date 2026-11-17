@@ -599,7 +599,7 @@
                         class="input-toggle-btn"
                         aria-label="Toggle password visibility"
                         title="Show / hide password"
-                        onclick="togglePasswordVisibility()"
+                        data-action-click="togglePasswordVisibility"
                     >
                         <svg id="eyeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
@@ -714,7 +714,7 @@
                     @foreach ($loginPresets as $preset)
                         <button
                             type="button"
-                            onclick="fillCredentials(@js($preset['email']), @js($preset['password']), @js($preset['label']))"
+                            data-action-click="fillCredentials" data-args="{{ json_encode([$preset['email'], $preset['password'], $preset['label']]) }}"
                             class="demo-preset-card"
                             style="border-color: {{ $preset['border'] }}; background-color: {{ $preset['bg'] }};"
                         >
@@ -745,7 +745,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function fillCredentials(email, password, label) {
     var emailField = document.getElementById('email');
     var passwordField = document.getElementById('password');

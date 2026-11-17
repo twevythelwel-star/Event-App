@@ -22,7 +22,7 @@
         <select
             name="target_role"
             id="target_role"
-            onchange="this.form.submit()"
+            data-action-change="submit-form"
             class="eb-select"
             style="min-height: 36px; padding: 0.35rem 0.75rem; font-size: 0.8125rem; font-weight: 600; width: auto;"
         >

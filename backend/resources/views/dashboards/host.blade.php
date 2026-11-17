@@ -439,7 +439,7 @@
                     <td class="eb-table-num">
                         @if(!$worker->isRevoked() && !$worker->isExpired())
                             <form method="POST" action="{{ route('host.events.staff.revoke', [$worker->event_id, $worker->id]) }}"
-                                  onsubmit="return confirm('Revoke this person\'s access now? They lose access immediately.');" style="display: inline;">
+                                  data-confirm="Revoke this person's access now? They lose access immediately." style="display: inline;">
                                 @csrf
                                 <input type="hidden" name="reason" value="Revoked from the host dashboard">
                                 <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Revoke</button>
@@ -454,7 +454,7 @@
     </section>
 </div>
 
-<script>
+<script @cspNonce>
     // Payment decisions go through the same validated service the API uses; the page reloads to show the result.
     document.querySelectorAll('[data-payment-decision]').forEach(function (button) {
         button.addEventListener('click', async function () {

@@ -494,7 +494,7 @@
         @endif
     </div>
 </section>
-<script>
+<script @cspNonce>
 (function () {
     // Arrangement locations open with their checkbox; the requirements list follows the form as it changes.
     const panel = document.querySelector('[data-requirements-preview]');
@@ -534,7 +534,7 @@
     if (!panel.dataset.eventId) { schedule(); }
 })();
 </script>
-<script>
+<script @cspNonce>
 (function () {
     // The declarations open once the jurisdiction is given; the server checks the same rule.
     const section = document.querySelector('[data-event-compliance]');
@@ -690,7 +690,7 @@
     </div>
 </section>
 
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         // Ticket rows
         const rows = document.getElementById('tier-rows');

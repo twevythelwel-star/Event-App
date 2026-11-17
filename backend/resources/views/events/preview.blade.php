@@ -172,13 +172,13 @@
     </div>
     <div class="preview-actions">
         <div class="preview-device-toggle">
-            <button type="button" class="preview-device-btn active" data-device="desktop" onclick="setPreviewDevice('desktop')">
+            <button type="button" class="preview-device-btn active" data-device="desktop" data-action-click="setPreviewDevice" data-args='["desktop"]'>
                 <span>🖥️</span> Desktop
             </button>
-            <button type="button" class="preview-device-btn" data-device="tablet" onclick="setPreviewDevice('tablet')">
+            <button type="button" class="preview-device-btn" data-device="tablet" data-action-click="setPreviewDevice" data-args='["tablet"]'>
                 <span>📱</span> Tablet
             </button>
-            <button type="button" class="preview-device-btn" data-device="mobile" onclick="setPreviewDevice('mobile')">
+            <button type="button" class="preview-device-btn" data-device="mobile" data-action-click="setPreviewDevice" data-args='["mobile"]'>
                 <span>📲</span> Mobile
             </button>
         </div>
@@ -197,7 +197,7 @@
     <div class="preview-badge">PREVIEW</div>
 
     <!-- Override the back button to return to edit -->
-    <script>
+    <script @cspNonce>
         document.addEventListener('DOMContentLoaded', function() {
             const backBtn = document.getElementById('btn-back-to-discovery');
             if (backBtn) {
@@ -210,7 +210,7 @@
     @parent
 </div>
 
-<script>
+<script @cspNonce>
     function setPreviewDevice(device) {
         const container = document.getElementById('preview-container');
         const buttons = document.querySelectorAll('.preview-device-btn');

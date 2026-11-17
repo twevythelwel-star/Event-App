@@ -31,7 +31,7 @@
             @if(is_string($value))<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endif
         @endforeach
         <div class="ac-field"><label for="cc-state">Jurisdiction (state)</label>
-            <select id="cc-state" class="ac-select" name="state" onchange="this.form.submit()">
+            <select id="cc-state" class="ac-select" name="state" data-action-change="submit-form">
                 <option value="">All states</option>
                 @foreach($states as $s)<option value="{{ $s->code }}" @selected($stateFilter === $s->code)>{{ $s->name }}</option>@endforeach
             </select></div>

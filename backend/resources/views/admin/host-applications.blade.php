@@ -58,7 +58,7 @@
                         <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Reject</button>
                     </form>
                     <form action="{{ route('admin.host-applications.approve', $app->id) }}" method="POST"
-                          onsubmit="return confirm('Approve this applicant as an event host?');">
+                          data-confirm="Approve this applicant as an event host?">
                         @csrf
                         <button type="submit" class="eb-btn eb-btn-primary eb-btn-sm">Approve</button>
                     </form>

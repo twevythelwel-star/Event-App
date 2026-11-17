@@ -65,7 +65,7 @@
         @endforeach
     </details>
 </section>
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         const picker = document.querySelector('[data-seat-picker]');
         if (!picker) return;

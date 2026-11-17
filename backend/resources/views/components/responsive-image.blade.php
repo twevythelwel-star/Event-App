@@ -15,10 +15,9 @@
     /** @var \App\Support\ResponsiveImage $image */
     $altText = $alt ?? $image->alt;
     $style = 'object-fit: ' . ($fit === 'contain' ? 'contain' : 'cover') . '; object-position: ' . $image->objectPosition() . ';';
-    // A broken image is replaced by the image's own fallback (once), unless the caller handles errors itself.
-    $onError = ($image->fallback && !$attributes->has('onerror'))
-        ? "this.onerror=null; this.parentElement.querySelectorAll('source').forEach(s => s.remove()); this.removeAttribute('srcset'); this.src=" . e(json_encode($image->fallback, JSON_UNESCAPED_SLASHES)) . ';'
-        : null;
+    // A broken image is replaced by the image's own fallback (once), unless the caller handles errors itself
+    // (public/js/actions.js "image-fallback": no inline handler, so the Content-Security-Policy can forbid them).
+    $fallback = ($image->fallback && !$attributes->has('data-action-error')) ? $image->fallback : null;
 @endphp
 {{-- The <picture> wrapper takes no box of its own (display: contents), so a class or style given here lands on the
      <img> and existing card styles keep working. --}}
@@ -29,6 +28,6 @@
     <img src="{{ $image->src }}" alt="{{ $altText }}"
          @if($image->width && $image->height) width="{{ $image->width }}" height="{{ $image->height }}" @endif
          loading="{{ $eager ? 'eager' : 'lazy' }}" decoding="async" @if($eager) fetchpriority="high" @endif
-         @if($onError) onerror="{!! $onError !!}" @endif
+         @if($fallback) data-action-error="image-fallback" data-args="{{ json_encode([$fallback], JSON_UNESCAPED_SLASHES) }}" @endif
          {{ $attributes->merge(['style' => $style]) }}>
 </picture>

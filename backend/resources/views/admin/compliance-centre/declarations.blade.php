@@ -10,11 +10,11 @@
 
     <form method="GET" class="ac-filters" style="margin-bottom:12px">
         <div class="ac-field"><label for="d-show">Show</label>
-            <select id="d-show" class="ac-select" name="show" onchange="this.form.submit()">
+            <select id="d-show" class="ac-select" name="show" data-action-change="submit-form">
                 @foreach(['attention' => 'Missing or out of date', 'suspended' => 'Suspended events', 'all' => 'All current events'] as $value => $label)<option value="{{ $value }}" @selected($show === $value)>{{ $label }}</option>@endforeach
             </select></div>
         <div class="ac-field"><label for="d-state">State</label>
-            <select id="d-state" class="ac-select" name="state" onchange="this.form.submit()">
+            <select id="d-state" class="ac-select" name="state" data-action-change="submit-form">
                 <option value="">All states</option>
                 @foreach($states as $s)<option value="{{ $s->code }}" @selected($stateFilter === $s->code)>{{ $s->name }}</option>@endforeach
             </select></div>

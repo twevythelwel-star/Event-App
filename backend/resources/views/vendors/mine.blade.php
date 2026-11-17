@@ -20,7 +20,7 @@
             @endif
             @if($app->decision_note)<p style="margin: 4px 0 0;"><strong>From the host:</strong> {{ $app->decision_note }}</p>@endif
             @if(in_array($app->status, ['pending', 'approved'], true) && !($app->status === 'approved' && $app->fee_status === 'paid'))
-                <form method="POST" action="{{ route('vendors.withdraw', $app->id) }}" onsubmit="return confirm('Withdraw this application?');" style="margin-top: var(--space-2);">
+                <form method="POST" action="{{ route('vendors.withdraw', $app->id) }}" data-confirm="Withdraw this application?" style="margin-top: var(--space-2);">
                     @csrf
                     <button class="eb-btn eb-btn-ghost eb-btn-sm" type="submit">Withdraw</button>
                 </form>

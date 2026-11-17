@@ -583,7 +583,7 @@
                                     @csrf
                                     <button type="submit" class="eb-btn eb-btn-primary eb-btn-sm">Accept Assignment</button>
                                 </form>
-                                <form action="{{ route('staff-assignments.decline', $invitation->id) }}" method="POST" onsubmit="return confirm('Decline this staff assignment offer?');" style="margin: 0;">
+                                <form action="{{ route('staff-assignments.decline', $invitation->id) }}" method="POST" data-confirm="Decline this staff assignment offer?" style="margin: 0;">
                                     @csrf
                                     <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Decline</button>
                                 </form>
@@ -603,7 +603,7 @@
                 <p class="eb-help-text" style="margin: 0 0 0.75rem;">
                     Share this code with your Event Host. Valid for <strong>10 minutes</strong> (until {{ session('code_expires_at') }}). Single-use only.
                 </p>
-                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" onclick="navigator.clipboard.writeText('{{ session('plain_code') }}'); this.textContent = 'Copied ✓';">
+                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-action-click="copy" data-args="{{ json_encode([(string) session('plain_code'), 'Copied ✓']) }}">
                     Copy Code
                 </button>
             </div>

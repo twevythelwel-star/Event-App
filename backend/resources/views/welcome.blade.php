@@ -105,7 +105,7 @@
         <form method="GET" action="{{ route('home') }}" class="eb-home-near" id="home-near-form">
             <div class="eb-form-group" style="margin: 0;">
                 <label for="home-market" class="eb-label">Show events near</label>
-                <select id="home-market" name="market" class="eb-input" onchange="this.form.submit()">
+                <select id="home-market" name="market" class="eb-input" data-action-change="submit-form">
                     <option value="">Anywhere in the United States</option>
                     @foreach($allMarkets as $m)
                         <option value="{{ $m->id }}" @selected($market && $market->id === $m->id)>{{ $m->city }}, {{ $m->state_code }}</option>

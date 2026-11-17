@@ -52,6 +52,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // nonce="..." for inline <script> blocks, matching this response's Content-Security-Policy.
+        \Illuminate\Support\Facades\Blade::directive('cspNonce',
+            fn () => '<?php echo \'nonce="\' . e(\App\Http\Middleware\SecurityHeaders::nonce()) . \'"\'; ?>');
+
         // Any write to holds or orders makes the listing inventory snapshot stale: drop it. Listening to the
         // queries (not model events) also catches bulk updates and deletes made with the query builder.
         \Illuminate\Support\Facades\Event::listen(\Illuminate\Database\Events\QueryExecuted::class, function (\Illuminate\Database\Events\QueryExecuted $query): void {

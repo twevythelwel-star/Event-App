@@ -22,7 +22,7 @@
         <x-alert type="error" title="Not saved: please check the form" id="studio-errors" tabindex="-1">
             <ul style="margin: 4px 0 0; padding-left: 1.1rem;">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul>
         </x-alert>
-        <script>document.addEventListener('DOMContentLoaded', () => document.getElementById('studio-errors')?.focus());</script>
+        <script @cspNonce>document.addEventListener('DOMContentLoaded', () => document.getElementById('studio-errors')?.focus());</script>
     @endif
 
     <nav class="eb-tabs" role="tablist" aria-label="Menu studio">
@@ -66,7 +66,7 @@
                         <h2 class="eb-text-card-title" style="margin: 0;">{{ $item->name }} @unless($item->is_active)<span class="eb-badge eb-badge-warning">Hidden</span>@endunless @if($item->is_featured)<span class="eb-badge eb-badge-info">Featured</span>@endif</h2>
                         <p class="eb-text-supporting" style="margin: 0;">{{ $item->category }} · {{ $fmt($item->priceMinorIn($currency)) }}{{ $item->available_stock !== null ? ' · ' . $item->available_stock . ' left' : '' }}{{ $item->max_per_order ? ' · limit ' . $item->max_per_order . ' per customer' : '' }}</p>
                     </div>
-                    <form method="POST" action="{{ route('events.menu-studio.destroy', [$event->id, $item->id]) }}" onsubmit="return confirm('Remove {{ addslashes($item->name) }} from the menu? Past orders keep it.');">
+                    <form method="POST" action="{{ route('events.menu-studio.destroy', [$event->id, $item->id]) }}" data-confirm="Remove {{ $item->name }} from the menu? Past orders keep it.">
                         @csrf @method('DELETE')
                         <button class="eb-btn eb-btn-ghost eb-btn-sm" type="submit">Remove</button>
                     </form>
@@ -108,7 +108,7 @@
                             @foreach($config['choice_groups'] ?? [] as $g) · {{ $g['title'] }} (choose {{ $g['min'] === $g['max'] ? $g['max'] : $g['min'] . '–' . $g['max'] }})@endforeach
                         </p>
                     </div>
-                    <form method="POST" action="{{ route('events.menu-studio.destroy', [$event->id, $package->id]) }}" onsubmit="return confirm('Remove this package? Past orders keep it.');">
+                    <form method="POST" action="{{ route('events.menu-studio.destroy', [$event->id, $package->id]) }}" data-confirm="Remove this package? Past orders keep it.">
                         @csrf @method('DELETE')
                         <button class="eb-btn eb-btn-ghost eb-btn-sm" type="submit">Remove</button>
                     </form>
@@ -128,14 +128,14 @@
         @if($preview['menu']->isEmpty() && $preview['packages']->isEmpty())
             <p class="eb-text-supporting">Nothing is on the menu yet, or every item is hidden or outside its availability times.</p>
         @else
-            <form onsubmit="return false;" aria-label="Menu preview">
+            <form data-action-submit="" data-prevent-default aria-label="Menu preview">
                 @include('checkout._food-builder', $preview + ['event' => $event, 'currency' => $currency])
             </form>
         @endif
     </section>
 </div>
 
-<script>
+<script @cspNonce>
     // Menu order: drag by the handle, or the arrow buttons (plain forms without JavaScript). Saved at once.
     document.querySelectorAll('[data-sortable]').forEach(function (list) {
         const status = document.querySelector('[data-sort-status]');

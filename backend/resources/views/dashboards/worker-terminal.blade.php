@@ -163,7 +163,7 @@
                 <span class="eb-badge eb-badge-warning">Payment Desk</span>
             </div>
 
-            <form id="cash_form" onsubmit="event.preventDefault(); recordPayment();" data-url="{{ route('worker.cash', $event->id) }}" class="eb-grid-2" style="gap: 1rem;">
+            <form id="cash_form" data-action-submit="recordPayment" data-prevent-default data-url="{{ route('worker.cash', $event->id) }}" class="eb-grid-2" style="gap: 1rem;">
                 <div class="eb-form-group" style="margin: 0;">
                     <label class="eb-label" for="cash_order_num">Order Number</label>
                     <input type="text" id="cash_order_num" class="eb-input" placeholder="ORD-2026-XXXX" required>
@@ -202,7 +202,7 @@
             </div>
 
             <form id="lookup_form" data-url="{{ route('worker.lookup', $event->id) }}" data-collect-url="{{ route('worker.collect', $event->id) }}"
-                onsubmit="event.preventDefault(); lookupOrder();" class="eb-cluster" style="gap: 0.75rem; align-items: flex-end;">
+                data-action-submit="lookupOrder" data-prevent-default class="eb-cluster" style="gap: 0.75rem; align-items: flex-end;">
                 <div class="eb-form-group" style="flex: 1 1 16rem; margin: 0;">
                     <label class="eb-label" for="lookup_code">Ticket QR, ticket code or order number</label>
                     <input type="text" id="lookup_code" class="eb-input" autocomplete="off" spellcheck="false" required style="font-family: var(--font-mono); font-size: 1rem;">
@@ -225,7 +225,7 @@
     @endif
 </div>
 
-<script>
+<script @cspNonce>
 // One scanner-session id per device/browser session: sent on every terminal call so audit
 // records can be correlated to a device without storing anything reusable or permanent.
 const SCANNER_SESSION_KEY = 'eventbite:scanner_session';

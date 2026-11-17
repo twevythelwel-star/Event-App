@@ -19,8 +19,8 @@ return [
     | fonts, frames, form posts and connections are limited to this site (plus Google Fonts). Images may come from
     | any HTTPS host, because event photos can be stored on object storage.
     |
-    | Scripts still need 'unsafe-inline': the views use inline <script> blocks and on*="" handlers. Moving those
-    | into files is what lets 'unsafe-inline' be dropped.
+    | Scripts: this site's files, plus inline <script> blocks that carry the response's nonce (@cspNonce in Blade).
+    | Inline on*="" handlers are refused; pages wire behaviour with data attributes (public/js/actions.js).
     |
     | CSP_EXTRA_SOURCES adds origins to every fetch directive (e.g. a CDN in front of storage), space-separated.
     | CSP_REPORT_ONLY=true sends the policy as Content-Security-Policy-Report-Only instead (log, don't block).

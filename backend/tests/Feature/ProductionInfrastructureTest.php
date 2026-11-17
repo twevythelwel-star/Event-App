@@ -83,10 +83,53 @@ class ProductionInfrastructureTest extends TestCase
         $this->assertSame("'self'", $directives['connect-src']);
         $this->assertStringNotContainsString('unsafe-eval', $csp);
         $this->assertStringNotContainsString('https:', $directives['script-src'], 'scripts never come from other sites');
+        $this->assertStringNotContainsString('unsafe-inline', $directives['script-src'], 'no inline handlers or un-nonced scripts');
+        $this->assertMatchesRegularExpression("/^'self' 'nonce-[A-Za-z0-9+\/=]{24}'$/", $directives['script-src']);
+        $this->assertSame("'none'", $directives['script-src-attr'], 'inline on*="" handlers are refused');
         $this->assertStringContainsString('https://fonts.googleapis.com', $directives['style-src']);
         $this->assertArrayNotHasKey('upgrade-insecure-requests', $directives->all(), 'only added on HTTPS');
 
         $this->assertSame(SecurityHeaders::policy(), $csp);
+    }
+
+    public function test_inline_scripts_carry_the_responses_nonce_and_pages_have_no_inline_handlers(): void
+    {
+        $response = $this->get('/login')->assertOk();
+        preg_match("/'nonce-([^']+)'/", (string) $response->headers->get('Content-Security-Policy'), $m);
+        $nonce = $m[1] ?? null;
+        $this->assertNotNull($nonce);
+
+        $html = $response->getContent();
+        preg_match_all('/<script(?![^>]*\bsrc=)[^>]*>/i', $html, $inline);
+        $this->assertNotEmpty($inline[0], 'the login page has inline scripts to check');
+        foreach ($inline[0] as $tag) {
+            $this->assertStringContainsString('nonce="' . $nonce . '"', $tag);
+        }
+        $this->assertDoesNotMatchRegularExpression('/<[a-z][^>]*\son[a-z]+\s*=/i', $html, 'no inline on*="" handlers');
+        $this->assertStringContainsString('js/actions.js', $html);
+
+        // Each response gets its own nonce.
+        preg_match("/'nonce-([^']+)'/", (string) $this->get('/login')->headers->get('Content-Security-Policy'), $again);
+        $this->assertNotSame($nonce, $again[1] ?? null);
+    }
+
+    public function test_no_view_uses_inline_handlers_or_un_nonced_scripts(): void
+    {
+        $offenders = [];
+        $files = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(resource_path('views')));
+        foreach ($files as $file) {
+            if (!str_ends_with($file->getFilename(), '.blade.php')) {
+                continue;
+            }
+            $source = file_get_contents($file->getPathname());
+            if (preg_match('/<[a-z][^>]*\son(click|change|submit|input|keyup|keydown|load|error|focus|blur|mouse\w+)\s*=/i', $source)) {
+                $offenders[] = 'handler in ' . $file->getFilename();
+            }
+            if (preg_match('/<script(?![^>]*(\bsrc=|@cspNonce))[^>]*>/i', $source)) {
+                $offenders[] = 'inline script without @cspNonce in ' . $file->getFilename();
+            }
+        }
+        $this->assertSame([], $offenders, 'Use data-action-* (public/js/actions.js) and <script @cspNonce>.');
     }
 
     public function test_the_content_security_policy_can_be_widened_or_switched_to_report_only(): void
@@ -94,7 +137,7 @@ class ProductionInfrastructureTest extends TestCase
         config(['security.csp.extra_sources' => 'https://cdn.example.test']);
         $csp = $this->get('/')->headers->get('Content-Security-Policy');
         $this->assertStringContainsString("img-src 'self' data: blob: https: https://cdn.example.test", $csp);
-        $this->assertStringContainsString("script-src 'self' 'unsafe-inline' https://cdn.example.test", $csp);
+        $this->assertMatchesRegularExpression("/script-src 'self' 'nonce-[^']+' https:\/\/cdn\.example\.test/", $csp);
 
         config(['security.csp.report_only' => true]);
         $response = $this->get('/');

@@ -59,8 +59,8 @@
                 :image="$photo"
                 sizes="(min-width: 641px) 260px, 100vw"
                 :style="'object-position:' . e($photo->objectPosition())"
-                onload="this.closest('.eb-food-card-media').classList.remove('eb-skeleton')"
-                onerror="const m = this.closest('.eb-food-card-media'); m.classList.remove('eb-skeleton'); m.classList.add('eb-food-card-placeholder'); this.remove();"
+                data-action-load="food-media-loaded"
+                data-action-error="food-media-failed"
             />
             @if($item->category)
                 <span class="eb-card-chip eb-badge eb-badge-info">{{ $item->category }}</span>

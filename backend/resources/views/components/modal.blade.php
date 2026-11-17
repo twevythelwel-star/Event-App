@@ -22,7 +22,7 @@
 </div>
 
 @once
-    <script>
+    <script @cspNonce>
         (function () {
             var lastTrigger = null;
             function show(modal, trigger) {

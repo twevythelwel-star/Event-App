@@ -529,7 +529,7 @@
                     </a>
                 @endauth
 
-                <button type="button" onclick="window.location.reload()" title="Refresh Catalog" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #94A3B8; cursor: pointer;">
+                <button type="button" data-action-click="reload" title="Refresh Catalog" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #94A3B8; cursor: pointer;">
                     <span class="sr-only">Refresh event catalog</span>
                     🔄
                 </button>
@@ -547,7 +547,7 @@
                     id="events-search-input"
                     aria-label="Search events, cities, towns, food or hosts"
                     placeholder="Search events, cities, towns, food or hosts..."
-                    onkeyup="filterEvents()"
+                    data-action-keyup="filterEvents"
                 />
             </div>
 
@@ -555,13 +555,13 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.85rem;">📍</span>
-                        <select id="filter-state" class="discovery-select" aria-label="Filter by state" onchange="filterEvents()">
+                        <select id="filter-state" class="discovery-select" aria-label="Filter by state" data-action-change="filterEvents">
                             <option value="all">All states & territories</option>
                             @foreach($states as $state)
                                 <option value="{{ $state->code }}">{{ $state->name }}</option>
                             @endforeach
                         </select>
-                        <select id="filter-city" class="discovery-select" aria-label="Filter by city" onchange="filterEvents()">
+                        <select id="filter-city" class="discovery-select" aria-label="Filter by city" data-action-change="filterEvents">
                             <option value="all">All cities and towns</option>
                             @foreach($markets as $market)
                                 <option value="{{ $market->state_code }}:{{ strtolower($market->city) }}" data-state="{{ $market->state_code }}">{{ $market->city }}, {{ $market->state_code }}</option>
@@ -572,21 +572,21 @@
                                 @endif
                             @endforeach
                         </select>
-                        <input id="filter-zip" class="discovery-select" inputmode="numeric" maxlength="10" placeholder="ZIP code" oninput="filterEvents()" aria-label="Filter by ZIP code">
+                        <input id="filter-zip" class="discovery-select" inputmode="numeric" maxlength="10" placeholder="ZIP code" data-action-input="filterEvents" aria-label="Filter by ZIP code">
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 0.85rem;">📅</span>
-                        <select id="filter-date" class="discovery-select" aria-label="Filter by date" onchange="filterEvents()">
+                        <select id="filter-date" class="discovery-select" aria-label="Filter by date" data-action-change="filterEvents">
                             <option value="all">All Dates</option>
                             <option value="weekend">This Weekend</option>
                         </select>
-                        <input id="filter-date-from" class="discovery-select" type="date" aria-label="Events from date" onchange="filterEvents()">
-                        <input id="filter-date-to" class="discovery-select" type="date" aria-label="Events through date" onchange="filterEvents()">
+                        <input id="filter-date-from" class="discovery-select" type="date" aria-label="Events from date" data-action-change="filterEvents">
+                        <input id="filter-date-to" class="discovery-select" type="date" aria-label="Events through date" data-action-change="filterEvents">
                     </div>
-                    <input id="filter-price-min" class="discovery-select" type="number" min="0" step="0.01" placeholder="Min price $" aria-label="Minimum event price" oninput="filterEvents()">
-                    <input id="filter-price-max" class="discovery-select" type="number" min="0" step="0.01" placeholder="Max price $" aria-label="Maximum event price" oninput="filterEvents()">
-                    <label style="font-size:0.8rem;color:#CBD5E1"><input id="filter-available" type="checkbox" onchange="filterEvents()"> Taking orders</label>
+                    <input id="filter-price-min" class="discovery-select" type="number" min="0" step="0.01" placeholder="Min price $" aria-label="Minimum event price" data-action-input="filterEvents">
+                    <input id="filter-price-max" class="discovery-select" type="number" min="0" step="0.01" placeholder="Max price $" aria-label="Maximum event price" data-action-input="filterEvents">
+                    <label style="font-size:0.8rem;color:#CBD5E1"><input id="filter-available" type="checkbox" data-action-change="filterEvents"> Taking orders</label>
                 </div>
 
                 <div role="status" aria-live="polite" aria-atomic="true" style="font-size: 0.8rem; color: #94A3B8; font-weight: 600;">
@@ -598,35 +598,35 @@
         <!-- 3. Category Shortcuts (4 prominent circular buttons) -->
         <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
             <h2 style="font-size: 1.05rem; font-weight: 800; color: #FFFFFF; margin: 0;">Explore by Category</h2>
-            <button type="button" onclick="selectCategory('all')" id="btn-cat-clear" style="background: none; border: none; color: #818CF8; font-size: 0.8rem; font-weight: 600; cursor: pointer;">
+            <button type="button" data-action-click="selectCategory" data-args='["all"]' id="btn-cat-clear" style="background: none; border: none; color: #818CF8; font-size: 0.8rem; font-weight: 600; cursor: pointer;">
                 View All
             </button>
         </div>
 
         <div class="category-shortcuts-grid">
             <!-- Music -->
-            <button type="button" class="category-btn cat-music" onclick="selectCategory('music')" id="cat-btn-music">
+            <button type="button" class="category-btn cat-music" data-action-click="selectCategory" data-args='["music"]' id="cat-btn-music">
                 <div class="category-icon-circle">🎵</div>
                 <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Music</div>
                 <div style="font-size: 0.68rem; color: #94A3B8;">Concerts, DJs & live sets</div>
             </button>
 
             <!-- Food -->
-            <button type="button" class="category-btn cat-food" onclick="selectCategory('food')" id="cat-btn-food">
+            <button type="button" class="category-btn cat-food" data-action-click="selectCategory" data-args='["food"]' id="cat-btn-food">
                 <div class="category-icon-circle">🍲</div>
                 <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Food</div>
                 <div style="font-size: 0.68rem; color: #94A3B8;">Festivals & Cookouts</div>
             </button>
 
             <!-- Sports -->
-            <button type="button" class="category-btn cat-sports" onclick="selectCategory('sports')" id="cat-btn-sports">
+            <button type="button" class="category-btn cat-sports" data-action-click="selectCategory" data-args='["sports"]' id="cat-btn-sports">
                 <div class="category-icon-circle">⚽</div>
                 <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Sports</div>
                 <div style="font-size: 0.68rem; color: #94A3B8;">Games & Fitness</div>
             </button>
 
             <!-- Culture -->
-            <button type="button" class="category-btn cat-culture" onclick="selectCategory('culture')" id="cat-btn-culture">
+            <button type="button" class="category-btn cat-culture" data-action-click="selectCategory" data-args='["culture"]' id="cat-btn-culture">
                 <div class="category-icon-circle">🎭</div>
                 <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Culture</div>
                 <div style="font-size: 0.68rem; color: #94A3B8;">Heritage & Parades</div>
@@ -841,7 +841,7 @@
             <img src="{{ \App\Support\VisualAssets::emptyState('events') }}" alt="" class="eb-empty-state-art" width="200" height="138" loading="lazy">
             <h3 style="font-size: 1.2rem; font-weight: 700; color: #FFFFFF; margin-bottom: 6px;">No Events Found</h3>
             <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 16px;">Try adjusting your search terms or clearing your location and date filters.</p>
-            <button type="button" onclick="clearAllFilters()" class="btn-gradient-cta" style="padding: 8px 20px; font-size: 0.82rem; border-radius: 9999px;">
+            <button type="button" data-action-click="clearAllFilters" class="btn-gradient-cta" style="padding: 8px 20px; font-size: 0.82rem; border-radius: 9999px;">
                 Clear All Filters
             </button>
         </div>
@@ -854,7 +854,7 @@
             <span>Home</span>
             <span class="nav-dot"></span>
         </a>
-        <a href="#events-search-input" onclick="focusSearch()" class="bottom-nav-link" id="nav-bottom-explore">
+        <a href="#events-search-input" data-action-click="focusSearch" class="bottom-nav-link" id="nav-bottom-explore">
             <span style="font-size: 1.2rem;">🧭</span>
             <span>Explore</span>
         </a>
@@ -885,7 +885,7 @@
             </a>
         @endauth
     </nav>
-    <script>
+    <script @cspNonce>
         document.addEventListener('DOMContentLoaded', () => {
             const bar = document.querySelector('.eb-customer-bottom-nav');
             if (!bar) return;
@@ -897,7 +897,7 @@
     </script>
 </div>
 
-<script>
+<script @cspNonce>
     let activeCategory = 'all';
 
     function selectCategory(category) {

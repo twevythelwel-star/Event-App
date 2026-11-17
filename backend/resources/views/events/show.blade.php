@@ -426,7 +426,7 @@
             </a>
 
             <div style="display: flex; align-items: center; gap: 10px;">
-                <button type="button" class="icon-glass-btn" onclick="shareCurrentEvent()" title="Share Event" aria-label="Share this event">
+                <button type="button" class="icon-glass-btn" data-action-click="shareCurrentEvent" title="Share Event" aria-label="Share this event">
                     <span>🔗</span>
                 </button>
             </div>
@@ -611,15 +611,15 @@
             <!-- 3. Section Switcher Tabs (Tickets · Food · Details) -->
             <div>
                 <div class="section-tab-nav" role="tablist">
-                    <button type="button" class="section-tab-btn active" id="tab-tickets-btn" onclick="switchSection('tickets')">
+                    <button type="button" class="section-tab-btn active" id="tab-tickets-btn" data-action-click="switchSection" data-args='["tickets"]'>
                         <span>🎟️</span>
                         <span>Tickets &amp; Passes</span>
                     </button>
-                    <button type="button" class="section-tab-btn" id="tab-food-btn" onclick="switchSection('food')">
+                    <button type="button" class="section-tab-btn" id="tab-food-btn" data-action-click="switchSection" data-args='["food"]'>
                         <span>🍲</span>
                         <span>Food &amp; Dining ({{ $menu->count() }})</span>
                     </button>
-                    <button type="button" class="section-tab-btn" id="tab-details-btn" onclick="switchSection('details')">
+                    <button type="button" class="section-tab-btn" id="tab-details-btn" data-action-click="switchSection" data-args='["details"]'>
                         <span>ℹ️</span>
                         <span>Event Guide &amp; Policies</span>
                     </button>
@@ -676,7 +676,7 @@
                                         {{ $menu->count() }} {{ \Illuminate\Support\Str::plural('item', $menu->count()) }} prepared for this event
                                     </p>
                                 </div>
-                                <button type="button" onclick="switchSection('food')" class="btn-glass" style="font-size: 12px; padding: 7px 14px;">
+                                <button type="button" data-action-click="switchSection" data-args='["food"]' class="btn-glass" style="font-size: 12px; padding: 7px 14px;">
                                     <span>🍲</span>
                                     <span>View full menu ({{ $menu->count() }})</span>
                                 </button>
@@ -942,7 +942,7 @@
                             <button type="button" class="gallery-open" data-lightbox-src="{{ $photo['image']->src }}" data-lightbox-caption="{{ $photo['caption'] }}{{ $photo['kind'] === 'illustrative' ? ' (illustrative photo)' : '' }}"
                                 aria-label="Open photo {{ $loop->iteration }} of {{ $loop->count }}: {{ $photo['caption'] }}" aria-haspopup="dialog">
                                 {{-- A photo that cannot be loaded is left out rather than shown as a broken tile. --}}
-                                <x-responsive-image :image="$photo['image']" alt="" sizes="220px" onerror="this.closest('.gallery-item').remove()" />
+                                <x-responsive-image :image="$photo['image']" alt="" sizes="220px" data-action-error="remove-closest" data-args='[".gallery-item"]' />
                             </button>
                             <div class="gallery-caption">
                                 {{ $photo['caption'] }}
@@ -1018,7 +1018,7 @@
                         <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 700;">Policy Summary</div>
                         <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 2px 0 0;">Cancellation &amp; Refund Information</h3>
                     </div>
-                    <button type="button" onclick="switchSection('details'); document.getElementById('refund-policy')?.scrollIntoView({behavior:'smooth'});" class="btn-glass" style="font-size: 11px; padding: 5px 12px;">
+                    <button type="button" data-action-click="switchSection scroll-to" data-args='["details"]' data-scroll-target="refund-policy" class="btn-glass" style="font-size: 11px; padding: 5px 12px;">
                         Full policy details &rarr;
                     </button>
                 </div>
@@ -1098,14 +1098,14 @@
 
                 <!-- Jump to Food Ordering -->
                 @if($menu->isNotEmpty())
-                    <button type="button" onclick="switchSection('food')" class="btn-glass" style="width: 100%; justify-content: center; margin-top: 10px; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
+                    <button type="button" data-action-click="switchSection" data-args='["food"]' class="btn-glass" style="width: 100%; justify-content: center; margin-top: 10px; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
                         <span>🍲</span>
                         <span>View the menu ({{ $menu->count() }})</span>
                     </button>
                 @endif
 
                 <div style="margin-top: 14px; font-size: 11px; color: var(--color-text-secondary); text-align: center; line-height: 1.4;">
-                    Your ticket QR code appears in My tickets once your payment is confirmed. <a href="#payment-methods" onclick="switchSection('details')" style="color: var(--color-accent); font-weight: 700;">Payment, fees and refunds</a>
+                    Your ticket QR code appears in My tickets once your payment is confirmed. <a href="#payment-methods" data-action-click="switchSection" data-args='["details"]' style="color: var(--color-accent); font-weight: 700;">Payment, fees and refunds</a>
                 </div>
             </div>
         </div>
@@ -1141,7 +1141,7 @@
     }
 </style>
 
-<script>
+<script @cspNonce>
     // Tab switching logic: swaps the active section content
     function switchSection(tabName) {
         document.querySelectorAll('.section-tab-btn').forEach(btn => btn.classList.remove('active'));

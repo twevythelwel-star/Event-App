@@ -33,6 +33,7 @@
     <link rel="stylesheet" href="{{ asset('css/brand.css') }}">
     <link rel="stylesheet" href="{{ asset('css/animations.css') }}">
     <script src="{{ asset('js/animations.js') }}" defer></script>
+    <script src="{{ asset('js/actions.js') }}" defer></script>
 
     <style>
         :focus-visible {
@@ -183,7 +184,7 @@
 <body>
     <div class="eb-app-shell app-shell">
         <!-- Mobile Drawer Backdrop -->
-        <div class="mobile-drawer-backdrop" id="drawerBackdrop" onclick="toggleMobileMenu()"></div>
+        <div class="mobile-drawer-backdrop" id="drawerBackdrop" data-action-click="toggleMobileMenu"></div>
 
         <!-- Management & Platform Sidebar -->
         <aside class="eb-management-sidebar app-sidebar" id="appSidebar">
@@ -240,7 +241,7 @@
             <!-- Top Header -->
             <header class="eb-app-header app-header">
                 <div class="header-left">
-                    <button type="button" class="mobile-menu-toggle" onclick="toggleMobileMenu()" aria-label="Toggle Navigation Drawer">
+                    <button type="button" class="mobile-menu-toggle" data-action-click="toggleMobileMenu" aria-label="Toggle Navigation Drawer">
                         <x-icon name="menu-bars" size="md" />
                     </button>
                     <nav class="breadcrumb-wrap" aria-label="Breadcrumb">
@@ -327,7 +328,7 @@
     </div>
 
     <!-- Accessible Drawer & Duplicate-Submission Protection -->
-    <script>
+    <script @cspNonce>
         function toggleMobileMenu() {
             const sidebar = document.getElementById('appSidebar');
             const backdrop = document.getElementById('drawerBackdrop');
