@@ -9,18 +9,18 @@
        ========================================================================== */
     .auth-wrapper {
         max-width: 470px;
-        margin: 2.5rem auto 3.5rem;
-        padding: 0 1rem;
+        margin: var(--space-10) auto 3.5rem;
+        padding: 0 var(--space-4);
     }
 
     .auth-card {
         background-color: var(--color-surface);
         background-image: var(--gradient-surface-elevated-3d);
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.16);
+        border-top-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
         border-radius: 24px;
         box-shadow: var(--shadow-elevated);
-        padding: 2.5rem 2.25rem 2rem;
+        padding: var(--space-10) 2.25rem var(--space-8);
         position: relative;
         overflow: hidden;
         color: var(--color-text-primary);
@@ -33,7 +33,7 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, var(--color-warning) 0%, var(--color-accent) 50%, var(--color-purple) 100%);
+        background: var(--color-accent);
     }
 
     .back-nav-link {
@@ -44,7 +44,7 @@
         font-weight: 600;
         color: var(--color-text-secondary);
         text-decoration: none;
-        margin-bottom: 1.5rem;
+        margin-bottom: var(--space-6);
         transition: color 0.15s ease;
     }
 
@@ -65,8 +65,6 @@
         border-radius: 9999px;
         font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
         background: var(--color-warning-bg);
         color: var(--color-warning-text);
         border: 1px solid var(--color-warning-border);
@@ -97,8 +95,6 @@
     .form-label {
         font-size: 0.78rem;
         font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
         color: var(--color-text-primary);
         display: block;
         margin-bottom: 0.45rem;
@@ -131,7 +127,7 @@
         font-size: 0.92rem;
         color: var(--color-text-primary);
         outline: none;
-        transition: all 0.15s ease;
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
         box-sizing: border-box;
     }
 
@@ -158,8 +154,8 @@
         border-radius: 12px;
         cursor: pointer;
         box-shadow: var(--shadow-btn-primary);
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
-        transition: all 0.15s ease;
+        text-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 35%, transparent);
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
     }
 
     .btn-submit-recovery:hover {
@@ -170,7 +166,7 @@
     }
 
     .alert-status {
-        padding: 0.85rem 1rem;
+        padding: 0.85rem var(--space-4);
         border-radius: 12px;
         background-color: var(--color-success-bg);
         border: 1px solid var(--color-success-border);
@@ -183,7 +179,7 @@
     }
 
     .alert-danger {
-        padding: 0.85rem 1rem;
+        padding: 0.85rem var(--space-4);
         border-radius: 12px;
         background-color: var(--color-error-bg);
         border: 1px solid var(--color-error-border);
@@ -196,7 +192,7 @@
     }
 
     .security-note {
-        margin-top: 1.5rem;
+        margin-top: var(--space-6);
         padding: 0.9rem;
         background: var(--color-surface-recessed);
         border: 1px solid var(--color-border);
@@ -213,7 +209,7 @@
     <div class="auth-card">
         <!-- Return Link -->
         <a href="{{ route('login') }}" class="back-nav-link">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"/>
                 <polyline points="12 19 5 12 12 5"/>
             </svg>
@@ -223,8 +219,8 @@
         <!-- Header -->
         <div class="auth-header">
             <span class="auth-brand-badge">
-                <span>🔐</span>
-                <span>Account Recovery</span>
+                <x-icon name="key" size="sm" />
+                <span>Account recovery</span>
             </span>
             <h1 class="auth-title">Reset Password</h1>
             <p class="auth-subtitle">Enter your registered email address and we'll dispatch an expiring password-reset link.</p>
@@ -233,7 +229,7 @@
         {{-- Status Notification --}}
         @if (session('status'))
             <div class="alert-status" role="status">
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                 </svg>
                 <span>{{ session('status') }}</span>
@@ -243,7 +239,7 @@
         {{-- Errors --}}
         @if ($errors->any())
             <div class="alert-danger" role="alert">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <div>
@@ -262,7 +258,7 @@
                 <label for="email" class="form-label">Email Address</label>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="20" height="16" x="2" y="4" rx="2"/>
                             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                         </svg>
@@ -282,7 +278,7 @@
             </div>
 
             <button type="submit" class="btn-submit-recovery">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="22" y1="2" x2="11" y2="13"/>
                     <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                 </svg>
@@ -291,7 +287,7 @@
         </form>
 
         <div class="security-note">
-            🛡️ Reset links expire after 60 minutes for security. If you don't receive an email within 2 minutes, check your spam or junk folder.
+            Reset links expire after 60 minutes for security. If you don't receive an email within 2 minutes, check your spam or junk folder.
         </div>
     </div>
 </div>

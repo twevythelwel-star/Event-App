@@ -1,0 +1,48 @@
+/* EventBite brand tokens (Hallmark restyle). The one place brand colours and faces are set; 01-tokens.css maps
+   the app's own token names onto these. */
+:root {
+  --space-3xs: 2px; --space-2xs: 4px; --space-xs: 8px; --space-sm: 12px; --space-md: 16px; --space-lg: 24px; --space-xl: 40px; --space-2xl: 64px; --space-3xl: 96px; --space-4xl: 144px;
+  --text-xs: 0.8125rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.5625rem; --text-2xl: 1.953rem; --text-3xl: 2.441rem;
+  --text-display-s: clamp(2.25rem, 4vw + 0.5rem, 3.75rem); --text-display: clamp(2.75rem, 5vw + 1rem, 5.25rem);
+  --text-section: clamp(2rem, 2.5vw + 1rem, 3.5rem); --text-title: clamp(1.25rem, 0.75vw + 0.875rem, 1.625rem); --text-lead: clamp(1.125rem, 0.35vw + 1rem, 1.375rem);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); --ease-in: cubic-bezier(0.7, 0, 0.84, 0); --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 120ms; --dur-short: 220ms; --dur-long: 420ms;
+  --container: 1440px; --gutter: 64px; --gap-columns: 32px; --section-gap-s: 120px; --section-gap: 144px; --section-gap-l: 176px;
+  --z-base: 1; --z-raised: 10; --z-dropdown: 100; --z-sticky: 200; --z-sticky-nav: 300; --z-modal: 400; --z-toast: 500; --z-tooltip: 600;
+
+  /* Brand: deep navy paper, one electric-lime signal. */
+  --color-paper: oklch(17.6% 0.033 256);      /* #07111F canvas */
+  --color-paper-2: oklch(21.1% 0.041 255);    /* #0B192B rails, secondary surface */
+  --color-paper-3: oklch(25.6% 0.049 252);    /* #10243A cards and panels */
+  --color-paper-4: oklch(28.8% 0.055 252);    /* #152C45 raised: hover, modals */
+  --color-paper-5: oklch(33% 0.06 250);       /* #1B3756 popovers, active pills */
+  --color-paper-sunk: oklch(14.5% 0.028 256); /* #050C17 inputs, wells */
+  --color-ink: oklch(98.4% 0.003 248);        /* #F8FAFC */
+  --color-ink-2: oklch(77.1% 0.030 255);      /* #A8B6C8 */
+  --color-muted: oklch(66.1% 0.035 254);      /* #8494A8 */
+  --color-rule: oklch(33.5% 0.044 253);       /* #26384D */
+  --color-rule-strong: oklch(41% 0.05 252);   /* #364F6B */
+  --color-accent: oklch(93% 0.211 125);       /* #C7FF45 lime */
+  --color-accent-hi: oklch(95% 0.17 125);     /* hover */
+  --color-accent-lo: oklch(88% 0.21 127);     /* pressed */
+  --color-accent-ink: oklch(22.9% 0.045 133); /* #14210A text on lime */
+  --color-focus: var(--color-accent);
+  --color-shade: oklch(10% 0.02 256);         /* the darkest shadow tone */
+  --color-qr-white: oklch(100% 0 0);          /* QR quiet zone only */
+
+  /* Status (always paired with a written label). */
+  --color-success: oklch(72% 0.19 150);
+  --color-success-ink: oklch(83% 0.16 152);
+  --color-warning: oklch(77% 0.16 70);
+  --color-warning-ink: oklch(84% 0.15 85);
+  --color-error: oklch(64% 0.21 25);
+  --color-error-ink: oklch(81% 0.1 20);
+  --color-info: oklch(75% 0.14 230);
+  --color-info-ink: oklch(84% 0.1 225);
+
+  --font-display: "Rethink Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: var(--font-display);
+  --radius-card: 10px; --radius-pill: 999px; --rule-hair: 1px; --shadow-card: none;
+  --tracking-display: -0.02em;
+}

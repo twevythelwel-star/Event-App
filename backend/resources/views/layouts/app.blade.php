@@ -21,7 +21,7 @@
     <!-- Modern Sans-Serif Typography with System Fallbacks -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Rethink+Sans:wght@600;700;800&display=swap" rel="stylesheet">
 
     <!-- Modular EventBite Design System Stylesheets -->
     <link rel="stylesheet" href="/css/01-tokens.css">
@@ -37,9 +37,9 @@
 
     <style>
         :focus-visible {
-            outline: 2px solid var(--color-border-focus, #C7FF45) !important;
+            outline: 2px solid var(--color-border-focus, var(--color-accent)) !important;
             outline-offset: 2px !important;
-            box-shadow: var(--shadow-focus, 0 0 0 3px rgba(199, 255, 69, 0.28)) !important;
+            box-shadow: var(--shadow-focus, 0 0 0 3px color-mix(in srgb, var(--color-accent) 28%, transparent)) !important;
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -55,13 +55,12 @@
             font-size: 0.7rem;
             color: var(--color-text-secondary);
             font-weight: 600;
-            letter-spacing: 0.04em;
         }
 
         .user-profile-preview {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: var(--space-3);
             overflow: hidden;
         }
 
@@ -69,17 +68,16 @@
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: linear-gradient(145deg, rgba(199, 255, 69, 0.22), rgba(139, 92, 246, 0.2));
+            background: linear-gradient(145deg, color-mix(in srgb, var(--color-accent) 22%, transparent), color-mix(in srgb, var(--color-ink-2) 20%, transparent));
             color: var(--color-accent);
             border: 1px solid var(--color-accent-border);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 3px 8px rgba(2, 6, 14, 0.45);
+            box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 20%, transparent), 0 3px 8px color-mix(in srgb, var(--color-shade) 45%, transparent);
             font-size: 0.82rem;
             font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            text-transform: uppercase;
         }
 
         .user-info-text {
@@ -109,7 +107,7 @@
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: var(--space-3);
         }
 
         .mobile-menu-toggle {
@@ -130,7 +128,7 @@
         .breadcrumb-wrap {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: var(--space-2);
             font-size: 0.875rem;
         }
 
@@ -161,7 +159,7 @@
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(7, 17, 31, 0.78);
+            background: color-mix(in srgb, var(--color-paper) 78%, transparent);
             backdrop-filter: blur(4px);
             z-index: 45;
         }

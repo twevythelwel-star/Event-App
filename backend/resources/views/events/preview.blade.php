@@ -11,14 +11,14 @@
         top: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
-        color: #FFFFFF;
+        background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning) 100%);
+        color: var(--color-ink);
         padding: 12px 24px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         z-index: 10000;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--color-shade) 30%, transparent);
         font-weight: 700;
         font-size: 14px;
     }
@@ -41,7 +41,7 @@
 
     .preview-banner .preview-device-toggle {
         display: flex;
-        background: rgba(255, 255, 255, 0.2);
+        background: color-mix(in srgb, var(--color-ink) 20%, transparent);
         border-radius: 8px;
         padding: 4px;
         gap: 4px;
@@ -50,38 +50,38 @@
     .preview-banner .preview-device-btn {
         background: transparent;
         border: none;
-        color: #FFFFFF;
+        color: var(--color-ink);
         padding: 6px 12px;
         border-radius: 6px;
         font-size: 12px;
         font-weight: 700;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
     }
 
     .preview-banner .preview-device-btn.active {
-        background: #FFFFFF;
-        color: #D97706;
+        background: var(--color-ink);
+        color: var(--color-warning);
     }
 
     .preview-banner .preview-device-btn:hover:not(.active) {
-        background: rgba(255, 255, 255, 0.3);
+        background: color-mix(in srgb, var(--color-ink) 30%, transparent);
     }
 
     .preview-banner .preview-close-btn {
-        background: rgba(255, 255, 255, 0.2);
+        background: color-mix(in srgb, var(--color-ink) 20%, transparent);
         border: none;
-        color: #FFFFFF;
+        color: var(--color-ink);
         padding: 8px 16px;
         border-radius: 6px;
         font-size: 13px;
         font-weight: 700;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
     }
 
     .preview-banner .preview-close-btn:hover {
-        background: rgba(255, 255, 255, 0.3);
+        background: color-mix(in srgb, var(--color-ink) 30%, transparent);
     }
 
     /* Preview Mode Container */
@@ -98,16 +98,16 @@
     .preview-tablet {
         width: 768px;
         margin: 0 auto;
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
+        border-right: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
     }
 
     /* Mobile Preview */
     .preview-mobile {
         width: 375px;
         margin: 0 auto;
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
+        border-right: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
     }
 
     /* Disable purchase buttons in preview */
@@ -144,14 +144,12 @@
         position: absolute;
         top: 70px;
         right: 24px;
-        background: rgba(245, 158, 11, 0.95);
-        color: #FFFFFF;
+        background: color-mix(in srgb, var(--color-warning) 95%, transparent);
+        color: var(--color-ink);
         padding: 6px 14px;
         border-radius: 9999px;
         font-size: 11px;
         font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
         z-index: 15;
         backdrop-filter: blur(8px);
     }
@@ -167,26 +165,26 @@
 <!-- Preview Mode Banner -->
 <div class="preview-banner">
     <div class="preview-info">
-        <span class="preview-icon">👁️</span>
+        <span class="preview-icon" aria-hidden="true"><x-icon name="search" size="sm" /></span>
         <span>Preview Mode — This is how your event will appear to the public</span>
     </div>
     <div class="preview-actions">
         <div class="preview-device-toggle">
             <button type="button" class="preview-device-btn active" data-device="desktop" data-action-click="setPreviewDevice" data-args='["desktop"]'>
-                <span>🖥️</span> Desktop
+                Desktop
             </button>
             <button type="button" class="preview-device-btn" data-device="tablet" data-action-click="setPreviewDevice" data-args='["tablet"]'>
-                <span>📱</span> Tablet
+                Tablet
             </button>
             <button type="button" class="preview-device-btn" data-device="mobile" data-action-click="setPreviewDevice" data-args='["mobile"]'>
-                <span>📲</span> Mobile
+                Mobile
             </button>
         </div>
         <a href="{{ route('events.edit', $event->id) }}" class="preview-close-btn">
-            <span>✏️</span> Edit Event
+            Edit Event
         </a>
         <a href="{{ route('events.publish', $event->id) }}" class="preview-close-btn">
-            <span>🚀</span> Publish
+            Publish
         </a>
     </div>
 </div>

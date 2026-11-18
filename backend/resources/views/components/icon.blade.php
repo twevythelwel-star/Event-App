@@ -14,7 +14,7 @@
     $hasAccessibleLabel = is_string($label) && trim($label) !== '';
 @endphp
 
-<svg
+<svg aria-hidden="true"
     {{ $attributes->merge(['class' => $sizeClass]) }}
     viewBox="0 0 24 24"
     fill="none"
@@ -193,6 +193,10 @@
             @break
         @case('star')
             <path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9Z" />
+            @break
+        @case('refresh')
+            <path d="M21 12a9 9 0 1 1-2.6-6.4" />
+            <path d="M21 3v6h-6" />
             @break
         @case('clock')
             <circle cx="12" cy="12" r="9" />

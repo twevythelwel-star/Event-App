@@ -9,7 +9,7 @@
 @if($image->label)
     <span class="eb-image-label" title="{{ $image->alt }}"
           style="position: absolute; {{ $corner === 'top-right' ? 'right: 10px' : 'left: 10px' }}; {{ $corner === 'bottom-left' ? 'bottom: 10px' : 'top: 10px' }}; z-index: 3; padding: 3px 9px; border-radius: 999px;
-                 background: rgba(7, 17, 31, .8); color: #F8FAFC; font-size: 11px; font-weight: 600; letter-spacing: .01em; pointer-events: none;">
+                 background: color-mix(in srgb, var(--color-paper) 80%, transparent); color: var(--color-ink); font-size: 11px; font-weight: 600; letter-spacing: .01em; pointer-events: none;">
         {{ $image->label }}
     </span>
 @endif

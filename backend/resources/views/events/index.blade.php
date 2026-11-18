@@ -18,9 +18,9 @@
 
     /* Discovery Top Header */
     .discovery-header {
-        background: linear-gradient(180deg, rgba(19, 36, 58, 0.94) 0%, rgba(7, 17, 31, 0.94) 100%);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--color-paper-3) 94%, transparent) 0%, color-mix(in srgb, var(--color-paper) 94%, transparent) 100%);
         border-bottom: 1px solid var(--color-border);
-        box-shadow: 0 10px 30px rgba(2, 6, 14, 0.45);
+        box-shadow: 0 10px 30px color-mix(in srgb, var(--color-shade) 45%, transparent);
         padding: 24px 32px 20px;
         position: sticky;
         top: 0;
@@ -48,8 +48,6 @@
         padding: 4px 12px;
         font-size: 11px;
         font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
         color: var(--color-accent);
         margin-bottom: 6px;
     }
@@ -76,7 +74,7 @@
         background-color: var(--color-surface);
         background-image: var(--gradient-surface-3d);
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.14);
+        border-top-color: color-mix(in srgb, var(--color-ink) 14%, transparent);
         border-radius: 20px;
         padding: 18px 22px;
         box-shadow: var(--shadow-card);
@@ -99,9 +97,10 @@
         outline: none;
         box-sizing: border-box;
         box-shadow: var(--shadow-3d-inset);
-        transition: border-color 0.2s, box-shadow 0.2s;
+        transition: border-color 0.2s;
     }
 
+    .discovery-search-input-wrap input:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
     .discovery-search-input-wrap input:focus {
         border-color: var(--color-accent);
         box-shadow: var(--shadow-3d-inset), 0 0 0 3px var(--color-accent-subtle);
@@ -158,7 +157,7 @@
         cursor: pointer;
         outline: none;
         box-shadow: var(--shadow-3d-inset);
-        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        transition: border-color 0.18s ease;
     }
 
     .discovery-select:focus {
@@ -178,7 +177,7 @@
         background-color: var(--color-surface);
         background-image: var(--gradient-surface-3d);
         border: 1px solid var(--color-border);
-        border-top-color: rgba(255, 255, 255, 0.12);
+        border-top-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
         border-radius: 18px;
         padding: 16px 12px;
         display: flex;
@@ -187,7 +186,7 @@
         gap: 10px;
         cursor: pointer;
         box-shadow: var(--shadow-subtle);
-        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease;
         text-decoration: none;
         color: var(--color-text-primary);
         border-bottom: 3px solid transparent;
@@ -197,14 +196,14 @@
     .category-btn:focus-visible {
         background-color: var(--color-surface-elevated);
         border-color: var(--color-border-strong);
-        border-top-color: rgba(199, 255, 69, 0.35);
+        border-top-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
         transform: translateY(-3px);
         box-shadow: var(--shadow-card);
     }
 
     .category-btn.active {
         background-color: var(--color-surface-elevated);
-        background-image: linear-gradient(180deg, rgba(199, 255, 69, 0.14) 0%, rgba(19, 36, 58, 0.95) 100%);
+        background-image: linear-gradient(180deg, color-mix(in srgb, var(--color-accent) 14%, transparent) 0%, color-mix(in srgb, var(--color-paper-3) 95%, transparent) 100%);
         border-color: var(--color-accent-border);
         border-bottom-color: var(--color-accent);
         box-shadow: var(--shadow-card);
@@ -218,7 +217,7 @@
         align-items: center;
         justify-content: center;
         font-size: 1.5rem;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(2, 6, 14, 0.38);
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--color-shade) 38%, transparent);
         transition: transform 0.2s var(--ease-out-quart);
     }
 
@@ -226,10 +225,10 @@
         transform: scale(1.08);
     }
 
-    .cat-music .category-icon-circle { background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.38); }
-    .cat-food .category-icon-circle { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.38); }
-    .cat-sports .category-icon-circle { background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.38); }
-    .cat-culture .category-icon-circle { background: rgba(199, 255, 69, 0.18); border: 1px solid rgba(199, 255, 69, 0.35); }
+    .cat-music .category-icon-circle { background: color-mix(in srgb, var(--color-ink-2) 20%, transparent); border: 1px solid color-mix(in srgb, var(--color-ink-2) 38%, transparent); }
+    .cat-food .category-icon-circle { background: color-mix(in srgb, var(--color-warning) 20%, transparent); border: 1px solid color-mix(in srgb, var(--color-warning) 38%, transparent); }
+    .cat-sports .category-icon-circle { background: color-mix(in srgb, var(--color-success) 20%, transparent); border: 1px solid color-mix(in srgb, var(--color-success) 38%, transparent); }
+    .cat-culture .category-icon-circle { background: color-mix(in srgb, var(--color-accent) 18%, transparent); border: 1px solid color-mix(in srgb, var(--color-accent) 35%, transparent); }
 
     /* Featured Event (Large image-led 3D card) */
     .featured-event-card {
@@ -237,18 +236,18 @@
         background-image: var(--gradient-surface-3d);
         border-radius: 24px;
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.15);
+        border-top-color: color-mix(in srgb, var(--color-ink) 15%, transparent);
         box-shadow: var(--shadow-elevated);
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         overflow: hidden;
         margin-bottom: 42px;
-        transition: transform 0.25s var(--ease-out-quart), border-color 0.25s ease, box-shadow 0.25s ease;
+        transition: transform 0.25s var(--ease-out-quart), border-color 0.25s ease;
     }
 
     .featured-event-card:hover {
         transform: translateY(-3px);
-        border-top-color: rgba(199, 255, 69, 0.42);
+        border-top-color: color-mix(in srgb, var(--color-accent) 42%, transparent);
     }
 
     .featured-event-img-wrap {
@@ -274,7 +273,7 @@
     .featured-event-overlay {
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, rgba(7, 17, 31, 0.15) 0%, rgba(7, 17, 31, 0.3) 50%, rgba(7, 17, 31, 0.9) 100%);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 15%, transparent) 0%, color-mix(in srgb, var(--color-paper) 30%, transparent) 50%, color-mix(in srgb, var(--color-paper) 90%, transparent) 100%);
         pointer-events: none;
     }
 
@@ -292,14 +291,14 @@
     }
 
     .featured-badge-tag {
-        background: rgba(7, 17, 31, 0.85);
+        background: color-mix(in srgb, var(--color-paper) 85%, transparent);
         backdrop-filter: blur(8px);
         color: var(--color-text-primary);
         padding: 4px 12px;
         border-radius: 9999px;
         font-size: 0.72rem;
         font-weight: 700;
-        border: 1px solid rgba(255, 255, 255, 0.18);
+        border: 1px solid color-mix(in srgb, var(--color-ink) 18%, transparent);
     }
 
     .featured-event-body {
@@ -313,7 +312,7 @@
     .btn-gradient-cta {
         background-color: var(--color-accent);
         background-image: var(--gradient-accent-3d);
-        border: 1px solid rgba(255, 255, 255, 0.28);
+        border: 1px solid color-mix(in srgb, var(--color-ink) 28%, transparent);
         border-radius: 12px;
         padding: 12px 22px;
         font-size: 0.92rem;
@@ -326,7 +325,7 @@
         gap: 8px;
         text-decoration: none;
         box-shadow: var(--shadow-btn-primary);
-        transition: transform 0.18s var(--ease-out-quart), box-shadow 0.18s ease, background-color 0.18s ease;
+        transition: transform 0.18s var(--ease-out-quart), background-color 0.18s ease;
     }
 
     .btn-gradient-cta:hover {
@@ -356,19 +355,19 @@
         background-image: var(--gradient-surface-3d);
         border-radius: 18px;
         border: 1px solid var(--color-border);
-        border-top-color: rgba(255, 255, 255, 0.12);
+        border-top-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
         overflow: hidden;
         display: flex;
         flex-direction: column;
         box-shadow: var(--shadow-subtle);
-        transition: transform 0.22s var(--ease-out-quart), border-color 0.22s ease, box-shadow 0.22s ease;
+        transition: transform 0.22s var(--ease-out-quart), border-color 0.22s ease;
     }
 
     .trending-card:hover,
     .trending-card:focus-within {
         transform: translateY(-4px);
         border-color: var(--color-border-strong);
-        border-top-color: rgba(199, 255, 69, 0.4);
+        border-top-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
         box-shadow: var(--shadow-elevated);
     }
 
@@ -402,8 +401,8 @@
     }
 
     /* Filter wrapper around each shared event card component; the card brings its own styling. */
-    .event-item-card { display: flex; flex-direction: column; }
-    .event-item-card > .eb-event-card { flex: 1; }
+    .event-item { display: flex; flex-direction: column; }
+    .event-item > .eb-event-card { flex: 1; }
 
     @media (max-width: 767px) {
         #event-discovery-page .discovery-header { padding: 10px 16px 16px; position: relative; }
@@ -415,7 +414,7 @@
         #event-discovery-page .discovery-search-card { padding: 0; margin: 14px 0 22px; border: 0; background: transparent; box-shadow: none; }
         #event-discovery-page .discovery-search-input-wrap { margin: 0; }
         #event-discovery-page .discovery-search-input-wrap input { min-height: 48px; background: var(--color-accent); color: var(--color-accent-text); border: 0; box-shadow: var(--shadow-btn-primary); }
-        #event-discovery-page .discovery-search-input-wrap input::placeholder { color: #35451B; }
+        #event-discovery-page .discovery-search-input-wrap input::placeholder { color: var(--color-accent-ink); }
         #event-discovery-page .discovery-search-icon { color: var(--color-accent-text); }
         #event-discovery-page .discovery-selectors-bar { gap: 8px; }
         #event-discovery-page .discovery-selectors-bar > div:first-child { display: none !important; }
@@ -426,11 +425,11 @@
         #event-discovery-page .featured-event-card { display: block; margin-bottom: 28px; border-radius: 18px; }
         #event-discovery-page .featured-event-img-wrap { min-height: 0; aspect-ratio: 16 / 10; }
         #event-discovery-page .featured-event-img-wrap img { position: absolute; inset: 0; }
-        #event-discovery-page .featured-event-overlay { background: linear-gradient(180deg, rgba(7,17,31,.05) 10%, rgba(7,17,31,.18) 40%, rgba(7,17,31,.94) 100%); }
+        #event-discovery-page .featured-event-overlay { background: linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 5%, transparent) 10%, color-mix(in srgb, var(--color-paper) 18%, transparent) 40%, color-mix(in srgb, var(--color-paper) 94%, transparent) 100%); }
         #event-discovery-page .featured-event-body { padding: 14px; gap: 12px; }
         #event-discovery-page .trending-scroll-container { gap: 12px; margin: 0 -16px 30px; padding: 0 16px 12px; }
         #event-discovery-page .trending-card { min-width: 248px; max-width: 248px; border-radius: 16px; }
-        #event-discovery-page .discovery-grid { grid-template-columns: 1fr; gap: 12px; }
+        #event-discovery-page .discovery-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
         .eb-app-header { display: none !important; }
         main.content-canvas { padding-top: 0 !important; }
         .eb-customer-bottom-nav { height: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -457,10 +456,6 @@
     <header class="discovery-header">
         <div class="discovery-header-inner">
             <div>
-                <div class="discovery-greeting-badge">
-                    <span>🎟️</span>
-                    <span>EventBite Discovery</span>
-                </div>
                 <h1 class="discovery-title" id="discovery-header-greeting">
                     {{ $foodScreen ? 'Food & Experience' : 'Explore Events' }}
                 </h1>
@@ -476,17 +471,17 @@
             <!-- Profile / Account Actions -->
             <div style="display: flex; align-items: center; gap: 12px;">
                 @auth
-                    <div style="display: flex; align-items: center; gap: 10px; background: #1E293B; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 9999px; padding: 5px 14px 5px 6px;">
-                        <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #6366F1 0%, #EC4899 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; font-size: 0.85rem;">
+                    <div style="display: flex; align-items: center; gap: 10px; background: var(--color-rule); border: 1px solid color-mix(in srgb, var(--color-ink) 15%, transparent); border-radius: 9999px; padding: 5px 14px 5px 6px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--color-ink-2) 0%, var(--color-error) 100%); display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--color-ink); font-size: 0.85rem;">
                             {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                         </div>
                         <div style="text-align: left;">
-                            <div style="font-size: 0.82rem; font-weight: 700; color: #fff; line-height: 1.2;">{{ Auth::user()->name }}</div>
-                            <div style="font-size: 0.68rem; color: #10B981; font-weight: 600;">● Online</div>
+                            <div style="font-size: 0.82rem; font-weight: 700; color: var(--color-ink); line-height: 1.2;">{{ Auth::user()->name }}</div>
+                            <div style="font-size: 0.68rem; color: var(--color-success); font-weight: 600;">● Online</div>
                         </div>
                     </div>
                 @else
-                    <a href="{{ route('login') }}" style="background: transparent; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 9999px; padding: 7px 16px; font-size: 0.82rem; font-weight: 600; color: #F8FAFC; text-decoration: none;">
+                    <a href="{{ route('login') }}" style="background: transparent; border: 1px solid color-mix(in srgb, var(--color-ink) 20%, transparent); border-radius: 9999px; padding: 7px 16px; font-size: 0.82rem; font-weight: 600; color: var(--color-ink); text-decoration: none;">
                         Sign In
                     </a>
                     <a href="{{ route('register') }}" class="btn-gradient-cta" style="padding: 7px 18px; font-size: 0.82rem; border-radius: 9999px;">
@@ -494,9 +489,9 @@
                     </a>
                 @endauth
 
-                <button type="button" data-action-click="reload" title="Refresh Catalog" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #94A3B8; cursor: pointer;">
+                <button type="button" data-action-click="reload" title="Refresh Catalog" style="background: color-mix(in srgb, var(--color-ink) 8%, transparent); border: 1px solid color-mix(in srgb, var(--color-ink) 15%, transparent); border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--color-ink-2); cursor: pointer;">
                     <span class="sr-only">Refresh event catalog</span>
-                    🔄
+                    <x-icon name="refresh" size="sm" />
                 </button>
             </div>
         </div>
@@ -542,7 +537,7 @@
         <!-- 2. Search Area with Rounded Search Field and Selectors -->
         <div class="discovery-search-card">
             <div class="discovery-search-input-wrap">
-                <span class="discovery-search-icon">🔍</span>
+                <span class="discovery-search-icon" aria-hidden="true"><x-icon name="search" size="sm" /></span>
                 <input
                     type="text"
                     id="events-search-input"
@@ -555,7 +550,7 @@
             <div class="discovery-selectors-bar">
                 <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 0.85rem;">📍</span>
+                        <x-icon name="map-pin" size="sm" />
                         <select id="filter-state" class="discovery-select" aria-label="Filter by state" data-action-change="filterEvents">
                             <option value="all">All states & territories</option>
                             @foreach($states as $state)
@@ -577,7 +572,7 @@
                     </div>
 
                     <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 0.85rem;">📅</span>
+                        <x-icon name="calendar" size="sm" />
                         <select id="filter-date" class="discovery-select" aria-label="Filter by date" data-action-change="filterEvents">
                             <option value="all">All Dates</option>
                             <option value="weekend">This Weekend</option>
@@ -587,19 +582,19 @@
                     </div>
                     <input id="filter-price-min" class="discovery-select" type="number" min="0" step="0.01" placeholder="Min price $" aria-label="Minimum event price" data-action-input="filterEvents">
                     <input id="filter-price-max" class="discovery-select" type="number" min="0" step="0.01" placeholder="Max price $" aria-label="Maximum event price" data-action-input="filterEvents">
-                    <label style="font-size:0.8rem;color:#CBD5E1"><input id="filter-available" type="checkbox" data-action-change="filterEvents"> Taking orders</label>
+                    <label style="font-size:0.8rem;color:var(--color-ink-2)"><input id="filter-available" type="checkbox" data-action-change="filterEvents"> Taking orders</label>
                 </div>
 
-                <div role="status" aria-live="polite" aria-atomic="true" style="font-size: 0.8rem; color: #94A3B8; font-weight: 600;">
-                    Showing <strong style="color: #FFFFFF;" id="events-count">{{ count($events) }}</strong> events
+                <div role="status" aria-live="polite" aria-atomic="true" style="font-size: 0.8rem; color: var(--color-ink-2); font-weight: 600;">
+                    Showing <strong style="color: var(--color-ink);" id="events-count">{{ count($events) }}</strong> events
                 </div>
             </div>
         </div>
 
         <!-- 3. Category Shortcuts (4 prominent circular buttons) -->
         <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <h2 style="font-size: 1.05rem; font-weight: 800; color: #FFFFFF; margin: 0;">Explore by Category</h2>
-            <button type="button" data-action-click="selectCategory" data-args='["all"]' id="btn-cat-clear" style="background: none; border: none; color: #818CF8; font-size: 0.8rem; font-weight: 600; cursor: pointer;">
+            <h2 style="font-size: 1.05rem; font-weight: 800; color: var(--color-ink); margin: 0;">Explore by Category</h2>
+            <button type="button" data-action-click="selectCategory" data-args='["all"]' id="btn-cat-clear" style="background: none; border: none; color: var(--color-ink-2); font-size: 0.8rem; font-weight: 600; cursor: pointer;">
                 View All
             </button>
         </div>
@@ -607,37 +602,37 @@
         <div class="category-shortcuts-grid">
             <!-- Music -->
             <button type="button" class="category-btn cat-music" data-action-click="selectCategory" data-args='["music"]' id="cat-btn-music">
-                <div class="category-icon-circle">🎵</div>
-                <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Music</div>
-                <div style="font-size: 0.68rem; color: #94A3B8;">Concerts, DJs & live sets</div>
+                <div class="category-icon-circle"><x-icon name="music" /></div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-ink);">Music</div>
+                <div style="font-size: 0.68rem; color: var(--color-ink-2);">Concerts, DJs & live sets</div>
             </button>
 
             <!-- Food -->
             <button type="button" class="category-btn cat-food" data-action-click="selectCategory" data-args='["food"]' id="cat-btn-food">
-                <div class="category-icon-circle">🍲</div>
-                <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Food</div>
-                <div style="font-size: 0.68rem; color: #94A3B8;">Festivals & Cookouts</div>
+                <div class="category-icon-circle"><x-icon name="utensils" /></div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-ink);">Food</div>
+                <div style="font-size: 0.68rem; color: var(--color-ink-2);">Festivals & Cookouts</div>
             </button>
 
             <!-- Sports -->
             <button type="button" class="category-btn cat-sports" data-action-click="selectCategory" data-args='["sports"]' id="cat-btn-sports">
-                <div class="category-icon-circle">⚽</div>
-                <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Sports</div>
-                <div style="font-size: 0.68rem; color: #94A3B8;">Games & Fitness</div>
+                <div class="category-icon-circle"><x-icon name="star" /></div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-ink);">Sports</div>
+                <div style="font-size: 0.68rem; color: var(--color-ink-2);">Games & Fitness</div>
             </button>
 
             <!-- Culture -->
             <button type="button" class="category-btn cat-culture" data-action-click="selectCategory" data-args='["culture"]' id="cat-btn-culture">
-                <div class="category-icon-circle">🎭</div>
-                <div style="font-size: 0.85rem; font-weight: 700; color: #FFFFFF;">Culture</div>
-                <div style="font-size: 0.68rem; color: #94A3B8;">Heritage & Parades</div>
+                <div class="category-icon-circle"><x-icon name="globe" /></div>
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--color-ink);">Culture</div>
+                <div style="font-size: 0.68rem; color: var(--color-ink-2);">Heritage & Parades</div>
             </button>
         </div>
 
         <!-- Explore: photo tiles for each kind of event, each a filtered list of upcoming events -->
         <section class="eb-explore-section" aria-labelledby="explore-tiles-heading">
             <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px;">
-                <h2 id="explore-tiles-heading" style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">Browse by kind of event</h2>
+                <h2 id="explore-tiles-heading" style="font-size: 1.1rem; font-weight: 800; color: var(--color-ink); margin: 0;">Browse by kind of event</h2>
                 @if(request()->filled('kind'))
                     <a href="{{ route('events.index') }}" style="font-size: 0.8rem; font-weight: 600; color: var(--color-accent);">Show all events</a>
                 @endif
@@ -658,8 +653,8 @@
             $featuredBadgeTone = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$featuredAvailability['tone']] ?? 'eb-badge-info';
         @endphp
         <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.1rem;" aria-hidden="true">🔥</span>
-            <h2 style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">Featured Event</h2>
+            <x-icon name="flame" size="sm" />
+            <h2 style="font-size: 1.1rem; font-weight: 800; color: var(--color-ink); margin: 0;">Featured Event</h2>
         </div>
 
         <div class="featured-event-card" id="primary-featured-card">
@@ -669,7 +664,7 @@
                 <x-image-label :image="$featuredCover" />
                 <div class="featured-badge-pill">
                     <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                        <span class="featured-badge-tag">★ FEATURED</span>
+                        <span class="featured-badge-tag">Featured</span>
                         @if($featuredEvent->category)
                             <span class="eb-badge eb-badge-info">{{ $featuredEvent->category }}</span>
                         @endif
@@ -681,8 +676,8 @@
                 </div>
                 <div style="position: absolute; bottom: 16px; left: 18px; right: 18px; z-index: 2;">
                     @if($featuredEvent->tagline)
-                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #CBD5E1;">Highlight</div>
-                        <div style="font-size: 0.95rem; font-weight: 700; color: #FFFFFF;">{{ $featuredEvent->tagline }}</div>
+                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--color-ink-2);">Highlight</div>
+                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--color-ink);">{{ $featuredEvent->tagline }}</div>
                     @endif
                 </div>
             </div>
@@ -691,17 +686,17 @@
                 <div>
                     <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--color-accent); font-weight: 700; margin-bottom: 8px;">
                         @if($featuredEvent->date_str)
-                            <span>📅 {{ $featuredEvent->date_str }}</span>
+                            <span><x-icon name="calendar" size="sm" /> {{ $featuredEvent->date_str }}</span>
                         @endif
                         @if($featuredEvent->date_str && $featuredEvent->time_str)
                             <span aria-hidden="true">&bull;</span>
                         @endif
                         @if($featuredEvent->time_str)
-                            <span>⏰ {{ $featuredEvent->time_str }}</span>
+                            <span><x-icon name="clock" size="sm" /> {{ $featuredEvent->time_str }}</span>
                         @endif
                     </div>
 
-                    <h3 style="font-size: 1.45rem; font-weight: 800; color: #FFFFFF; line-height: 1.25; margin: 0 0 10px;">
+                    <h3 style="font-size: 1.45rem; font-weight: 800; color: var(--color-ink); line-height: 1.25; margin: 0 0 10px;">
                         {{ $featuredEvent->title }}
                     </h3>
 
@@ -713,7 +708,7 @@
 
                     @if($featuredEvent->venue_name || $featuredLocation !== '')
                         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.84rem; color: var(--color-text-secondary); margin-bottom: 16px;">
-                            <span aria-hidden="true">📍</span>
+                            <x-icon name="map-pin" size="sm" />
                             @if($featuredEvent->venue_name)
                                 <span style="font-weight: 700; color: var(--color-text-primary);">{{ $featuredEvent->venue_name }}</span>
                             @endif
@@ -747,7 +742,7 @@
                             </span>
                             @if($featuredEvent->supports_food_ordering)
                                 <div style="font-size: 0.72rem; color: var(--color-accent); font-weight: 700; margin-top: 4px;">
-                                    🍲 Advance food menu available
+                                    <x-icon name="utensils" size="sm" /> Advance food menu available
                                 </div>
                             @endif
                         </div>
@@ -755,7 +750,6 @@
 
                     <a href="{{ route('events.show', $featuredEvent->id) }}" class="btn-gradient-cta" style="width: 100%; box-sizing: border-box;" id="btn-featured-view-cta">
                         <span>View Event &amp; Menu</span>
-                        <span aria-hidden="true">&rarr;</span>
                     </a>
                 </div>
             </div>
@@ -765,8 +759,8 @@
         <!-- 5. Coming Up (Horizontal Collection) -->
         <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
             <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.1rem;" aria-hidden="true">📅</span>
-                <h2 style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">Coming Up</h2>
+                <x-icon name="calendar" size="sm" />
+                <h2 style="font-size: 1.1rem; font-weight: 800; color: var(--color-ink); margin: 0;">Coming Up</h2>
             </div>
             <span style="font-size: 0.78rem; color: var(--color-text-secondary);">Next on the calendar</span>
         </div>
@@ -797,21 +791,21 @@
                         <div style="padding: 16px; display: flex; flex-direction: column; flex: 1; justify-content: space-between; gap: 10px;">
                             <div>
                                 <div style="font-size: 0.75rem; color: var(--color-accent); font-weight: 700; margin-bottom: 4px;">
-                                    📅 {{ $trend->date_str }}
+                                    <x-icon name="calendar" size="sm" /> {{ $trend->date_str }}
                                 </div>
-                                <h3 style="font-size: 0.96rem; font-weight: 800; color: #FFFFFF; line-height: 1.3; margin: 0 0 6px;" class="eb-clamp-2">
+                                <h3 style="font-size: 0.96rem; font-weight: 800; color: var(--color-ink); line-height: 1.3; margin: 0 0 6px;" class="eb-clamp-2">
                                     {{ $trend->title }}
                                 </h3>
                                 @if($trend->venue_name || $trendLocation !== '')
                                     <div style="font-size: 0.78rem; color: var(--color-text-secondary);" class="eb-clamp-2">
-                                        📍 {{ implode(' · ', array_filter([$trend->venue_name, $trendLocation])) }}
+                                        <x-icon name="map-pin" size="sm" /> {{ implode(', ', array_filter([$trend->venue_name, $trendLocation])) }}
                                     </div>
                                 @endif
                             </div>
 
                             <div class="eb-event-card-footer">
                                 <span class="eb-text-price">{{ $trendPrice ?? 'Tickets not on sale' }}</span>
-                                <span class="eb-event-card-cta" aria-hidden="true">Details <span class="eb-event-card-cta-arrow">→</span></span>
+                                <span class="eb-event-card-cta" aria-hidden="true">Details</span>
                             </div>
                         </div>
                     </a>
@@ -821,8 +815,8 @@
 
         <!-- 6. All Events Grid (Search & Filter Results) -->
         <div style="margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between;">
-            <h2 style="font-size: 1.1rem; font-weight: 800; color: #FFFFFF; margin: 0;">All Events</h2>
-            <span style="font-size: 0.78rem; color: #818CF8; font-weight: 600;" id="active-category-display">
+            <h2 style="font-size: 1.1rem; font-weight: 800; color: var(--color-ink); margin: 0;">All Events</h2>
+            <span style="font-size: 0.78rem; color: var(--color-ink-2); font-weight: 600;" id="active-category-display">
                 Category: All
             </span>
         </div>
@@ -839,7 +833,7 @@
                         implode(' ', \App\Services\Discovery\HomeSections::traditions($event)),
                     ])));
                 @endphp
-                <div class="event-item-card" data-search="{{ $search }}" data-category="{{ $catType }}" data-date="{{ $event->date_str ?? '' }}" data-event-date="{{ substr((string) ($event->event_date_iso ?? ''), 0, 10) }}" data-state="{{ $event->state_code ?? '' }}" data-city="{{ strtolower($event->city ?? '') }}" data-zip="{{ $event->zip_code ?? '' }}" data-price="{{ $fromMinor === null ? '' : \App\Support\Money::ofMinor($fromMinor, $event->currency ?: 'USD')->toDecimalString() }}" data-available="{{ in_array($availability['key'], ['on_sale', 'food'], true) ? '1' : '0' }}">
+                <div class="event-item" data-search="{{ $search }}" data-category="{{ $catType }}" data-date="{{ $event->date_str ?? '' }}" data-event-date="{{ substr((string) ($event->event_date_iso ?? ''), 0, 10) }}" data-state="{{ $event->state_code ?? '' }}" data-city="{{ strtolower($event->city ?? '') }}" data-zip="{{ $event->zip_code ?? '' }}" data-price="{{ $fromMinor === null ? '' : \App\Support\Money::ofMinor($fromMinor, $event->currency ?: 'USD')->toDecimalString() }}" data-available="{{ in_array($availability['key'], ['on_sale', 'food'], true) ? '1' : '0' }}">
                     <x-event-card :event="$event" />
                 </div>
             @endforeach
@@ -849,10 +843,10 @@
         </nav>
 
         <!-- Empty Results State -->
-        <div id="no-events-found" style="display: none; background: #162038; border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 20px; padding: 44px 20px; text-align: center; margin: 20px 0;">
+        <div id="no-events-found" style="display: none; background: var(--color-paper-3); border: 1px dashed color-mix(in srgb, var(--color-ink) 15%, transparent); border-radius: 20px; padding: 44px 20px; text-align: center; margin: 20px 0;">
             <img src="{{ \App\Support\VisualAssets::emptyState('events') }}" alt="" class="eb-empty-state-art" width="200" height="138" loading="lazy">
-            <h3 style="font-size: 1.2rem; font-weight: 700; color: #FFFFFF; margin-bottom: 6px;">No Events Found</h3>
-            <p style="font-size: 0.85rem; color: #94A3B8; margin-bottom: 16px;">Try adjusting your search terms or clearing your location and date filters.</p>
+            <h3 style="font-size: 1.2rem; font-weight: 700; color: var(--color-ink); margin-bottom: 6px;">No Events Found</h3>
+            <p style="font-size: 0.85rem; color: var(--color-ink-2); margin-bottom: 16px;">Try adjusting your search terms or clearing your location and date filters.</p>
             <button type="button" data-action-click="clearAllFilters" class="btn-gradient-cta" style="padding: 8px 20px; font-size: 0.82rem; border-radius: 9999px;">
                 Clear All Filters
             </button>
@@ -883,7 +877,7 @@
         const q = (document.getElementById('events-search-input').value || '').toLowerCase().trim();
         const dateFilter = document.getElementById('filter-date').value;
 
-        const cards = document.querySelectorAll('.event-item-card');
+        const cards = document.querySelectorAll('.event-item');
         let visibleCount = 0;
 
         cards.forEach(card => {

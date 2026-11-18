@@ -16,17 +16,17 @@
     ];
 @endphp
 <style>
-    .eb-home { display: flex; flex-direction: column; gap: var(--space-8, 2.5rem); max-width: 1240px; margin: 0 auto; }
-    .eb-home-hero { padding: var(--space-6, 2rem); border-radius: var(--radius-lg, 16px); background: var(--color-surface, #10243A); border: 1px solid var(--color-border, #26384D); }
+    .eb-home { display: flex; flex-direction: column; gap: var(--space-8, var(--space-10)); max-width: 1240px; margin: 0 auto; }
+    .eb-home-hero { padding: var(--space-6, var(--space-8)); border-radius: var(--radius-lg, 16px); background: var(--color-surface, var(--color-paper-3)); border: 1px solid var(--color-border, var(--color-rule)); }
     .eb-home-hero h1 { margin: 0 0 var(--space-2, .5rem); }
     .eb-home-near { display: flex; flex-wrap: wrap; gap: var(--space-3, .75rem); align-items: end; margin: 0; }
     .eb-home-section-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3, .75rem); margin-bottom: var(--space-3, .75rem); }
     .eb-home-markets { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--space-3, .75rem); margin: 0; padding: 0; list-style: none; }
-    .eb-home-markets a { display: block; padding: var(--space-3, .75rem) var(--space-4, 1rem); border-radius: var(--radius-md, 12px); background: var(--color-surface, #10243A); border: 1px solid var(--color-border, #26384D); color: var(--color-text-primary, #F8FAFC); text-decoration: none; }
+    .eb-home-markets a { display: block; padding: var(--space-3, .75rem) var(--space-4, var(--space-4)); border-radius: var(--radius-md, 12px); background: var(--color-surface, var(--color-paper-3)); border: 1px solid var(--color-border, var(--color-rule)); color: var(--color-text-primary, var(--color-ink)); text-decoration: none; }
     .eb-home-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: var(--space-3, .75rem); margin: 0; padding: 0; list-style: none; counter-reset: step; }
-    .eb-home-steps li { padding: var(--space-4, 1rem); border-radius: var(--radius-md, 12px); background: var(--color-background-secondary, #0B192B); border: 1px solid var(--color-border, #26384D); }
-    .eb-home-steps li::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 28px; height: 28px; margin-bottom: var(--space-2, .5rem); border-radius: 50%; background: var(--color-accent-subtle); color: var(--color-accent, #C7FF45); font-weight: 800; font-size: .85rem; }
-    .eb-home-steps strong { display: block; color: var(--color-text-primary, #F8FAFC); }
+    .eb-home-steps li { padding: var(--space-4, var(--space-4)); border-radius: var(--radius-md, 12px); background: var(--color-background-secondary, var(--color-paper-2)); border: 1px solid var(--color-border, var(--color-rule)); }
+    .eb-home-steps li::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 28px; height: 28px; margin-bottom: var(--space-2, .5rem); border-radius: 50%; background: var(--color-accent-subtle); color: var(--color-accent, var(--color-accent)); font-weight: 800; font-size: .85rem; }
+    .eb-home-steps strong { display: block; color: var(--color-text-primary, var(--color-ink)); }
 </style>
 
 <div class="eb-home">
@@ -91,7 +91,7 @@
         <div class="eb-hero-backdrop" aria-hidden="true"></div>
         <div class="eb-home-photo-hero-content">
             <h1 id="home-heading" class="eb-home-photo-hero-title">Discover. Enjoy. <span>Make Memories.</span></h1>
-            <p class="eb-home-photo-hero-kicker">Events <span aria-hidden="true">•</span> Food <span aria-hidden="true">•</span> Culture <span aria-hidden="true">•</span> More</p>
+            <p class="eb-home-photo-hero-kicker"><span>Events</span> <span>Food</span> <span>Culture</span> <span>More</span></p>
             <p class="eb-home-photo-hero-lede">Events, food and culture across the U.S. Find food festivals, cookouts, live music and community celebrations, then buy tickets and order food in one place.</p>
 
             <form method="GET" action="{{ route('events.index') }}" class="eb-home-search" role="search" aria-label="Search events">
@@ -137,7 +137,7 @@
                     <h2 id="upcoming-heading" class="eb-text-section-title" style="margin: 0;">Featured events</h2>
                     <p class="eb-text-supporting" style="margin: 2px 0 0;">Upcoming events in our featured cities, soonest first.</p>
                 </div>
-                <a class="eb-text-label" href="{{ route('events.index') }}">See all →</a>
+                <a class="eb-text-label" href="{{ route('events.index') }}">See all</a>
             </div>
             <div class="eb-event-rows">
                 @foreach($featured as $event)
@@ -169,7 +169,7 @@
                 @foreach($traditions as $label => $count)
                     @php $photoEvent = $traditionPhotos[$label] ?? null; $cuisineArt = $photoEvent ? null : \App\Support\VisualAssets::cuisineForTradition($label); @endphp
                     <li>
-                        <a href="{{ route('events.index', ['q' => $label]) }}" class="eb-tradition-card{{ ($cuisineArt || $photoEvent) ? ' has-art' : '' }}" style="--tint: {{ ['#C7FF45', '#C4B5FD', '#7DD3FC', '#FBBF24', '#4ADE80', '#FCA5A5', '#F472B6'][crc32($label) % 7] }}; --turn: {{ crc32($label) % 360 }}deg;">
+                        <a href="{{ route('events.index', ['q' => $label]) }}" class="eb-tradition-card{{ ($cuisineArt || $photoEvent) ? ' has-art' : '' }}" style="--tint: {{ ['var(--color-accent)', 'var(--color-ink-2)', 'var(--color-info)', 'var(--color-warning)', 'var(--color-success)', 'var(--color-error)', 'var(--color-ink-2)'][crc32($label) % 7] }}; --turn: {{ crc32($label) % 360 }}deg;">
                             {{-- Illustrated cuisine artwork where one fits the tradition; decorative, the name says what it is. --}}
                             <span class="eb-tradition-art" aria-hidden="true">@if($photoEvent)<x-responsive-image :image="$photoEvent->coverImage()" alt="" sizes="240px" />@elseif($cuisineArt)<img src="{{ $cuisineArt['url'] }}" alt="" width="800" height="600" loading="lazy" decoding="async">@endif</span>
                             <span class="eb-tradition-name">{{ $label }}</span>
@@ -190,7 +190,7 @@
             <ul class="eb-tradition-cards">
                 @foreach($collections as $collection)
                     <li>
-                        <a href="{{ route('events.index', ['kind' => $collection['key']]) }}" class="eb-tradition-card{{ $collection['image'] ? ' has-art' : '' }}" style="--tint: {{ ['#C7FF45', '#C4B5FD', '#7DD3FC', '#FBBF24'][crc32($collection['key']) % 4] }}; --turn: {{ crc32($collection['key']) % 360 }}deg; position: relative;">
+                        <a href="{{ route('events.index', ['kind' => $collection['key']]) }}" class="eb-tradition-card{{ $collection['image'] ? ' has-art' : '' }}" style="--tint: {{ ['var(--color-accent)', 'var(--color-ink-2)', 'var(--color-info)', 'var(--color-warning)'][crc32($collection['key']) % 4] }}; --turn: {{ crc32($collection['key']) % 360 }}deg; position: relative;">
                             {{-- An illustrative library photo of this kind of event, labelled; the name says what the collection is. --}}
                             <span class="eb-tradition-art" aria-hidden="true">@if($collection['image'])<x-responsive-image :image="$collection['image']" alt="" sizes="240px" />@endif</span>
                             <span class="eb-tradition-name">{{ $collection['label'] }}</span>
@@ -207,7 +207,7 @@
         <section aria-labelledby="near-heading">
             <div class="eb-home-section-head">
                 <h2 id="near-heading" class="eb-text-section-title" style="margin: 0;">Near {{ $market->city }}, {{ $market->state_code }}</h2>
-                <a class="eb-text-label" href="{{ route('events.index', ['city' => $marketValue($market)]) }}">See all in {{ $market->city }} →</a>
+                <a class="eb-text-label" href="{{ route('events.index', ['city' => $marketValue($market)]) }}">See all in {{ $market->city }}</a>
             </div>
             @if($near->isEmpty())
                 <x-empty-state illustration="events" title="No upcoming events in {{ $market->state_code }} yet" description="Try another city, or browse every event." />
@@ -233,7 +233,7 @@
                     @if($section['note'])<p class="eb-text-supporting" style="margin: 2px 0 0;">{{ $section['note'] }}</p>@endif
                     </div>
                 </div>
-                @if($section['more'])<a class="eb-text-label" href="{{ $section['more'] }}">See all →</a>@endif
+                @if($section['more'])<a class="eb-text-label" href="{{ $section['more'] }}">See all</a>@endif
             </div>
             <div class="eb-grid-4 eb-home-rail">
                 @foreach($section['events'] as $event)

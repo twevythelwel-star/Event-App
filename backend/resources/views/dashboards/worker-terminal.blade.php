@@ -214,7 +214,7 @@
             </form>
 
             <p id="food_message" role="status" aria-live="polite" class="eb-help-text" style="margin-top: 1rem; font-size: 0.9rem;"></p>
-            <div id="food_order" hidden style="margin-top: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1rem; background: rgba(7, 15, 28, 0.72);">
+            <div id="food_order" hidden style="margin-top: 0.75rem; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 1rem; background: color-mix(in srgb, var(--color-paper) 72%, transparent);">
                 <div class="eb-cluster" style="justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
                     <strong id="food_order_title" style="font-size: 1rem; color: var(--color-text-primary);"></strong>
                     <span id="food_order_badge" class="eb-badge"></span>

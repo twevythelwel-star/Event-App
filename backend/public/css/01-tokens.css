@@ -1,122 +1,133 @@
+/* Hallmark · shape: app screen · genre: editorial · theme: brand · redesign: restyle
+ * paper: oklch(17.6% 0.033 256) · accent: oklch(93% 0.211 125) · display: Rethink Sans · body: Figtree · hero: kept · nav: kept · footer: kept · signature: kept
+ * axes: dark/grotesk-sans/chromatic-lime · posture: kept · contrast: pass · fold: kept · v2.0.0 */
+/* Hallmark · pre-emit critique: P2 H2 E2 S3 R2 V2 · weakest: R, the 3D-soft-realism gradients, glows and bevels became flat navy tiers with hairline rules and one lime signal; layouts are kept as they were */
+/* Hallmark · kept on purpose (48, still reported) · the collectible ticket designs (.eb-ticket-skin, [data-design], [data-accent], [data-bg], [data-mode]), the payment-provider marks (.eb-payment-icon[data-method]) and the venue-map area colours ([data-kind]) keep their own palettes: they are ticket artwork, third-party brand colours and a categorical key, not the app's system */
+/* Hallmark · kept on purpose (7a, still reported) · the QR quiet zone (.eb-ticket-qr-well) stays pure white so scanners read it */
+/* Hallmark · kept on purpose (63, still reported) · "Keepsake · Not valid for entry", the theme kicker, seat lists and admin gate labels are pinned by tests (TicketCollectionTest, TicketThemeTest, VenueSeatingTest, EventPublicationGatesTest); copy changes there are the owner's call */
+/* Hallmark · kept on purpose (67, still reported) · .eb-ticket-skin-kicker and .eb-ticket-theme-kicker are part of the collectible ticket artwork */
+@import url("./tokens.css");
+@import url("./base.css");
+
 /* ==========================================================================
-   EVENTBITE DESIGN SYSTEM — MODULE 01: CENTRALIZED DESIGN TOKENS
-   Aesthetic Direction: 3D Soft Realism & Dark Mode Elevation
+   EVENTBITE DESIGN SYSTEM — MODULE 01: TOKENS
+   The app's own token names, mapped onto the brand tokens in tokens.css. Flat navy tiers, hairline rules,
+   one lime signal; no ambient glows, bevels or 3D gradients.
    ========================================================================== */
 
 :root {
-  /* ------------------------------------------------------------------------
-     1. Core Dark Mode Elevation Hierarchy (WCAG 2.1 AA/AAA Contrast Verified)
-     ------------------------------------------------------------------------ */
-  --color-surface-recessed: #050C17;     /* Tier 0: Sunken wells, inputs, tracks (L = 0.0052) */
-  --color-background: #07111F;           /* Tier 1: Primary abyssal canvas (L = 0.0080) */
-  --color-background-secondary: #0B192B; /* Tier 2: Secondary surface / sidebar / rails (L = 0.0144) */
-  --color-surface: #10243A;              /* Tier 3: Standard elevated cards / panels / tables (L = 0.0232) */
-  --color-surface-elevated: #152C45;     /* Tier 4: Hover cards / modals / sticky bars (L = 0.0319) */
-  --color-surface-floating: #1B3756;     /* Tier 5: Highest elevation popovers / active pills (L = 0.0435) */
+  /* 1. Surfaces (navy elevation tiers) */
+  --color-surface-recessed: var(--color-paper-sunk);
+  --color-background: var(--color-paper);
+  --color-background-secondary: var(--color-paper-2);
+  --color-surface: var(--color-paper-3);
+  --color-surface-elevated: var(--color-paper-4);
+  --color-surface-floating: var(--color-paper-5);
 
-  /* 3D Soft Realism Surface Gradients & Specular Lighting */
-  --gradient-canvas-ambient:
-    radial-gradient(ellipse 80% 50% at 15% -10%, rgba(199, 255, 69, 0.055), transparent 60%),
-    radial-gradient(ellipse 70% 50% at 88% 12%, rgba(139, 92, 246, 0.065), transparent 62%),
-    linear-gradient(180deg, #07111F 0%, #060E1A 100%);
-  --gradient-surface-3d: linear-gradient(165deg, rgba(24, 49, 77, 0.92) 0%, rgba(14, 32, 52, 0.98) 100%);
-  --gradient-surface-elevated-3d: linear-gradient(165deg, rgba(31, 61, 94, 0.95) 0%, rgba(18, 39, 63, 0.98) 100%);
-  --gradient-surface-recessed-3d: linear-gradient(180deg, #050C17 0%, #091525 100%);
-  --gradient-accent-3d: linear-gradient(180deg, #DAFF6B 0%, #C7FF45 52%, #AFE928 100%);
-  --gradient-accent-hover-3d: linear-gradient(180deg, #E5FF8F 0%, #D7FF77 52%, #C0F63E 100%);
-  --gradient-secondary-btn-3d: linear-gradient(180deg, #18324F 0%, #10243A 100%);
-  --gradient-secondary-btn-hover-3d: linear-gradient(180deg, #1E3D5F 0%, #152C45 100%);
+  /* Former 3D gradients: kept as names, now flat fills, so every rule that used them keeps working. */
+  --gradient-canvas-ambient: linear-gradient(var(--color-paper), var(--color-paper));
+  --gradient-surface-3d: linear-gradient(var(--color-paper-3), var(--color-paper-3));
+  --gradient-surface-elevated-3d: linear-gradient(var(--color-paper-4), var(--color-paper-4));
+  --gradient-surface-recessed-3d: linear-gradient(var(--color-paper-sunk), var(--color-paper-sunk));
+  --gradient-accent-3d: linear-gradient(var(--color-accent), var(--color-accent));
+  --gradient-accent-hover-3d: linear-gradient(var(--color-accent-hi), var(--color-accent-hi));
+  --gradient-secondary-btn-3d: linear-gradient(var(--color-paper-4), var(--color-paper-4));
+  --gradient-secondary-btn-hover-3d: linear-gradient(var(--color-paper-5), var(--color-paper-5));
 
-  /* Specular Rim Highlights (Top-Lit 3D Soft Realism) */
-  --rim-light-subtle: rgba(255, 255, 255, 0.07);
-  --rim-light-strong: rgba(255, 255, 255, 0.14);
-  --rim-shade-bottom: rgba(0, 0, 0, 0.45);
+  /* Former specular rims: retired (transparent), borders carry the edges now. */
+  --rim-light-subtle: transparent;
+  --rim-light-strong: transparent;
+  --rim-shade-bottom: transparent;
 
-  /* Primary Electric Lime Accent (16.51:1 on #07111F, 11.42:1 on #14210A) */
-  --color-accent: #C7FF45;
-  --color-accent-hover: #D7FF77;
-  --color-accent-active: #B2EE2B;
-  --color-accent-text: #14210A;
-  --color-accent-subtle: rgba(199, 255, 69, 0.12);
-  --color-accent-border: rgba(199, 255, 69, 0.35);
+  /* Lime: the one signal. */
+  --color-accent-hover: var(--color-accent-hi);
+  --color-accent-active: var(--color-accent-lo);
+  --color-accent-text: var(--color-accent-ink);
+  --color-accent-subtle: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --color-accent-border: color-mix(in srgb, var(--color-accent) 35%, transparent);
 
-  /* Secondary Purple Accent (Selective accents, provider badges, differentiation) */
-  --color-purple: #8B5CF6;
-  --color-purple-text: #C4B5FD;          /* 10.45:1 on #07111F, 7.64:1 on #152C45 */
-  --color-purple-surface: rgba(139, 92, 246, 0.14);
-  --color-purple-border: rgba(139, 92, 246, 0.38);
+  /* Former purple secondary: now a quiet cool neutral, so lime stays the only colour. */
+  --color-purple: var(--color-ink-2);
+  --color-purple-text: var(--color-ink-2);
+  --color-purple-surface: color-mix(in srgb, var(--color-ink-2) 10%, transparent);
+  --color-purple-border: color-mix(in srgb, var(--color-ink-2) 30%, transparent);
 
-  /* Typography Colors */
-  --color-text-primary: #F8FAFC;         /* 18.29:1 on #07111F, 13.38:1 on #152C45 (AAA) */
-  --color-text-secondary: #A8B6C8;       /* 9.48:1 on #07111F, 6.94:1 on #152C45 (AA/AAA) */
-  --color-text-muted: #8494A8;           /* 6.18:1 on #07111F, 4.52:1 on #152C45 (AA) */
-  --color-text-inverse: #07111F;
+  /* Text */
+  --color-text-primary: var(--color-ink);
+  --color-text-secondary: var(--color-ink-2);
+  --color-text-muted: var(--color-muted);
+  --color-text-inverse: var(--color-paper);
 
-  /* Borders & Dividers */
-  --color-border: #26384D;
-  --color-border-subtle: rgba(168, 182, 200, 0.12);
-  --color-border-strong: #364F6B;
-  --color-border-focus: #C7FF45;
+  /* Borders */
+  --color-border: var(--color-rule);
+  --color-border-subtle: color-mix(in srgb, var(--color-ink-2) 12%, transparent);
+  --color-border-strong: var(--color-rule-strong);
+  --color-border-focus: var(--color-focus);
 
-  /* Semantic Status Colors (Always paired with explicit textual labels) */
-  --color-success: #22C55E;
-  --color-success-text: #4ADE80;         /* 9.95:1 on #10243A */
-  --color-success-bg: rgba(34, 197, 94, 0.14);
-  --color-success-border: rgba(34, 197, 94, 0.38);
+  /* Status (always paired with a written label) */
+  --color-success-text: var(--color-success-ink);
+  --color-success-bg: color-mix(in srgb, var(--color-success) 14%, transparent);
+  --color-success-border: color-mix(in srgb, var(--color-success) 38%, transparent);
+  --color-warning-text: var(--color-warning-ink);
+  --color-warning-bg: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  --color-warning-border: color-mix(in srgb, var(--color-warning) 38%, transparent);
+  --color-error-text: var(--color-error-ink);
+  --color-error-bg: color-mix(in srgb, var(--color-error) 14%, transparent);
+  --color-error-border: color-mix(in srgb, var(--color-error) 42%, transparent);
+  --color-danger: var(--color-error);
+  --color-info-text: var(--color-info-ink);
+  --color-info-bg: color-mix(in srgb, var(--color-info) 14%, transparent);
+  --color-info-border: color-mix(in srgb, var(--color-info) 35%, transparent);
 
-  --color-warning: #F59E0B;
-  --color-warning-text: #FBBF24;         /* 10.32:1 on #10243A */
-  --color-warning-bg: rgba(245, 158, 11, 0.14);
-  --color-warning-border: rgba(245, 158, 11, 0.38);
+  /* QR quiet zone: must stay pure white for scanners. */
+  --color-qr-surface: var(--color-qr-white);
+  --color-qr-ink: var(--color-paper);
 
-  --color-error: #EF4444;
-  --color-error-text: #FCA5A5;           /* 9.35:1 on #152C45 for small validation text */
-  --color-error-bg: rgba(239, 68, 68, 0.14);
-  --color-error-border: rgba(239, 68, 68, 0.42);
-  --color-danger: #EF4444;
+  /* Translucent tones the components use (borders, washes, overlays), all from the brand tokens. */
+  --tone-ink-04: color-mix(in srgb, var(--color-ink) 4%, transparent);
+  --tone-ink-08: color-mix(in srgb, var(--color-ink) 8%, transparent);
+  --tone-ink-12: color-mix(in srgb, var(--color-ink) 12%, transparent);
+  --tone-ink-20: color-mix(in srgb, var(--color-ink) 20%, transparent);
+  --tone-ink-40: color-mix(in srgb, var(--color-ink) 40%, transparent);
+  --tone-ink-70: color-mix(in srgb, var(--color-ink) 70%, transparent);
+  --tone-ink-90: color-mix(in srgb, var(--color-ink) 90%, transparent);
+  --tone-shade-35: color-mix(in srgb, var(--color-shade) 35%, transparent);
+  --tone-shade-55: color-mix(in srgb, var(--color-shade) 55%, transparent);
+  --tone-shade-75: color-mix(in srgb, var(--color-shade) 75%, transparent);
+  --tone-paper-80: color-mix(in srgb, var(--color-paper) 80%, transparent);
+  --tone-paper-94: color-mix(in srgb, var(--color-paper-2) 94%, transparent);
+  --tone-accent-08: color-mix(in srgb, var(--color-accent) 8%, transparent);
+  --tone-accent-16: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  --tone-accent-30: color-mix(in srgb, var(--color-accent) 30%, transparent);
 
-  --color-info: #38BDF8;
-  --color-info-text: #7DD3FC;
-  --color-info-bg: rgba(56, 189, 248, 0.14);
-  --color-info-border: rgba(56, 189, 248, 0.35);
-
-  /* High-Contrast Optical QR Quiet Zone */
-  --color-qr-surface: #FFFFFF;
-  --color-qr-ink: #07111F;
-
-  /* ------------------------------------------------------------------------
-     2. Typography Tokens
-     ------------------------------------------------------------------------ */
-  --font-display: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* 2. Typography: Rethink Sans for display, Figtree for everything read. */
+  --font-sans: var(--font-body);
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  --text-display-size: clamp(1.875rem, 3.5vw, 2.75rem);     /* 30px - 44px */
-  --text-page-size: clamp(1.5rem, 2.5vw, 2rem);             /* 24px - 32px */
-  --text-section-size: clamp(1.1875rem, 1.8vw, 1.4375rem);  /* 19px - 23px */
-  --text-card-size: 1.0625rem;                              /* 17px */
-  --text-body-size: 0.9375rem;                              /* 15px */
-  --text-supporting-size: 0.84375rem;                       /* 13.5px */
-  --text-label-size: 0.8125rem;                             /* 13px */
-  --text-button-size: 0.875rem;                             /* 14px */
-  --text-price-size: 1.125rem;                              /* 18px */
-  --text-metric-size: clamp(1.625rem, 2.5vw, 2.125rem);     /* 26px - 34px */
-  --text-ticket-size: 0.9375rem;                            /* 15px */
-  --text-timestamp-size: 0.8125rem;                         /* 13px */
-  --text-status-size: 0.75rem;                              /* 12px */
+  --text-display-size: clamp(2rem, 3.5vw, 3rem);
+  --text-page-size: clamp(1.625rem, 2.5vw, 2.125rem);
+  --text-section-size: clamp(1.25rem, 1.8vw, 1.5rem);
+  --text-card-size: 1.125rem;
+  --text-body-size: 1rem;
+  --text-supporting-size: 0.9375rem;
+  --text-label-size: 0.875rem;
+  --text-button-size: 0.9375rem;
+  --text-price-size: 1.125rem;
+  --text-metric-size: clamp(1.75rem, 2.5vw, 2.25rem);
+  --text-ticket-size: 1rem;
+  --text-timestamp-size: 0.875rem;
+  --text-status-size: 0.8125rem;
 
-  /* ------------------------------------------------------------------------
-     3. Spacing & Layout Scale (4px Base Grid)
-     ------------------------------------------------------------------------ */
-  --space-1: 0.25rem;   /* 4px */
-  --space-2: 0.5rem;    /* 8px */
-  --space-3: 0.75rem;   /* 12px */
-  --space-4: 1rem;      /* 16px */
-  --space-5: 1.25rem;   /* 20px */
-  --space-6: 1.5rem;    /* 24px */
-  --space-8: 2rem;      /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
+  /* 3. Spacing & layout (4px grid) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
 
   --layout-page-padding-x: clamp(1rem, 3vw, 2rem);
   --layout-page-padding-y: clamp(1.25rem, 2.5vw, 2rem);
@@ -135,67 +146,29 @@
   --table-cell-padding-y: 0.875rem;
   --table-cell-padding-x: 1rem;
 
-  /* ------------------------------------------------------------------------
-     4. Radii, Borders & 3D Soft Realism Elevation Shadows
-     ------------------------------------------------------------------------ */
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
-  --radius-pill: 9999px;
+  /* 4. Radii, borders, elevation: one radius per level, flat surfaces, shadow only on overlays. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
 
-  /* Image ratios: one shape per kind of image, everywhere it appears */
-  --ratio-banner: 21 / 9;   /* wide headers: event page banner, ticket header */
-  --ratio-event: 16 / 10;   /* event covers: cards, the homepage feature, review */
-  --ratio-photo: 4 / 3;     /* food and gallery photos */
-  --ratio-square: 1 / 1;    /* thumbnails */
+  --ratio-banner: 21 / 9;
+  --ratio-event: 16 / 10;
+  --ratio-photo: 4 / 3;
+  --ratio-square: 1 / 1;
 
-  /* Multi-layered 3D Soft Realism Shadows (Top Specular Bevel + Bottom Contact + Ambient Depth) */
-  --shadow-3d-inset:
-    inset 0 2px 5px rgba(2, 6, 14, 0.65),
-    inset 0 1px 2px rgba(2, 6, 14, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.05);
-  --shadow-subtle:
-    inset 0 1px 0 rgba(255, 255, 255, 0.07),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
-    0 6px 18px -4px rgba(2, 6, 14, 0.52),
-    0 2px 6px -1px rgba(2, 6, 14, 0.38);
-  --shadow-card:
-    inset 0 1px 0 rgba(255, 255, 255, 0.09),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
-    0 12px 30px -6px rgba(2, 6, 14, 0.65),
-    0 4px 10px -2px rgba(2, 6, 14, 0.48);
-  --shadow-elevated:
-    inset 0 1px 0 rgba(255, 255, 255, 0.13),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
-    0 20px 44px -10px rgba(2, 6, 14, 0.76),
-    0 8px 18px -4px rgba(2, 6, 14, 0.55);
-  --shadow-modal:
-    inset 0 1px 0 rgba(255, 255, 255, 0.15),
-    0 28px 64px -12px rgba(2, 6, 14, 0.88),
-    0 10px 24px -6px rgba(2, 6, 14, 0.65);
-  --shadow-btn-primary:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.58),
-    inset 0 -2px 0 rgba(20, 33, 10, 0.28),
-    0 6px 18px -3px rgba(199, 255, 69, 0.28),
-    0 2px 5px rgba(2, 6, 14, 0.45);
-  --shadow-btn-primary-hover:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.68),
-    inset 0 -2px 0 rgba(20, 33, 10, 0.32),
-    0 10px 24px -4px rgba(199, 255, 69, 0.38),
-    0 4px 8px rgba(2, 6, 14, 0.5);
-  --shadow-btn-secondary:
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.42),
-    0 4px 12px -2px rgba(2, 6, 14, 0.48);
-  --shadow-focus:
-    0 0 0 3px rgba(199, 255, 69, 0.34),
-    inset 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-3d-inset: none;
+  --shadow-subtle: none;
+  --shadow-card: none;
+  --shadow-elevated: 0 12px 32px -12px var(--tone-shade-75);
+  --shadow-modal: 0 24px 56px -16px var(--tone-shade-75);
+  --shadow-btn-primary: none;
+  --shadow-btn-primary-hover: none;
+  --shadow-btn-secondary: none;
+  --shadow-focus: 0 0 0 2px var(--color-focus);
 
-  /* ------------------------------------------------------------------------
-     5. Motion & Interaction Timing
-     ------------------------------------------------------------------------ */
+  /* 5. Motion & interaction timing */
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --duration-fast: 140ms;

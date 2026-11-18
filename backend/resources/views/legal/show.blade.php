@@ -6,7 +6,7 @@
 @push('head')
 <style>
     .eb-legal a:not([class]) { color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; }
-    .eb-legal-body h2 { font-size: 1.05rem; margin: 1.25rem 0 0.4rem; }
+    .eb-legal-body h2 { font-size: 1.05rem; margin: var(--space-5) 0 0.4rem; }
     .eb-legal-body p, .eb-legal-body li { line-height: 1.6; margin: 0 0 0.6rem; }
 </style>
 @endpush

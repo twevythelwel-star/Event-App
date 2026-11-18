@@ -47,7 +47,7 @@
         <section class="ac-card" style="margin-top:16px">
             <div class="ac-card-head"><h2>Awaiting review ({{ $pending->count() }})</h2></div>
             @foreach($pending as $photo)
-                <article class="ac-card-body" style="border-top:1px solid var(--ac-border,#233);display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:16px">
+                <article class="ac-card-body" style="border-top:1px solid var(--ac-border,var(--color-paper-4));display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:16px">
                     <img src="{{ $photo->url(['variant' => 'medium', 'format' => 'webp']) }}" alt="{{ $photo->alt_text }}" style="width:100%;height:auto;border-radius:8px;object-fit:cover;object-position:{{ $photo->focal_x }}% {{ $photo->focal_y }}%">
                     <div>
                         <strong>{{ $photo->title }}</strong> <span class="ac-badge warning">{{ $photo->subjectLabel() }}</span>
@@ -85,7 +85,7 @@
                 <input id="lp-photo" class="ac-input" type="file" name="photo" accept=".jpg,.jpeg,.png,.webp" required></div>
             <div id="lp-preview-wrap" hidden style="position:relative;max-width:480px">
                 <img id="lp-preview" alt="Preview of the photo to upload. Click it to set the focal point." style="width:100%;border-radius:8px;cursor:crosshair">
-                <span id="lp-focus" aria-hidden="true" style="position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid #C7FF45;border-radius:50%;left:50%;top:50%"></span>
+                <span id="lp-focus" aria-hidden="true" style="position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border:2px solid var(--color-accent);border-radius:50%;left:50%;top:50%"></span>
                 <p class="ac-hint">Click the photo where its subject is: cropped versions keep that point in view.</p>
             </div>
             <div class="ac-field"><label for="lp-subject">Kind of event it shows</label>

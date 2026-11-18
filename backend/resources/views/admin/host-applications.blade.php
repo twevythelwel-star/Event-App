@@ -72,7 +72,7 @@
                 subtitle="Private encrypted identity submissions. Every document view or status transition is recorded in the PII security audit log.">
             <div class="eb-stack" style="gap: var(--space-4);">
                 @foreach($identityVerifications as $verification)
-                    <div class="eb-card" style="padding: 1rem; border: 1px solid var(--border-default, #cbd5e1); border-radius: 10px;">
+                    <div class="eb-card" style="padding: 1rem; border: 1px solid var(--border-default, var(--color-ink-2)); border-radius: 10px;">
                         <dl class="eb-grid-3" style="margin: 0 0 0.75rem;">
                             <div><dt class="eb-text-label">Host / Applicant</dt><dd style="margin: 0; font-weight: 700;">{{ $verification->legal_full_name }} ({{ $verification->user?->email ?? '—' }})</dd></div>
                             <div><dt class="eb-text-label">Status</dt><dd style="margin: 0;">{{ $verification->statusEnum()->label() }}</dd></div>

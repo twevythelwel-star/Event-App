@@ -7,7 +7,7 @@
             id="livewire_role_select" 
             wire:model.live="activeRole" 
             wire:change="switchRole($event.target.value)"
-            style="background: rgba(255, 255, 255, 0.08); color: white; border: 1px solid var(--border-color); padding: 0.35rem 0.65rem; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer;"
+            style="background: color-mix(in srgb, var(--color-ink) 8%, transparent); color: white; border: 1px solid var(--border-color); padding: 0.35rem 0.65rem; border-radius: 6px; font-size: 0.82rem; font-weight: 600; cursor: pointer;"
         >
             @foreach($authorizedRoles as $role)
                 <option value="{{ $role }}">

@@ -14,7 +14,7 @@
                    description="Change details, tickets and the flyer. Publishing makes the event visible and lets people buy tickets."
                    :breadcrumbs="['Host dashboard' => route('host.dashboard'), $event->title => null]">
         <x-slot:actions>
-            <x-button variant="secondary" size="sm" icon="eye" :href="route('events.preview', $event->id)">👁️ Preview</x-button>
+            <x-button variant="secondary" size="sm" icon="eye" :href="route('events.preview', $event->id)">Preview</x-button>
             <x-button variant="ghost" size="sm" :href="route('events.show', $event->id)">View public page</x-button>
             <x-button variant="secondary" size="sm" icon="staff" :href="route('host.events.staff', $event->id)">Staff</x-button>
             @if($event->status === 'published')
@@ -144,7 +144,7 @@
     @endif
 
     @if($event->status !== 'cancelled')
-        <section class="eb-card card" aria-labelledby="cancel-event-heading" style="border-color: var(--color-danger, #DC2626);">
+        <section class="eb-card card" aria-labelledby="cancel-event-heading" style="border-color: var(--color-danger, var(--color-error));">
             <div class="eb-card-header card-header"><div>
                 <h2 id="cancel-event-heading" class="eb-card-title card-title">Cancel this event</h2>
                 <p class="eb-card-subtitle card-subtitle">Cancelling takes the event out of discovery and stops all ticket and food sales. It cannot be undone: to run it again, create a new event. Existing orders and tickets are kept so you can refund them.</p>
@@ -155,7 +155,7 @@
                 <div class="eb-form-group">
                     <label class="eb-label" for="cancel-reason">Reason (kept in the audit log)</label>
                     <textarea id="cancel-reason" name="reason" class="eb-input" rows="2" minlength="5" maxlength="500" required>{{ old('reason') }}</textarea>
-                    @error('reason')<p class="eb-help-text" style="color: var(--color-danger, #DC2626);">{{ $message }}</p>@enderror
+                    @error('reason')<p class="eb-help-text" style="color: var(--color-danger, var(--color-error));">{{ $message }}</p>@enderror
                 </div>
                 <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Cancel event</button>
             </form>

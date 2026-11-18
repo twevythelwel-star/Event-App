@@ -64,7 +64,7 @@
 
     // Ticket type summary label
     $ticketTypeSummary = match (true) {
-        $tickets->isNotEmpty() => $tickets->map(fn ($i) => $i->quantity . ' × ' . $i->name)->join(' · '),
+        $tickets->isNotEmpty() => $tickets->map(fn ($i) => $i->quantity . ' × ' . $i->name)->join(', '),
         $food->isNotEmpty() => 'Advance Food Pre-Order Pass',
         default => 'General Event Pass',
     };
@@ -124,7 +124,7 @@
             @if($ticketKeepsake)
                 <figure class="eb-ticket-keepsake">
                     <x-responsive-image :image="$ticketKeepsake->responsiveImage()" :alt="$ticketKeepsake->alt_text" sizes="(min-width: 640px) 560px, 100vw" />
-                    <figcaption>From this event · {{ $ticketKeepsake->alt_text }}</figcaption>
+                    <figcaption>From this event: {{ $ticketKeepsake->alt_text }}</figcaption>
                 </figure>
             @endif
         @endif
@@ -150,7 +150,7 @@
                         <div class="eb-ticket-meta-cell">
                             <span class="eb-ticket-meta-label"><x-icon name="calendar" size="sm" /> Date &amp; Time</span>
                             <span class="eb-ticket-meta-val">
-                                {{ collect([\App\Services\ReceiptService::eventDate($event), \App\Services\ReceiptService::eventTime($event)])->filter()->implode(' · ') }}
+                                {{ collect([\App\Services\ReceiptService::eventDate($event), \App\Services\ReceiptService::eventTime($event)])->filter()->implode(', ') }}
                             </span>
                         </div>
                         <div class="eb-ticket-meta-cell">
@@ -225,7 +225,7 @@
                             <svg class="eb-icon eb-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path class="eb-check-draw" d="M20 6L9 17l-5-5" />
                             </svg>
-                            <span>Official Attendee Admission Pass · Scan at Gate</span>
+                            <span>Official attendee admission pass. Scan at the gate.</span>
                         </div>
                         {{-- High-contrast, unobstructed QR well: pure white quiet zone, zero decorative graphics over QR modules --}}
                         <div class="eb-ticket-qr-frame">
@@ -234,7 +234,7 @@
                             </div>
                         </div>
                         <p class="eb-help-text" style="margin: var(--space-2) 0 0; text-align: center;">
-                            Single-use admission QR{{ $admissionWindow ? ' · valid ' . $admissionWindow : '' }}. Food items are collected separately by event staff.
+                            Single-use admission QR{{ $admissionWindow ? ', valid ' . $admissionWindow : '' }}. Food items are collected separately by event staff.
                         </p>
                     @else
                         <img src="{{ \App\Support\VisualAssets::illustration('payment')['url'] }}" alt="" width="180" height="135" style="display: block; margin: 0 auto var(--space-2); max-width: 60%; height: auto;">
@@ -251,10 +251,10 @@
                         <div class="eb-ticket-serial-sub">
                             <span>Order {{ $order->order_number }}</span>
                             @if($order->created_at)
-                                <span>· Placed {{ $local($order->created_at) }}</span>
+                                <span>Placed {{ $local($order->created_at) }}</span>
                             @endif
                             @if((int) ($order->token_version ?? 1) > 1)
-                                <span>· QR v{{ (int) $order->token_version }}{{ $order->token_reissued_at ? ' (reissued ' . $local($order->token_reissued_at) . ')' : '' }}</span>
+                                <span>QR v{{ (int) $order->token_version }}{{ $order->token_reissued_at ? ' (reissued ' . $local($order->token_reissued_at) . ')' : '' }}</span>
                             @endif
                         </div>
                         <div class="eb-ticket-serial-actions" data-no-print>
@@ -316,10 +316,10 @@
             @endif
 
             <p class="eb-help-text" style="margin: 0;">
-                Payment: {{ \App\Support\PaymentStatusPresenter::label($status) }} · {{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }} · {{ $currency }}
-                @if($order->payment_reference && \App\Payments\PaymentMethods::isManual($order->method)) · your reference {{ $order->payment_reference }}@endif
+                Payment: {{ \App\Support\PaymentStatusPresenter::label($status) }}, {{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }}, {{ $currency }}
+                @if($order->payment_reference && \App\Payments\PaymentMethods::isManual($order->method)), your reference {{ $order->payment_reference }}@endif
             </p>
-            <p class="eb-help-text" style="margin: 0;">Order {{ $order->order_number }} · placed {{ $local($order->created_at) }}</p>
+            <p class="eb-help-text" style="margin: 0;">Order {{ $order->order_number }}, placed {{ $local($order->created_at) }}</p>
 
             @if(!$void && !$settled && $order->reservation_expires_at)
                 <p class="eb-help-text" style="margin: 0;">Inventory held until {{ $local($order->reservation_expires_at) }}. Complete payment confirmation before this time to keep this reservation.</p>
@@ -327,7 +327,7 @@
 
             @php $ticketSponsors = $event ? app(\App\Services\Events\PartnersService::class)->sponsorsFor($event, 'ticket') : collect(); @endphp
             @if($ticketSponsors->isNotEmpty())
-                <p class="eb-ticket-sponsors"><span class="eb-text-label">With thanks to</span> {{ $ticketSponsors->pluck('name')->join(' · ') }}</p>
+                <p class="eb-ticket-sponsors"><span class="eb-text-label">With thanks to</span> {{ $ticketSponsors->pluck('name')->join(', ') }}</p>
             @endif
 
             <div class="eb-ticket-card-brand">

@@ -45,7 +45,7 @@
             @endif
 
             @if($existingApplication && $existingApplication->isPending() && $idStatusEnum !== \App\Enums\HostVerificationStatus::APPROVED)
-                <form action="{{ route('host.verification.store') }}" method="POST" enctype="multipart/form-data" class="eb-stack" style="gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-default, #cbd5e1);">
+                <form action="{{ route('host.verification.store') }}" method="POST" enctype="multipart/form-data" class="eb-stack" style="gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-default, var(--color-ink-2));">
                     @csrf
                     <div class="eb-grid-3">
                         <x-form-field name="legal_full_name" label="Legal full name" :required="true"
@@ -99,7 +99,7 @@
                               :value="$existingApplication?->description"
                               help="The kind of events, how often, and roughly how many guests." />
 
-                <div class="eb-card" style="padding: 1.25rem; background: var(--surface-subtle, #f8fafc); border: 1px solid var(--border-default, #cbd5e1); border-radius: 12px;">
+                <div class="eb-card" style="padding: 1.25rem; background: var(--surface-subtle, var(--color-ink)); border: 1px solid var(--border-default, var(--color-ink-2)); border-radius: 12px;">
                     <h3 style="margin: 0 0 0.5rem; font-size: 1rem; font-weight: 800;">Host Identity Verification &amp; Permit Disclosures</h3>
                     <p class="eb-help-text" style="margin: 0 0 1rem;">Verify your legal identity, upload your government-issued ID for encrypted compliance review, and list any applicable food-handler or alcohol permits for your events.</p>
                     <div class="eb-grid-2">
@@ -135,12 +135,12 @@
                     </div>
                 </div>
 
-                <div class="eb-card" id="host-responsibility-acknowledgements" style="padding: 1.25rem; background: var(--surface-subtle, #f8fafc); border: 1px solid var(--border-default, #cbd5e1); border-radius: 12px;">
+                <div class="eb-card" id="host-responsibility-acknowledgements" style="padding: 1.25rem; background: var(--surface-subtle, var(--color-ink)); border: 1px solid var(--border-default, var(--color-ink-2)); border-radius: 12px;">
                     <input type="hidden" name="enforce_host_compliance" value="1">
                     <h3 style="margin: 0 0 0.35rem; font-size: 1rem; font-weight: 800;">Mandatory Host Responsibility Acknowledgements (Section D)</h3>
                     <p class="eb-help-text" style="margin: 0 0 0.85rem;">Each responsibility below must be individually acknowledged before submitting your Event Host application. Read the full <a href="{{ route('legal.show', 'host-agreement') }}" target="_blank" rel="noopener">Event Host Agreement</a> and the <a href="{{ route('legal.show', 'host-identity-privacy') }}" target="_blank" rel="noopener">Host Identity Verification and Privacy Notice</a>.</p>
                     @unless(\App\Support\LegalPages::counselReviewed())
-                        <p class="eb-help-text" style="margin: 0 0 0.85rem; color: #92400e;">These acknowledgements reflect draft policy wording pending review by qualified US legal counsel; they are not yet legally approved.</p>
+                        <p class="eb-help-text" style="margin: 0 0 0.85rem; color: var(--color-error);">These acknowledgements reflect draft policy wording pending review by qualified US legal counsel; they are not yet legally approved.</p>
                     @endunless
 
                     <div class="eb-stack" style="gap: 0.65rem;">
