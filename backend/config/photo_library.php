@@ -32,6 +32,20 @@ return [
         'private' => 'Private and premium events',
     ],
 
+    // The Explore screen's category tiles: each gathers the kinds of event (subjects below) it covers.
+    // /events?kind=<key> lists the upcoming events of those kinds. 'art' picks EventBite's original artwork
+    // (config/visual_assets.php) for a tile with no photograph.
+    'collections' => [
+        'live-music' => ['label' => 'Live Music & Dancing', 'art' => 'concert', 'subjects' => ['reggae_concert', 'dancehall_event', 'live_band', 'dj_set', 'music_festival', 'outdoor_concert', 'arts_entertainment']],
+        'food-festivals' => ['label' => 'Food Festivals', 'art' => 'food', 'subjects' => ['caribbean_food_festival', 'jamaican_fish_fry', 'international_food_festival', 'outdoor_cookout', 'food_vendor_gathering']],
+        'cultural' => ['label' => 'Cultural Celebrations', 'art' => 'culture', 'subjects' => ['cultural_celebration', 'cultural_heritage']],
+        'family-community' => ['label' => 'Family & Community', 'art' => 'family', 'subjects' => ['family_festival', 'community_gathering', 'outdoor_picnic', 'community_fundraiser', 'family_entertainment_day']],
+        'nightlife' => ['label' => 'Nightlife', 'art' => 'party', 'subjects' => ['nightlife', 'rooftop_party']],
+        'private' => ['label' => 'Weddings & Private Parties', 'art' => 'wedding', 'subjects' => ['wedding', 'birthday_celebration', 'formal_dinner', 'private_party', 'vip_experience', 'corporate_event']],
+        'sports-outdoor' => ['label' => 'Sports & Outdoor Fun', 'art' => 'picnic', 'subjects' => ['sports_outdoor']],
+        'markets-lifestyle' => ['label' => 'Markets & Lifestyle', 'art' => 'market', 'subjects' => ['street_food_market']],
+    ],
+
     // What a reviewer confirms before approving a photo (each must be ticked).
     'standards' => [
         'genuine' => 'Looks like a genuine professional photograph of this kind of event',

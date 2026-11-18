@@ -7,10 +7,9 @@
    -------------------------------------------------------------------------- */
 
 .eb-customer-bottom-nav {
-  position: fixed;
+  /* On every page: held at the bottom of the screen while scrolling, at rest above the legal links. */
+  position: sticky;
   bottom: 0;
-  left: 0;
-  right: 0;
   z-index: 60;
   height: var(--layout-bottom-nav-height);
   background-color: rgba(11, 25, 43, 0.94);
@@ -57,12 +56,6 @@
 .eb-customer-nav-item:focus-visible {
   outline: 2px solid var(--color-border-focus);
   outline-offset: 2px;
-}
-
-@media (min-width: 1024px) {
-  .eb-customer-bottom-nav-mobile-only {
-    display: none;
-  }
 }
 
 /* --------------------------------------------------------------------------
