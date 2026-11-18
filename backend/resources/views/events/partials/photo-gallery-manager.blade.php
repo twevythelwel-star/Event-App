@@ -44,7 +44,7 @@
                         </div>
                     </form>
                     <form id="remove-photo-{{ $media->id }}" method="POST" action="{{ route('events.photos.destroy', [$event->id, $media->id]) }}"
-                          onsubmit="return confirm('Remove this photo? The original and every resized copy are deleted.');" hidden>
+                          data-confirm="Remove this photo? The original and every resized copy are deleted." hidden>
                         @csrf
                         @method('DELETE')
                     </form>
@@ -89,7 +89,7 @@
     @endif
 </section>
 
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         // Existing photos: the focus sliders move the photo in its frame as you drag.
         document.querySelectorAll('.eb-photo-manager-item').forEach(function (item) {

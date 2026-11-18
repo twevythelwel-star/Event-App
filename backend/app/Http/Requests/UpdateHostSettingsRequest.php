@@ -23,9 +23,13 @@ class UpdateHostSettingsRequest extends FormRequest
             'default_flyer_aspect_ratio' => ['nullable', 'string', 'in:4:5,1:1,16:9'],
             'default_brand_theme' => ['nullable', 'string', 'max:64'],
             'enable_cash' => ['nullable', 'boolean'],
+            'enable_zelle' => ['nullable', 'boolean'],
+            'enable_cashapp' => ['nullable', 'boolean'],
+            ...\App\Models\HostPaymentPolicy::handleRules(),
             'zelle_instructions' => ['nullable', 'string', 'max:500'],
             'cash_app_instructions' => ['nullable', 'string', 'max:255'],
-            'bank_transfer_instructions' => ['nullable', 'string', 'max:1000'],
+            // Bank transfer is no longer offered (an empty value from an old form is fine).
+            'bank_transfer_instructions' => ['nullable', \App\Models\HostPaymentPolicy::retiredBankRule()],
             'require_transfer_reference' => ['nullable', 'boolean'],
             'require_sender_name' => ['nullable', 'boolean'],
             'require_receipt_snapshot' => ['nullable', 'boolean'],
@@ -41,5 +45,22 @@ class UpdateHostSettingsRequest extends FormRequest
             'food_order_modification_deadline_hours' => ['nullable', 'integer', 'min:0', 'max:720'],
             'food_prep_buffer_percent' => ['nullable', 'integer', 'min:0', 'max:50'],
         ];
+    }
+
+    public function messages(): array
+    {
+        return \App\Models\HostPaymentPolicy::handleMessages();
+    }
+
+    /** Turning on Zelle or Cash App needs the handle customers send to. */
+    public function withValidator(\Illuminate\Validation\Validator $validator): void
+    {
+        $validator->after(function (\Illuminate\Validation\Validator $v) {
+            $organizerId = \App\Http\Controllers\AccountSettingsController::ownedOrganizerId($this->user());
+            $current = $organizerId ? \App\Models\HostPaymentPolicy::where('organizer_id', $organizerId)->first() : null;
+            foreach (\App\Models\HostPaymentPolicy::missingHandleErrors($this->all(), $current) as $field => $message) {
+                $v->errors()->add($field, $message);
+            }
+        });
     }
 }

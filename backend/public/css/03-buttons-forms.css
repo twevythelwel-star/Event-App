@@ -27,11 +27,7 @@
   cursor: pointer;
   user-select: none;
   transition:
-    background-color var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard),
-    transform var(--duration-fast) var(--ease-standard),
-    box-shadow var(--duration-fast) var(--ease-standard);
+    background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
 }
 
 .eb-btn:focus-visible,
@@ -45,7 +41,7 @@
 .eb-btn:active:not(:disabled):not([aria-disabled="true"]),
 .btn:active:not(:disabled):not([aria-disabled="true"]) {
   transform: translateY(1px);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--color-shade) 35%, transparent), 0 2px 6px color-mix(in srgb, var(--color-shade) 30%, transparent);
 }
 
 /* Variant 1: Primary (3D Soft Realism Electric Lime Pillow Button with #14210A contrast-verified text) */
@@ -57,7 +53,7 @@
   color: var(--color-accent-text);
   border-color: var(--color-accent);
   box-shadow: var(--shadow-btn-primary);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 35%, transparent);
 }
 
 .eb-btn-primary:hover:not(:disabled):not([aria-disabled="true"]),
@@ -85,27 +81,27 @@
 .btn-secondary:hover:not(:disabled):not([aria-disabled="true"]) {
   background-color: var(--color-surface-elevated);
   background-image: var(--gradient-secondary-btn-hover-3d);
-  border-color: #496688;
+  border-color: var(--color-rule-strong);
   color: var(--color-text-primary);
   transform: translateY(-1px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.14),
-    inset 0 -2px 0 rgba(0, 0, 0, 0.45),
-    0 6px 14px rgba(2, 6, 14, 0.55);
+    inset 0 1px 0 color-mix(in srgb, var(--color-ink) 14%, transparent),
+    inset 0 -2px 0 color-mix(in srgb, var(--color-shade) 45%, transparent),
+    0 6px 14px color-mix(in srgb, var(--color-shade) 55%, transparent);
 }
 
 /* Variant 3: Outline */
 .eb-btn-outline,
 .btn-outline {
-  background-color: rgba(16, 36, 58, 0.35);
+  background-color: color-mix(in srgb, var(--color-paper-3) 35%, transparent);
   color: var(--color-text-primary);
   border-color: var(--color-border-strong);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 6%, transparent);
 }
 
 .eb-btn-outline:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-outline:hover:not(:disabled):not([aria-disabled="true"]) {
-  background-color: rgba(199, 255, 69, 0.08);
+  background-color: color-mix(in srgb, var(--color-accent) 8%, transparent);
   border-color: var(--color-accent);
   color: var(--color-accent);
   transform: translateY(-1px);
@@ -123,7 +119,7 @@
 .eb-btn-ghost:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-ghost:hover:not(:disabled):not([aria-disabled="true"]),
 .text-button:hover:not(:disabled):not([aria-disabled="true"]) {
-  background-color: rgba(168, 182, 200, 0.1);
+  background-color: color-mix(in srgb, var(--color-ink-2) 10%, transparent);
   color: var(--color-text-primary);
   text-decoration: none;
 }
@@ -132,20 +128,20 @@
 .eb-btn-destructive,
 .btn-danger {
   background-color: var(--color-error-bg);
-  background-image: linear-gradient(180deg, rgba(248, 113, 113, 0.22) 0%, rgba(239, 68, 68, 0.14) 100%);
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--color-error) 22%, transparent) 0%, color-mix(in srgb, var(--color-error) 14%, transparent) 100%);
   color: var(--color-error-text);
   border-color: var(--color-error-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 3px 10px rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 10%, transparent), 0 3px 10px color-mix(in srgb, var(--color-shade) 35%, transparent);
 }
 
 .eb-btn-destructive:hover:not(:disabled):not([aria-disabled="true"]),
 .btn-danger:hover:not(:disabled):not([aria-disabled="true"]) {
   background-color: var(--color-error);
-  background-image: linear-gradient(180deg, #F87171 0%, #DC2626 100%);
-  color: #FFFFFF;
+  background-image: linear-gradient(180deg, var(--color-error) 0%, var(--color-error) 100%);
+  color: var(--color-ink);
   border-color: var(--color-error);
   transform: translateY(-1px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 6px 16px rgba(239, 68, 68, 0.35);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 25%, transparent), 0 6px 16px color-mix(in srgb, var(--color-error) 35%, transparent);
 }
 
 /* Variant 6: Icon-Only (44x44px minimum touch target) */
@@ -166,11 +162,7 @@
   align-items: center;
   justify-content: center;
   transition:
-    background-color var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard),
-    transform var(--duration-fast) var(--ease-standard),
-    box-shadow var(--duration-fast) var(--ease-standard);
+    background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
 }
 
 .eb-btn-icon:hover:not(:disabled):not([aria-disabled="true"]),
@@ -178,7 +170,7 @@
   background-color: var(--color-surface-elevated);
   background-image: var(--gradient-secondary-btn-hover-3d);
   color: var(--color-text-primary);
-  border-color: #496688;
+  border-color: var(--color-rule-strong);
   transform: translateY(-1px);
 }
 
@@ -193,7 +185,7 @@
 
 .eb-btn-lg {
   min-height: 50px;
-  padding: 0.75rem 1.5rem;
+  padding: var(--space-3) var(--space-6);
   font-size: 0.9375rem;
   border-radius: var(--radius-lg);
 }
@@ -242,7 +234,7 @@
 .field-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--space-1);
   font-family: var(--font-sans);
   font-size: var(--text-label-size);
   font-weight: 600;
@@ -273,9 +265,7 @@
   font-size: 0.9375rem;
   line-height: 1.4;
   transition:
-    border-color var(--duration-fast) var(--ease-standard),
-    box-shadow var(--duration-fast) var(--ease-standard),
-    background-color var(--duration-fast) var(--ease-standard);
+    border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
 }
 
 .eb-input::placeholder,
@@ -308,7 +298,7 @@
 .eb-textarea:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background-color: rgba(5, 12, 23, 0.55);
+  background-color: color-mix(in srgb, var(--color-paper-sunk) 55%, transparent);
 }
 
 .eb-textarea {
@@ -348,7 +338,7 @@ input[type="number"].eb-input {
   align-items: flex-start;
   gap: 0.625rem;
   min-height: 44px;
-  padding: 0.5rem 0;
+  padding: var(--space-2) 0;
   cursor: pointer;
   color: var(--color-text-primary);
   font-size: 0.9rem;
@@ -375,7 +365,7 @@ input[type="number"].eb-input {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--space-3);
   min-height: 44px;
   cursor: pointer;
 }
@@ -395,7 +385,7 @@ input[type="number"].eb-input {
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-3d-inset);
   position: relative;
-  transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+  transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
   flex-shrink: 0;
 }
 
@@ -403,9 +393,9 @@ input[type="number"].eb-input {
   width: 18px;
   height: 18px;
   background-color: var(--color-text-primary);
-  background-image: linear-gradient(180deg, #FFFFFF 0%, #CBD5E1 100%);
+  background-image: linear-gradient(180deg, var(--color-ink) 0%, var(--color-ink-2) 100%);
   border-radius: 50%;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--color-shade) 50%, transparent), inset 0 1px 0 color-mix(in srgb, var(--color-ink) 90%, transparent);
   position: absolute;
   top: 2px;
   left: 2px;
@@ -416,14 +406,14 @@ input[type="number"].eb-input {
   background-color: var(--color-accent);
   background-image: var(--gradient-accent-3d);
   border-color: var(--color-accent);
-  box-shadow: inset 0 1px 2px rgba(20, 33, 10, 0.25), 0 0 12px rgba(199, 255, 69, 0.25);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--color-accent-ink) 25%, transparent), 0 0 12px color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
 
 .eb-toggle-input:checked + .eb-toggle-track .eb-toggle-thumb {
   transform: translateX(20px);
   background-color: var(--color-accent-text);
-  background-image: linear-gradient(180deg, #1E3210 0%, #0D1606 100%);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background-image: linear-gradient(180deg, var(--color-accent-ink) 0%, var(--color-accent-ink) 100%);
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--color-shade) 45%, transparent), inset 0 1px 0 color-mix(in srgb, var(--color-ink) 20%, transparent);
 }
 
 .eb-toggle-input:focus-visible + .eb-toggle-track {
@@ -447,14 +437,14 @@ input[type="number"].eb-input {
   color: var(--color-text-secondary);
   text-align: center;
   cursor: pointer;
-  transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard);
+  transition: border-color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
 }
 
 .eb-file-upload:hover,
 .eb-file-upload:focus-within {
   border-color: var(--color-accent);
   background-color: var(--color-background-secondary);
-  box-shadow: inset 0 1px 0 rgba(199, 255, 69, 0.14), 0 4px 14px rgba(2, 6, 14, 0.45);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-accent) 14%, transparent), 0 4px 14px color-mix(in srgb, var(--color-shade) 45%, transparent);
 }
 
 /* Help Text & Accessible Field Validation Errors (Icon + Text, never color alone) */
@@ -470,14 +460,14 @@ input[type="number"].eb-input {
 .eb-select[aria-invalid="true"],
 .eb-textarea[aria-invalid="true"] {
   border-color: var(--color-error) !important;
-  background-color: rgba(239, 68, 68, 0.06);
+  background-color: color-mix(in srgb, var(--color-error) 6%, transparent);
 }
 
 .eb-field-error {
   display: inline-flex;
   align-items: flex-start;
   gap: 0.375rem;
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-error-text);

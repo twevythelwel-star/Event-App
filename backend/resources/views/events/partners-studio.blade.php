@@ -34,8 +34,8 @@
         <div class="eb-panel" style="margin: 0;">
             <p style="margin: 0;"><strong>Invite vendors:</strong> share this link. Applicants sign in with their own account.
                 @unless($event->vendor_applications_open)<span class="eb-badge eb-badge-warning">Applications are closed</span> <a href="{{ route('events.partners', ['id' => $event->id, 'tab' => 'settings']) }}">Open them in Settings</a>@endunless</p>
-            <p class="eb-cluster" style="margin: var(--space-2) 0 0;"><input class="eb-input" readonly value="{{ $applyLink }}" aria-label="Vendor application link" style="flex: 1 1 280px;" onclick="this.select()">
-                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" onclick="navigator.clipboard?.writeText(@js($applyLink)); this.textContent='Copied'">Copy link</button></p>
+            <p class="eb-cluster" style="margin: var(--space-2) 0 0;"><input class="eb-input" readonly value="{{ $applyLink }}" aria-label="Vendor application link" style="flex: 1 1 280px;" data-action-click="select">
+                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-action-click="copy" data-args="{{ json_encode([$applyLink, 'Copied']) }}">Copy link</button></p>
         </div>
         <nav class="eb-cluster" aria-label="Filter applications">
             <a href="{{ route('events.partners', ['id' => $event->id, 'tab' => 'applications']) }}" class="eb-btn eb-btn-sm {{ $status ? 'eb-btn-ghost' : 'eb-btn-secondary' }}">All</a>
@@ -132,7 +132,7 @@
                 </div>
             </form>
             @if($offer)
-                <form id="offer-del-{{ $offer->id }}" method="POST" action="{{ route('events.partners.offers.destroy', [$event->id, $offer->id]) }}" onsubmit="return confirm('Remove this booth type?');" hidden>@csrf @method('DELETE')</form>
+                <form id="offer-del-{{ $offer->id }}" method="POST" action="{{ route('events.partners.offers.destroy', [$event->id, $offer->id]) }}" data-confirm="Remove this booth type?" hidden>@csrf @method('DELETE')</form>
             @endif
         @endforeach
     </section>
@@ -156,7 +156,7 @@
                     @if($package)<button class="eb-btn eb-btn-ghost eb-btn-sm" type="submit" form="pkg-del-{{ $package->id }}">Remove</button>@endif
                 </div>
             </form>
-            @if($package)<form id="pkg-del-{{ $package->id }}" method="POST" action="{{ route('events.partners.packages.destroy', [$event->id, $package->id]) }}" onsubmit="return confirm('Remove this package? Its sponsors stay.');" hidden>@csrf @method('DELETE')</form>@endif
+            @if($package)<form id="pkg-del-{{ $package->id }}" method="POST" action="{{ route('events.partners.packages.destroy', [$event->id, $package->id]) }}" data-confirm="Remove this package? Its sponsors stay." hidden>@csrf @method('DELETE')</form>@endif
         @endforeach
 
         <h2 class="eb-text-section-title" style="margin: 0;">Sponsors</h2>
@@ -198,7 +198,7 @@
                     @if($sponsor)<button class="eb-btn eb-btn-ghost eb-btn-sm" type="submit" form="sp-del-{{ $sponsor->id }}">Remove</button>@endif
                 </div>
             </form>
-            @if($sponsor)<form id="sp-del-{{ $sponsor->id }}" method="POST" action="{{ route('events.partners.sponsors.destroy', [$event->id, $sponsor->id]) }}" onsubmit="return confirm('Remove this sponsor?');" hidden>@csrf @method('DELETE')</form>@endif
+            @if($sponsor)<form id="sp-del-{{ $sponsor->id }}" method="POST" action="{{ route('events.partners.sponsors.destroy', [$event->id, $sponsor->id]) }}" data-confirm="Remove this sponsor?" hidden>@csrf @method('DELETE')</form>@endif
         @endforeach
     </section>
 

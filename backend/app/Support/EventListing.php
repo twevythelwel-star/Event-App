@@ -19,7 +19,8 @@ final class EventListing
     /**
      * @return array{key: string, label: string, tone: string}
      */
-    public static function availability(Event $event): array
+    /** @param list<array<string, mixed>>|null $tiers TicketTierCatalog::sellable($event), when the caller already has it */
+    public static function availability(Event $event, ?array $tiers = null): array
     {
         $status = static fn (string $key, string $label, string $tone) => compact('key', 'label', 'tone');
 
@@ -33,7 +34,7 @@ final class EventListing
             return $status('closed', 'Ordering closed', 'warning');
         }
 
-        $tiers = TicketTierCatalog::sellable($event);
+        $tiers ??= TicketTierCatalog::sellable($event);
         if ($tiers !== []) {
             if (collect($tiers)->contains(fn (array $t) => $t['on_sale'])) {
                 return $status('on_sale', 'Tickets on sale', 'success');
@@ -56,16 +57,17 @@ final class EventListing
     }
 
     /** The cheapest ticket that can be bought right now, in minor units; null when none is on sale. */
-    public static function fromPriceMinor(Event $event): ?int
+    /** @param list<array<string, mixed>>|null $tiers TicketTierCatalog::sellable($event), when the caller already has it */
+    public static function fromPriceMinor(Event $event, ?array $tiers = null): ?int
     {
-        $prices = collect(TicketTierCatalog::sellable($event))->where('on_sale', true)->pluck('price_minor');
+        $prices = collect($tiers ?? TicketTierCatalog::sellable($event))->where('on_sale', true)->pluck('price_minor');
 
         return $prices->isEmpty() ? null : (int) $prices->min();
     }
 
-    public static function fromPriceText(Event $event): ?string
+    public static function fromPriceText(Event $event, ?array $tiers = null): ?string
     {
-        $minor = self::fromPriceMinor($event);
+        $minor = self::fromPriceMinor($event, $tiers);
         if ($minor === null) {
             return null;
         }

@@ -59,7 +59,7 @@
         </div>
     </form>
 </div>
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.querySelector('[data-venue-form]');
         const svg = form.querySelector('[data-venue-canvas]');

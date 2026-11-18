@@ -23,7 +23,7 @@
                 <label for="method">Method</label>
                 <select class="ac-select" id="method" name="method">
                     <option value="">Any</option>
-                    @foreach(['bank', 'cash', 'card', 'zelle', 'cashapp'] as $method)<option value="{{ $method }}" @selected(($filters['method'] ?? '') === $method)>{{ \App\Support\PaymentStatusPresenter::methodLabel($method) }}</option>@endforeach
+                    @foreach(\App\Payments\PaymentMethods::all() as $method)<option value="{{ $method }}" @selected(($filters['method'] ?? '') === $method)>{{ \App\Support\PaymentStatusPresenter::methodLabel($method) }}</option>@endforeach
                 </select>
             </div>
             <div class="ac-field">

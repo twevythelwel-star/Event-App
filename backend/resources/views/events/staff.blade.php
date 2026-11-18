@@ -152,7 +152,7 @@
                     <td class="eb-table-num">
                         @if(!$assignment->isRevoked() && !$assignment->isExpired() && in_array($assignment->status, ['active', 'scheduled', 'pending_acceptance'], true))
                             <form action="{{ route('host.events.staff.revoke', [$event->id, $assignment->id]) }}" method="POST"
-                                  onsubmit="return confirm('Revoke this person\'s access now? They lose access immediately.');" style="display: inline;">
+                                  data-confirm="Revoke this person's access now? They lose access immediately." style="display: inline;">
                                 @csrf
                                 <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Revoke</button>
                             </form>
@@ -166,7 +166,7 @@
     </x-card>
 </div>
 
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         const roleSelect = document.getElementById('worker_role');
         const customBox = document.getElementById('custom_permissions_box');

@@ -15,4 +15,4 @@
 .hero-brand-icon { width: auto; height: 24px; }
 
 /* The logo on a printed ticket or receipt sits on white, so it keeps a dark band behind it. */
-.brand-band { display: inline-flex; padding: 8px 14px; border-radius: 10px; background: #07111F; }
+.brand-band { display: inline-flex; padding: 8px 14px; border-radius: 10px; background: var(--color-paper); }

@@ -250,7 +250,7 @@
         </div>
         <p id="review-result" role="status" aria-live="polite" class="eb-help-text" hidden></p>
         <x-data-table caption="Payments to review" :columns="['Order', 'Event', 'Customer', 'Method and reference', ['label' => 'Amount', 'numeric' => true], 'Status', ['label' => 'Decision', 'numeric' => true]]"
-                      :empty="collect($review_orders ?? [])->isEmpty()" empty-title="Nothing to review" empty-text="Bank transfer and Zelle confirmations that customers submit appear here.">
+                      :empty="collect($review_orders ?? [])->isEmpty()" empty-title="Nothing to review" empty-text="Cash App and Zelle confirmations that customers submit appear here.">
             @foreach($review_orders ?? [] as $order)
                 <tr>
                     <td style="font-family: var(--font-mono);">{{ $order->order_number }}</td>
@@ -439,7 +439,7 @@
                     <td class="eb-table-num">
                         @if(!$worker->isRevoked() && !$worker->isExpired())
                             <form method="POST" action="{{ route('host.events.staff.revoke', [$worker->event_id, $worker->id]) }}"
-                                  onsubmit="return confirm('Revoke this person\'s access now? They lose access immediately.');" style="display: inline;">
+                                  data-confirm="Revoke this person's access now? They lose access immediately." style="display: inline;">
                                 @csrf
                                 <input type="hidden" name="reason" value="Revoked from the host dashboard">
                                 <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Revoke</button>
@@ -454,7 +454,7 @@
     </section>
 </div>
 
-<script>
+<script @cspNonce>
     // Payment decisions go through the same validated service the API uses; the page reloads to show the result.
     document.querySelectorAll('[data-payment-decision]').forEach(function (button) {
         button.addEventListener('click', async function () {

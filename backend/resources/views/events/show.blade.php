@@ -67,7 +67,7 @@
     .detail-hero-overlay {
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, rgba(7, 17, 31, 0.58) 0%, rgba(7, 17, 31, 0.18) 45%, rgba(7, 17, 31, 0.94) 90%, var(--color-background) 100%);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 58%, transparent) 0%, color-mix(in srgb, var(--color-paper) 18%, transparent) 45%, color-mix(in srgb, var(--color-paper) 94%, transparent) 90%, var(--color-background) 100%);
         pointer-events: none;
     }
 
@@ -89,12 +89,12 @@
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        background-color: rgba(13, 27, 45, 0.82);
+        background-color: color-mix(in srgb, var(--color-paper-2) 82%, transparent);
         background-image: var(--gradient-secondary-btn-3d);
         backdrop-filter: blur(12px);
         color: var(--color-text-primary);
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.18);
+        border-top-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
         border-radius: 9999px;
         padding: 8px 18px;
         font-size: 13px;
@@ -116,11 +116,11 @@
         width: 42px;
         height: 42px;
         border-radius: 50%;
-        background-color: rgba(13, 27, 45, 0.82);
+        background-color: color-mix(in srgb, var(--color-paper-2) 82%, transparent);
         background-image: var(--gradient-secondary-btn-3d);
         backdrop-filter: blur(12px);
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.18);
+        border-top-color: color-mix(in srgb, var(--color-ink) 18%, transparent);
         color: var(--color-text-primary);
         display: flex;
         align-items: center;
@@ -162,7 +162,7 @@
         background-image: var(--gradient-surface-3d);
         border-radius: 20px;
         border: 1px solid var(--color-border);
-        border-top-color: rgba(255, 255, 255, 0.13);
+        border-top-color: color-mix(in srgb, var(--color-ink) 13%, transparent);
         padding: 24px;
         box-shadow: var(--shadow-card);
     }
@@ -195,8 +195,6 @@
     .detail-highlight-label {
         font-size: 10px;
         font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
         color: var(--color-text-muted);
     }
 
@@ -233,12 +231,12 @@
         justify-content: center;
         gap: 8px;
         white-space: nowrap;
-        transition: all 0.2s ease;
+        transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
     }
 
     .section-tab-btn:hover:not(.active) {
         color: var(--color-text-primary);
-        background-color: rgba(255, 255, 255, 0.04);
+        background-color: color-mix(in srgb, var(--color-ink) 4%, transparent);
     }
 
     .section-tab-btn.active {
@@ -246,7 +244,7 @@
         background-image: var(--gradient-surface-elevated-3d);
         color: var(--color-accent);
         border-color: var(--color-accent-border);
-        border-top-color: rgba(199, 255, 69, 0.45);
+        border-top-color: color-mix(in srgb, var(--color-accent) 45%, transparent);
         box-shadow: var(--shadow-subtle);
     }
 
@@ -273,13 +271,13 @@
         border-radius: 14px;
         overflow: hidden;
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.14);
+        border-top-color: color-mix(in srgb, var(--color-ink) 14%, transparent);
         background-color: var(--color-surface-recessed);
         box-shadow: var(--shadow-subtle);
         position: relative;
         flex-shrink: 0;
         cursor: pointer;
-        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease;
     }
 
     .gallery-item:hover {
@@ -299,18 +297,18 @@
     }
     .gallery-open { all: unset; display: block; width: 100%; height: 100%; cursor: zoom-in; }
     .gallery-open:focus-visible { outline: 2px solid var(--color-accent); outline-offset: -2px; }
-    .gallery-tag { display: block; font-size: 10px; font-weight: 600; color: #CBD5E1; }
+    .gallery-tag { display: block; font-size: 10px; font-weight: 600; color: var(--color-ink-2); }
 
     .gallery-caption {
         position: absolute;
         bottom: 0;
         left: 0;
         right: 0;
-        background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(7, 17, 31, 0.92) 100%);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--color-shade) 0%, transparent) 0%, color-mix(in srgb, var(--color-paper) 92%, transparent) 100%);
         padding: 10px 12px 8px;
         font-size: 11px;
         font-weight: 700;
-        color: #FFFFFF;
+        color: var(--color-ink);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -321,7 +319,7 @@
         width: 100%;
         background-color: var(--color-accent);
         background-image: var(--gradient-accent-3d);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+        border: 1px solid color-mix(in srgb, var(--color-ink) 30%, transparent);
         border-radius: 14px;
         padding: 15px 24px;
         font-size: 15px;
@@ -333,7 +331,7 @@
         justify-content: center;
         gap: 8px;
         box-shadow: var(--shadow-btn-primary);
-        transition: transform 0.18s var(--ease-out-quart), box-shadow 0.18s ease, background-color 0.18s ease;
+        transition: transform 0.18s var(--ease-out-quart), background-color 0.18s ease;
         text-decoration: none;
         box-sizing: border-box;
     }
@@ -349,7 +347,7 @@
         background-color: var(--color-surface);
         background-image: var(--gradient-surface-3d);
         border: 1px solid var(--color-border);
-        border-top-color: rgba(255, 255, 255, 0.13);
+        border-top-color: color-mix(in srgb, var(--color-ink) 13%, transparent);
         border-radius: 16px;
         padding: 20px;
         display: flex;
@@ -357,13 +355,13 @@
         gap: 16px;
         align-items: flex-start;
         box-shadow: var(--shadow-subtle);
-        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.2s var(--ease-out-quart), border-color 0.2s ease;
     }
 
     .tier-option-card:hover {
         transform: translateY(-2px);
         border-color: var(--color-border-strong);
-        border-top-color: rgba(199, 255, 69, 0.35);
+        border-top-color: color-mix(in srgb, var(--color-accent) 35%, transparent);
         box-shadow: var(--shadow-card);
     }
 
@@ -375,10 +373,10 @@
 
     @media (max-width: 767px) {
         body:has(#event-detail-page) .eb-app-header { display: none !important; }
-        body:has(#event-detail-page) main.content-canvas { padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: calc(var(--layout-bottom-nav-height) + 84px + env(safe-area-inset-bottom, 0px)) !important; }
+        body:has(#event-detail-page) main.content-canvas { padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; padding-bottom: 84px !important; }
         #event-detail-page .detail-hero { min-height: 0; height: auto; aspect-ratio: 4 / 5; max-height: 560px; border: 0; }
         #event-detail-page .detail-hero-img { position: absolute; inset: 0; }
-        #event-detail-page .detail-hero-overlay { background: linear-gradient(180deg, rgba(7,17,31,.08) 35%, rgba(7,17,31,.45) 64%, rgba(7,17,31,.98) 100%); }
+        #event-detail-page .detail-hero-overlay { background: linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 8%, transparent) 35%, color-mix(in srgb, var(--color-paper) 45%, transparent) 64%, color-mix(in srgb, var(--color-paper) 98%, transparent) 100%); }
         #event-detail-page .detail-hero-nav { top: max(14px, env(safe-area-inset-top, 0px)); padding: 0 14px; }
         #event-detail-page .detail-hero-nav .btn-glass { width: 42px; height: 42px; padding: 0; justify-content: center; overflow: hidden; font-size: 0; }
         #event-detail-page .detail-hero-nav .btn-glass span:first-child { font-size: 1.4rem; }
@@ -391,12 +389,38 @@
         #event-detail-page .eb-buy-bar { bottom: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding: 9px 14px; }
         #event-detail-page .eb-buy-bar .eb-btn { min-width: 52%; min-height: 48px; border-radius: 999px; }
         .eb-customer-bottom-nav { height: calc(var(--layout-bottom-nav-height) + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); }
+        /* The page canvas has no side padding here, so the root must not pull itself outwards (that scrolled sideways). */
+        #event-detail-page.event-detail-root { margin-left: 0; margin-right: 0; }
+        /* The app design: on phones the title block sits on the page itself, not in a card. */
+        #event-detail-page .detail-intro.card-navy { background: transparent; border: 0; box-shadow: none; padding: 4px 2px 0; }
+        #event-detail-page #venue-information { background: transparent; border: 0; box-shadow: none; padding: 0; gap: 12px; }
     }
+
+    .detail-title { font-family: var(--font-display); font-size: clamp(1.75rem, 7vw, 2.4rem); font-weight: 800; color: var(--color-ink); line-height: 1.1; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .detail-kicker { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 8px; font-size: 0.95rem; font-weight: 600; color: var(--color-text-secondary); }
+    .detail-kicker a { color: var(--color-text-secondary); text-decoration: none; }
+    .detail-kicker a:hover { color: var(--color-accent); text-decoration: underline; }
+    .detail-info-icon { flex-shrink: 0; display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 10px; background: var(--color-accent-subtle); color: var(--color-accent); }
+    .detail-subhead { font-size: 1rem; font-weight: 800; color: var(--color-ink); margin: 0 0 10px; }
+    .detail-food-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+    @media (min-width: 640px) { .detail-food-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+    .detail-food-strip button { position: relative; display: block; width: 100%; aspect-ratio: 4 / 3; padding: 0; border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; cursor: pointer; background: var(--color-surface-recessed); }
+    .detail-food-strip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .detail-food-strip .eb-image-label { font-size: 9px !important; padding: 2px 6px !important; left: 4px !important; bottom: 4px !important; }
+    .detail-cta-inline .btn-gradient-purchase { border-radius: 9999px; min-height: 52px; font-size: 1rem; }
+    @media (min-width: 901px) { .detail-cta-inline { display: none; } }
+    .icon-glass-btn { text-decoration: none; }
+    .icon-glass-btn.is-saved { color: var(--color-accent); border-color: var(--color-accent-border); }
+    .icon-glass-btn.is-saved svg { fill: currentColor; }
+    /* Tabs as an underlined row, as in the app design. */
+    .section-tab-nav { background: transparent; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; box-shadow: none; padding: 0; gap: 4px; }
+    .section-tab-btn { border-radius: 0; border: 0; border-bottom: 3px solid transparent; padding: 12px 10px; }
+    .section-tab-btn.active { background: transparent; background-image: none; box-shadow: none; color: var(--color-ink); border-color: transparent; border-bottom-color: var(--color-accent); }
 </style>
 
 <div class="event-detail-root" id="event-detail-page">
     <!-- Toast Notification -->
-    <div id="detail-toast" style="display: none; position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background-color: #1E293B; color: #FFFFFF; padding: 12px 24px; border-radius: 9999px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); z-index: 9999; font-size: 14px; font-weight: 600;"></div>
+    <div id="detail-toast" style="display: none; position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background-color: var(--color-rule); color: var(--color-ink); padding: 12px 24px; border-radius: 9999px; box-shadow: 0 10px 30px color-mix(in srgb, var(--color-shade) 50%, transparent); border: 1px solid color-mix(in srgb, var(--color-ink) 15%, transparent); z-index: 9999; font-size: 14px; font-weight: 600;"></div>
 
     <!-- 1. Cinematic Hero Section -->
     <div class="detail-hero">
@@ -420,14 +444,29 @@
 
         <!-- Floating Top Navigation -->
         <div class="detail-hero-nav">
-            <a href="{{ route('events.index') }}" class="btn-glass" id="btn-back-to-discovery">
-                <span>&larr;</span>
-                <span>Back to All Events</span>
+            <a href="{{ route('events.index') }}" class="icon-glass-btn" id="btn-back-to-discovery" title="Back to all events">
+                <x-icon name="arrow-left" size="md" />
+                <span class="sr-only">Back to all events</span>
             </a>
 
             <div style="display: flex; align-items: center; gap: 10px;">
-                <button type="button" class="icon-glass-btn" onclick="shareCurrentEvent()" title="Share Event" aria-label="Share this event">
-                    <span>🔗</span>
+                @auth
+                    @php $heroSaved = \App\Models\SavedEvent::where('user_id', auth()->id())->where('event_id', $event->id)->exists(); @endphp
+                    <form method="POST" action="{{ route('events.save.toggle', $event->id) }}" style="margin: 0;">
+                        @csrf
+                        <button type="submit" class="icon-glass-btn{{ $heroSaved ? ' is-saved' : '' }}" aria-pressed="{{ $heroSaved ? 'true' : 'false' }}" title="{{ $heroSaved ? 'Remove from saved events' : 'Save this event' }}">
+                            <x-icon name="heart" size="md" />
+                            <span class="sr-only">Save this event</span>
+                        </button>
+                    </form>
+                @else
+                    <a href="{{ route('login') }}" class="icon-glass-btn" title="Sign in to save this event">
+                        <x-icon name="heart" size="md" />
+                        <span class="sr-only">Sign in to save this event</span>
+                    </a>
+                @endauth
+                <button type="button" class="icon-glass-btn" data-action-click="shareCurrentEvent" title="Share Event" aria-label="Share this event">
+                    <x-icon name="share" size="md" />
                 </button>
             </div>
         </div>
@@ -438,15 +477,9 @@
         <!-- LEFT COLUMN: Metadata, Tabs, Media Gallery & Organizer -->
         <div style="display: flex; flex-direction: column; gap: 28px;">
             <!-- Event Title, Description, Highlights & Venue Information -->
-            <div class="card-navy" style="position: relative; display: flex; flex-direction: column; gap: 18px;">
+            <div class="card-navy detail-intro" style="position: relative; display: flex; flex-direction: column; gap: 18px;">
                 <div>
                     <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-                        <span class="eb-badge eb-badge-info" style="text-transform: uppercase; letter-spacing: 0.04em;">
-                            {{ $event->category ?: 'Event' }}
-                        </span>
-                        @foreach($event->traditionLabels() as $tradition)
-                            <a href="{{ route('events.index', ['q' => $tradition]) }}" style="border: 1px solid rgba(255, 255, 255, 0.24); background: rgba(255, 255, 255, 0.05); color: #F8FAFC; font-size: 11px; font-weight: 700; padding: 3px 11px; border-radius: 9999px; text-decoration: none;">{{ $tradition }}</a>
-                        @endforeach
                         @php $heroTone = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$availability['tone']] ?? 'eb-badge-info'; @endphp
                         <span class="eb-badge {{ $heroTone }}">
                             <span class="eb-badge-dot" aria-hidden="true"></span>
@@ -459,9 +492,16 @@
                         @endif
                     </div>
 
-                    <h1 style="font-size: clamp(1.6rem, 2.5vw, 2.1rem); font-weight: 900; color: #FFFFFF; line-height: 1.2; margin: 0 0 8px; letter-spacing: -0.02em;">
+                    <h1 class="detail-title">
                         {{ $event->title }}
                     </h1>
+                    {{-- The kind of event and its traditions on one line ("Music • Food • Culture" in the app design). --}}
+                    <p class="detail-kicker">
+                        <span>{{ $event->category ?: 'Event' }}</span>
+                        @foreach($event->traditionLabels() as $tradition)
+                            <a href="{{ route('events.index', ['q' => $tradition]) }}">{{ $tradition }}</a>
+                        @endforeach
+                    </p>
 
                     @if(!empty($event->tagline))
                         <p style="font-size: 15px; color: var(--color-text-secondary); line-height: 1.5; margin: 0; font-weight: 600;">
@@ -481,10 +521,10 @@
                 @endphp
                 <div class="detail-well" id="venue-information" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
                     <div style="display: flex; gap: 12px; align-items: flex-start;">
-                        <span style="font-size: 20px;" aria-hidden="true">📅</span>
+                        <span class="detail-info-icon" aria-hidden="true"><x-icon name="calendar" size="md" /></span>
                         <div>
                             <div style="font-size: 10px; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; letter-spacing: 0.05em;">Date &amp; Time</div>
-                            <div style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">
+                            <div style="font-size: 14px; font-weight: 800; color: var(--color-ink); margin-top: 2px;">
                                 {{ $event->date_str ?? ($event->date ? (is_string($event->date) ? date('l, F j, Y', strtotime($event->date)) : $event->date->format('l, F j, Y')) : 'Date TBA') }}
                             </div>
                             <div style="font-size: 12px; color: var(--color-text-secondary); margin-top: 2px;">
@@ -499,10 +539,10 @@
                     </div>
 
                     <div style="display: flex; gap: 12px; align-items: flex-start;">
-                        <span style="font-size: 20px;" aria-hidden="true">📍</span>
+                        <span class="detail-info-icon" aria-hidden="true"><x-icon name="map-pin" size="md" /></span>
                         <div>
                             <div style="font-size: 10px; text-transform: uppercase; color: var(--color-text-muted); font-weight: 700; letter-spacing: 0.05em;">Venue &amp; Location</div>
-                            <div style="font-size: 14px; font-weight: 800; color: #FFFFFF; margin-top: 2px;">
+                            <div style="font-size: 14px; font-weight: 800; color: var(--color-ink); margin-top: 2px;">
                                 {{ $event->venue_name ?: 'Venue to be announced' }}
                                 @if($event->venue_building_name)
                                     <span style="font-weight: 600; color: var(--color-text-secondary);"> · {{ $event->venue_building_name }}</span>
@@ -575,6 +615,44 @@
                     </div>
                 @endif
 
+                @php
+                    // Dishes from the event's own menu that have a photo: the "Food Highlights" strip.
+                    $foodHighlights = $menu->map(fn ($dish) => ['item' => $dish, 'image' => $dish->responsiveImage()])
+                        ->filter(fn ($row) => $row['image'] !== null)->take(6)->values();
+                @endphp
+                @if($foodHighlights->isNotEmpty())
+                    <div id="food-highlights">
+                        <h2 class="detail-subhead">Food Highlights</h2>
+                        <ul class="detail-food-strip">
+                            @foreach($foodHighlights as $row)
+                                <li>
+                                    <button type="button" data-action-click="switchSection" data-args='["food", true]' title="{{ $row['item']->name }}">
+                                        <x-responsive-image :image="$row['image']" :alt="$row['item']->name . ' (see the menu)'" sizes="(min-width: 640px) 160px, 31vw" />
+                                        <x-image-label :image="$row['image']" />
+                                    </button>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
+                @if($canOrder)
+                    {{-- Phones and tablets: the way to buy, right under the essentials (the side panel comes later). --}}
+                    <div class="detail-cta-inline" id="detail-cta-inline">
+                        @auth
+                            <a href="{{ route('checkout.tickets', $event) }}" class="btn-gradient-purchase">
+                                <x-icon name="ticket" size="md" />
+                                <span>{{ collect($tiers)->contains('on_sale', true) ? 'Get Tickets' : 'Order Food' }}</span>
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="btn-gradient-purchase">
+                                <x-icon name="ticket" size="md" />
+                                <span>Sign in to get tickets</span>
+                            </a>
+                        @endauth
+                    </div>
+                @endif
+
                 <!-- Event Highlights (derived strictly from populated event attributes) -->
                 @php
                     $formatLabels = ['in_person' => 'In-Person Event', 'virtual' => 'Virtual / Online', 'hybrid' => 'Hybrid (In-Person + Online)'];
@@ -610,26 +688,23 @@
 
             <!-- 3. Section Switcher Tabs (Tickets · Food · Details) -->
             <div>
-                <div class="section-tab-nav" role="tablist">
-                    <button type="button" class="section-tab-btn active" id="tab-tickets-btn" onclick="switchSection('tickets')">
-                        <span>🎟️</span>
-                        <span>Tickets &amp; Passes</span>
+                <div class="section-tab-nav" role="tablist" aria-label="Event information">
+                    <button type="button" role="tab" class="section-tab-btn active" id="tab-tickets-btn" aria-selected="true" aria-controls="pane-tickets" data-action-click="switchSection" data-args='["tickets"]'>
+                        <span>Tickets</span>
                     </button>
-                    <button type="button" class="section-tab-btn" id="tab-food-btn" onclick="switchSection('food')">
-                        <span>🍲</span>
-                        <span>Food &amp; Dining ({{ $menu->count() }})</span>
+                    <button type="button" role="tab" class="section-tab-btn" id="tab-food-btn" aria-selected="false" aria-controls="pane-food" tabindex="-1" data-action-click="switchSection" data-args='["food"]'>
+                        <span>Food ({{ $menu->count() }})</span>
                     </button>
-                    <button type="button" class="section-tab-btn" id="tab-details-btn" onclick="switchSection('details')">
-                        <span>ℹ️</span>
-                        <span>Event Guide &amp; Policies</span>
+                    <button type="button" role="tab" class="section-tab-btn" id="tab-details-btn" aria-selected="false" aria-controls="pane-details" tabindex="-1" data-action-click="switchSection" data-args='["details"]'>
+                        <span>Details</span>
                     </button>
                 </div>
 
                 <!-- TAB 1: TICKETS & MENU PREVIEW (host-configured types from TicketTierCatalog + dish previews) -->
-                <div class="tab-pane active" id="pane-tickets">
+                <div class="tab-pane active" id="pane-tickets" role="tabpanel" aria-labelledby="tab-tickets-btn" tabindex="0">
                     @if(empty($tiers))
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
-                            <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No tickets on sale</h3>
+                            <h3 style="font-size: 16px; font-weight: 700; color: var(--color-ink); margin: 0 0 6px;">No tickets on sale</h3>
                             <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">
                                 {{ $menu->isNotEmpty() ? 'This event sells food only. See the Food tab.' : 'The organizer hasn’t put tickets on sale yet.' }}
                             </p>
@@ -640,7 +715,7 @@
                                 <div class="tier-option-card">
                                     <div style="min-width: 0;">
                                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">{{ $tier['name'] }}</h3>
+                                            <h3 style="font-size: 16px; font-weight: 800; color: var(--color-ink); margin: 0;">{{ $tier['name'] }}</h3>
                                             @if(!empty($tier['category']))
                                                 <span class="eb-badge eb-badge-purple">{{ $tier['category'] }}</span>
                                             @endif
@@ -654,7 +729,7 @@
                                         </div>
                                     </div>
                                     <div style="text-align: right; flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
-                                        <div style="font-size: 21px; font-weight: 900; color: #FFFFFF; font-variant-numeric: tabular-nums;">{{ \App\Support\Money::formatMinor($tier['price_minor'], $tier['currency']) }}</div>
+                                        <div style="font-size: 21px; font-weight: 900; color: var(--color-ink); font-variant-numeric: tabular-nums;">{{ \App\Support\Money::formatMinor($tier['price_minor'], $tier['currency']) }}</div>
                                         <div style="font-size: 11px; color: var(--color-text-muted);">per ticket</div>
                                         @if($canOrder && !empty($tier['on_sale']))
                                             <a href="{{ auth()->check() ? route('checkout.tickets', $event) : route('login') }}" class="eb-btn eb-btn-secondary eb-btn-sm" style="margin-top: 4px; font-size: 12px; padding: 6px 12px;">
@@ -671,13 +746,13 @@
                         <div class="card-navy" id="menu-preview" style="margin-top: 22px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px;">
                                 <div>
-                                    <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">Menu Preview</h3>
+                                    <h3 style="font-size: 16px; font-weight: 800; color: var(--color-ink); margin: 0;">Menu Preview</h3>
                                     <p style="font-size: 12px; color: var(--color-text-secondary); margin: 2px 0 0;">
                                         {{ $menu->count() }} {{ \Illuminate\Support\Str::plural('item', $menu->count()) }} prepared for this event
                                     </p>
                                 </div>
-                                <button type="button" onclick="switchSection('food')" class="btn-glass" style="font-size: 12px; padding: 7px 14px;">
-                                    <span>🍲</span>
+                                <button type="button" data-action-click="switchSection" data-args='["food"]' class="btn-glass" style="font-size: 12px; padding: 7px 14px;">
+                                    <x-icon name="utensils" size="sm" />
                                     <span>View full menu ({{ $menu->count() }})</span>
                                 </button>
                             </div>
@@ -691,10 +766,10 @@
                 </div>
 
                 <!-- TAB 2: FOOD & DINING (active menu items with dish photography) -->
-                <div class="tab-pane" id="pane-food">
+                <div class="tab-pane" id="pane-food" role="tabpanel" aria-labelledby="tab-food-btn" tabindex="0">
                     @if($menu->isEmpty())
                         <div class="card-navy" style="text-align: center; padding: 36px 20px;">
-                            <h3 style="font-size: 16px; font-weight: 700; color: #FFFFFF; margin: 0 0 6px;">No food menu</h3>
+                            <h3 style="font-size: 16px; font-weight: 700; color: var(--color-ink); margin: 0 0 6px;">No food menu</h3>
                             <p style="font-size: 13px; color: var(--color-text-secondary); margin: 0;">This event has no food to order in advance.</p>
                         </div>
                     @else
@@ -709,7 +784,7 @@
                                 </p>
                                 @if($event->food_service_start_time && $event->food_service_end_time)
                                     <p style="font-size: 12px; color: var(--color-text-secondary); margin: 4px 0 0;">
-                                        Service hours: <strong style="color: #FFFFFF;">{{ $event->food_service_start_time }} – {{ $event->food_service_end_time }}</strong>
+                                        Service hours: <strong style="color: var(--color-ink);">{{ $event->food_service_start_time }} – {{ $event->food_service_end_time }}</strong>
                                     </p>
                                 @endif
                             </div>
@@ -729,98 +804,98 @@
                 </div>
 
                 <!-- TAB 3: DETAILS: description, pickup, payment, fees, refunds and the event QR code -->
-                <div class="tab-pane" id="pane-details">
+                <div class="tab-pane" id="pane-details" role="tabpanel" aria-labelledby="tab-details-btn" tabindex="0">
                     <div class="card-navy" style="display: flex; flex-direction: column; gap: 20px;">
                         <div>
-                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0 0 8px;">About this event</h3>
-                            <p style="font-size: 13px; color: #CBD5E1; line-height: 1.6; margin: 0; white-space: pre-line;">{{ $event->description ?: $event->tagline }}</p>
+                            <h3 style="font-size: 16px; font-weight: 800; color: var(--color-ink); margin: 0 0 8px;">About this event</h3>
+                            <p style="font-size: 13px; color: var(--color-ink-2); line-height: 1.6; margin: 0; white-space: pre-line;">{{ $event->description ?: $event->tagline }}</p>
                         </div>
 
                         @if($event->pickup_instructions && $menu->isNotEmpty())
                             <div>
-                                <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Food pickup</h3>
-                                <p style="font-size: 13px; color: #CBD5E1; margin: 0;">{{ $event->pickup_instructions }}</p>
+                                <h3 style="font-size: 15px; font-weight: 800; color: var(--color-ink); margin: 0 0 6px;">Food pickup</h3>
+                                <p style="font-size: 13px; color: var(--color-ink-2); margin: 0;">{{ $event->pickup_instructions }}</p>
                             </div>
                         @endif
 
                         <div id="payment-methods">
-                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 8px;">Accepted payment methods</h3>
+                            <h3 style="font-size: 15px; font-weight: 800; color: var(--color-ink); margin: 0 0 8px;">Accepted payment methods</h3>
                             @if($paymentMethods === [])
-                                <p style="font-size: 13px; color: #94A3B8; margin: 0;">The organizer has not set up a payment method yet, so orders can't be paid for at the moment.</p>
+                                <p style="font-size: 13px; color: var(--color-ink-2); margin: 0;">The organizer has not set up a payment method yet, so orders can't be paid for at the moment.</p>
                             @else
                                 <div class="eb-stack" style="gap: 8px;">
                                     @foreach($paymentMethods as $method)
                                         @php
                                             $pmVal = $method['value'] ?? '';
-                                            $pmIcon = ['bank' => 'bank', 'zelle' => 'phone', 'cashapp' => 'phone', 'cash_app_pay' => 'phone', 'cash' => 'cash', 'card' => 'credit-card', 'paypal' => 'globe'][$pmVal] ?? ($method['icon'] ?? 'payment');
+                                            $pmIcon = \App\Payments\PaymentMethods::icon($pmVal, $method['icon'] ?? 'payment');
                                         @endphp
                                         <div class="eb-payment-card" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px;">
                                             <span class="eb-payment-icon" data-method="{{ $pmVal }}" aria-hidden="true">
                                                 <x-icon :name="$pmIcon" size="md" />
                                             </span>
                                             <div style="min-width: 0; flex: 1;">
-                                                <strong style="color: #FFFFFF; font-size: 13px; display: block;">{{ $method['label'] }}</strong>
-                                                <span style="font-size: 12px; color: #CBD5E1;">{{ $method['description'] }}</span>
+                                                <strong style="color: var(--color-ink); font-size: 13px; display: block;">{{ $method['label'] }}</strong>
+                                                <span style="font-size: 12px; color: var(--color-ink-2);">{{ $method['description'] }}</span>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Transfers and cash are marked paid only after the organizer confirms them.</p>
+                                <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">Transfers and cash are marked paid only after the organizer confirms them.</p>
                             @endif
                         </div>
 
                         <div id="fees-and-taxes">
-                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Fees and taxes</h3>
+                            <h3 style="font-size: 15px; font-weight: 800; color: var(--color-ink); margin: 0 0 6px;">Fees and taxes</h3>
                             @if($packagingFeeMinor <= 0 && $chargeRules === [])
-                                <p style="font-size: 13px; color: #CBD5E1; margin: 0;">No fees or taxes are added. You pay the ticket and food prices shown.</p>
+                                <p style="font-size: 13px; color: var(--color-ink-2); margin: 0;">No fees or taxes are added. You pay the ticket and food prices shown.</p>
                             @else
-                                <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: #CBD5E1; line-height: 1.6;">
+                                <ul style="margin: 0; padding-left: 18px; font-size: 13px; color: var(--color-ink-2); line-height: 1.6;">
                                     @if($packagingFeeMinor > 0)
-                                        <li><strong style="color: #FFFFFF;">Packaging fee</strong> (organizer fee): {{ \App\Support\Money::formatMinor($packagingFeeMinor, $currency) }} per order with food</li>
+                                        <li><strong style="color: var(--color-ink);">Packaging fee</strong> (organizer fee): {{ \App\Support\Money::formatMinor($packagingFeeMinor, $currency) }} per order with food</li>
                                     @endif
                                     @foreach($chargeRules as $rule)
-                                        <li><strong style="color: #FFFFFF;">{{ $rule->label }}</strong> ({{ strtolower($rule->kindLabel()) }}): {{ $rule->describe() }}</li>
+                                        <li><strong style="color: var(--color-ink);">{{ $rule->label }}</strong> ({{ strtolower($rule->kindLabel()) }}): {{ $rule->describe() }}</li>
                                     @endforeach
                                 </ul>
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">The exact amount of each fee and tax is shown, line by line, before you confirm your order.</p>
+                                <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">The exact amount of each fee and tax is shown, line by line, before you confirm your order.</p>
                             @endif
                         </div>
 
                         <div id="refund-policy">
-                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Cancellations and refunds</h3>
+                            <h3 style="font-size: 15px; font-weight: 800; color: var(--color-ink); margin: 0 0 6px;">Cancellations and refunds</h3>
                             @php $refundPolicyNotes = $event->refund_policy_notes ?: $policy?->refund_policy_notes; @endphp
                             @php $refundDeadlineHours = $event->refund_policy_deadline_hours ?? $policy?->refund_policy_deadline_hours; @endphp
                             @php $refundMode = $event->refund_policy_mode ?? $policy?->refund_policy_mode ?? 'manual_full_and_partial'; @endphp
                             @if(trim((string) $refundPolicyNotes) !== '')
-                                <p style="font-size: 13px; color: #CBD5E1; margin: 0; white-space: pre-line;">{{ $refundPolicyNotes }}</p>
+                                <p style="font-size: 13px; color: var(--color-ink-2); margin: 0; white-space: pre-line;">{{ $refundPolicyNotes }}</p>
                             @else
-                                <p style="font-size: 13px; color: #CBD5E1; margin: 0;">The organizer has not published a refund policy. Contact them before you buy if you may need a refund.</p>
+                                <p style="font-size: 13px; color: var(--color-ink-2); margin: 0;">The organizer has not published a refund policy. Contact them before you buy if you may need a refund.</p>
                             @endif
                             @if($refundDeadlineHours !== null)
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Refund requests close {{ (int) $refundDeadlineHours }} hours before the event starts.</p>
+                                <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">Refund requests close {{ (int) $refundDeadlineHours }} hours before the event starts.</p>
                             @endif
-                            <p style="font-size: 12px; color: #CBD5E1; margin: 6px 0 0;">
+                            <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">
                                 @if($refundMode === 'non_refundable') This event is marked non-refundable.
                                 @elseif($refundMode === 'manual_full_only') Organizers may record full manual refunds for supported payment methods; partial refunds are not offered.
                                 @else Organizers may record full or partial manual refunds for supported payment methods.
                                 @endif
                             </p>
-                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">EventBite cannot process provider-backed refunds. A cancellation request or approval is not a completed refund; the organizer must complete any supported manual refund and record its reference.</p>
+                            <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">EventBite cannot process provider-backed refunds. A cancellation request or approval is not a completed refund; the organizer must complete any supported manual refund and record its reference.</p>
                             @php $nonRefundableCategories = $event->non_refundable_ticket_categories ?? []; @endphp
                             @if(count($nonRefundableCategories))
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Non-refundable ticket types: {{ implode(', ', $nonRefundableCategories) }}.</p>
+                                <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">Non-refundable ticket types: {{ implode(', ', $nonRefundableCategories) }}.</p>
                             @endif
-                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">
+                            <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">
                                 @if(($event->host_cancellation_policy ?? $policy?->host_cancellation_policy) === 'manual_refund_if_supported') If the host cancels, a manual refund may be recorded only for a supported payment method.
                                 @else If the host cancels, contact the organizer; no automatic refund is promised.
                                 @endif
                             </p>
-                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">
+                            <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">
                                 @if(($event->postponement_policy ?? $policy?->postponement_policy ?? 'tickets_valid_for_new_date') === 'tickets_valid_for_new_date') If postponed or rescheduled, existing tickets remain valid for the new date.
                                 @else If postponed or rescheduled, contact the organizer for next steps.
                                 @endif
                             </p>
-                            <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">
+                            <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">
                                 @if(($event->weather_cancellation_policy ?? $policy?->weather_cancellation_policy ?? 'contact_organizer') === 'reschedule_tickets_valid') For weather cancellation, the event will be rescheduled and existing tickets remain valid.
                                 @elseif(($event->weather_cancellation_policy ?? $policy?->weather_cancellation_policy ?? 'contact_organizer') === 'manual_refund_if_supported') For weather cancellation, a manual refund may be recorded only for a supported payment method.
                                 @else For weather cancellation, contact the organizer; no automatic refund is promised.
@@ -829,50 +904,50 @@
                             @php $foodCancelHours = $event->food_order_cancellation_deadline_hours ?? $policy?->food_order_cancellation_deadline_hours; @endphp
                             @php $foodModifyHours = $event->food_order_modification_deadline_hours ?? $policy?->food_order_modification_deadline_hours; @endphp
                             @if($foodCancelHours !== null)
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Food cancellation requests close {{ (int) $foodCancelHours }} hours before the event starts.</p>
+                                <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">Food cancellation requests close {{ (int) $foodCancelHours }} hours before the event starts.</p>
                             @endif
                             @if($foodModifyHours !== null)
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">Food orders cannot be modified in EventBite; contact the organizer at least {{ (int) $foodModifyHours }} hours before the event.</p>
+                                <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">Food orders cannot be modified in EventBite; contact the organizer at least {{ (int) $foodModifyHours }} hours before the event.</p>
                             @endif
                             @if($foodCancelHours !== null && $refundDeadlineHours !== null)
-                                <p style="font-size: 12px; color: #94A3B8; margin: 6px 0 0;">If multiple cancellation cutoffs apply, the earliest deadline controls.</p>
+                                <p style="font-size: 12px; color: var(--color-ink-2); margin: 6px 0 0;">If multiple cancellation cutoffs apply, the earliest deadline controls.</p>
                             @endif
                         </div>
 
-                        <div id="food-safety-and-alcohol-policy" style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 16px;">
-                            <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 6px;">Food safety, allergen &amp; alcohol compliance</h3>
-                            <p style="font-size: 12px; color: #CBD5E1; line-height: 1.6; margin: 0;">
+                        <div id="food-safety-and-alcohol-policy" style="border-top: 1px solid color-mix(in srgb, var(--color-ink) 8%, transparent); padding-top: 16px;">
+                            <h3 style="font-size: 15px; font-weight: 800; color: var(--color-ink); margin: 0 0 6px;">Food safety, allergen &amp; alcohol compliance</h3>
+                            <p style="font-size: 12px; color: var(--color-ink-2); line-height: 1.6; margin: 0;">
                                 Event hosts and participating vendors are independently responsible for safe food preparation, proper cooking and holding temperatures, refrigeration, sanitation, allergen identification, and required state, county, and municipal food-service permits and inspections. Guests with severe allergies should confirm cross-contamination precautions directly with the organizer before ordering.
                             </p>
                             @if($event->serves_alcohol)
-                                <p style="font-size: 12px; color: #FCD34D; line-height: 1.6; margin: 8px 0 0; font-weight: 600;">
+                                <p style="font-size: 12px; color: var(--color-accent); line-height: 1.6; margin: 8px 0 0; font-weight: 600;">
                                     Alcohol Service &amp; Age Restriction Notice: Alcohol is served at this event subject to state and local liquor laws. Valid government-issued photo ID and minimum legal drinking age verification are strictly required at the venue.
                                 </p>
                             @endif
-                            <p style="font-size: 12px; color: #94A3B8; line-height: 1.5; margin: 6px 0 0;">
+                            <p style="font-size: 12px; color: var(--color-ink-2); line-height: 1.5; margin: 6px 0 0;">
                                 Purchasing an event ticket does not automatically authorize alcohol consumption, and EventBite does not grant an alcohol licence.
                             </p>
                             @auth
                                 <details id="report-safety-issue" style="margin-top: 10px;" @if($errors->hasAny(['category', 'description', 'occurred_on'])) open @endif>
-                                    <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: #FCD34D;">Report a safety issue at this event</summary>
+                                    <summary style="cursor: pointer; font-size: 12px; font-weight: 700; color: var(--color-accent);">Report a safety issue at this event</summary>
                                     <form method="POST" action="{{ route('events.safety-report', $event->id) }}" style="display: grid; gap: 8px; margin-top: 8px;">
                                         @csrf
-                                        <p style="font-size: 12px; color: #CBD5E1; margin: 0;">Your report goes to EventBite's compliance team, not the host. If someone is in danger, call 911.</p>
-                                        <label style="font-size: 12px; color: #E2E8F0;">What kind of issue
+                                        <p style="font-size: 12px; color: var(--color-ink-2); margin: 0;">Your report goes to EventBite's compliance team, not the host. If someone is in danger, call 911.</p>
+                                        <label style="font-size: 12px; color: var(--color-ink);">What kind of issue
                                             <select name="category" required class="eb-input" style="margin-top: 4px;">
                                                 @foreach(\App\Models\Compliance\ComplianceSafetyReport::CATEGORIES as $value => $label)
                                                     <option value="{{ $value }}" @selected(old('category') === $value)>{{ $label }}</option>
                                                 @endforeach
                                             </select>
                                         </label>
-                                        <label style="font-size: 12px; color: #E2E8F0;">What happened
+                                        <label style="font-size: 12px; color: var(--color-ink);">What happened
                                             <textarea name="description" required minlength="20" maxlength="5000" rows="3" class="eb-input" style="margin-top: 4px;">{{ old('description') }}</textarea>
                                         </label>
-                                        @error('description')<p style="font-size: 12px; color: #FCA5A5; margin: 0;">{{ $message }}</p>@enderror
-                                        <label style="font-size: 12px; color: #E2E8F0;">When it happened (optional)
+                                        @error('description')<p style="font-size: 12px; color: var(--color-error); margin: 0;">{{ $message }}</p>@enderror
+                                        <label style="font-size: 12px; color: var(--color-ink);">When it happened (optional)
                                             <input type="date" name="occurred_on" value="{{ old('occurred_on') }}" max="{{ now()->toDateString() }}" class="eb-input" style="margin-top: 4px;">
                                         </label>
-                                        <label style="font-size: 12px; color: #E2E8F0; display: flex; gap: 6px;"><input type="checkbox" name="may_contact" value="1"> EventBite may contact me about this report</label>
+                                        <label style="font-size: 12px; color: var(--color-ink); display: flex; gap: 6px;"><input type="checkbox" name="may_contact" value="1"> EventBite may contact me about this report</label>
                                         <div><button type="submit" class="eb-btn eb-btn-secondary eb-btn-sm">Send report</button></div>
                                     </form>
                                 </details>
@@ -882,13 +957,13 @@
                         @if($eventQr)
                             <div id="event-qr" class="eb-promotional-qr-card" data-qr-type="promotional">
                                 <div class="eb-promotional-qr-well">
-                                    <img src="{{ $eventQr['image'] }}" alt="QR code linking to this event page" width="120" height="120" style="background: #FFFFFF; border-radius: 8px; padding: 6px; display: block;">
+                                    <img src="{{ $eventQr['image'] }}" alt="QR code linking to this event page" width="120" height="120" style="background: var(--color-ink); border-radius: 8px; padding: 6px; display: block;">
                                 </div>
                                 <div style="min-width: 0; flex: 1;">
                                     <span class="eb-badge eb-badge-info" style="margin-bottom: 6px;">Promotional Share Code · Not an Admission Ticket</span>
-                                    <h3 style="font-size: 15px; font-weight: 800; color: #FFFFFF; margin: 0 0 4px;">Share this event</h3>
-                                    <p style="font-size: 12px; color: #94A3B8; margin: 0 0 4px;">Scan to open this page. This code is for sharing only and is not a ticket.</p>
-                                    <a href="{{ $eventQr['link'] }}" style="font-size: 12px; color: #C7FF45; word-break: break-all;">{{ $eventQr['link'] }}</a>
+                                    <h3 style="font-size: 15px; font-weight: 800; color: var(--color-ink); margin: 0 0 4px;">Share this event</h3>
+                                    <p style="font-size: 12px; color: var(--color-ink-2); margin: 0 0 4px;">Scan to open this page. This code is for sharing only and is not a ticket.</p>
+                                    <a href="{{ $eventQr['link'] }}" style="font-size: 12px; color: var(--color-accent); word-break: break-all;">{{ $eventQr['link'] }}</a>
                                 </div>
                             </div>
                         @endif
@@ -932,8 +1007,8 @@
             @if($photos->isNotEmpty())
             <section aria-labelledby="photos-heading">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px;">
-                    <h3 id="photos-heading" style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 0;">Photos</h3>
-                    <span style="font-size: 11px; color: #94A3B8;">From this listing</span>
+                    <h3 id="photos-heading" style="font-size: 16px; font-weight: 800; color: var(--color-ink); margin: 0;">Photos</h3>
+                    <span style="font-size: 11px; color: var(--color-ink-2);">From this listing</span>
                 </div>
 
                 <ul class="gallery-scroll" style="list-style: none; margin: 0; padding: 0;">
@@ -942,7 +1017,7 @@
                             <button type="button" class="gallery-open" data-lightbox-src="{{ $photo['image']->src }}" data-lightbox-caption="{{ $photo['caption'] }}{{ $photo['kind'] === 'illustrative' ? ' (illustrative photo)' : '' }}"
                                 aria-label="Open photo {{ $loop->iteration }} of {{ $loop->count }}: {{ $photo['caption'] }}" aria-haspopup="dialog">
                                 {{-- A photo that cannot be loaded is left out rather than shown as a broken tile. --}}
-                                <x-responsive-image :image="$photo['image']" alt="" sizes="220px" onerror="this.closest('.gallery-item').remove()" />
+                                <x-responsive-image :image="$photo['image']" alt="" sizes="220px" data-action-error="remove-closest" data-args='[".gallery-item"]' />
                             </button>
                             <div class="gallery-caption">
                                 {{ $photo['caption'] }}
@@ -973,12 +1048,12 @@
             <div class="card-navy" id="host-information">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;">
                     <div style="display: flex; align-items: center; gap: 14px;">
-                        <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, rgba(199, 255, 69, 0.22) 0%, rgba(139, 92, 246, 0.28) 100%); border: 1px solid var(--color-accent-border); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 4px 12px rgba(2, 6, 14, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: var(--color-accent);">
+                        <div style="width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 22%, transparent) 0%, color-mix(in srgb, var(--color-ink-2) 28%, transparent) 100%); border: 1px solid var(--color-accent-border); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--color-shade) 40%, transparent); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; color: var(--color-accent);">
                             {{ mb_substr($event->organizer_name ?: 'EventBite', 0, 1) }}
                         </div>
                         <div>
                             <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 700;">Host Information</div>
-                            <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 2px 0 0;">{{ $event->organizer_name ?? 'EventBite Host' }}</h3>
+                            <h3 style="font-size: 16px; font-weight: 800; color: var(--color-ink); margin: 2px 0 0;">{{ $event->organizer_name ?? 'EventBite Host' }}</h3>
                             <div style="font-size: 11px; color: var(--color-text-secondary); font-weight: 600;">Event organizer</div>
                         </div>
                     </div>
@@ -987,19 +1062,19 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                     @if(!empty($event->organizer_phone))
                         <a href="tel:{{ $event->organizer_phone }}" class="btn-glass" style="font-size: 12px; padding: 6px 14px;">
-                            <span>📞</span>
+                            <x-icon name="phone" size="sm" />
                             <span>{{ $event->organizer_phone }}</span>
                         </a>
                     @endif
                     @if(!empty($event->organizer_whatsapp))
-                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $event->organizer_whatsapp) }}" target="_blank" rel="noopener" class="btn-glass" style="font-size: 12px; padding: 6px 14px; color: #34D399;">
-                            <span>💬</span>
+                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $event->organizer_whatsapp) }}" target="_blank" rel="noopener" class="btn-glass" style="font-size: 12px; padding: 6px 14px; color: var(--color-success);">
+                            <x-icon name="phone" size="sm" />
                             <span>WhatsApp Host</span>
                         </a>
                     @endif
                     @if(!empty($event->organizer_email))
                         <a href="mailto:{{ $event->organizer_email }}" class="btn-glass" style="font-size: 12px; padding: 6px 14px;">
-                            <span>✉️</span>
+                            <x-icon name="file-text" size="sm" />
                             <span>{{ $event->organizer_email }}</span>
                         </a>
                     @endif
@@ -1016,10 +1091,10 @@
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 10px;">
                     <div>
                         <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-muted); font-weight: 700;">Policy Summary</div>
-                        <h3 style="font-size: 16px; font-weight: 800; color: #FFFFFF; margin: 2px 0 0;">Cancellation &amp; Refund Information</h3>
+                        <h3 style="font-size: 16px; font-weight: 800; color: var(--color-ink); margin: 2px 0 0;">Cancellation &amp; Refund Information</h3>
                     </div>
-                    <button type="button" onclick="switchSection('details'); document.getElementById('refund-policy')?.scrollIntoView({behavior:'smooth'});" class="btn-glass" style="font-size: 11px; padding: 5px 12px;">
-                        Full policy details &rarr;
+                    <button type="button" data-action-click="switchSection scroll-to" data-args='["details"]' data-scroll-target="refund-policy" class="btn-glass" style="font-size: 11px; padding: 5px 12px;">
+                        Full policy details
                     </button>
                 </div>
                 <p style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.55; margin: 0;">
@@ -1045,10 +1120,10 @@
 
         <!-- RIGHT COLUMN: Sticky Ticket Reservation Panel -->
         <div style="position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px;">
-            <div class="card-navy" style="box-shadow: var(--shadow-elevated); border-color: var(--color-border-strong); border-top-color: rgba(255, 255, 255, 0.16);">
+            <div class="card-navy" style="box-shadow: var(--shadow-elevated); border-color: var(--color-border-strong); border-top-color: color-mix(in srgb, var(--color-ink) 16%, transparent);">
                 <div style="margin-bottom: 14px;">
                     @if($fromPriceText)
-                        <div style="font-size: 28px; font-weight: 900; color: #FFFFFF; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">{{ $fromPriceText }}</div>
+                        <div style="font-size: 28px; font-weight: 900; color: var(--color-ink); font-variant-numeric: tabular-nums; letter-spacing: -0.02em;">{{ $fromPriceText }}</div>
                         <div style="font-size: 11px; color: var(--color-text-secondary); font-weight: 700;">Ticket prices; fees and taxes are shown before you pay</div>
                     @endif
                     @php $tone = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$availability['tone']] ?? 'eb-badge-info'; @endphp
@@ -1078,11 +1153,10 @@
                     @else
                         <a href="{{ route('login') }}" class="btn-gradient-purchase" id="btn-blade-signin-purchase">
                             <span>Sign in to get tickets</span>
-                            <span aria-hidden="true">&rarr;</span>
                         </a>
                     @endauth
                 @else
-                    <p style="font-size: 13px; color: #CBD5E1; margin: 0;">{{ $availability['label'] }}. Tickets can't be bought right now.</p>
+                    <p style="font-size: 13px; color: var(--color-ink-2); margin: 0;">{{ $availability['label'] }}. Tickets can't be bought right now.</p>
                 @endif
 
                 @auth
@@ -1098,14 +1172,14 @@
 
                 <!-- Jump to Food Ordering -->
                 @if($menu->isNotEmpty())
-                    <button type="button" onclick="switchSection('food')" class="btn-glass" style="width: 100%; justify-content: center; margin-top: 10px; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
-                        <span>🍲</span>
+                    <button type="button" data-action-click="switchSection" data-args='["food"]' class="btn-glass" style="width: 100%; justify-content: center; margin-top: 10px; padding: 11px 16px; border-radius: 12px; font-size: 13px;">
+                        <x-icon name="utensils" size="sm" />
                         <span>View the menu ({{ $menu->count() }})</span>
                     </button>
                 @endif
 
                 <div style="margin-top: 14px; font-size: 11px; color: var(--color-text-secondary); text-align: center; line-height: 1.4;">
-                    Your ticket QR code appears in My tickets once your payment is confirmed. <a href="#payment-methods" onclick="switchSection('details')" style="color: var(--color-accent); font-weight: 700;">Payment, fees and refunds</a>
+                    Your ticket QR code appears in My tickets once your payment is confirmed. <a href="#payment-methods" data-action-click="switchSection" data-args='["details"]' style="color: var(--color-accent); font-weight: 700;">Payment, fees and refunds</a>
                 </div>
             </div>
         </div>
@@ -1115,8 +1189,8 @@
     @if($canOrder)
         <div class="eb-buy-bar" role="region" aria-label="Buy tickets">
             <div style="min-width: 0;">
-                @if($fromPriceText)<strong style="display: block; font-size: 1rem; color: #F8FAFC;">{{ $fromPriceText }}</strong>@endif
-                <span style="font-size: 0.75rem; color: #A8B6C8;">{{ $availability['label'] }}</span>
+                @if($fromPriceText)<strong style="display: block; font-size: 1rem; color: var(--color-ink);">{{ $fromPriceText }}</strong>@endif
+                <span style="font-size: 0.75rem; color: var(--color-ink-2);">{{ $availability['label'] }}</span>
             </div>
             @auth
                 <a href="{{ route('checkout.tickets', $event) }}" class="eb-btn eb-btn-primary">{{ collect($tiers)->contains('on_sale', true) ? 'Get tickets' : 'Order food' }}</a>
@@ -1133,26 +1207,66 @@
         .eb-buy-bar {
             display: flex; align-items: center; justify-content: space-between; gap: 12px;
             position: fixed; left: 0; right: 0; bottom: var(--layout-bottom-nav-height); z-index: 55;
-            padding: 10px 16px; background: rgba(11, 25, 43, 0.96); border-top: 1px solid var(--color-border);
+            padding: 10px 16px; background: color-mix(in srgb, var(--color-paper-2) 96%, transparent); border-top: 1px solid var(--color-border);
             backdrop-filter: blur(10px);
         }
         .eb-buy-bar .eb-btn { min-height: 44px; flex-shrink: 0; }
+        .eb-buy-bar { transition: transform .2s ease, visibility .2s; }
+        .eb-buy-bar.is-hidden { transform: translateY(120%); visibility: hidden; }
         .event-detail-root { padding-bottom: calc(5rem + 72px); }
     }
 </style>
 
-<script>
+<script @cspNonce>
     // Tab switching logic: swaps the active section content
-    function switchSection(tabName) {
-        document.querySelectorAll('.section-tab-btn').forEach(btn => btn.classList.remove('active'));
+    function switchSection(tabName, reveal) {
+        document.querySelectorAll('.section-tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+            btn.setAttribute('tabindex', '-1');
+        });
         document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
 
         const targetBtn = document.getElementById('tab-' + tabName + '-btn');
         const targetPane = document.getElementById('pane-' + tabName);
 
-        if (targetBtn) targetBtn.classList.add('active');
-        if (targetPane) targetPane.classList.add('active');
+        if (targetBtn) {
+            targetBtn.classList.add('active');
+            targetBtn.setAttribute('aria-selected', 'true');
+            targetBtn.removeAttribute('tabindex');
+        }
+        if (targetPane) {
+            targetPane.classList.add('active');
+            if (reveal) {
+                const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                (targetBtn || targetPane).scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+            }
+        }
     }
+
+    // Tabs: arrow keys move between them (WAI-ARIA tabs pattern); a #pane-food link opens that tab.
+    (function () {
+        const tabs = Array.from(document.querySelectorAll('.section-tab-btn[role="tab"]'));
+        tabs.forEach((tab, i) => tab.addEventListener('keydown', event => {
+            const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+            if (!step) return;
+            event.preventDefault();
+            const next = tabs[(i + step + tabs.length) % tabs.length];
+            next.click();
+            next.focus();
+        }));
+        const fromHash = (location.hash || '').replace('#pane-', '');
+        if (['tickets', 'food', 'details'].includes(fromHash)) switchSection(fromHash, true);
+
+        // Phones: the bottom buy bar appears once the in-page Get Tickets button has scrolled away.
+        const inline = document.getElementById('detail-cta-inline');
+        const bar = document.querySelector('.eb-buy-bar');
+        if (inline && bar && 'IntersectionObserver' in window) {
+            new IntersectionObserver(([entry]) => {
+                bar.classList.toggle('is-hidden', entry.isIntersecting || entry.boundingClientRect.top > 0);
+            }).observe(inline);
+        }
+    })();
 
 
     // Share Event
@@ -1164,7 +1278,7 @@
             }).catch(() => {});
         } else {
             navigator.clipboard.writeText(window.location.href);
-            showDetailToast('Event link copied to clipboard! 📋');
+            showDetailToast('Event link copied.');
         }
     }
 

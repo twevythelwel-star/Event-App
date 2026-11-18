@@ -13,7 +13,7 @@
 
     <form method="GET" class="ac-filters" style="margin-bottom:12px">
         <div class="ac-field"><label for="id-status">Show</label>
-            <select id="id-status" class="ac-select" name="status" onchange="this.form.submit()">
+            <select id="id-status" class="ac-select" name="status" data-action-change="submit-form">
                 <option value="open" @selected($status === 'open')>Waiting for a decision</option>
                 <option value="all" @selected($status === 'all')>All</option>
                 @foreach(\App\Enums\HostVerificationStatus::cases() as $case)<option value="{{ $case->value }}" @selected($status === $case->value)>{{ $case->label() }}</option>@endforeach

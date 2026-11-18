@@ -114,7 +114,7 @@
                         <label for="notes">Internal note</label>
                         <textarea class="ac-textarea" id="notes" name="notes" maxlength="500">{{ old('notes') }}</textarea>
                     </div>
-                    <label class="ac-check" style="margin-top:12px"><input type="checkbox" name="confirm" value="1" required> I checked the bank statement or cash record for this payment</label>
+                    <label class="ac-check" style="margin-top:12px"><input type="checkbox" name="confirm" value="1" required> I checked Cash App, Zelle or the cash record for this payment</label>
                     <div class="ac-form-actions"><button class="ac-btn ac-btn-primary" type="submit" data-loading-text="Saving…">Save decision</button></div>
                 </form>
             @endif

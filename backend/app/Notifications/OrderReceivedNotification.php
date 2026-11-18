@@ -59,7 +59,7 @@ class OrderReceivedNotification extends Notification implements ShouldQueue
             ->greeting("Hello {$customerName},")
             ->line("We have received your order for **{$eventName}**.")
             ->line("Your order reference is **#{$orderNumber}** with a subtotal of **{$totalFormatted}**.")
-            ->line("Please note: Your order is currently placed. If you chose a manual transfer (Zelle, Cash App, or Bank Transfer), please follow the payment instructions provided.")
+            ->line("Please note: Your order is currently placed. If you chose Zelle or Cash App, send the payment to the organizer's handle shown on your ticket, then submit your confirmation number.")
             ->action('View Order & Payment Details', $trackingUrl)
             ->line('Thank you for supporting community culinary gatherings!')
             ->salutation('Warm regards, The ' . $eventName . ' Organizing Team');

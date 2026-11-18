@@ -64,18 +64,12 @@
 
     // Ticket type summary label
     $ticketTypeSummary = match (true) {
-        $tickets->isNotEmpty() => $tickets->map(fn ($i) => $i->quantity . ' × ' . $i->name)->join(' · '),
+        $tickets->isNotEmpty() => $tickets->map(fn ($i) => $i->quantity . ' × ' . $i->name)->join(', '),
         $food->isNotEmpty() => 'Advance Food Pre-Order Pass',
         default => 'General Event Pass',
     };
 
-    $methodIconName = match ((string) $order->method) {
-        'bank' => 'bank',
-        'zelle', 'cashapp', 'cash_app_pay' => 'phone',
-        'cash' => 'cash',
-        'paypal' => 'globe',
-        default => 'credit-card',
-    };
+    $methodIconName = \App\Payments\PaymentMethods::icon($order->method);
 
     // What the customer should do next, in one line.
     [$nextTitle, $nextDetail, $nextTone] = match (true) {
@@ -130,7 +124,7 @@
             @if($ticketKeepsake)
                 <figure class="eb-ticket-keepsake">
                     <x-responsive-image :image="$ticketKeepsake->responsiveImage()" :alt="$ticketKeepsake->alt_text" sizes="(min-width: 640px) 560px, 100vw" />
-                    <figcaption>From this event · {{ $ticketKeepsake->alt_text }}</figcaption>
+                    <figcaption>From this event: {{ $ticketKeepsake->alt_text }}</figcaption>
                 </figure>
             @endif
         @endif
@@ -156,7 +150,7 @@
                         <div class="eb-ticket-meta-cell">
                             <span class="eb-ticket-meta-label"><x-icon name="calendar" size="sm" /> Date &amp; Time</span>
                             <span class="eb-ticket-meta-val">
-                                {{ collect([\App\Services\ReceiptService::eventDate($event), \App\Services\ReceiptService::eventTime($event)])->filter()->implode(' · ') }}
+                                {{ collect([\App\Services\ReceiptService::eventDate($event), \App\Services\ReceiptService::eventTime($event)])->filter()->implode(', ') }}
                             </span>
                         </div>
                         <div class="eb-ticket-meta-cell">
@@ -231,7 +225,7 @@
                             <svg class="eb-icon eb-icon--sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <path class="eb-check-draw" d="M20 6L9 17l-5-5" />
                             </svg>
-                            <span>Official Attendee Admission Pass · Scan at Gate</span>
+                            <span>Official attendee admission pass. Scan at the gate.</span>
                         </div>
                         {{-- High-contrast, unobstructed QR well: pure white quiet zone, zero decorative graphics over QR modules --}}
                         <div class="eb-ticket-qr-frame">
@@ -240,7 +234,7 @@
                             </div>
                         </div>
                         <p class="eb-help-text" style="margin: var(--space-2) 0 0; text-align: center;">
-                            Single-use admission QR{{ $admissionWindow ? ' · valid ' . $admissionWindow : '' }}. Food items are collected separately by event staff.
+                            Single-use admission QR{{ $admissionWindow ? ', valid ' . $admissionWindow : '' }}. Food items are collected separately by event staff.
                         </p>
                     @else
                         <img src="{{ \App\Support\VisualAssets::illustration('payment')['url'] }}" alt="" width="180" height="135" style="display: block; margin: 0 auto var(--space-2); max-width: 60%; height: auto;">
@@ -257,14 +251,14 @@
                         <div class="eb-ticket-serial-sub">
                             <span>Order {{ $order->order_number }}</span>
                             @if($order->created_at)
-                                <span>· Placed {{ $local($order->created_at) }}</span>
+                                <span>Placed {{ $local($order->created_at) }}</span>
                             @endif
                             @if((int) ($order->token_version ?? 1) > 1)
-                                <span>· QR v{{ (int) $order->token_version }}{{ $order->token_reissued_at ? ' (reissued ' . $local($order->token_reissued_at) . ')' : '' }}</span>
+                                <span>QR v{{ (int) $order->token_version }}{{ $order->token_reissued_at ? ' (reissued ' . $local($order->token_reissued_at) . ')' : '' }}</span>
                             @endif
                         </div>
                         <div class="eb-ticket-serial-actions" data-no-print>
-                            <button type="button" class="eb-btn eb-btn-ghost eb-btn-sm" onclick="navigator.clipboard && navigator.clipboard.writeText('{{ $order->ticket_code }}'); this.textContent = 'Copied ✓';">
+                            <button type="button" class="eb-btn eb-btn-ghost eb-btn-sm" data-action-click="copy" data-args="{{ json_encode([$order->ticket_code, 'Copied ✓']) }}">
                                 Copy code
                             </button>
                             @if($event && ($event->starts_at || $event->event_date_iso))
@@ -275,7 +269,7 @@
                                 <a class="eb-btn eb-btn-sm eb-wallet-btn" href="{{ route('tickets.wallet', $order) }}" data-confirm-text="Opening Apple Wallet"><span data-confirm-label>Add to Apple Wallet</span></a>
                             @endif
                             @if($settled && !$checkedIn)
-                                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" onclick="window.print()">
+                                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-action-click="print">
                                     Print ticket
                                 </button>
                                 <form method="POST" action="{{ route('tickets.reissue', $order) }}" style="display: inline-block; margin: 0;">
@@ -322,10 +316,10 @@
             @endif
 
             <p class="eb-help-text" style="margin: 0;">
-                Payment: {{ \App\Support\PaymentStatusPresenter::label($status) }} · {{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }} · {{ $currency }}
-                @if($order->payment_reference && in_array($order->method, ['bank', 'zelle', 'cashapp'], true)) · your reference {{ $order->payment_reference }}@endif
+                Payment: {{ \App\Support\PaymentStatusPresenter::label($status) }}, {{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }}, {{ $currency }}
+                @if($order->payment_reference && \App\Payments\PaymentMethods::isManual($order->method)), your reference {{ $order->payment_reference }}@endif
             </p>
-            <p class="eb-help-text" style="margin: 0;">Order {{ $order->order_number }} · placed {{ $local($order->created_at) }}</p>
+            <p class="eb-help-text" style="margin: 0;">Order {{ $order->order_number }}, placed {{ $local($order->created_at) }}</p>
 
             @if(!$void && !$settled && $order->reservation_expires_at)
                 <p class="eb-help-text" style="margin: 0;">Inventory held until {{ $local($order->reservation_expires_at) }}. Complete payment confirmation before this time to keep this reservation.</p>
@@ -333,7 +327,7 @@
 
             @php $ticketSponsors = $event ? app(\App\Services\Events\PartnersService::class)->sponsorsFor($event, 'ticket') : collect(); @endphp
             @if($ticketSponsors->isNotEmpty())
-                <p class="eb-ticket-sponsors"><span class="eb-text-label">With thanks to</span> {{ $ticketSponsors->pluck('name')->join(' · ') }}</p>
+                <p class="eb-ticket-sponsors"><span class="eb-text-label">With thanks to</span> {{ $ticketSponsors->pluck('name')->join(', ') }}</p>
             @endif
 
             <div class="eb-ticket-card-brand">
@@ -357,7 +351,7 @@
             @if(session('transfer_link'))
                 <x-alert type="success" title="Send this link to the new holder">
                     <p style="margin: 0 0 4px;">They open it and sign in with the email you entered. Only you see this link.</p>
-                    <input class="eb-input" readonly value="{{ session('transfer_link') }}" onclick="this.select()" aria-label="Transfer link">
+                    <input class="eb-input" readonly value="{{ session('transfer_link') }}" data-action-click="select" aria-label="Transfer link">
                 </x-alert>
             @endif
             @if($pendingTransfer)
@@ -374,7 +368,7 @@
                         <label class="eb-label" for="transfer-email">Their EventBite email</label>
                         <input class="eb-input" type="email" id="transfer-email" name="email" required maxlength="190">
                     </div>
-                    <button class="eb-btn eb-btn-secondary" type="submit" onclick="return confirm('Transfer these tickets? Your QR code will stop working once they accept.');">Transfer</button>
+                    <button class="eb-btn eb-btn-secondary" type="submit" data-confirm="Transfer these tickets? Your QR code will stop working once they accept.">Transfer</button>
                 </form>
                 @error('transfer')<div class="eb-field-error" role="alert"><span>{{ $message }}</span></div>@enderror
             @endif
@@ -389,13 +383,21 @@
                 </span>
                 <div>
                     <h2 id="pay-heading" class="eb-text-section-title" style="margin: 0;">How to pay ({{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }})</h2>
-                    <p class="eb-help-text" style="margin: 2px 0 0;">Follow the organizer's instructions below, then submit your transfer reference.</p>
+                    <p class="eb-help-text" style="margin: 2px 0 0;">Send the payment as shown below, then submit your confirmation number.</p>
                 </div>
             </div>
 
+            @if($payTo ?? null)
+                <div class="eb-payment-due-callout" data-payment-handle="{{ $order->method }}">
+                    <div>
+                        <span class="eb-text-label">Send with {{ \App\Support\PaymentStatusPresenter::methodLabel($order->method) }} to</span>
+                        <strong class="eb-text-ticket-code" style="display: block; font-size: 1.15rem;">{{ $payTo }}</strong>
+                    </div>
+                </div>
+            @endif
             @if($instructions)
                 <div class="eb-checkout-instructions">{{ $instructions }}</div>
-            @else
+            @elseif(!($payTo ?? null))
                 <p class="eb-text-supporting" style="margin: 0;">The organizer will send you payment details.</p>
             @endif
 
@@ -415,8 +417,8 @@
 
             <form method="POST" action="{{ route('tickets.payment-reference', $order) }}" class="eb-stack" style="gap: var(--space-3);">
                 @csrf
-                <x-form-field name="payment_reference" label="Transfer reference" :value="old('payment_reference', $order->payment_reference)"
-                    :required="true" placeholder="e.g. NCB-109284" help="From your bank or app receipt." />
+                <x-form-field name="payment_reference" label="Payment confirmation number" :value="old('payment_reference', $order->payment_reference)"
+                    :required="true" placeholder="e.g. the Cash App or Zelle confirmation number" help="From your Cash App or Zelle receipt." />
                 <x-form-field name="sender_name" label="Name on the paying account (optional)" :value="old('sender_name', $order->sender_name)" />
                 <div><button type="submit" class="eb-btn eb-btn-primary" data-prevent-double-submit="true">
                     {{ $status === 'payment_submitted' ? 'Update reference' : 'I’ve sent the payment' }}

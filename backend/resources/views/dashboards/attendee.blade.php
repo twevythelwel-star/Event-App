@@ -34,36 +34,36 @@
     /* Discovery-first chips: brand accent border, lime on hover/focus — same tokens as the public pages. */
     .eb-discover-chip {
         display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 9999px;
-        border: 1px solid var(--color-border, #26384D); background: var(--color-surface, #10243A);
-        color: var(--color-text-primary, #F8FAFC); text-decoration: none; font-size: 0.85rem; font-weight: 600;
-        transition: border-color .15s ease, box-shadow .15s ease;
+        border: 1px solid var(--color-border, var(--color-rule)); background: var(--color-surface, var(--color-paper-3));
+        color: var(--color-text-primary, var(--color-ink)); text-decoration: none; font-size: 0.85rem; font-weight: 600;
+        transition: border-color .15s ease;
     }
     .eb-discover-chip:hover, .eb-discover-chip:focus-visible {
-        border-color: var(--color-accent, #C7FF45); box-shadow: 0 0 0 3px var(--color-accent-subtle, rgba(199,255,69,.15));
+        border-color: var(--color-accent, var(--color-accent)); box-shadow: 0 0 0 3px var(--color-accent-subtle, color-mix(in srgb, var(--color-accent) 15%, transparent));
     }
     /* Marketplace spotlight: full-width featured event card with image scrim. */
     .eb-spotlight {
         position: relative; display: flex; flex-direction: column; overflow: hidden;
-        border-radius: var(--radius-lg, 16px); border: 1px solid var(--color-border, #26384D);
-        background: var(--color-surface, #10243A); color: inherit; text-decoration: none;
+        border-radius: var(--radius-lg, 16px); border: 1px solid var(--color-border, var(--color-rule));
+        background: var(--color-surface, var(--color-paper-3)); color: inherit; text-decoration: none;
         min-height: 220px;
     }
     .eb-spotlight-media { position: absolute; inset: 0; }
     .eb-spotlight-media img { width: 100%; height: 100%; object-fit: cover; }
     .eb-spotlight-scrim {
         position: absolute; inset: 0;
-        background: linear-gradient(180deg, rgba(7,17,31,0.15) 0%, rgba(7,17,31,0.88) 78%);
+        background: linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 15%, transparent) 0%, color-mix(in srgb, var(--color-paper) 88%, transparent) 78%);
     }
     .eb-spotlight-body {
-        position: relative; margin-top: auto; padding: 1rem 1.1rem 1.1rem;
-        display: flex; flex-direction: column; gap: 0.45rem; color: #F8FAFC;
+        position: relative; margin-top: auto; padding: var(--space-4) 1.1rem 1.1rem;
+        display: flex; flex-direction: column; gap: 0.45rem; color: var(--color-ink);
     }
-    .eb-spotlight-title { font-size: 1.35rem; font-weight: 800; margin: 0; color: #FFFFFF; }
-    .eb-spotlight-meta { margin: 0; font-size: 0.85rem; color: #CBD5E1; }
+    .eb-spotlight-title { font-size: 1.35rem; font-weight: 800; margin: 0; color: var(--color-ink); }
+    .eb-spotlight-meta { margin: 0; font-size: 0.85rem; color: var(--color-ink-2); }
     @media (min-width: 768px) {
         .eb-spotlight { min-height: 300px; }
         .eb-spotlight-title { font-size: 1.7rem; }
-        .eb-spotlight-body { padding: 1.4rem 1.5rem 1.5rem; }
+        .eb-spotlight-body { padding: 1.4rem var(--space-6) var(--space-6); }
     }
 </style>
 <div class="eb-dashboard-shell eb-stack attendee-wallet-view">
@@ -150,7 +150,7 @@
 
     {{-- Event Host Status & Privileges Banner --}}
     @if($authUser && $authUser->hasRole(\App\Enums\AccountType::EVENT_HOST))
-        <section class="eb-card eb-panel" aria-label="Event Host privileges" style="border-color: rgba(52, 211, 153, 0.35);">
+        <section class="eb-card eb-panel" aria-label="Event Host privileges" style="border-color: color-mix(in srgb, var(--color-success) 35%, transparent);">
             <div class="eb-cluster" style="justify-content: space-between; align-items: center; gap: 1rem;">
                 <div>
                     <span class="eb-badge eb-badge-success">Approved Event Host</span>
@@ -168,7 +168,7 @@
             </div>
         </section>
     @elseif(!empty($hostApplication) && $hostApplication->isPending())
-        <section class="eb-card eb-panel" aria-label="Host application status" style="border-color: rgba(251, 191, 36, 0.35);">
+        <section class="eb-card eb-panel" aria-label="Host application status" style="border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);">
             <div class="eb-cluster" style="justify-content: space-between; align-items: center; gap: 1rem;">
                 <div>
                     <span class="eb-badge eb-badge-warning">Application Under Review</span>
@@ -234,8 +234,8 @@
                     <span class="eb-badge eb-badge-info">Featured this week</span>
                     <h3 class="eb-spotlight-title eb-clamp-2">{{ $featuredEvent->title }}</h3>
                     <p class="eb-spotlight-meta">
-                        {{ $featuredEvent->date_str }}@if($featuredEvent->time_str) · {{ $featuredEvent->time_str }}@endif
-                        @if($featuredLocation !== '') · {{ \Illuminate\Support\Str::limit($featuredLocation, 60) }}@endif
+                        {{ $featuredEvent->date_str }}@if($featuredEvent->time_str), {{ $featuredEvent->time_str }}@endif
+                        @if($featuredLocation !== '')<br>{{ \Illuminate\Support\Str::limit($featuredLocation, 60) }}@endif
                     </p>
                     <div class="eb-cluster" style="justify-content: space-between; align-items: center; gap: var(--space-3);">
                         <span class="eb-text-price">{{ $featuredPrice ?? 'Tickets not on sale' }}</span>
@@ -327,7 +327,7 @@
                                 <a href="{{ route('events.show', $event->id) }}" style="color: var(--color-text-primary); text-decoration: none;">{{ $event->title }}</a>
                             </h3>
                             <p class="eb-help-text" style="margin: 0;">
-                                {{ $event->date_str ?: 'Date TBA' }}{{ $event->time_str ? ' · ' . $event->time_str : '' }}
+                                {{ $event->date_str ?: 'Date TBA' }}{{ $event->time_str ? ', ' . $event->time_str : '' }}
                                 &bull; {{ $event->venue_name ?: 'Venue TBA' }}{{ $event->city ? ', ' . $event->city : '' }}
                             </p>
                         </div>
@@ -420,7 +420,7 @@
                         @php($cancellation = $ordersEstimates->firstWhere('id', $order->id)['cancellation'] ?? [])
                         <div class="eb-help-text" style="margin-top: 0.3rem;">
                             Refund: {{ str_replace('_', ' ', $cancellation['refundStatus'] ?? 'not_started') }}
-                            @if(!empty($cancellation['deadline'])) · Requests close {{ \Illuminate\Support\Carbon::parse($cancellation['deadline'])->format('M d, Y g:i A T') }} @endif
+                            @if(!empty($cancellation['deadline'])). Requests close {{ \Illuminate\Support\Carbon::parse($cancellation['deadline'])->format('M d, Y g:i A T') }} @endif
                         </div>
                         @if(!empty($cancellation['policyNotes']))<div class="eb-help-text" style="margin-top: 0.15rem;">{{ $cancellation['policyNotes'] }}</div>@endif
                         @foreach(($cancellation['refundHistory'] ?? []) as $refund)
@@ -483,7 +483,7 @@
                                 <span class="eb-notification-icon"><x-icon name="staff" size="sm" /></span>
                                 <div>
                                     <div style="font-weight: 700; color: var(--color-text-primary);">Staff Assignment Offer: {{ $invite->worker_role->label() }}</div>
-                                    <div class="eb-help-text">{{ $invite->event?->title ?? 'Event' }} · Station: {{ str_replace('_', ' ', $invite->station_assignment ?? 'all') }}</div>
+                                    <div class="eb-help-text">{{ $invite->event?->title ?? 'Event' }}, station: {{ str_replace('_', ' ', $invite->station_assignment ?? 'all') }}</div>
                                 </div>
                             </div>
                             <a href="#staff-access" class="eb-btn eb-btn-primary eb-btn-sm">Respond</a>
@@ -496,7 +496,7 @@
                                 <div>
                                     <div style="font-weight: 700; color: var(--color-text-primary);">{{ $item->title ?: $item->email_subject ?: ucfirst(str_replace('_', ' ', (string) $item->trigger)) }}</div>
                                     <div class="eb-help-text">
-                                        @if($item->order_number) Order #{{ $item->order_number }} · @endif
+                                        @if($item->order_number) Order #{{ $item->order_number }}, @endif
                                         {{ \Illuminate\Support\Str::limit((string) $item->message, 110) }}
                                     </div>
                                 </div>
@@ -583,7 +583,7 @@
                                     @csrf
                                     <button type="submit" class="eb-btn eb-btn-primary eb-btn-sm">Accept Assignment</button>
                                 </form>
-                                <form action="{{ route('staff-assignments.decline', $invitation->id) }}" method="POST" onsubmit="return confirm('Decline this staff assignment offer?');" style="margin: 0;">
+                                <form action="{{ route('staff-assignments.decline', $invitation->id) }}" method="POST" data-confirm="Decline this staff assignment offer?" style="margin: 0;">
                                     @csrf
                                     <button type="submit" class="eb-btn eb-btn-destructive eb-btn-sm">Decline</button>
                                 </form>
@@ -603,12 +603,12 @@
                 <p class="eb-help-text" style="margin: 0 0 0.75rem;">
                     Share this code with your Event Host. Valid for <strong>10 minutes</strong> (until {{ session('code_expires_at') }}). Single-use only.
                 </p>
-                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" onclick="navigator.clipboard.writeText('{{ session('plain_code') }}'); this.textContent = 'Copied ✓';">
+                <button type="button" class="eb-btn eb-btn-secondary eb-btn-sm" data-action-click="copy" data-args="{{ json_encode([(string) session('plain_code'), 'Copied ✓']) }}">
                     Copy Code
                 </button>
             </div>
         @else
-            <div class="eb-cluster" style="justify-content: space-between; align-items: center; gap: 1rem; padding: 1.15rem; border-radius: 14px; background: rgba(7, 15, 28, 0.68); border: 1px solid rgba(139, 179, 255, 0.16); margin-bottom: 1rem;">
+            <div class="eb-cluster" style="justify-content: space-between; align-items: center; gap: 1rem; padding: 1.15rem; border-radius: 14px; background: color-mix(in srgb, var(--color-paper) 68%, transparent); border: 1px solid color-mix(in srgb, var(--color-ink-2) 16%, transparent); margin-bottom: 1rem;">
                 <div style="max-width: 600px;">
                     <div style="font-weight: 700; color: var(--color-text-primary); font-size: 0.95rem;">Working as staff at an upcoming event?</div>
                     <p class="eb-help-text" style="margin: 0.25rem 0 0;">

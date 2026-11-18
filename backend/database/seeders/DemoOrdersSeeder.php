@@ -28,14 +28,14 @@ class DemoOrdersSeeder extends Seeder
         $event = TenantContext::withoutTenantScope(fn () => Event::where('slug', 'south-florida-jamaican-fish-fry')->firstOrFail());
 
         $demoOrders = [
-            // Transfer submitted with a bank reference: waiting in the host's verification queue
-            ['method' => 'bank', 'payment_reference' => 'DEMO-ACH-882104', 'name' => 'Shanice Brown', 'items' => [['menu_item_id' => 'kgn-escovitch', 'quantity' => 2, 'selected_choices' => ['fish-size' => 1, 'sides' => 0]]]],
-            // Demo transfer with a sender name only; no real payment was made
-            ['method' => 'bank', 'sender_name' => 'Marcus Reid', 'name' => 'Marcus Reid', 'items' => [['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 3]]],
+            // Zelle payment submitted with a confirmation number: waiting in the host's verification queue
+            ['method' => 'zelle', 'payment_reference' => 'DEMO-ZELLE-882104', 'name' => 'Shanice Brown', 'items' => [['menu_item_id' => 'kgn-escovitch', 'quantity' => 2, 'selected_choices' => ['fish-size' => 1, 'sides' => 0]]]],
+            // Demo Cash App payment with a sender name only; no real payment was made
+            ['method' => 'cashapp', 'sender_name' => 'Marcus Reid', 'name' => 'Marcus Reid', 'items' => [['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 3]]],
             // Cash at pickup: authorized unpaid, so the kitchen can prepare it
             ['method' => 'cash', 'name' => 'Paulette Grant', 'items' => [['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 1], ['menu_item_id' => 'kgn-escovitch', 'quantity' => 1]]],
             // Verified and paid: ready for the scanner
-            ['method' => 'bank', 'payment_reference' => 'DEMO-ACH-55127', 'name' => 'Andre Campbell', 'paid' => true, 'items' => [['menu_item_id' => 'kgn-escovitch', 'quantity' => 1], ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 2]]],
+            ['method' => 'cashapp', 'payment_reference' => 'DEMO-CASHAPP-55127', 'name' => 'Andre Campbell', 'paid' => true, 'items' => [['menu_item_id' => 'kgn-escovitch', 'quantity' => 1], ['menu_item_id' => 'kgn-fried-chicken', 'quantity' => 2]]],
         ];
 
         foreach ($demoOrders as $demo) {

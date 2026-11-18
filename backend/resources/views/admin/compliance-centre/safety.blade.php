@@ -11,13 +11,13 @@
 
     <form method="GET" class="ac-filters" style="margin-bottom:12px">
         <div class="ac-field"><label for="s-status">Show</label>
-            <select id="s-status" class="ac-select" name="status" onchange="this.form.submit()">
+            <select id="s-status" class="ac-select" name="status" data-action-change="submit-form">
                 <option value="open" @selected($status === 'open')>Open and investigating</option>
                 <option value="all" @selected($status === 'all')>All</option>
                 @foreach(\App\Models\Compliance\ComplianceSafetyReport::STATUSES as $value => $label)<option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>@endforeach
             </select></div>
         <div class="ac-field"><label for="s-state">State</label>
-            <select id="s-state" class="ac-select" name="state" onchange="this.form.submit()">
+            <select id="s-state" class="ac-select" name="state" data-action-change="submit-form">
                 <option value="">All states</option>
                 @foreach($states as $s)<option value="{{ $s->code }}" @selected($stateFilter === $s->code)>{{ $s->name }}</option>@endforeach
             </select></div>

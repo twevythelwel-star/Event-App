@@ -21,7 +21,7 @@ class UpdatePlatformSettingsRequest extends FormRequest
             'supported_currencies' => ['required', 'array', 'min:1'],
             'supported_currencies.*' => ['string', \Illuminate\Validation\Rule::in(\App\Support\Currency::supportedCodes())],
             'supported_payment_methods' => ['required', 'array', 'min:1'],
-            'supported_payment_methods.*' => ['string', 'in:cash,bank,zelle,cashapp,card'],
+            'supported_payment_methods.*' => ['string', 'in:cash,zelle,cashapp,card'],
             'mandatory_2fa_for_admins' => ['nullable', 'boolean'],
             'admin_session_timeout_minutes' => ['nullable', 'integer', 'min:5', 'max:1440'],
             'attendee_session_timeout_days' => ['nullable', 'integer', 'min:1', 'max:90'],

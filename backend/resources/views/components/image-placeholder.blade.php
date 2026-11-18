@@ -12,10 +12,10 @@
     ];
     $config = $sizes[$size] ?? $sizes['medium'];
     $icons = [
-        'generic' => '📷',
-        'food' => '🍽️',
-        'event' => '🎪',
-        'venue' => '🏛️',
+        'generic' => 'events',
+        'food' => 'utensils',
+        'event' => 'events',
+        'venue' => 'map-pin',
     ];
     $icon = $icons[$type] ?? $icons['generic'];
     $labels = [
@@ -27,6 +27,6 @@
 @endphp
 
 <div class="image-placeholder {{ $type }}" style="width: {{ $config['w'] }}; height: {{ $config['h'] }}; min-height: {{ $config['h'] }};">
-    <div style="font-size: {{ $config['icon'] }}; margin-bottom: 8px; display: block;">{{ $icon }}</div>
+    <div style="margin-bottom: 8px; display: block;" aria-hidden="true"><x-icon :name="$icon" size="lg" /></div>
     <span style="font-size: 14px; font-weight: 500;">{{ $labels[$type] ?? $labels['generic'] }}</span>
 </div>

@@ -14,7 +14,7 @@
   background-image: var(--gradient-surface-3d);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
-  border-top-color: rgba(255, 255, 255, 0.11);
+  border-top-color: color-mix(in srgb, var(--color-ink) 11%, transparent);
   border-radius: var(--radius-lg);
   padding: var(--layout-card-padding-lg);
   box-shadow: var(--shadow-subtle);
@@ -24,7 +24,7 @@
   background-color: var(--color-surface-elevated);
   background-image: var(--gradient-surface-elevated-3d);
   border-color: var(--color-border-strong);
-  border-top-color: rgba(255, 255, 255, 0.15);
+  border-top-color: color-mix(in srgb, var(--color-ink) 15%, transparent);
   box-shadow: var(--shadow-card);
 }
 
@@ -37,7 +37,7 @@
   padding-bottom: var(--space-4);
   margin-bottom: var(--space-4);
   border-bottom: 1px solid var(--color-border);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 4%, transparent);
 }
 
 .eb-card-title,
@@ -53,7 +53,7 @@
 .card-subtitle {
   font-size: var(--text-supporting-size);
   color: var(--color-text-secondary);
-  margin-top: 0.25rem;
+  margin-top: var(--space-1);
 }
 
 /* --------------------------------------------------------------------------
@@ -66,21 +66,19 @@
   background-color: var(--color-surface);
   background-image: var(--gradient-surface-3d);
   border: 1px solid var(--color-border);
-  border-top-color: rgba(255, 255, 255, 0.12);
+  border-top-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-subtle);
   overflow: hidden;
   transition:
-    transform var(--duration-normal) var(--ease-out-quart),
-    border-color var(--duration-normal) var(--ease-standard),
-    box-shadow var(--duration-normal) var(--ease-standard);
+    transform var(--duration-normal) var(--ease-out-quart), border-color var(--duration-normal) var(--ease-standard);
 }
 
 .eb-event-card:hover,
 .eb-event-card:focus-within {
   transform: translateY(-4px);
   border-color: var(--color-border-strong);
-  border-top-color: rgba(199, 255, 69, 0.42);
+  border-top-color: color-mix(in srgb, var(--color-accent) 42%, transparent);
   box-shadow: var(--shadow-elevated);
 }
 
@@ -108,7 +106,7 @@
 .eb-event-card-scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(7, 17, 31, 0.14) 0%, rgba(7, 17, 31, 0.25) 48%, rgba(7, 17, 31, 0.88) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-paper) 14%, transparent) 0%, color-mix(in srgb, var(--color-paper) 25%, transparent) 48%, color-mix(in srgb, var(--color-paper) 88%, transparent) 100%);
   pointer-events: none;
 }
 
@@ -134,23 +132,22 @@
   border-radius: var(--radius-pill);
   font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: color-mix(in srgb, var(--color-ink) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-ink) 10%, transparent);
   color: var(--color-text-secondary);
 }
 
 .eb-event-card-tag-food {
-  background-color: rgba(245, 158, 11, 0.12);
-  border-color: rgba(245, 158, 11, 0.28);
-  color: #FCD34D;
+  background-color: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 28%, transparent);
+  color: var(--color-accent);
 }
 
 .eb-event-card-footer {
   margin-top: auto;
   padding-top: var(--space-3);
   border-top: 1px solid var(--color-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 4%, transparent);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -184,10 +181,7 @@
   font-weight: 700;
   white-space: nowrap;
   transition:
-    background-color var(--duration-fast) var(--ease-standard),
-    border-color var(--duration-fast) var(--ease-standard),
-    color var(--duration-fast) var(--ease-standard),
-    transform var(--duration-fast) var(--ease-out-quart);
+    background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-out-quart);
 }
 
 .eb-event-card-cta-arrow {
@@ -218,21 +212,19 @@
   background-color: var(--color-surface);
   background-image: var(--gradient-surface-3d);
   border: 1px solid var(--color-border);
-  border-top-color: rgba(255, 255, 255, 0.11);
+  border-top-color: color-mix(in srgb, var(--color-ink) 11%, transparent);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-subtle);
   overflow: hidden;
   transition:
-    transform var(--duration-fast) var(--ease-out-quart),
-    border-color var(--duration-fast) var(--ease-standard),
-    box-shadow var(--duration-fast) var(--ease-standard);
+    transform var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) var(--ease-standard);
 }
 
 .eb-food-card:hover,
 .food-card:hover {
   transform: translateY(-3px);
   border-color: var(--color-border-strong);
-  border-top-color: rgba(199, 255, 69, 0.3);
+  border-top-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
   box-shadow: var(--shadow-card);
 }
 
@@ -260,7 +252,7 @@
   bottom: var(--space-2);
   padding: 2px 8px;
   border-radius: var(--radius-full, 999px);
-  background: rgba(7, 17, 31, 0.78);
+  background: color-mix(in srgb, var(--color-paper) 78%, transparent);
   color: var(--color-text-primary);
   font-size: 0.72rem;
   font-weight: 600;
@@ -290,7 +282,7 @@
   background-color: var(--color-surface);
   background-image: var(--gradient-surface-3d);
   border: 1px solid var(--color-border);
-  border-top-color: rgba(255, 255, 255, 0.12);
+  border-top-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-card);
@@ -318,7 +310,7 @@
   background-color: var(--color-surface);
   background-image: var(--gradient-surface-3d);
   border: 1px solid var(--color-border);
-  border-top-color: rgba(255, 255, 255, 0.11);
+  border-top-color: color-mix(in srgb, var(--color-ink) 11%, transparent);
   border-radius: var(--radius-lg);
   padding: var(--layout-card-padding);
   box-shadow: var(--shadow-subtle);
@@ -343,14 +335,14 @@
   background-color: var(--color-surface);
   background-image: var(--gradient-surface-3d);
   border: 1px solid var(--color-border);
-  border-top-color: rgba(255, 255, 255, 0.12);
+  border-top-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
   border-radius: var(--radius-lg);
   padding: var(--layout-card-padding) var(--layout-card-padding-lg);
   box-shadow: var(--shadow-subtle);
   display: flex;
   flex-direction: column;
   gap: 0.375rem;
-  transition: transform var(--duration-fast) var(--ease-out-quart), box-shadow var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+  transition: transform var(--duration-fast) var(--ease-out-quart), border-color var(--duration-fast) var(--ease-standard);
 }
 
 .eb-metric-card:hover,
@@ -365,7 +357,6 @@
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--color-text-secondary);
-  letter-spacing: 0.02em;
 }
 
 .eb-metric-value,
@@ -397,7 +388,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.25rem 0.6875rem;
+  padding: var(--space-1) 0.6875rem;
   border-radius: var(--radius-pill);
   font-family: var(--font-sans);
   font-size: var(--text-status-size);
@@ -483,7 +474,7 @@
   position: relative; /* keeps visually hidden labels inside, so a wide table never widens the page */
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--color-border);
-  border-top-color: rgba(255, 255, 255, 0.1);
+  border-top-color: color-mix(in srgb, var(--color-ink) 10%, transparent);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
   background-image: var(--gradient-surface-3d);
@@ -505,10 +496,9 @@ table.data-table th {
   color: var(--color-text-secondary);
   font-weight: 700;
   font-size: 0.75rem;
-  letter-spacing: 0.04em;
   padding: var(--table-cell-padding-y) var(--table-cell-padding-x);
   border-bottom: 1px solid var(--color-border);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--color-ink) 4%, transparent);
   white-space: nowrap;
 }
 
@@ -544,7 +534,7 @@ table.data-table tbody tr:hover td {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background-color: rgba(7, 17, 31, 0.82);
+  background-color: color-mix(in srgb, var(--color-paper) 82%, transparent);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -561,7 +551,7 @@ table.data-table tbody tr:hover td {
   background-image: var(--gradient-surface-elevated-3d);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border-strong);
-  border-top-color: rgba(255, 255, 255, 0.16);
+  border-top-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
   box-shadow: var(--shadow-modal);
@@ -585,7 +575,7 @@ table.data-table tbody tr:hover td {
   background-color: var(--color-surface-floating);
   background-image: var(--gradient-surface-elevated-3d);
   border: 1px solid var(--color-border-strong);
-  border-top-color: rgba(255, 255, 255, 0.15);
+  border-top-color: color-mix(in srgb, var(--color-ink) 15%, transparent);
   border-radius: var(--radius-md);
   padding: var(--space-2);
   box-shadow: var(--shadow-elevated);
@@ -598,7 +588,7 @@ table.data-table tbody tr:hover td {
   gap: var(--space-2);
   width: 100%;
   min-height: 40px;
-  padding: 0.5rem 0.75rem;
+  padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
   border: none;
   background: transparent;
@@ -658,7 +648,7 @@ table.data-table tbody tr:hover td {
   padding: 0.875rem 1.125rem;
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
-  border-top-color: rgba(255, 255, 255, 0.12);
+  border-top-color: color-mix(in srgb, var(--color-ink) 12%, transparent);
   background-color: var(--color-surface);
   background-image: var(--gradient-surface-3d);
   box-shadow: var(--shadow-subtle);

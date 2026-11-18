@@ -2457,67 +2457,6 @@ class LegacyServiceChecksTest extends TestCase
         $this->assert($lockedCurrency === 'USD', "Authoritative currency remains locked to USD despite browser requesting JMD");
 
         // =========================================================================
-        // 3. Payment Layer (Manual US Gateway & Verification Gate)
-        // =========================================================================
-        $manualGateway = new \App\Services\Gateways\ManualPaymentGateway();
-        $this->assert($manualGateway->getIdentifier() === 'manual_us', "Manual US payment gateway identifier is manual_us");
-        $this->assert($manualGateway->isAvailable('USD', 'US') === true, "Manual US gateway is available for USD in US");
-
-        // Create a test order
-        $testOrder = (new \App\Models\Order)->forceFill([
-            'id' => 9901,
-            'organizer_id' => 10,
-            'customer_name' => 'Sarah Connor',
-            'email' => 'sarah@example.com',
-            'subtotal' => 45.00,
-            'packaging_fee' => 1.50,
-            'total_amount' => 46.50,
-            'currency' => 'USD',
-            'status' => 'awaiting_payment',
-        ]);
-        $testOrder->save();
-
-        // Attendee submits transfer claim with screenshot
-        $initiation = $manualGateway->initiatePayment($testOrder, [
-            'reference' => 'CHASE-WIRE-998811',
-            'sender_name' => 'Sarah Connor',
-            'method' => 'bank_transfer',
-            'receipt_path' => '/uploads/receipts/chase_wire_9901.png',
-        ]);
-
-        $this->assert($initiation['status'] === 'payment_submitted', "Attendee submission sets status to payment_submitted");
-        $this->assert($initiation['is_paid'] === false, "Uploaded screenshot is strictly NOT treated as proof of funds");
-        $this->assert($testOrder->status === 'payment_submitted', "Order in database remains payment_submitted and unpaid");
-
-        // Authorized Host verifies payment
-        $verification = $manualGateway->verifyPayment($testOrder, [
-            'verifier_id' => 10,
-            'verifier_name' => 'Host Marcus',
-            'amount_verified_minor' => 4650, // Full amount verified
-            'notes' => 'Matched in Chase Commercial Online banking statement',
-        ]);
-
-        $this->assert($verification['is_paid'] === true, "Order transitions to paid upon authorized verification");
-        $this->assert($testOrder->status === 'paid', "Order status in database is now paid");
-        $this->assert($testOrder->verified_by == 10, "Order records verifier ID");
-        $this->assert(str_contains($testOrder->verification_notes, 'Host Marcus'), "Verification notes record staff name");
-
-        // Process authorized partial refund
-        $refund = $manualGateway->processRefund(
-            order: $testOrder,
-            refundAmountMinor: 1000, // $10.00 refund
-            reason: 'Item unavailable at event',
-            refundData: ['authorizer_name' => 'Administrator Alice']
-        );
-        $this->assert($refund['refunded_amount_minor'] === 1000, "Refund of 1000 cents processed");
-        $this->assert($refund['net_receipts_minor'] === 3650, "Net receipts updated to 3650 cents after refund");
-
-        // Stripe automated gateway readiness
-        $stripeGateway = new \App\Services\Gateways\StripePaymentGateway();
-        $this->assert($stripeGateway->getIdentifier() === 'stripe_us', "Stripe gateway identifier is stripe_us");
-        $this->assert($stripeGateway->isAvailable('USD', 'US') === false, "Stripe gateway is unavailable until provider-backed checkout is implemented");
-
-        // =========================================================================
         // 4. US Addresses and IANA Timezones with DST Handling
         // =========================================================================
         // Valid US Address

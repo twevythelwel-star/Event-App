@@ -207,7 +207,7 @@ class CheckoutCorrectnessTest extends TestCase
         $response = $this->actingAs($this->buyer)->post('/events/' . $this->event->slug . '/order', [
             'customer_name' => 'Buyer One',
             'customer_phone' => '+1 876 555 0123',
-            'method' => 'bank',
+            'method' => 'cash',
             'currency' => 'JMD',
             'idempotency_key' => 'browser-form-1',
             'items' => [
@@ -227,7 +227,7 @@ class CheckoutCorrectnessTest extends TestCase
         $response = $this->actingAs($this->buyer)->from('/events/' . $this->event->slug)->post('/events/' . $this->event->slug . '/order', [
             'customer_name' => 'Buyer One',
             'customer_phone' => '+1 876 555 0123',
-            'method' => 'bank',
+            'method' => 'cash',
             'currency' => 'JMD',
             'items' => [['menu_item_id' => $this->dish->id, 'quantity' => 9]],
         ]);

@@ -27,7 +27,7 @@
 </span>
 
 @once
-    <script>
+    <script @cspNonce>
         // Progressive enhancement: reveal the − / + buttons, sync active state, and keep the value inside min/max.
         document.addEventListener('DOMContentLoaded', function () {
             function syncControl(control) {

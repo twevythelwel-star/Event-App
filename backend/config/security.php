@@ -13,4 +13,21 @@ return [
     | there); on a self-managed server behind a local NGINX, set the proxy's address, e.g. 127.0.0.1.
     */
     'trusted_proxies' => env('TRUSTED_PROXIES', '*'),
+
+    /*
+    | Content-Security-Policy sent on every web response (App\Http\Middleware\SecurityHeaders). Scripts, styles,
+    | fonts, frames, form posts and connections are limited to this site (plus Google Fonts). Images may come from
+    | any HTTPS host, because event photos can be stored on object storage.
+    |
+    | Scripts: this site's files, plus inline <script> blocks that carry the response's nonce (@cspNonce in Blade).
+    | Inline on*="" handlers are refused; pages wire behaviour with data attributes (public/js/actions.js).
+    |
+    | CSP_EXTRA_SOURCES adds origins to every fetch directive (e.g. a CDN in front of storage), space-separated.
+    | CSP_REPORT_ONLY=true sends the policy as Content-Security-Policy-Report-Only instead (log, don't block).
+    */
+    'csp' => [
+        'enabled' => (bool) env('CSP_ENABLED', true),
+        'report_only' => (bool) env('CSP_REPORT_ONLY', false),
+        'extra_sources' => trim((string) env('CSP_EXTRA_SOURCES', '')),
+    ],
 ];

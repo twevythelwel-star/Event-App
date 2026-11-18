@@ -16,7 +16,7 @@
             {{ $message }}
         </p>
         <div style="display: flex; justify-content: flex-end; gap: var(--space-3);">
-            <button type="button" class="eb-btn eb-btn-secondary" onclick="document.getElementById('{{ $id }}').style.display='none'">
+            <button type="button" class="eb-btn eb-btn-secondary" data-action-click="hide" data-args="{{ json_encode([$id]) }}">
                 Cancel
             </button>
             <form action="{{ $confirmAction }}" method="POST" style="margin: 0;">

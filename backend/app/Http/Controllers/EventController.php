@@ -47,7 +47,12 @@ class EventController extends Controller
         if ($request->filled('kind')) {
             $kind = (string) $request->query('kind');
             $subjects = \App\Services\PhotoLibrary::subjects();
-            $keys = array_key_exists($kind, $subjects) ? [$kind] : array_keys(array_filter($subjects, fn ($s) => $s['group'] === $kind));
+            $collection = config('photo_library.collections.' . $kind);
+            $keys = match (true) {
+                array_key_exists($kind, $subjects) => [$kind],
+                is_array($collection) => array_values(array_intersect((array) ($collection['subjects'] ?? []), array_keys($subjects))),
+                default => array_keys(array_filter($subjects, fn ($s) => $s['group'] === $kind)),
+            };
             $query->whereIn('photo_subject', $keys ?: ['__none__']);
         }
         $perPage = min(48, max(12, (int) $request->query('per_page', 24)));
@@ -66,6 +71,11 @@ class EventController extends Controller
                     'per_page' => $events->perPage(), 'total' => $events->total()],
             ]);
         }
+
+        // Every card shows a photo and ticket availability: read them for the whole page at once. HTML only, so
+        // the JSON listing above keeps its shape (no media rows in it).
+        $events->getCollection()->load('mediaItems');
+        \App\Services\Checkout\InventorySnapshot::instance()->prefetch($events->getCollection());
 
         return view('events.index', [
             'events' => $events,

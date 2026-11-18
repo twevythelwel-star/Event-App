@@ -84,11 +84,5 @@ return [
             'zip' => ['required' => true, 'pattern' => '/^\d{5}(-\d{4})?$/'], // 5-digit US ZIP or ZIP+4
             'country' => ['required' => true, 'default' => 'US', 'allowed' => ['US']],
         ],
-        // Supported Payment Gateways for US Launch
-        'payments' => [
-            'supported_methods' => ['cash', 'bank_transfer', 'zelle', 'ach'],
-            'active_gateway' => env('PAYMENT_GATEWAY', 'manual_us'), // 'manual_us', 'stripe_us'
-            'require_manual_verification' => true, // Uploaded screenshot is NEVER proof of funds
-        ],
     ],
 ];

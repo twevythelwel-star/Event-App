@@ -67,7 +67,7 @@
 </fieldset>
 
 @once
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-country-picker]').forEach(function (picker) {
             const max = parseInt(picker.dataset.max, 10);

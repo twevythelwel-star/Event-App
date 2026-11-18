@@ -20,7 +20,7 @@
         <x-alert type="error" title="Not saved" id="schedule-errors" tabindex="-1">
             <ul style="margin: 4px 0 0; padding-left: 1.1rem;">@foreach($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul>
         </x-alert>
-        <script>document.addEventListener('DOMContentLoaded', () => document.getElementById('schedule-errors')?.focus());</script>
+        <script @cspNonce>document.addEventListener('DOMContentLoaded', () => document.getElementById('schedule-errors')?.focus());</script>
     @endif
 
     <nav class="eb-tabs" role="tablist" aria-label="Schedule studio">
@@ -50,7 +50,7 @@
                                 @unless($activity->is_public)<span class="eb-badge">Not public</span>@endunless
                             </summary>
                             @include('events.partials.activity-form', ['activity' => $activity])
-                            <form method="POST" action="{{ route('events.schedule-studio.activities.destroy', [$event->id, $activity->id]) }}" onsubmit="return confirm('Remove this activity from the schedule?');" style="margin-top: var(--space-3);">
+                            <form method="POST" action="{{ route('events.schedule-studio.activities.destroy', [$event->id, $activity->id]) }}" data-confirm="Remove this activity from the schedule?" style="margin-top: var(--space-3);">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="eb-btn eb-btn-ghost eb-btn-sm">Remove activity</button>
                             </form>
@@ -74,7 +74,7 @@
                 <summary class="eb-schedule-studio-row"><strong>{{ $person->name }}</strong><span class="eb-badge eb-badge-info">{{ $person->roleLabel() }}</span>
                     <span class="eb-help-text">{{ $person->activities()->count() }} {{ \Illuminate\Support\Str::plural('activity', $person->activities()->count()) }}</span></summary>
                 @include('events.partials.performer-form', ['performer' => $person])
-                <form method="POST" action="{{ route('events.schedule-studio.performers.destroy', [$event->id, $person->id]) }}" onsubmit="return confirm('Remove {{ $person->name }} from the line-up and from every activity?');" style="margin-top: var(--space-3);">
+                <form method="POST" action="{{ route('events.schedule-studio.performers.destroy', [$event->id, $person->id]) }}" data-confirm="Remove {{ $person->name }} from the line-up and from every activity?" style="margin-top: var(--space-3);">
                     @csrf @method('DELETE')
                     <button type="submit" class="eb-btn eb-btn-ghost eb-btn-sm">Remove from line-up</button>
                 </form>
@@ -105,7 +105,7 @@
                         <span class="eb-help-text">{{ $stage->activities()->count() }} {{ \Illuminate\Support\Str::plural('activity', $stage->activities()->count()) }}</span>
                     </div>
                 </form>
-                <form id="stage-delete-{{ $stage->id }}" method="POST" action="{{ route('events.schedule-studio.stages.destroy', [$event->id, $stage->id]) }}" onsubmit="return confirm('Remove this place? Its activities stay on the schedule without a set place.');" hidden>
+                <form id="stage-delete-{{ $stage->id }}" method="POST" action="{{ route('events.schedule-studio.stages.destroy', [$event->id, $stage->id]) }}" data-confirm="Remove this place? Its activities stay on the schedule without a set place." hidden>
                     @csrf @method('DELETE')
                 </form>
             </div>

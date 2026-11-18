@@ -28,6 +28,10 @@ class HostPaymentPolicy extends Model
         'cash_underpayment_rule',
         'zelle_instructions',
         'cash_app_instructions',
+        // Where customers send Zelle and Cash App payments (migration 2026_11_13_000001)
+        'zelle_recipient',
+        'cash_app_cashtag',
+        // Retired: bank transfer is no longer offered. Kept so older rows stay readable.
         'bank_transfer_instructions',
         'require_transfer_reference',
         'require_sender_name',
@@ -73,19 +77,101 @@ class HostPaymentPolicy extends Model
         return $this->belongsTo(Organizer::class, 'organizer_id');
     }
 
+    /** A $Cashtag: a letter first, then up to 19 letters, digits, hyphens or underscores. The leading $ is optional on input. */
+    public const CASHTAG_PATTERN = '/^\$?[A-Za-z][A-Za-z0-9_-]{0,19}$/';
+
     /**
-     * Check if payment method can be enabled based on host location eligibility.
+     * Validation for the Zelle and Cash App handles, shared by the settings page and the host API.
+     *
+     * @return array<string, list<mixed>>
      */
-    public function canEnableMethod(string $methodId, string $location): bool
+    public static function handleRules(bool $sometimes = false): array
     {
-        if ($methodId === 'cash' || $methodId === 'bank' || $methodId === 'bank_transfer') {
+        $prefix = $sometimes ? ['sometimes'] : [];
+
+        return [
+            'cash_app_cashtag' => [...$prefix, 'nullable', 'string', 'max:21', 'regex:' . self::CASHTAG_PATTERN],
+            'zelle_recipient' => [...$prefix, 'nullable', 'string', 'max:190', function (string $attribute, mixed $value, \Closure $fail) {
+                if ($value !== null && trim((string) $value) !== '' && !self::isZelleRecipient((string) $value)) {
+                    $fail('Enter the email address or U.S. mobile number your Zelle is enrolled with.');
+                }
+            }],
+        ];
+    }
+
+    /** @return array<string, string> */
+    public static function handleMessages(): array
+    {
+        return ['cash_app_cashtag.regex' => 'Enter a $Cashtag: a letter, then up to 19 letters, numbers, hyphens or underscores.'];
+    }
+
+    /** The switch for each method that needs a handle, and the handle's column. */
+    public const HANDLE_SWITCHES = ['enable_zelle' => 'zelle_recipient', 'enable_cashapp' => 'cash_app_cashtag'];
+
+    /**
+     * Turning Zelle or Cash App on needs the handle customers send to: the one in this update, or else the one
+     * already saved. Shared by the settings page and the host API.
+     *
+     * @param array<string, mixed> $input the submitted fields (only those present are considered)
+     * @return array<string, string> field => message for each method switched on without a handle
+     */
+    public static function missingHandleErrors(array $input, ?self $current): array
+    {
+        $errors = [];
+        foreach (self::HANDLE_SWITCHES as $switch => $field) {
+            if (!filter_var($input[$switch] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                continue;
+            }
+            $handle = array_key_exists($field, $input) ? $input[$field] : $current?->{$field};
+            if (trim((string) $handle) === '') {
+                $method = $switch === 'enable_zelle' ? 'zelle' : 'cashapp';
+                $errors[$field] = 'Add your ' . \App\Payments\PaymentMethods::handleLabel($method) . ' to accept '
+                    . \App\Payments\PaymentMethods::label($method) . '.';
+            }
+        }
+
+        return $errors;
+    }
+
+    /** Fails a field that tries to give bank transfer details or switch it on; empty or false is allowed. */
+    public static function retiredBankRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            $set = is_bool($value) || in_array($value, [0, 1, '0', '1', 'true', 'false', 'on', 'off'], true)
+                ? filter_var($value, FILTER_VALIDATE_BOOLEAN)
+                : trim((string) $value) !== '';
+            if ($set) {
+                $fail('Bank transfer is no longer offered. Use Zelle, Cash App or cash in person.');
+            }
+        };
+    }
+
+    public static function isZelleRecipient(string $value): bool
+    {
+        $value = trim($value);
+        if (filter_var($value, FILTER_VALIDATE_EMAIL) !== false) {
             return true;
         }
-
-        if ($methodId === 'zelle' || $methodId === 'cashapp') {
-            return strtoupper($location) === 'US';
+        if (!preg_match('/^[0-9+()\s.-]+$/', $value)) {
+            return false;
         }
+        $digits = preg_replace('/\D/', '', $value);
 
-        return false;
+        return strlen($digits) === 10 || (strlen($digits) === 11 && $digits[0] === '1');
+    }
+
+    /** Stored as "$Name" whether or not the host typed the $. */
+    public function setCashAppCashtagAttribute(?string $value): void
+    {
+        $value = trim((string) $value);
+        $this->attributes['cash_app_cashtag'] = $value === '' ? null : '$' . ltrim($value, '$');
+    }
+
+    /** Emails are stored lower-case; phone numbers as the host typed them. */
+    public function setZelleRecipientAttribute(?string $value): void
+    {
+        $value = trim((string) $value);
+        $this->attributes['zelle_recipient'] = $value === '' ? null
+            : (str_contains($value, '@') ? strtolower($value) : $value);
     }
 }

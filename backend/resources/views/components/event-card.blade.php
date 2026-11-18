@@ -16,10 +16,12 @@
 @php
     $link = $href ?? route('events.show', $event->id);
     $tag = 'h' . max(2, min(4, (int) $headingLevel));
-    $availability = \App\Support\EventListing::availability($event);
-    $priceText = $price ?? \App\Support\EventListing::fromPriceText($event);
+    // The card's status and price come from one read of the event's ticket types.
+    $tiers = \App\Services\Checkout\TicketTierCatalog::sellable($event);
+    $availability = \App\Support\EventListing::availability($event, $tiers);
+    $priceText = $price ?? \App\Support\EventListing::fromPriceText($event, $tiers);
     $location = \App\Support\EventListing::location($event);
-    $venueLine = implode(' · ', array_filter([$event->venue_name, $location]));
+    $venueLine = implode(', ', array_filter([$event->venue_name, $location]));
     $badge = ['success' => 'eb-badge-success', 'danger' => 'eb-badge-error', 'warning' => 'eb-badge-warning'][$availability['tone']] ?? 'eb-badge-info';
     $traditions = array_slice($event->traditionLabels(), 0, 2);
     $hasMenu = $event->supports_food_ordering && $event->relationLoaded('menuItems') && $event->menuItems->where('is_active', true)->isNotEmpty();
@@ -53,7 +55,10 @@
             @endif
             <{{ $tag }} class="eb-text-card-title eb-clamp-2" style="margin: 0;">{{ $event->title }}</{{ $tag }}>
             <div class="eb-card-meta">
-                <span class="eb-card-meta-row"><x-icon name="calendar" size="sm" /><span>{{ $event->date_str }}@if($event->time_str) · {{ $event->time_str }}@endif</span></span>
+                <span class="eb-card-meta-row"><x-icon name="calendar" size="sm" /><span>{{ $event->date_str }}</span></span>
+                @if($event->time_str)
+                    <span class="eb-card-meta-row"><x-icon name="clock" size="sm" /><span>{{ $event->time_str }}</span></span>
+                @endif
                 @if($venueLine !== '')
                     <span class="eb-card-meta-row"><x-icon name="events" size="sm" /><span class="eb-clamp-2">{{ $venueLine }}</span></span>
                 @endif

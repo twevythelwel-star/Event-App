@@ -17,7 +17,7 @@
 
         <div class="eb-checkout-bar">
             <a href="{{ route('checkout.tickets', $event) }}" class="eb-btn eb-btn-secondary">Back</a>
-            <button type="submit" class="eb-btn eb-btn-primary" onclick="if (this.form.checkValidity()) { this.setAttribute('data-saving', ''); this.setAttribute('aria-busy', 'true'); }">Continue to checkout</button>
+            <button type="submit" class="eb-btn eb-btn-primary" data-action-click="mark-saving">Continue to checkout</button>
         </div>
     </form>
 </div>

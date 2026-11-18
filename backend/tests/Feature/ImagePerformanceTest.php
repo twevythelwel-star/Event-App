@@ -92,13 +92,16 @@ class ImagePerformanceTest extends TestCase
         $event = Event::allTenants()->whereKey(self::EVENT)->firstOrFail()->forceFill(['flyer_path' => 'tenants/x/flyers/gone.jpg', 'flyer_variants' => null]);
         $html = Blade::render('<x-responsive-image :image="$image" />', ['image' => $event->coverImage()]);
 
-        $this->assertStringContainsString('onerror="this.onerror=null;', $html);
+        // The fallback is wired by public/js/actions.js ("image-fallback"), not an inline onerror handler,
+        // so the Content-Security-Policy can refuse inline handlers.
+        $this->assertStringContainsString('data-action-error="image-fallback"', $html);
         $this->assertStringContainsString('/events/' . self::EVENT . '/flyer.svg', $html);
+        $this->assertStringNotContainsString('onerror=', $html);
 
-        // Callers that handle errors themselves (food cards, gallery tiles) keep their own handler.
-        $own = Blade::render('<x-responsive-image :image="$image" onerror="custom()" />', ['image' => $event->coverImage()]);
-        $this->assertStringContainsString('onerror="custom()"', $own);
-        $this->assertStringNotContainsString('this.onerror=null', $own);
+        // Callers that handle errors themselves (food cards, gallery tiles) keep their own action.
+        $own = Blade::render('<x-responsive-image :image="$image" data-action-error="custom" />', ['image' => $event->coverImage()]);
+        $this->assertStringContainsString('data-action-error="custom"', $own);
+        $this->assertStringNotContainsString('image-fallback', $own);
     }
 
     public function test_variant_backfill_keeps_originals_and_the_audit_reports_relationships(): void

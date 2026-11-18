@@ -1,11 +1,11 @@
 <div>
     @if(session('profile_success'))
-        <div class="card" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.1); color: var(--accent-emerald);">
+        <div class="card" style="border-color: color-mix(in srgb, var(--color-success) 40%, transparent); background: color-mix(in srgb, var(--color-success) 10%, transparent); color: var(--accent-emerald);">
             ✓ {{ session('profile_success') }}
         </div>
     @endif
     @if(session('currency_success'))
-        <div class="card" style="border-color: rgba(59, 130, 246, 0.4); background: rgba(59, 130, 246, 0.1); color: var(--accent-blue);">
+        <div class="card" style="border-color: color-mix(in srgb, var(--color-info) 40%, transparent); background: color-mix(in srgb, var(--color-info) 10%, transparent); color: var(--accent-blue);">
             ✓ {{ session('currency_success') }}
         </div>
     @endif
@@ -16,12 +16,12 @@
             <div class="grid-2">
                 <div>
                     <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">Full Name</label>
-                    <input type="text" wire:model="name" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: white; padding: 0.55rem; border-radius: 6px;">
+                    <input type="text" wire:model="name" style="width: 100%; background: color-mix(in srgb, var(--color-ink) 6%, transparent); border: 1px solid var(--border-color); color: white; padding: 0.55rem; border-radius: 6px;">
                     @error('name') <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ $message }}</span> @enderror
                 </div>
                 <div>
                     <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.35rem;">Email Address</label>
-                    <input type="email" wire:model="email" style="width: 100%; background: rgba(255,255,255,0.06); border: 1px solid var(--border-color); color: white; padding: 0.55rem; border-radius: 6px;">
+                    <input type="email" wire:model="email" style="width: 100%; background: color-mix(in srgb, var(--color-ink) 6%, transparent); border: 1px solid var(--border-color); color: white; padding: 0.55rem; border-radius: 6px;">
                     @error('email') <span style="color: var(--accent-rose); font-size: 0.75rem;">{{ $message }}</span> @enderror
                 </div>
             </div>

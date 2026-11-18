@@ -123,7 +123,7 @@ class InclusiveIdentityTest extends TestCase
             ->assertDontSee('jerk chicken, Tampa')
             ->assertSee('Live music &amp; nightlife', false)
             ->assertSeeInOrder(['Discover', 'Find events near you', 'Buy tickets', 'Order food', 'Pay your way', 'Get your ticket'])
-            ->assertSee('Bank transfer, Zelle, Cash App or cash, wherever the host accepts it.');
+            ->assertSee('Cash App, Zelle or cash in person, wherever the host accepts it.');
 
         $traditions = HomeSections::build()['traditions'];
         $this->assertArrayHasKey('Caribbean', $traditions);

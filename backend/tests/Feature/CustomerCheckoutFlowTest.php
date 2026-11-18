@@ -45,8 +45,9 @@ class CustomerCheckoutFlowTest extends TestCase
             'status' => 'published',
             'is_ordering_open' => true,
             'packaging_fee_jmd' => 100,
+            'packaging_fee_usd' => 1,
             'ticket_tiers' => [
-                ['id' => 'tier-ga', 'name' => 'General Admission', 'price_jmd' => 2000, 'quantity_available' => 50, 'max_per_order' => 4],
+                ['id' => 'tier-ga', 'name' => 'General Admission', 'price_jmd' => 2000, 'price_usd' => 20, 'quantity_available' => 50, 'max_per_order' => 4],
             ],
         ]);
         $this->dish = MenuItem::allTenants()->create([
@@ -59,12 +60,14 @@ class CustomerCheckoutFlowTest extends TestCase
             'category' => 'Mains', 'pricing_type' => 'customizable', 'price_usd' => 8, 'price_jmd' => 1200,
             'is_active' => true,
             'custom_option_groups' => [
-                ['id' => 'size', 'title' => 'Size', 'choices' => [['label' => 'Regular', 'extraPriceJMD' => 0], ['label' => 'Large', 'extraPriceJMD' => 300]]],
+                ['id' => 'size', 'title' => 'Size', 'choices' => [['label' => 'Regular', 'extraPriceJMD' => 0, 'extraPriceUSD' => 0], ['label' => 'Large', 'extraPriceJMD' => 300, 'extraPriceUSD' => 3]]],
             ],
         ]);
         HostPaymentPolicy::create([
             'organizer_id' => $this->organizer->id,
             'enable_cash' => true,
+            // A host who once offered bank transfer: it is retired, so these instructions are never offered.
+            'enable_bank' => true,
             'bank_transfer_instructions' => "Bank: Example Bank\nAccount: 000-000",
         ]);
         $this->buyer = User::create(['name' => 'Flow Buyer', 'email' => 'flow@example.test', 'phone' => '+18765550123', 'password' => bcrypt('password'), 'status' => 'active']);
@@ -86,6 +89,28 @@ class CustomerCheckoutFlowTest extends TestCase
     // 2 × 2000 + 1500 + (1200 + 300) + 100 packaging
     private const EXPECTED_TOTAL = 7100.0;
 
+    // In US dollars: 2 × 20 + 10 + (8 + 3) + 1 packaging
+    private const USD_TOTAL_MINOR = 6200;
+
+    /** Price the event in US dollars and let the host take Zelle, so a Zelle order can be placed. */
+    private function offerZelleInUsd(): void
+    {
+        $this->event->forceFill(['currency' => 'USD', 'packaging_fee_usd' => 1, 'packaging_fee_minor' => 100])->save();
+        HostPaymentPolicy::where('organizer_id', $this->organizer->id)->firstOrFail()
+            ->forceFill(['enable_zelle' => true, 'zelle_recipient' => 'pay@flow-org.example', 'zelle_instructions' => 'Put your order code in the memo.'])->save();
+    }
+
+    private function placeZelleOrder(): Order
+    {
+        $this->offerZelleInUsd();
+        $this->fillCart();
+        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
+            'customer_phone' => '+1 876 555 0123', 'method' => 'zelle', 'quoted_total_minor' => self::USD_TOTAL_MINOR,
+        ])->assertSessionHasNoErrors()->assertSessionMissing('error');
+
+        return Order::allTenants()->sole();
+    }
+
     public function test_guests_must_sign_in(): void
     {
         $this->get(route('checkout.tickets', $this->event))->assertRedirect(route('login'));
@@ -102,11 +127,17 @@ class CustomerCheckoutFlowTest extends TestCase
             ->assertSee('Size: Large')
             ->assertSee('Packaging fee')
             ->assertSee('J$7,100.00')
-            ->assertSee('Bank transfer')->assertSee('Cash at pickup')
+            ->assertDontSee('Bank transfer')->assertDontSee('Account: 000-000')->assertSee('Cash at pickup')
             ->assertDontSee('Zelle');
 
-        $response = $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
+        // Bank transfer is retired: posting it anyway is refused.
+        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
             'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
+        ])->assertSessionHasErrors('method');
+        $this->assertSame(0, Order::allTenants()->count());
+
+        $response = $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
+            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total_minor' => 710000,
         ]);
 
         $order = Order::allTenants()->with('items')->sole();
@@ -118,17 +149,16 @@ class CustomerCheckoutFlowTest extends TestCase
         $this->assertSame(48, (int) Event::allTenants()->find($this->event->id)->ticket_tiers[0]['quantity_available']);
 
         $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
-            ->assertSee('Waiting for your payment')
+            ->assertSee('Pay at pickup')
             ->assertSee($order->ticket_code)
             ->assertSee('Order reference')
             ->assertDontSee('QR code for ticket', false) // no admission QR until the payment is confirmed
-            ->assertSee('Account: 000-000')
-            ->assertSee('I’ve sent the payment')
+            ->assertDontSee('Account: 000-000')
             ->assertDontSee($order->secure_ticket_token);
 
         // The cart is cleared: posting again cannot create a second order.
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
+            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total_minor' => 710000,
         ])->assertRedirect(route('checkout.tickets', $this->event))->assertSessionHas('error');
         $this->assertSame(1, Order::allTenants()->count());
     }
@@ -166,7 +196,10 @@ class CustomerCheckoutFlowTest extends TestCase
             'customer_phone' => '+1 876 555 0123', 'method' => 'zelle', 'quoted_total_minor' => 710000,
         ])->assertSessionHasErrors('method');
 
-        HostPaymentPolicy::where('organizer_id', $this->organizer->id)->update(['bank_transfer_instructions' => null, 'enable_cash' => true]);
+        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
+            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
+        ])->assertSessionHasErrors('method');
+
         $this->actingAs($this->buyer)->get(route('checkout.review', $this->event))->assertDontSee('Bank transfer')->assertSee('Cash at pickup');
         $this->assertSame(0, Order::allTenants()->count());
     }
@@ -215,11 +248,7 @@ class CustomerCheckoutFlowTest extends TestCase
 
     public function test_tickets_are_private_to_their_owner(): void
     {
-        $this->fillCart();
-        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
-        ]);
-        $order = Order::allTenants()->sole();
+        $order = $this->placeZelleOrder();
         $stranger = User::create(['name' => 'Other', 'email' => 'other@example.test', 'password' => bcrypt('password'), 'status' => 'active']);
 
         $this->app['auth']->forgetGuards(); // signed out
@@ -231,11 +260,7 @@ class CustomerCheckoutFlowTest extends TestCase
 
     public function test_customer_reference_marks_confirmation_submitted_not_paid(): void
     {
-        $this->fillCart();
-        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
-        ]);
-        $order = Order::allTenants()->sole();
+        $order = $this->placeZelleOrder();
 
         $this->actingAs($this->buyer)->post(route('tickets.payment-reference', $order), ['payment_reference' => ''])
             ->assertSessionHasErrors('payment_reference');
@@ -265,34 +290,26 @@ class CustomerCheckoutFlowTest extends TestCase
 
     public function test_ticket_qr_and_receipt_are_issued_once_payment_is_confirmed(): void
     {
-        $this->fillCart();
-        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
-        ]);
-        $order = Order::allTenants()->sole();
+        $order = $this->placeZelleOrder();
 
-        $order->forceFill(['status' => 'partially_paid', 'amount_paid_minor' => 200000])->save();
+        $order->forceFill(['status' => 'partially_paid', 'amount_paid_minor' => 2000])->save();
         $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
             ->assertSee('Part of your payment received')
             ->assertSee('Still to pay')
             ->assertDontSee('QR code for ticket', false);
 
-        $order->forceFill(['status' => 'paid', 'amount_paid_minor' => 710000, 'verified_at' => '2026-11-02 15:30:00'])->save();
+        $order->forceFill(['status' => 'paid', 'amount_paid_minor' => self::USD_TOTAL_MINOR, 'verified_at' => '2026-11-02 15:30:00'])->save();
         $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
             ->assertSee('You’re all set')
             ->assertSee('QR code for ticket ' . $order->ticket_code, false)
             ->assertSee('Receipt')
-            ->assertSee('Paid J$7,100.00 by Bank transfer')
+            ->assertSee('Paid $62.00 by Zelle')
             ->assertDontSee('Still to pay');
     }
 
     public function test_refunded_ticket_hides_the_qr_code(): void
     {
-        $this->fillCart();
-        $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
-        ]);
-        $order = Order::allTenants()->sole();
+        $order = $this->placeZelleOrder();
         $order->forceFill(['status' => 'refunded'])->save();
 
         $this->actingAs($this->buyer)->get(route('tickets.show', $order))->assertOk()
@@ -311,7 +328,7 @@ class CustomerCheckoutFlowTest extends TestCase
 
         $this->fillCart();
         $this->actingAs($this->buyer)->post(route('checkout.place', $this->event), [
-            'customer_phone' => '+1 876 555 0123', 'method' => 'bank', 'quoted_total_minor' => 710000,
+            'customer_phone' => '+1 876 555 0123', 'method' => 'cash', 'quoted_total_minor' => 710000,
         ]);
         $order = Order::allTenants()->sole();
 

@@ -9,11 +9,11 @@
                 type="text" 
                 wire:model.live.debounce.300ms="searchQuery" 
                 placeholder="Search user name or email..."
-                style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: white; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem;"
+                style="background: color-mix(in srgb, var(--color-ink) 8%, transparent); border: 1px solid var(--border-color); color: white; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem;"
             >
             <select 
                 wire:model.live="selectedStatus"
-                style="background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: white; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem;"
+                style="background: color-mix(in srgb, var(--color-ink) 8%, transparent); border: 1px solid var(--border-color); color: white; padding: 0.5rem 0.75rem; border-radius: 6px; font-size: 0.85rem;"
             >
                 <option value="all">All Statuses</option>
                 <option value="active">Active Only</option>
@@ -35,7 +35,7 @@
             </thead>
             <tbody>
                 @forelse($users as $user)
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                    <tr style="border-bottom: 1px solid color-mix(in srgb, var(--color-ink) 4%, transparent);">
                         <td style="padding: 0.6rem;">{{ $user->name }}</td>
                         <td style="padding: 0.6rem;">{{ $user->email }}</td>
                         <td style="padding: 0.6rem;">

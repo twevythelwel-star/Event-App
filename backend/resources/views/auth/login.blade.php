@@ -9,18 +9,18 @@
        ========================================================================== */
     .auth-wrapper {
         max-width: 490px;
-        margin: 2rem auto 3.5rem;
-        padding: 0 1rem;
+        margin: var(--space-8) auto 3.5rem;
+        padding: 0 var(--space-4);
     }
 
     .auth-card {
         background-color: var(--color-surface);
         background-image: var(--gradient-surface-elevated-3d);
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.16);
+        border-top-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
         border-radius: 24px;
         box-shadow: var(--shadow-elevated);
-        padding: 2.25rem 2.25rem 2rem;
+        padding: 2.25rem 2.25rem var(--space-8);
         position: relative;
         overflow: hidden;
         color: var(--color-text-primary);
@@ -33,7 +33,7 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, var(--color-accent) 0%, #38BDF8 50%, var(--color-purple) 100%);
+        background: var(--color-accent);
     }
 
     /* Segmented Top Pill Switcher (Recessed 3D Well) */
@@ -56,7 +56,7 @@
         border-radius: 9999px;
         text-decoration: none;
         color: var(--color-text-secondary);
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -68,7 +68,7 @@
         background-image: var(--gradient-secondary-btn-3d);
         color: var(--color-accent);
         border: 1px solid var(--color-accent-border);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 4px 12px rgba(2, 6, 14, 0.55);
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 14%, transparent), 0 4px 12px color-mix(in srgb, var(--color-shade) 55%, transparent);
     }
 
     .auth-switch-btn:hover:not(.active) {
@@ -89,12 +89,10 @@
         border-radius: 9999px;
         font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
         background: var(--color-accent-subtle);
         color: var(--color-accent);
         border: 1px solid var(--color-accent-border);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 12%, transparent);
         margin-bottom: 0.85rem;
     }
 
@@ -120,7 +118,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
-        margin-bottom: 1.5rem;
+        margin-bottom: var(--space-6);
     }
 
     .btn-social {
@@ -139,12 +137,12 @@
         color: var(--color-text-primary);
         text-decoration: none;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
     }
 
     .btn-social:hover {
         background-color: var(--color-surface-elevated);
-        border-color: #496688;
+        border-color: var(--color-rule-strong);
         transform: translateY(-1px);
     }
 
@@ -152,12 +150,10 @@
     .auth-divider {
         display: flex;
         align-items: center;
-        margin: 1.25rem 0 1.5rem;
+        margin: var(--space-5) 0 var(--space-6);
         color: var(--color-text-muted);
         font-size: 0.76rem;
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
     }
 
     .auth-divider::before,
@@ -174,7 +170,7 @@
 
     /* Form Fields */
     .form-group {
-        margin-bottom: 1.25rem;
+        margin-bottom: var(--space-5);
     }
 
     .form-label-row {
@@ -187,8 +183,6 @@
     .form-label {
         font-size: 0.78rem;
         font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
         color: var(--color-text-primary);
         display: block;
     }
@@ -233,7 +227,7 @@
         font-size: 0.92rem;
         color: var(--color-text-primary);
         outline: none;
-        transition: all 0.15s ease;
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
         box-sizing: border-box;
     }
 
@@ -271,7 +265,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin: 0.4rem 0 1.5rem;
+        margin: 0.4rem 0 var(--space-6);
     }
 
     .checkbox-label {
@@ -317,8 +311,8 @@
         border-radius: 12px;
         cursor: pointer;
         box-shadow: var(--shadow-btn-primary);
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
-        transition: all 0.15s ease;
+        text-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 35%, transparent);
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
     }
 
     .btn-submit-auth:hover {
@@ -334,7 +328,7 @@
 
     /* Alerts */
     .alert-banner {
-        padding: 0.85rem 1rem;
+        padding: 0.85rem var(--space-4);
         border-radius: 12px;
         font-size: 0.84rem;
         margin-bottom: 1.35rem;
@@ -367,14 +361,12 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 0.75rem;
+        margin-bottom: var(--space-3);
     }
 
     .demo-presets-title {
         font-size: 0.76rem;
         font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
         color: var(--color-text-secondary);
         display: flex;
         align-items: center;
@@ -407,14 +399,14 @@
     }
 
     .demo-preset-card {
-        padding: 0.75rem;
+        padding: var(--space-3);
         border-radius: 12px;
         text-align: left;
         cursor: pointer;
         border: 1px solid var(--color-border);
         background-color: var(--color-background-secondary);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 12px rgba(2, 6, 14, 0.4);
-        transition: all 0.15s ease;
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 8%, transparent), 0 4px 12px color-mix(in srgb, var(--color-shade) 40%, transparent);
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
         display: flex;
         flex-direction: column;
         gap: 0.2rem;
@@ -422,7 +414,7 @@
 
     .demo-preset-card:hover {
         transform: translateY(-2px);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 8px 18px rgba(2, 6, 14, 0.55);
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 14%, transparent), 0 8px 18px color-mix(in srgb, var(--color-shade) 55%, transparent);
     }
 
     .demo-preset-top {
@@ -445,7 +437,6 @@
         font-weight: 700;
         padding: 0.1rem 0.4rem;
         border-radius: 4px;
-        text-transform: uppercase;
     }
 
     .demo-preset-email {
@@ -468,8 +459,8 @@
         align-items: center;
         justify-content: center;
         gap: 0.4rem;
-        padding: 0.5rem 0.75rem;
-        margin-top: 0.75rem;
+        padding: var(--space-2) var(--space-3);
+        margin-top: var(--space-3);
         background: var(--color-success-bg);
         border: 1px solid var(--color-success-border);
         border-radius: 8px;
@@ -490,7 +481,7 @@
         <!-- Segmented Tab Bar Switcher (Dribbble Architecture) -->
         <div class="auth-switcher">
             <a href="{{ route('login') }}" class="auth-switch-btn active" aria-current="page">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                     <polyline points="10 17 15 12 10 7"/>
                     <line x1="15" x2="3" y1="12" y2="12"/>
@@ -498,7 +489,7 @@
                 <span>Sign In</span>
             </a>
             <a href="{{ route('register') }}" class="auth-switch-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
                     <line x1="19" x2="19" y1="8" y2="14"/>
@@ -521,7 +512,7 @@
         {{-- Status Notification --}}
         @if (session('status'))
             <div class="alert-banner alert-status" role="status">
-                <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink: 0; margin-top: 1px;">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
                 </svg>
                 <span>{{ session('status') }}</span>
@@ -531,7 +522,7 @@
         {{-- Error Summary --}}
         @if ($errors->any())
             <div class="alert-banner alert-danger" role="alert">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <div>
@@ -551,7 +542,7 @@
                 <label for="email" class="form-label">Email Address</label>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="20" height="16" x="2" y="4" rx="2"/>
                             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                         </svg>
@@ -578,7 +569,7 @@
                 </div>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         </svg>
@@ -599,13 +590,13 @@
                         class="input-toggle-btn"
                         aria-label="Toggle password visibility"
                         title="Show / hide password"
-                        onclick="togglePasswordVisibility()"
+                        data-action-click="togglePasswordVisibility"
                     >
-                        <svg id="eyeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" id="eyeIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                             <circle cx="12" cy="12" r="3"/>
                         </svg>
-                        <svg id="eyeOffIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                        <svg aria-hidden="true" id="eyeOffIcon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
                             <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
                             <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
                             <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
@@ -623,7 +614,7 @@
                 </label>
 
                 <span class="security-badge">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/>
                         <path d="m9 12 2 2 4-4"/>
                     </svg>
@@ -633,7 +624,7 @@
 
             <!-- Sign In Submit Button -->
             <button type="submit" class="btn-submit-auth" id="submitLoginBtn">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                     <polyline points="10 17 15 12 10 7"/>
                     <line x1="15" x2="3" y1="12" y2="12"/>
@@ -644,7 +635,7 @@
 
         <!-- Notification pill when demo credentials clicked -->
         <div id="fillNotification" class="fill-notification" role="status">
-            <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
+            <svg aria-hidden="true" width="15" height="15" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
             </svg>
             <span id="fillNotificationText">Credentials filled</span>
@@ -661,10 +652,10 @@
                         'email' => 'host@islandevents.example',
                         'password' => $demoPassword,
                         'blurb' => 'Kitchen prep, menus & cash receipts',
-                        'color' => '#FBBF24',
-                        'bg' => 'rgba(245, 158, 11, 0.12)',
-                        'border' => 'rgba(245, 158, 11, 0.35)',
-                        'icon' => '🎪'
+                        'color' => 'var(--color-warning-text)',
+                        'bg' => 'var(--color-warning-bg)',
+                        'border' => 'var(--color-warning-border)',
+                        'icon' => 'events'
                     ],
                     [
                         'label' => 'Attendee',
@@ -672,10 +663,10 @@
                         'email' => 'attendee@islandevents.example',
                         'password' => $demoPassword,
                         'blurb' => 'Orders, active tickets & QR pass',
-                        'color' => '#4ADE80',
-                        'bg' => 'rgba(34, 197, 94, 0.12)',
-                        'border' => 'rgba(34, 197, 94, 0.35)',
-                        'icon' => '🎟️'
+                        'color' => 'var(--color-success-text)',
+                        'bg' => 'var(--color-success-bg)',
+                        'border' => 'var(--color-success-border)',
+                        'icon' => 'tickets'
                     ],
                     [
                         'label' => 'Administrator',
@@ -683,10 +674,10 @@
                         'email' => 'admin@islandevents.example',
                         'password' => $demoPassword,
                         'blurb' => 'Disputes, host approval & moderation',
-                        'color' => '#7DD3FC',
-                        'bg' => 'rgba(56, 189, 248, 0.12)',
-                        'border' => 'rgba(56, 189, 248, 0.35)',
-                        'icon' => '📋'
+                        'color' => 'var(--color-info-text)',
+                        'bg' => 'var(--color-info-bg)',
+                        'border' => 'var(--color-info-border)',
+                        'icon' => 'file-text'
                     ],
                     [
                         'label' => 'System Admin',
@@ -694,17 +685,16 @@
                         'email' => config('events.system_admin.email'),
                         'password' => config('events.system_admin.password') ?: $demoPassword,
                         'blurb' => 'Platform health, logs & provisioning',
-                        'color' => '#C4B5FD',
-                        'bg' => 'rgba(139, 92, 246, 0.14)',
-                        'border' => 'rgba(139, 92, 246, 0.38)',
-                        'icon' => '🛡️'
+                        'color' => 'var(--color-purple-text)',
+                        'bg' => 'var(--color-purple-surface)',
+                        'border' => 'var(--color-purple-border)',
+                        'icon' => 'shield'
                     ],
                 ];
             @endphp
             <div class="demo-presets-wrap">
                 <div class="demo-presets-header">
                     <span class="demo-presets-title">
-                        <span>✨</span>
                         <span>Local Demo Accounts</span>
                     </span>
                     <span class="demo-presets-pill">Click to Pre-Fill</span>
@@ -714,16 +704,16 @@
                     @foreach ($loginPresets as $preset)
                         <button
                             type="button"
-                            onclick="fillCredentials(@js($preset['email']), @js($preset['password']), @js($preset['label']))"
+                            data-action-click="fillCredentials" data-args="{{ json_encode([$preset['email'], $preset['password'], $preset['label']]) }}"
                             class="demo-preset-card"
                             style="border-color: {{ $preset['border'] }}; background-color: {{ $preset['bg'] }};"
                         >
                             <div class="demo-preset-top">
                                 <span class="demo-preset-label" style="color: {{ $preset['color'] }};">
-                                    <span>{{ $preset['icon'] }}</span>
+                                    <x-icon :name="$preset['icon']" size="sm" />
                                     <span>{{ $preset['label'] }}</span>
                                 </span>
-                                <span class="demo-preset-tag" style="background: rgba(7, 17, 31, 0.65); color: {{ $preset['color'] }}; border: 1px solid {{ $preset['border'] }};">
+                                <span class="demo-preset-tag" style="background: color-mix(in srgb, var(--color-paper) 65%, transparent); color: {{ $preset['color'] }}; border: 1px solid {{ $preset['border'] }};">
                                     {{ $preset['tag'] }}
                                 </span>
                             </div>
@@ -745,7 +735,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function fillCredentials(email, password, label) {
     var emailField = document.getElementById('email');
     var passwordField = document.getElementById('password');

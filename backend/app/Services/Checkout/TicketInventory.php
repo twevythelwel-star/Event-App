@@ -44,6 +44,10 @@ final class TicketInventory
 
     public static function heldByOthers(Event $event, string $tierId, ?int $userId): int
     {
+        if ($userId === null && ($prefetched = InventorySnapshot::instance()->heldByAnyone($event, $tierId)) !== null) {
+            return $prefetched;
+        }
+
         return (int) TicketHold::active()->where('event_id', $event->id)->where('ticket_tier_id', $tierId)
             ->when($userId !== null, fn ($q) => $q->where('user_id', '!=', $userId))->sum('quantity');
     }

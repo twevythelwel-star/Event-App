@@ -49,7 +49,7 @@
     <section class="ac-card" style="margin-top:16px">
         <div class="ac-card-head"><h2>Drafts</h2></div>
         @forelse($drafts as $v)
-            <div class="ac-card-body" style="border-top:1px solid var(--ac-border, #233)">
+            <div class="ac-card-body" style="border-top:1px solid var(--ac-border, var(--color-paper-4))">
                 <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap">
                     <strong>{{ $v->title }} · version {{ $v->version }}</strong><span class="ac-badge warning">Draft</span>
                 </div>

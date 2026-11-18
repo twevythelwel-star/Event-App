@@ -47,7 +47,7 @@ class DemoSupportRequestsSeeder extends Seeder
         $disputes->submit($attendee, [
             'order_id' => $order->id,
             'dispute_type' => 'payment_mismatch',
-            'reason' => 'I sent the bank transfer two days ago but my ticket still shows payment pending.',
+            'reason' => 'I sent the Zelle payment two days ago but my ticket still shows payment pending.',
             'amount' => (float) $order->total_amount,
         ]);
     }

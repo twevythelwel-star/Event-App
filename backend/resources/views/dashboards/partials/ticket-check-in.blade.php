@@ -14,7 +14,7 @@
         </div>
     </div>
 
-    <form id="scan_form" data-url="{{ route('worker.scan', $event->id) }}" data-offline-policy="fail-closed" onsubmit="event.preventDefault(); validateTicket();" class="eb-stack" style="gap: 1rem;">
+    <form id="scan_form" data-url="{{ route('worker.scan', $event->id) }}" data-offline-policy="fail-closed" data-action-submit="validateTicket" data-prevent-default class="eb-stack" style="gap: 1rem;">
         <div class="eb-form-group" style="margin: 0;">
             <label class="eb-label" for="ticket_input">{{ $workerRole->value === 'event_supervisor' ? 'Ticket QR, ticket code or order number' : 'Ticket QR' }}</label>
             <input type="text" id="ticket_input" class="eb-input" autocomplete="off" autocapitalize="off" spellcheck="false" autofocus required
@@ -29,7 +29,7 @@
     </form>
 
     <div id="scan_result" role="status" aria-live="assertive" hidden
-        style="margin-top: 1rem; padding: 1rem; border-radius: var(--radius-md); border: 2px solid var(--color-border); background: rgba(7, 15, 28, 0.72);">
+        style="margin-top: 1rem; padding: 1rem; border-radius: var(--radius-md); border: 2px solid var(--color-border); background: color-mix(in srgb, var(--color-paper) 72%, transparent);">
         <strong id="scan_verdict" style="font-size: 1.1rem; display: block;"></strong>
         <div id="scan_details" class="eb-help-text" style="margin-top: 0.35rem;"></div>
     </div>

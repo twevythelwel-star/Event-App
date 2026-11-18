@@ -42,7 +42,7 @@
     <title>@yield('title', 'Administration') · EventBite Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Rethink+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     {{-- Same modular EventBite design system stylesheets as layouts.app so all dashboards share one design system --}}
     <link rel="stylesheet" href="/css/01-tokens.css">
     <link rel="stylesheet" href="/css/02-typography-layout.css">
@@ -54,6 +54,7 @@
     <link rel="stylesheet" href="{{ asset('css/brand.css') }}">
     <link rel="stylesheet" href="{{ asset('css/animations.css') }}">
     <script src="{{ asset('js/animations.js') }}" defer></script>
+    <script src="{{ asset('js/actions.js') }}" defer></script>
 </head>
 <body class="ac-body">
 <a class="sr-only" href="#ac-main">Skip to content</a>
@@ -151,7 +152,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
     (function () {
         var shell = document.getElementById('acShell');
         var toggle = document.getElementById('acMenuToggle');

@@ -11,16 +11,16 @@
 
     <form method="GET" class="ac-filters" style="margin-bottom:12px">
         <div class="ac-field"><label for="evidence-status">Show</label>
-            <select id="evidence-status" class="ac-select" name="status" onchange="this.form.submit()">
+            <select id="evidence-status" class="ac-select" name="status" data-action-change="submit-form">
                 <option value="open" @selected($status === 'open')>Waiting for review</option>
                 @foreach(\App\Models\EventComplianceEvidence::STATUSES as $value => $label)<option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>@endforeach
             </select></div>
         <div class="ac-field"><label for="evidence-kind">Type</label>
-            <select id="evidence-kind" class="ac-select" name="kind" onchange="this.form.submit()">
+            <select id="evidence-kind" class="ac-select" name="kind" data-action-change="submit-form">
                 @foreach(['all' => 'All permits and licences', 'food' => 'Food permits', 'alcohol' => 'Alcohol licences'] as $value => $label)<option value="{{ $value }}" @selected($kind === $value)>{{ $label }}</option>@endforeach
             </select></div>
         <div class="ac-field"><label for="evidence-state">Jurisdiction (state)</label>
-            <select id="evidence-state" class="ac-select" name="state" onchange="this.form.submit()">
+            <select id="evidence-state" class="ac-select" name="state" data-action-change="submit-form">
                 <option value="">All states</option>
                 @foreach($states as $s)<option value="{{ $s->code }}" @selected($state === $s->code)>{{ $s->name }}</option>@endforeach
             </select></div>

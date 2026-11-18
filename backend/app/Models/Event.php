@@ -530,41 +530,6 @@ class Event extends Model
         return (string) ($this->currency ?: \App\Support\Currency::defaultCode());
     }
 
-    /**
-     * Check if a specific payment method is enabled for this event.
-     */
-    public function hasPaymentMethod(string $method): bool
-    {
-        if (empty($this->payment_methods) || !is_array($this->payment_methods)) {
-            // Default: all methods enabled if not configured
-            return true;
-        }
-
-        return in_array($method, $this->payment_methods, true);
-    }
-
-    /**
-     * Get enabled payment methods for this event.
-     */
-    public function getEnabledPaymentMethods(): array
-    {
-        if (empty($this->payment_methods) || !is_array($this->payment_methods)) {
-            // Default payment methods
-            return ['bank', 'zelle', 'cashapp', 'cash', 'card'];
-        }
-
-        return $this->payment_methods;
-    }
-
-    /**
-     * Set enabled payment methods for this event.
-     */
-    public function setPaymentMethods(array $methods): void
-    {
-        $validMethods = ['bank', 'zelle', 'cashapp', 'cash', 'card'];
-        $this->payment_methods = array_intersect($methods, $validMethods);
-    }
-
     public function complianceAcknowledgements(): HasMany
     {
         return $this->hasMany(EventComplianceAcknowledgement::class, 'event_id', 'id')

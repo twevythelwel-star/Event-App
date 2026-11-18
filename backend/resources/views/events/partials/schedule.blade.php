@@ -74,7 +74,7 @@
         </ul>
     @endif
 </section>
-<script>
+<script @cspNonce>
     document.querySelectorAll('[data-schedule-filter]').forEach(function (select) {
         select.addEventListener('change', function () {
             const section = select.closest('.eb-schedule');

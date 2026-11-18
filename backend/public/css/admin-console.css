@@ -52,7 +52,7 @@ a { color: inherit; }
 .ac-sidebar-foot a { color: var(--ac-sidebar-text); }
 
 .ac-main { min-width: 0; display: flex; flex-direction: column; }
-.ac-topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 28px; background: rgba(7, 17, 31, 0.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--ac-line); }
+.ac-topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 28px; background: color-mix(in srgb, var(--color-paper) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--ac-line); }
 .ac-breadcrumbs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; color: var(--ac-text-3); }
 .ac-breadcrumbs a { text-decoration: none; }
 .ac-breadcrumbs a:hover { color: var(--ac-text); text-decoration: underline; }
@@ -77,7 +77,7 @@ a { color: inherit; }
 .ac-page-head p { margin: 4px 0 0; color: var(--ac-text-2); max-width: 70ch; }
 
 /* Surfaces */
-.ac-card { background: var(--ac-surface); background-image: var(--gradient-surface-3d); border: 1px solid var(--ac-line); border-top-color: rgba(255, 255, 255, 0.11); border-radius: var(--ac-radius); box-shadow: var(--ac-shadow); }
+.ac-card { background: var(--ac-surface); background-image: var(--gradient-surface-3d); border: 1px solid var(--ac-line); border-top-color: color-mix(in srgb, var(--color-ink) 11%, transparent); border-radius: var(--ac-radius); box-shadow: var(--ac-shadow); }
 .ac-card + .ac-card, .ac-section + .ac-section { margin-top: 16px; }
 .ac-metrics > .ac-card, .ac-grid > .ac-card { margin-top: 0; }
 .ac-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 18px; border-bottom: 1px solid var(--ac-line); }
@@ -126,7 +126,7 @@ a { color: inherit; }
 .ac-form-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 16px; }
 
 /* Buttons */
-.ac-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 0 14px; border: 1px solid var(--ac-line-strong); border-radius: 8px; background: var(--ac-surface-muted); background-image: var(--gradient-secondary-btn-3d); color: var(--ac-text); box-shadow: var(--shadow-btn-secondary); font: 600 13px/1 var(--font-sans); text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease; }
+.ac-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 0 14px; border: 1px solid var(--ac-line-strong); border-radius: 8px; background: var(--ac-surface-muted); background-image: var(--gradient-secondary-btn-3d); color: var(--ac-text); box-shadow: var(--shadow-btn-secondary); font: 600 13px/1 var(--font-sans); text-decoration: none; cursor: pointer; white-space: nowrap; transition: transform 0.15s ease, background 0.15s ease; }
 .ac-btn:hover { background: var(--color-surface-elevated); background-image: var(--gradient-secondary-btn-hover-3d); transform: translateY(-1px); }
 .ac-btn-primary { background: var(--ac-accent); background-image: var(--gradient-accent-3d); border-color: var(--ac-accent); color: var(--ac-on-accent); box-shadow: var(--shadow-btn-primary); }
 .ac-btn-primary:hover { background: var(--ac-accent-strong); background-image: var(--gradient-accent-hover-3d); box-shadow: var(--shadow-btn-primary-hover); }
@@ -167,7 +167,7 @@ form[data-submitting="true"] button[type="submit"] { opacity: 0.6; pointer-event
 @media (max-width: 960px) {
   .ac-shell { grid-template-columns: minmax(0, 1fr); }
   .ac-sidebar { position: fixed; z-index: 40; inset: 0 auto 0 0; width: 264px; transform: translateX(-100%); transition: transform 0.2s ease; }
-  .ac-shell[data-nav-open="true"] .ac-sidebar { transform: none; box-shadow: 0 0 0 100vmax rgba(7, 17, 31, 0.7); }
+  .ac-shell[data-nav-open="true"] .ac-sidebar { transform: none; box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--color-paper) 70%, transparent); }
   .ac-btn.ac-menu-toggle { display: inline-flex; }
   .ac-topbar { padding: 10px 16px; }
   .ac-content { padding: 18px 16px 40px; }

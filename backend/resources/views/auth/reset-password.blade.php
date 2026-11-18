@@ -9,18 +9,18 @@
        ========================================================================== */
     .auth-wrapper {
         max-width: 480px;
-        margin: 2.5rem auto 3.5rem;
-        padding: 0 1rem;
+        margin: var(--space-10) auto 3.5rem;
+        padding: 0 var(--space-4);
     }
 
     .auth-card {
         background-color: var(--color-surface);
         background-image: var(--gradient-surface-elevated-3d);
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.16);
+        border-top-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
         border-radius: 24px;
         box-shadow: var(--shadow-elevated);
-        padding: 2.5rem 2.25rem 2rem;
+        padding: var(--space-10) 2.25rem var(--space-8);
         position: relative;
         overflow: hidden;
         color: var(--color-text-primary);
@@ -33,7 +33,7 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, var(--color-accent) 0%, #38BDF8 50%, var(--color-purple) 100%);
+        background: var(--color-accent);
     }
 
     .auth-header {
@@ -49,8 +49,6 @@
         border-radius: 9999px;
         font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
         background: var(--color-accent-subtle);
         color: var(--color-accent);
         border: 1px solid var(--color-accent-border);
@@ -75,14 +73,12 @@
     }
 
     .form-group {
-        margin-bottom: 1.25rem;
+        margin-bottom: var(--space-5);
     }
 
     .form-label {
         font-size: 0.78rem;
         font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
         color: var(--color-text-primary);
         display: block;
         margin-bottom: 0.45rem;
@@ -115,7 +111,7 @@
         font-size: 0.92rem;
         color: var(--color-text-primary);
         outline: none;
-        transition: all 0.15s ease;
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
         box-sizing: border-box;
     }
 
@@ -160,8 +156,8 @@
         border-radius: 12px;
         cursor: pointer;
         box-shadow: var(--shadow-btn-primary);
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
-        transition: all 0.15s ease;
+        text-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 35%, transparent);
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
     }
 
     .btn-submit-reset:hover {
@@ -172,7 +168,7 @@
     }
 
     .alert-danger {
-        padding: 0.85rem 1rem;
+        padding: 0.85rem var(--space-4);
         border-radius: 12px;
         background-color: var(--color-error-bg);
         border: 1px solid var(--color-error-border);
@@ -189,8 +185,8 @@
     <div class="auth-card">
         <div class="auth-header">
             <span class="auth-brand-badge">
-                <span>🛡️</span>
-                <span>Security Verification</span>
+                <x-icon name="shield" size="sm" />
+                <span>Security verification</span>
             </span>
             <h1 class="auth-title">Set New Password</h1>
             <p class="auth-subtitle">Create a secure password with at least 8 characters to secure your account.</p>
@@ -199,7 +195,7 @@
         {{-- Errors --}}
         @if ($errors->any())
             <div class="alert-danger" role="alert">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <div>
@@ -218,7 +214,7 @@
                 <label for="email" class="form-label">Email Address</label>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="20" height="16" x="2" y="4" rx="2"/>
                             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                         </svg>
@@ -240,7 +236,7 @@
                 <label for="password" class="form-label">New Password</label>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         </svg>
@@ -258,10 +254,10 @@
                     <button
                         type="button"
                         class="input-toggle-btn"
-                        onclick="toggleField('password')"
+                        data-action-click="toggleField" data-args='["password"]'
                         aria-label="Toggle password visibility"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                             <circle cx="12" cy="12" r="3"/>
                         </svg>
@@ -273,7 +269,7 @@
                 <label for="password_confirmation" class="form-label">Confirm New Password</label>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                         </svg>
@@ -291,10 +287,10 @@
                     <button
                         type="button"
                         class="input-toggle-btn"
-                        onclick="toggleField('password_confirmation')"
+                        data-action-click="toggleField" data-args='["password_confirmation"]'
                         aria-label="Toggle password confirmation visibility"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                             <circle cx="12" cy="12" r="3"/>
                         </svg>
@@ -303,7 +299,7 @@
             </div>
 
             <button type="submit" class="btn-submit-reset">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 6 9 17l-5-5"/>
                 </svg>
                 <span>Update Password & Sign In</span>
@@ -312,7 +308,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function toggleField(id) {
     var el = document.getElementById(id);
     if (!el) return;

@@ -94,12 +94,18 @@ class DemoAccountsSeeder extends Seeder
             }
         }
 
-        // The demo host takes bank transfers and cash, so both checkout paths can be tried.
-        // Placeholder account details: never real banking information.
+        // The demo host takes Cash App, Zelle and cash in person, so every checkout path can be tried.
+        // Clearly fake handles only (a reserved .example email, a DEMO cashtag): never real payment details.
         if (\App\Models\Organizer::whereKey('org-kingston-youth')->exists()) {
             HostPaymentPolicy::updateOrCreate(['organizer_id' => 'org-kingston-youth'], [
                 'enable_cash' => true,
-                'bank_transfer_instructions' => 'DEMO ONLY: configure a verified U.S. ACH recipient before accepting transfers.',
+                'enable_cashapp' => true,
+                'cash_app_cashtag' => '$DEMO-NotARealCashtag',
+                'cash_app_instructions' => 'DEMO ONLY: this $Cashtag is a placeholder. Do not send money to it.',
+                'enable_zelle' => true,
+                'zelle_recipient' => 'demo-payments@kingston-youth.example',
+                'zelle_instructions' => 'DEMO ONLY: this Zelle email is a placeholder. Do not send money to it.',
+                'enable_bank' => false,
                 'require_transfer_reference' => true,
                 'require_sender_name' => false,
             ]);

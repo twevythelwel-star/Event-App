@@ -117,6 +117,6 @@ class SampleCatalogSeederTest extends TestCase
         $this->seed(FishFryEventsSeeder::class);
 
         $eastOrange = Event::withoutGlobalScopes()->where('city', 'East Orange')->firstOrFail();
-        $this->assertEqualsCanonicalizing(['zelle', 'bank', 'cash'], array_column(PaymentOptions::forEvent($eastOrange), 'value'));
+        $this->assertEqualsCanonicalizing(['zelle', 'cash'], array_column(PaymentOptions::forEvent($eastOrange), 'value'));
     }
 }

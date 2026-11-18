@@ -9,18 +9,18 @@
        ========================================================================== */
     .auth-wrapper {
         max-width: 540px;
-        margin: 2rem auto 3.5rem;
-        padding: 0 1rem;
+        margin: var(--space-8) auto 3.5rem;
+        padding: 0 var(--space-4);
     }
 
     .auth-card {
         background-color: var(--color-surface);
         background-image: var(--gradient-surface-elevated-3d);
         border: 1px solid var(--color-border-strong);
-        border-top-color: rgba(255, 255, 255, 0.16);
+        border-top-color: color-mix(in srgb, var(--color-ink) 16%, transparent);
         border-radius: 24px;
         box-shadow: var(--shadow-elevated);
-        padding: 2.25rem 2.25rem 2rem;
+        padding: 2.25rem 2.25rem var(--space-8);
         position: relative;
         overflow: hidden;
         color: var(--color-text-primary);
@@ -33,7 +33,7 @@
         left: 0;
         right: 0;
         height: 4px;
-        background: linear-gradient(90deg, var(--color-accent) 0%, #38BDF8 50%, var(--color-purple) 100%);
+        background: var(--color-accent);
     }
 
     /* Segmented Top Pill Switcher (Recessed 3D Well) */
@@ -56,7 +56,7 @@
         border-radius: 9999px;
         text-decoration: none;
         color: var(--color-text-secondary);
-        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: color 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -68,7 +68,7 @@
         background-image: var(--gradient-secondary-btn-3d);
         color: var(--color-accent);
         border: 1px solid var(--color-accent-border);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 4px 12px rgba(2, 6, 14, 0.55);
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 14%, transparent), 0 4px 12px color-mix(in srgb, var(--color-shade) 55%, transparent);
     }
 
     .auth-switch-btn:hover:not(.active) {
@@ -89,12 +89,10 @@
         border-radius: 9999px;
         font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
         background: var(--color-accent-subtle);
         color: var(--color-accent);
         border: 1px solid var(--color-accent-border);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+        box-shadow: inset 0 1px 0 color-mix(in srgb, var(--color-ink) 12%, transparent);
         margin-bottom: 0.85rem;
     }
 
@@ -120,7 +118,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 10px;
-        margin-bottom: 1.5rem;
+        margin-bottom: var(--space-6);
     }
 
     .btn-social {
@@ -139,12 +137,12 @@
         color: var(--color-text-primary);
         text-decoration: none;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
     }
 
     .btn-social:hover {
         background-color: var(--color-surface-elevated);
-        border-color: #496688;
+        border-color: var(--color-rule-strong);
         transform: translateY(-1px);
     }
 
@@ -152,12 +150,10 @@
     .auth-divider {
         display: flex;
         align-items: center;
-        margin: 1.25rem 0 1.5rem;
+        margin: var(--space-5) 0 var(--space-6);
         color: var(--color-text-muted);
         font-size: 0.76rem;
         font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
     }
 
     .auth-divider::before,
@@ -195,8 +191,6 @@
     .form-label {
         font-size: 0.78rem;
         font-weight: 700;
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
         color: var(--color-text-primary);
         display: block;
         margin-bottom: 0.45rem;
@@ -233,7 +227,7 @@
         font-size: 0.92rem;
         color: var(--color-text-primary);
         outline: none;
-        transition: all 0.15s ease;
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
         box-sizing: border-box;
     }
 
@@ -277,7 +271,7 @@
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        margin: 1rem 0 1.5rem;
+        margin: var(--space-4) 0 var(--space-6);
     }
 
     .terms-row input[type="checkbox"] {
@@ -318,8 +312,8 @@
         border-radius: 12px;
         cursor: pointer;
         box-shadow: var(--shadow-btn-primary);
-        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
-        transition: all 0.15s ease;
+        text-shadow: 0 1px 0 color-mix(in srgb, var(--color-ink) 35%, transparent);
+        transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
     }
 
     .btn-submit-signup:hover {
@@ -335,7 +329,7 @@
 
     /* Error Alert */
     .alert-danger {
-        padding: 0.85rem 1rem;
+        padding: 0.85rem var(--space-4);
         border-radius: 12px;
         background-color: var(--color-error-bg);
         border: 1px solid var(--color-error-border);
@@ -354,7 +348,7 @@
         <!-- Segmented Tab Bar Switcher (Dribbble Signature) -->
         <div class="auth-switcher">
             <a href="{{ route('login') }}" class="auth-switch-btn">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                     <polyline points="10 17 15 12 10 7"/>
                     <line x1="15" x2="3" y1="12" y2="12"/>
@@ -362,7 +356,7 @@
                 <span>Sign In</span>
             </a>
             <a href="{{ route('register') }}" class="auth-switch-btn active" aria-current="page">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
                     <line x1="19" x2="19" y1="8" y2="14"/>
@@ -386,7 +380,7 @@
         {{-- Error Alerts --}}
         @if ($errors->any())
             <div class="alert-danger" role="alert">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
+                <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 <div>
@@ -407,7 +401,7 @@
                     <label for="first_name" class="form-label">First Name <span class="required">*</span></label>
                     <div class="input-wrapper">
                         <span class="input-icon-left">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                                 <circle cx="12" cy="7" r="4"/>
                             </svg>
@@ -429,7 +423,7 @@
                     <label for="last_name" class="form-label">Last Name <span class="required">*</span></label>
                     <div class="input-wrapper">
                         <span class="input-icon-left">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/>
                                 <circle cx="12" cy="7" r="4"/>
                             </svg>
@@ -452,7 +446,7 @@
                 <label for="email" class="form-label">Email Address <span class="required">*</span></label>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect width="20" height="16" x="2" y="4" rx="2"/>
                             <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
                         </svg>
@@ -475,7 +469,7 @@
                 <label for="phone" class="form-label">Mobile Phone (Optional for SMS Tickets)</label>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
                         </svg>
                     </span>
@@ -497,7 +491,7 @@
                     <label for="password" class="form-label">Password <span class="required">*</span></label>
                     <div class="input-wrapper">
                         <span class="input-icon-left">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                             </svg>
@@ -515,10 +509,10 @@
                         <button
                             type="button"
                             class="input-toggle-btn"
-                            onclick="toggleInputVisibility('password')"
+                            data-action-click="toggleInputVisibility" data-args='["password"]'
                             aria-label="Toggle password visibility"
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                                 <circle cx="12" cy="12" r="3"/>
                             </svg>
@@ -530,7 +524,7 @@
                     <label for="password_confirmation" class="form-label">Confirm Password <span class="required">*</span></label>
                     <div class="input-wrapper">
                         <span class="input-icon-left">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
                                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                             </svg>
@@ -548,10 +542,10 @@
                         <button
                             type="button"
                             class="input-toggle-btn"
-                            onclick="toggleInputVisibility('password_confirmation')"
+                            data-action-click="toggleInputVisibility" data-args='["password_confirmation"]'
                             aria-label="Toggle confirm password visibility"
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
                                 <circle cx="12" cy="12" r="3"/>
                             </svg>
@@ -565,7 +559,7 @@
                 <label for="preferred_display_currency" class="form-label">Preferred Currency Display</label>
                 <div class="input-wrapper">
                     <span class="input-icon-left">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"/>
                             <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
                             <path d="M12 18V6"/>
@@ -623,7 +617,7 @@
 
             <!-- Submit Button -->
             <button type="submit" class="btn-submit-signup">
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                     <circle cx="9" cy="7" r="4"/>
                     <polyline points="16 11 18 13 22 9"/>
@@ -634,7 +628,7 @@
     </div>
 </div>
 
-<script>
+<script @cspNonce>
 function toggleInputVisibility(fieldId) {
     var field = document.getElementById(fieldId);
     if (!field) return;

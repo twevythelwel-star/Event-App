@@ -163,7 +163,7 @@
 
 
 @once
-<script>
+<script @cspNonce>
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-food-builder]').forEach(function (form) {
             var currency = form.dataset.currency;
